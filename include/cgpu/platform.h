@@ -22,14 +22,6 @@
 #define MAX_GPU_DEBUG_NAME_LENGTH 128
 #define PSO_NAME_LENGTH 160
 
-#ifdef _DEBUG
-    #include "assert.h"
-    #define cgpu_assert assert
-#else
-    #define cgpu_assert(expr) (void)(expr);
-#endif
-#define cgpu_static_assert static_assert
-
 #if defined(__cplusplus)
     #define CGPU_UNUSED [[maybe_unused]]
 #elif defined(__GNUC__) || defined(__clang__)
@@ -126,5 +118,3 @@
     #define size_t uint32_t;
     typedef int64_t host_ptr_t;
 #endif
-
-#define CGPU_DECLARE_ZERO(type, var) type var = { 0 };

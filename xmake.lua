@@ -30,8 +30,9 @@ target("cgpu")
 
     add_includedirs("include", {public = true})
     add_headerfiles("include/cgpu/*.h")
-    add_files("src/*.cpp")
-    add_files("src/cgpu/*.cpp")
+    add_includedirs("src/common/include", {public = false})
+    add_headerfiles("src/common/include/*.h")
+    add_files("src/common/*.c")
 
     -- if is_config("use_vulkan") then
         add_defines("CGPU_USE_VULKAN")
