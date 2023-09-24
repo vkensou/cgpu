@@ -18,6 +18,10 @@
     #endif
 #endif
 
+#define MAX_GPU_VENDOR_STRING_LENGTH 64
+#define MAX_GPU_DEBUG_NAME_LENGTH 128
+#define PSO_NAME_LENGTH 160
+
 #ifndef CGPU_EXTERN_C
 #ifdef __cplusplus
     #define CGPU_EXTERN_C extern "C"
@@ -42,12 +46,24 @@
 #endif
 #endif
 
+#ifdef _DEBUG
+    #include "assert.h"
+    #define cgpu_assert assert
+#else
+    #define cgpu_assert(expr) (void)(expr);
+#endif
+#define cgpu_static_assert static_assert
+
 #if defined(__cplusplus)
     #define CGPU_UNUSED [[maybe_unused]]
 #elif defined(__GNUC__) || defined(__clang__)
     #define CGPU_UNUSED __attribute__((unused))
 #elif defined(_MSC_VER)
     #define CGPU_UNUSED 
+#endif
+
+#ifndef CGPU_STATIC_API
+    #define CGPU_STATIC_API
 #endif
 
 #ifndef CGPU_API // If the build file hasn't already defined this to be dllexport...
@@ -110,3 +126,5 @@
     #define size_t uint32_t;
     typedef int64_t host_ptr_t;
 #endif
+
+#define CGPU_DECLARE_ZERO(type, var) type var = { 0 };

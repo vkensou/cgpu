@@ -1,6 +1,5 @@
 #pragma once
-#include "config.h"
-#include "compiler.h"
+#include "platform.h"
 
 #ifdef __cplusplus
 CGPU_EXTERN_C_BEGIN

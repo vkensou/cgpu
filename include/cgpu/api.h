@@ -1,6 +1,5 @@
 #pragma once
-#include "config.h"
-#include "compiler.h"
+#include "platform.h"
 #include "flags.h"
 
 #define CGPU_ARRAY_LEN(array) ((sizeof(array) / sizeof(array[0])))

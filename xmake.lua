@@ -10,17 +10,36 @@ if (is_os("windows")) then
     end
 end
 
-if not is_os("ios") and not is_os("macosx") then
-    add_requires("volk", {configs = {vs_runtime = "MD", header_only = true}})
+add_requires("volk", {configs = {vs_runtime = "MD", header_only = true}})
+add_requires("xxhash")
+add_requires("parallel-hashmap")
+
+if is_os("windows") or is_os("linux") or is_os("android")  then
+    option("use_vulkan")
+        set_default(false)
+        add_defines("CGPU_USE_VULKAN")
 end
 
 target("cgpu")
     set_kind("static")
 
-    if not is_os("ios") and not is_os("macosx") then
-        add_packages("volk")
-    end
+    add_packages("xxhash")
+    add_packages("parallel-hashmap")
+    
+    -- add_options("use_vulkan")
 
     add_includedirs("include", {public = true})
     add_headerfiles("include/cgpu/*.h")
+    add_files("src/*.cpp")
     add_files("src/cgpu/*.cpp")
+
+    -- if is_config("use_vulkan") then
+        add_defines("CGPU_USE_VULKAN")
+        add_packages("volk")
+        add_includedirs("src/backend/vulkan/include")
+        add_headerfiles("src/backend/vulkan/include/*.h")
+        add_files("src/backend/vulkan/src/cgpu_vulkan_instance.cpp")
+        if is_os("windows") then
+            add_files("src/backend/vulkan/src/cgpu_vulkan_windows.cpp")
+        end
+    -- end
