@@ -22,30 +22,6 @@
 #define MAX_GPU_DEBUG_NAME_LENGTH 128
 #define PSO_NAME_LENGTH 160
 
-#ifndef CGPU_EXTERN_C
-#ifdef __cplusplus
-    #define CGPU_EXTERN_C extern "C"
-#else
-    #define CGPU_EXTERN_C
-#endif
-#endif
-
-#ifndef CGPU_EXTERN_C_BEGIN
-#ifdef __cplusplus
-    #define CGPU_EXTERN_C_BEGIN extern "C" {
-#else
-    #define CGPU_EXTERN_C_BEGIN
-#endif
-#endif
-
-#ifndef CGPU_EXTERN_C_END
-#ifdef __cplusplus
-    #define CGPU_EXTERN_C_END }
-#else
-    #define CGPU_EXTERN_C_END
-#endif
-#endif
-
 #ifdef _DEBUG
     #include "assert.h"
     #define cgpu_assert assert
@@ -80,6 +56,30 @@
     #else
         #define CGPU_API
     #endif
+#endif
+
+#ifndef CGPU_EXTERN_C
+#ifdef __cplusplus
+    #define CGPU_EXTERN_C extern "C"
+#else
+    #define CGPU_EXTERN_C
+#endif
+#endif
+
+#ifndef CGPU_EXTERN_C_BEGIN
+#ifdef __cplusplus
+    #define CGPU_EXTERN_C_BEGIN extern "C" {
+#else
+    #define CGPU_EXTERN_C_BEGIN
+#endif
+#endif
+
+#ifndef CGPU_EXTERN_C_END
+#ifdef __cplusplus
+    #define CGPU_EXTERN_C_END }
+#else
+    #define CGPU_EXTERN_C_END
+#endif
 #endif
 
 #if defined(_MSC_VER) && !defined(__clang__)
