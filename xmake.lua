@@ -39,8 +39,9 @@ target("cgpu")
         add_packages("volk")
         add_includedirs("src/backend/vulkan/include")
         add_headerfiles("src/backend/vulkan/include/*.h")
+        add_files("src/backend/vulkan/src/proc_table.cpp")
         add_files("src/backend/vulkan/src/cgpu_vulkan_instance.cpp")
         if is_os("windows") then
-            add_files("src/backend/vulkan/src/cgpu_vulkan_windows.cpp")
+            -- add_files("src/backend/vulkan/src/cgpu_vulkan_windows.cpp")
         end
     -- end
