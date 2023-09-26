@@ -40,6 +40,7 @@ target("cgpu")
         add_includedirs("src/backend/vulkan/include")
         add_headerfiles("src/backend/vulkan/include/*.h")
         add_files("src/backend/vulkan/src/proc_table.cpp")
+        add_files("src/backend/vulkan/src/cgpu_vulkan_surfaces.cpp")
         add_files("src/backend/vulkan/src/cgpu_vulkan_instance.cpp")
         if is_os("windows") then
             -- add_files("src/backend/vulkan/src/cgpu_vulkan_windows.cpp")
