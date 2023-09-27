@@ -93,6 +93,8 @@ size_t cgpu_hash(const void* buffer, size_t size, size_t seed);
 #define cgpu_error(...)
 #define cgpu_fatal(...)
 
+#define CGPU_UNIMPLEMENTED_FUNCTION()
+
 CGPU_FORCEINLINE static void* _aligned_calloc(size_t nelem, size_t elsize, size_t alignment)
 {
     void* memory = _aligned_malloc(nelem * elsize, alignment);
