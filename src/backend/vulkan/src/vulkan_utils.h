@@ -57,8 +57,6 @@ void VkUtil_ReturnDescriptorSets(struct VkUtil_DescriptorPool* pPool, VkDescript
 void VkUtil_FreeDescriptorPool(struct VkUtil_DescriptorPool* DescPool);
 VkDescriptorSetLayout VkUtil_CreateDescriptorSetLayout(CGPUDevice_Vulkan* D, const VkDescriptorSetLayoutBinding* bindings, uint32_t bindings_count);
 void VkUtil_FreeDescriptorSetLayout(CGPUDevice_Vulkan* D, VkDescriptorSetLayout layout);
-void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vulkan* library, const struct CGPUShaderLibraryDescriptor* desc);
-void VkUtil_FreeShaderReflection(CGPUShaderLibrary_Vulkan* library);
 
 // Feature Select Helpers
 void VkUitl_QueryDynamicPipelineStates(CGPUAdapter_Vulkan* VkAdapter, uint32_t* pCount, VkDynamicState* pStates);

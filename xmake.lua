@@ -32,7 +32,7 @@ target("cgpu")
     add_headerfiles("include/cgpu/*.h")
     add_includedirs("src/common/include", {public = false})
     add_headerfiles("src/common/include/*.h")
-    add_files("src/common/*.c")
+    add_files("src/common/*.cpp")
 
     -- if is_config("use_vulkan") then
         add_defines("CGPU_USE_VULKAN")
@@ -42,6 +42,7 @@ target("cgpu")
         add_files("src/backend/vulkan/src/proc_table.cpp")
         add_files("src/backend/vulkan/src/cgpu_vulkan_surfaces.cpp")
         add_files("src/backend/vulkan/src/cgpu_vulkan_instance.cpp")
+        add_files("src/backend/vulkan/src/vulkan_utils.cpp")
         if is_os("windows") then
             -- add_files("src/backend/vulkan/src/cgpu_vulkan_windows.cpp")
         end
