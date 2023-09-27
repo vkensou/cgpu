@@ -37,6 +37,14 @@ void CGPUUtil_FreeRootSignaturePool(CGPURootSignaturePoolId pool);
 
 CGPU_EXTERN_C_END
 
+#ifndef cgpu_max
+    #define cgpu_max(a, b) (((a) > (b)) ? (a) : (b))
+#endif
+
+#ifndef cgpu_min
+    #define cgpu_min(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+
 #ifdef _DEBUG
     #include "assert.h"
     #define cgpu_assert assert
