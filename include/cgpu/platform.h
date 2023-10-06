@@ -92,6 +92,12 @@
     #define CGPU_IF_CPP(...)
 #endif
 
+#if defined(_MSC_VER)
+    #define CGPU_ALIGNAS(x) __declspec(align(x))
+#else
+    #define CGPU_ALIGNAS(x) __attribute__((aligned(x)))
+#endif
+
 #if defined(__x86_64__) || defined(_M_X64) || defined(_AMD64_) || defined(_M_AMD64)
     #define CGPU_PLATFORM_X86_64
 #elif defined(__i386) || defined(_M_IX86) || defined(_X86_)
@@ -117,4 +123,13 @@
 #if defined(CGPU_PLATFORM_WA32)
     #define size_t uint32_t;
     typedef int64_t host_ptr_t;
+#endif
+
+// PTR SIZE
+#if INTPTR_MAX == 0x7FFFFFFFFFFFFFFFLL
+    #define PTR_SIZE 8
+#elif INTPTR_MAX == 0x7FFFFFFF
+    #define PTR_SIZE 4
+#else
+    #error unsupported platform
 #endif

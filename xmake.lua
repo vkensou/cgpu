@@ -44,8 +44,9 @@ target("cgpu")
         add_files("src/backend/vulkan/src/proc_table.cpp")
         add_files("src/backend/vulkan/src/cgpu_vulkan_surfaces.cpp")
         add_files("src/backend/vulkan/src/cgpu_vulkan_instance.cpp")
+        add_files("src/backend/vulkan/src/cgpu_vulkan_resources.cpp")
         add_files("src/backend/vulkan/src/vulkan_utils.cpp")
         if is_os("windows") then
-            -- add_files("src/backend/vulkan/src/cgpu_vulkan_windows.cpp")
+            add_files("src/backend/vulkan/src/cgpu_vulkan_windows.cpp")
         end
     -- end
