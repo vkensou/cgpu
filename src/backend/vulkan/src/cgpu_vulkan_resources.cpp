@@ -798,7 +798,6 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
         {
             imageCreateInfo.flags |= VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
             imageCreateInfo.flags |= VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
-            imageCreateInfo.tiling = VK_IMAGE_TILING_LINEAR;
         }
 
         // Verify that GPU supports this format
