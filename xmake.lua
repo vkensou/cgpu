@@ -13,6 +13,7 @@ end
 add_requires("volk", {configs = {vs_runtime = "MD", header_only = true}})
 add_requires("xxhash")
 add_requires("parallel-hashmap")
+add_requires("libsdl")
 
 if is_os("windows") or is_os("linux") or is_os("android")  then
     option("use_vulkan")
@@ -50,3 +51,11 @@ target("cgpu")
             add_files("src/backend/vulkan/src/cgpu_vulkan_windows.cpp")
         end
     -- end
+
+target("arena")
+    set_kind("binary")
+
+    add_deps("cgpu")
+    add_packages("libsdl")
+
+    add_files("arena/*.cpp")
