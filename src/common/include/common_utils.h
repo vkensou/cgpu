@@ -14,11 +14,11 @@ void cgpu_free_runtime_table(struct CGPURuntimeTable* table);
 void cgpu_runtime_table_add_queue(CGPUQueueId queue, ECGPUQueueType type, uint32_t index);
 CGPUQueueId cgpu_runtime_table_try_get_queue(CGPUDeviceId device, ECGPUQueueType type, uint32_t index);
 
-void cgpu_runtime_table_add_custom_data(struct CGPURuntimeTable* table, const char8_t* key, void* data);
-void cgpu_runtime_table_add_sweep_callback(struct CGPURuntimeTable* table, const char8_t* key, void(pfn)(void*), void* usrdata);
-void cgpu_runtime_table_add_early_sweep_callback(struct CGPURuntimeTable* table, const char8_t* key, void(pfn)(void*), void* usrdata);
-void* cgpu_runtime_table_try_get_custom_data(struct CGPURuntimeTable* table, const char8_t* key);
-bool cgpu_runtime_table_remove_custom_data(struct CGPURuntimeTable* table, const char8_t* key);
+void cgpu_runtime_table_add_custom_data(struct CGPURuntimeTable* table, const char* key, void* data);
+void cgpu_runtime_table_add_sweep_callback(struct CGPURuntimeTable* table, const char* key, void(pfn)(void*), void* usrdata);
+void cgpu_runtime_table_add_early_sweep_callback(struct CGPURuntimeTable* table, const char* key, void(pfn)(void*), void* usrdata);
+void* cgpu_runtime_table_try_get_custom_data(struct CGPURuntimeTable* table, const char* key);
+bool cgpu_runtime_table_remove_custom_data(struct CGPURuntimeTable* table, const char* key);
 
 void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSignatureDescriptor* desc);
 void CGPUUtil_FreeRSParamTables(CGPURootSignature* RS);
@@ -126,6 +126,14 @@ T* cgpu_new(Args&&... args)
 {
     void* pMemory = cgpu_malloc_aligned(sizeof(T), alignof(T));
     memset(pMemory, 0, sizeof(T));
+    cgpu_assert(pMemory != nullptr);
+    return new (pMemory) T{ std::forward<Args>(args)... };
+}
+
+template <typename T, typename... Args>
+T* cgpu_new_aligned(Args&&... args)
+{
+    void* pMemory = cgpu_malloc_aligned(sizeof(T), alignof(T));
     cgpu_assert(pMemory != nullptr);
     return new (pMemory) T{ std::forward<Args>(args)... };
 }
