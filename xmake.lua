@@ -49,6 +49,7 @@ target("cgpu")
         add_files("src/backend/vulkan/src/cgpu_vulkan_resources.cpp")
         add_files("src/backend/vulkan/src/vulkan_utils.cpp")
         add_files("src/backend/vulkan/src/vma.cpp")
+        add_files("src/backend/vulkan/src/volk.cpp")
         if is_os("windows") then
             add_defines("VK_USE_PLATFORM_WIN32_KHR")
             add_files("src/backend/vulkan/src/cgpu_vulkan_windows.cpp")
