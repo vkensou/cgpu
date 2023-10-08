@@ -37,6 +37,7 @@ target("cgpu")
 
     -- if is_config("use_vulkan") then
         add_defines("CGPU_USE_VULKAN")
+        add_defines("VK_NO_PROTOTYPES")
         add_packages("volk")
         add_includedirs("src/backend/vulkan/include")
         add_headerfiles("src/backend/vulkan/include/*.h")
@@ -47,7 +48,9 @@ target("cgpu")
         add_files("src/backend/vulkan/src/cgpu_vulkan_instance.cpp")
         add_files("src/backend/vulkan/src/cgpu_vulkan_resources.cpp")
         add_files("src/backend/vulkan/src/vulkan_utils.cpp")
+        add_files("src/backend/vulkan/src/vma.cpp")
         if is_os("windows") then
+            add_defines("VK_USE_PLATFORM_WIN32_KHR")
             add_files("src/backend/vulkan/src/cgpu_vulkan_windows.cpp")
         end
     -- end
