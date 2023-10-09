@@ -1265,8 +1265,8 @@ void cgpu_queue_unmap_tiled_texture_vulkan(CGPUQueueId queue, const struct CGPUT
 }
 
 #ifdef _WIN32
-extern uint64_t cgpu_export_shared_texture_handle_vulkan_win32(CGPUDeviceId device, const struct CGPUExportTextureDescriptor* desc);
-extern CGPUTextureId cgpu_import_shared_texture_handle_vulkan_win32(CGPUDeviceId device, const struct CGPUImportTextureDescriptor* desc);
+CGPU_EXTERN_C uint64_t cgpu_export_shared_texture_handle_vulkan_win32(CGPUDeviceId device, const struct CGPUExportTextureDescriptor* desc);
+CGPU_EXTERN_C CGPUTextureId cgpu_import_shared_texture_handle_vulkan_win32(CGPUDeviceId device, const struct CGPUImportTextureDescriptor* desc);
 #endif
 
 uint64_t cgpu_export_shared_texture_handle_vulkan(CGPUDeviceId device, const struct CGPUExportTextureDescriptor* desc)

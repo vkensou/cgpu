@@ -1,5 +1,6 @@
 ﻿#include <iostream>
 #include <SDL.h>
+#include "cgpu/api.h"
 
 using namespace std;
 
@@ -18,13 +19,23 @@ int main(int argc, char** argv)
 	else
 	{
 		// 创建窗口
-		SDL_Window* window = SDL_CreateWindow("HelloSDL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+		SDL_Window* window = SDL_CreateWindow("HelloSDL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN);
 		if (window == nullptr)
 		{
 			std::cout << "[Error]: Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
 		}
 		else
 		{
+			CGPUInstanceId instance;
+
+			CGPUInstanceDescriptor instance_desc = {
+				.backend = CGPU_BACKEND_VULKAN,
+				.enable_debug_layer = true,
+				.enable_gpu_based_validation = true,
+				.enable_set_name = true
+			};
+			instance = cgpu_create_instance(&instance_desc);
+
 			// 获取窗口所包含的表面
 			SDL_Surface* screenSurface = SDL_GetWindowSurface(window);
 
@@ -45,6 +56,8 @@ int main(int argc, char** argv)
 						quit = true;
 				}
 			}
+
+			cgpu_free_instance(instance);
 		}
 	}
 	// 销毁窗口
