@@ -239,7 +239,7 @@ static void VKAPI_PTR cgpu_vulkan_free(
     void*                                       pUserData,
     void*                                       pMemory)
 {
-    free(pMemory);
+    _aligned_free(pMemory);
 }
 
 static void* VKAPI_PTR cgpu_vulkan_realloc(
