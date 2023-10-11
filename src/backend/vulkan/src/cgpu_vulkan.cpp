@@ -2429,7 +2429,7 @@ uint32_t cgpu_acquire_next_image_vulkan(CGPUSwapChainId swapchain, const struct 
 void cgpu_free_swapchain_vulkan(CGPUSwapChainId swapchain)
 {
     cgpu_free_swapchain_vulkan_impl(swapchain);
-    cgpu_free((void*)swapchain);
+    cgpu_free_aligned((void*)swapchain, alignof(CGPUSwapChain_Vulkan));
 }
 
 // exts

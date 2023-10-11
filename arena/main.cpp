@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <SDL.h>
 #include "cgpu/api.h"
+#include "SDL_syswm.h"
 
 using namespace std;
 
@@ -53,14 +54,37 @@ int main(int argc, char** argv)
 			auto gfx_queue = cgpu_get_queue(device, CGPU_QUEUE_TYPE_GRAPHICS, 0);
 			auto present_fence = cgpu_create_fence(device);
 
-			// 获取窗口所包含的表面
-			SDL_Surface* screenSurface = SDL_GetWindowSurface(window);
+			SDL_SysWMinfo wmInfo;
+			SDL_VERSION(&wmInfo.version);
+			SDL_GetWindowWMInfo(window, &wmInfo);
+			auto surface = cgpu_surface_from_hwnd(device, wmInfo.info.win.window);
 
-			// 将表面填充为蓝色
-			SDL_FillRect(screenSurface, nullptr, SDL_MapRGB(screenSurface->format, 51, 76, 204));
+			CGPUSwapChainDescriptor descriptor = {
+				.present_queues = &gfx_queue,
+				.present_queues_count = 1,
+				.surface = surface,
+				.image_count = 3,
+				.width = SCREEN_WIDTH,
+				.height = SCREEN_HEIGHT,
+				.enable_vsync = true,
+				.format = CGPU_FORMAT_R8G8B8A8_UNORM,
+			};
+			auto swapchain = cgpu_create_swapchain(device, &descriptor);
+			CGPUTextureViewId views[3];
 
-			// 更新表面
-			SDL_UpdateWindowSurface(window);
+			for (uint32_t i = 0; i < swapchain->buffer_count; i++)
+			{
+				CGPUTextureViewDescriptor view_desc = {
+					.texture = swapchain->back_buffers[i],
+					.format = swapchain->back_buffers[i]->info->format,
+					.usages = CGPU_TVU_RTV_DSV,
+					.aspects = CGPU_TVA_COLOR,
+					.dims = CGPU_TEX_DIMENSION_2D,
+					.array_layer_count = 1,
+				};
+				views[i] = cgpu_create_texture_view(device, &view_desc);
+			}
+
 
 			// 窗口循环
 			SDL_Event e;
@@ -73,6 +97,16 @@ int main(int argc, char** argv)
 						quit = true;
 				}
 			}
+
+			cgpu_wait_queue_idle(gfx_queue);
+			cgpu_wait_fences(&present_fence, 1);
+
+			for (uint32_t i = 0; i < swapchain->buffer_count; i++)
+			{
+				cgpu_free_texture_view(views[i]);
+			}
+			cgpu_free_swapchain(swapchain);
+			cgpu_free_surface(device, surface);
 
 			cgpu_free_fence(present_fence);
 			cgpu_free_queue(gfx_queue);
