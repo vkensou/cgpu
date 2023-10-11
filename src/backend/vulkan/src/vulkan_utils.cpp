@@ -287,6 +287,8 @@ void VkUtil_CreatePipelineCache(CGPUDevice_Vulkan* D)
 void VkUtil_CreateVMAAllocator(CGPUInstance_Vulkan* I, CGPUAdapter_Vulkan* A, CGPUDevice_Vulkan* D)
 {
     VmaVulkanFunctions vulkanFunctions = {
+        .vkGetInstanceProcAddr = vkGetInstanceProcAddr,
+        .vkGetDeviceProcAddr = vkGetDeviceProcAddr,
         .vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties,
         .vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties,
         .vkAllocateMemory = D->mVkDeviceTable.vkAllocateMemory,

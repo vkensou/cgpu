@@ -26,15 +26,32 @@ int main(int argc, char** argv)
 		}
 		else
 		{
-			CGPUInstanceId instance;
-
 			CGPUInstanceDescriptor instance_desc = {
 				.backend = CGPU_BACKEND_VULKAN,
 				.enable_debug_layer = true,
 				.enable_gpu_based_validation = true,
 				.enable_set_name = true
 			};
-			instance = cgpu_create_instance(&instance_desc);
+			auto instance = cgpu_create_instance(&instance_desc);
+
+			uint32_t adapters_count = 0;
+			cgpu_enum_adapters(instance, CGPU_NULLPTR, &adapters_count);
+			CGPUAdapterId* adapters = (CGPUAdapterId*)_alloca(sizeof(CGPUAdapterId) * (adapters_count));
+			cgpu_enum_adapters(instance, adapters, &adapters_count);
+			auto adapter = adapters[0];
+
+			// Create device
+			CGPUQueueGroupDescriptor G = {
+				.queue_type = CGPU_QUEUE_TYPE_GRAPHICS,
+				.queue_count = 1
+			};
+			CGPUDeviceDescriptor device_desc = {
+				.queue_groups = &G,
+				.queue_group_count = 1
+			};
+			auto device = cgpu_create_device(adapter, &device_desc);
+			auto gfx_queue = cgpu_get_queue(device, CGPU_QUEUE_TYPE_GRAPHICS, 0);
+			auto present_fence = cgpu_create_fence(device);
 
 			// 获取窗口所包含的表面
 			SDL_Surface* screenSurface = SDL_GetWindowSurface(window);
@@ -57,6 +74,9 @@ int main(int argc, char** argv)
 				}
 			}
 
+			cgpu_free_fence(present_fence);
+			cgpu_free_queue(gfx_queue);
+			cgpu_free_device(device);
 			cgpu_free_instance(instance);
 		}
 	}
