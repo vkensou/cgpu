@@ -58,6 +58,7 @@ target("cgpu")
 
 target("arena")
     set_kind("binary")
+    set_rundir("$(projectdir)")
 
     add_deps("cgpu")
     add_packages("libsdl")
