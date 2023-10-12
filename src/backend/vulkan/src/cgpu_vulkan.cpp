@@ -2396,7 +2396,7 @@ uint32_t cgpu_acquire_next_image_vulkan(CGPUSwapChainId swapchain, const struct 
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)swapchain->device;
 
     VkResult vk_res = VK_SUCCESS;
-    uint32_t idx;
+    uint32_t idx = 0xFFFFFFFF;
 
     VkSemaphore vsemaphore = Semaphore ? Semaphore->pVkSemaphore : VK_NULL_HANDLE;
     VkFence vfence = Fence ? Fence->pVkFence : VK_NULL_HANDLE;

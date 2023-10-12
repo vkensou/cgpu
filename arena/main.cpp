@@ -85,6 +85,9 @@ int main(int argc, char** argv)
 				views[i] = cgpu_create_texture_view(device, &view_desc);
 			}
 
+			auto pool = cgpu_create_command_pool(gfx_queue, CGPU_NULLPTR);
+			CGPUCommandBufferDescriptor cmd_desc = { .is_secondary = false };
+			auto cmd = cgpu_create_command_buffer(pool, &cmd_desc);
 
 			// 窗口循环
 			SDL_Event e;
@@ -96,6 +99,37 @@ int main(int argc, char** argv)
 					if (e.type == SDL_QUIT)
 						quit = true;
 				}
+
+				cgpu_wait_fences(&present_fence, 1);
+				CGPUAcquireNextDescriptor acquire_desc = {
+					.fence = present_fence
+				};
+
+				auto backbuffer_index = cgpu_acquire_next_image(swapchain, &acquire_desc);
+				if (backbuffer_index >= swapchain->buffer_count)
+					continue;
+				const CGPUTextureId back_buffer = swapchain->back_buffers[backbuffer_index];
+				const CGPUTextureViewId back_buffer_view = views[backbuffer_index];
+
+				cgpu_reset_command_pool(pool);
+				cgpu_cmd_begin(cmd);
+
+				cgpu_cmd_end(cmd);
+				// submit
+				CGPUQueueSubmitDescriptor submit_desc = {
+					.cmds = &cmd,
+					.cmds_count = 1,
+				};
+				cgpu_submit_queue(gfx_queue, &submit_desc);
+
+				cgpu_wait_queue_idle(gfx_queue);
+				CGPUQueuePresentDescriptor present_desc = {
+					.swapchain = swapchain,
+					.wait_semaphores = CGPU_NULLPTR,
+					.wait_semaphore_count = 0,
+					.index = (uint8_t)backbuffer_index,
+				};
+				cgpu_queue_present(gfx_queue, &present_desc);
 			}
 
 			cgpu_wait_queue_idle(gfx_queue);
