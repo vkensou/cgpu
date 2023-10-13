@@ -184,7 +184,7 @@ int main(int argc, char** argv)
 				cgpu_cmd_begin(cmd);
 
 				const CGPUClearValue clearColor = {
-					{ 1.f, 0.f, 0.f, 1.f }
+					{ 0.f, 0.f, 0.f, 1.f }
 				};
 
 				CGPUColorAttachment screen_attachment = {
@@ -207,6 +207,14 @@ int main(int argc, char** argv)
 				CGPUResourceBarrierDescriptor barrier_desc0 = { .texture_barriers = &draw_barrier, .texture_barriers_count = 1 };
 				cgpu_cmd_resource_barrier(cmd, &barrier_desc0);
 				CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass(cmd, &rp_desc);
+
+				cgpu_render_encoder_set_viewport(rp_encoder,
+					0.0f, 0.0f,
+					(float)SCREEN_WIDTH, (float)SCREEN_HEIGHT,
+					0.f, 1.f);
+				cgpu_render_encoder_set_scissor(rp_encoder, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+				cgpu_render_encoder_bind_pipeline(rp_encoder, pipeline);
+				cgpu_render_encoder_draw(rp_encoder, 3, 0);
 
 				cgpu_cmd_end_render_pass(cmd, rp_encoder);
 				CGPUTextureBarrier present_barrier = {
