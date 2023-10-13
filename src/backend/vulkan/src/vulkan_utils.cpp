@@ -7,7 +7,7 @@
 #ifdef CGPU_THREAD_SAFETY
     #include "SkrRT/platform/thread.h"
 #endif
-// #include "cgpu/shader-reflections/spirv/spirv_reflect.h"
+#include "spirv_reflect.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -281,6 +281,173 @@ void VkUtil_CreatePipelineCache(CGPUDevice_Vulkan* D)
     };
     D->mVkDeviceTable.vkCreatePipelineCache(D->pVkDevice,
     &info, GLOBAL_VkAllocationCallbacks, &D->pPipelineCache);
+}
+
+// Shader Reflection
+static const ECGPUResourceType RTLut[] = {
+    CGPU_RESOURCE_TYPE_SAMPLER,                // SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER
+    CGPU_RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER, // SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    CGPU_RESOURCE_TYPE_TEXTURE,                // SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+    CGPU_RESOURCE_TYPE_RW_TEXTURE,             // SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE
+    CGPU_RESOURCE_TYPE_TEXEL_BUFFER,           // SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
+    CGPU_RESOURCE_TYPE_RW_TEXEL_BUFFER,        // SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
+    CGPU_RESOURCE_TYPE_UNIFORM_BUFFER,         // SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+    CGPU_RESOURCE_TYPE_RW_BUFFER,              // SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER
+    CGPU_RESOURCE_TYPE_UNIFORM_BUFFER,         // SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
+    CGPU_RESOURCE_TYPE_RW_BUFFER,              // SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC
+    CGPU_RESOURCE_TYPE_INPUT_ATTACHMENT,       // SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
+    CGPU_RESOURCE_TYPE_RAY_TRACING             // SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR
+};
+static ECGPUTextureDimension DIMLut[SpvDimSubpassData + 1] = {
+    CGPU_TEX_DIMENSION_1D,        // SpvDim1D
+    CGPU_TEX_DIMENSION_2D,        // SpvDim2D
+    CGPU_TEX_DIMENSION_3D,        // SpvDim3D
+    CGPU_TEX_DIMENSION_CUBE,      // SpvDimCube
+    CGPU_TEX_DIMENSION_UNDEFINED, // SpvDimRect
+    CGPU_TEX_DIMENSION_UNDEFINED, // SpvDimBuffer
+    CGPU_TEX_DIMENSION_UNDEFINED  // SpvDimSubpassData
+};
+static ECGPUTextureDimension ArrDIMLut[SpvDimSubpassData + 1] = {
+    CGPU_TEX_DIMENSION_1D_ARRAY,   // SpvDim1D
+    CGPU_TEX_DIMENSION_2D_ARRAY,   // SpvDim2D
+    CGPU_TEX_DIMENSION_UNDEFINED,  // SpvDim3D
+    CGPU_TEX_DIMENSION_CUBE_ARRAY, // SpvDimCube
+    CGPU_TEX_DIMENSION_UNDEFINED,  // SpvDimRect
+    CGPU_TEX_DIMENSION_UNDEFINED,  // SpvDimBuffer
+    CGPU_TEX_DIMENSION_UNDEFINED   // SpvDimSubpassData
+};
+const char8_t* push_constants_name = u8"push_constants";
+void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vulkan* S, const struct CGPUShaderLibraryDescriptor* desc)
+{
+    S->pReflect = (SpvReflectShaderModule*)cgpu_calloc(1, sizeof(SpvReflectShaderModule));
+    SpvReflectResult spvRes = spvReflectCreateShaderModule(desc->code_size, desc->code, S->pReflect);
+    (void)spvRes;
+    cgpu_assert(spvRes == SPV_REFLECT_RESULT_SUCCESS && "Failed to Reflect Shader!");
+    uint32_t entry_count = S->pReflect->entry_point_count;
+    S->super.entrys_count = entry_count;
+    S->super.entry_reflections = (CGPUShaderReflection*)cgpu_calloc(entry_count, sizeof(CGPUShaderReflection));
+    for (uint32_t i = 0; i < entry_count; i++)
+    {
+        // Initialize Common Reflection Data
+        CGPUShaderReflection* reflection = &S->super.entry_reflections[i];
+        // ATTENTION: We have only one entry point now
+        const SpvReflectEntryPoint* entry = spvReflectGetEntryPoint(S->pReflect, S->pReflect->entry_points[i].name);
+        reflection->entry_name = (const char8_t*)entry->name;
+        reflection->stage = (ECGPUShaderStage)entry->shader_stage;
+        if (reflection->stage == CGPU_SHADER_STAGE_COMPUTE)
+        {
+            reflection->thread_group_sizes[0] = entry->local_size.x;
+            reflection->thread_group_sizes[1] = entry->local_size.y;
+            reflection->thread_group_sizes[2] = entry->local_size.z;
+        }
+        const bool bGLSL = S->pReflect->source_language & SpvSourceLanguageGLSL;
+        (void)bGLSL;
+        const bool bHLSL = S->pReflect->source_language & SpvSourceLanguageHLSL;
+        uint32_t icount;
+        spvReflectEnumerateInputVariables(S->pReflect, &icount, NULL);
+        if (icount > 0)
+        {
+            CGPU_DECLARE_ZERO_VLA(SpvReflectInterfaceVariable*, input_vars, icount)
+            spvReflectEnumerateInputVariables(S->pReflect, &icount, input_vars);
+            if ((entry->shader_stage & SPV_REFLECT_SHADER_STAGE_VERTEX_BIT))
+            {
+                reflection->vertex_inputs_count = icount;
+                reflection->vertex_inputs = (CGPUVertexInput*)cgpu_calloc(icount, sizeof(CGPUVertexInput));
+                // Handle Vertex Inputs
+                for (uint32_t i = 0; i < icount; i++)
+                {
+                    // We use semantic for HLSL sources because DXC is a piece of shit.
+                    reflection->vertex_inputs[i].name = (const char8_t*)
+                        (bHLSL ? input_vars[i]->semantic : input_vars[i]->name);
+                    reflection->vertex_inputs[i].format =
+                        VkUtil_FormatTranslateToCGPU((VkFormat)input_vars[i]->format);
+                }
+            }
+        }
+        // Handle Descriptor Sets
+        uint32_t scount;
+        uint32_t ccount;
+        spvReflectEnumeratePushConstantBlocks(S->pReflect, &ccount, NULL);
+        spvReflectEnumerateDescriptorSets(S->pReflect, &scount, NULL);
+        if (scount > 0 || ccount > 0)
+        {
+            CGPU_DECLARE_ZERO_VLA(SpvReflectDescriptorSet*, descriptros_sets, scount + 1)
+            CGPU_DECLARE_ZERO_VLA(SpvReflectBlockVariable*, root_sets, ccount + 1)
+            spvReflectEnumerateDescriptorSets(S->pReflect, &scount, descriptros_sets);
+            spvReflectEnumeratePushConstantBlocks(S->pReflect, &ccount, root_sets);
+            uint32_t bcount = 0;
+            for (uint32_t i = 0; i < scount; i++)
+            {
+                bcount += descriptros_sets[i]->binding_count;
+            }
+            bcount += ccount;
+            reflection->shader_resources_count = bcount;
+            reflection->shader_resources = (CGPUShaderResource*)cgpu_calloc(bcount, sizeof(CGPUShaderResource));
+            // Fill Shader Resources
+            uint32_t i_res = 0;
+            for (uint32_t i_set = 0; i_set < scount; i_set++)
+            {
+                SpvReflectDescriptorSet* current_set = descriptros_sets[i_set];
+                for (uint32_t i_binding = 0; i_binding < current_set->binding_count; i_binding++, i_res++)
+                {
+                    SpvReflectDescriptorBinding* current_binding = current_set->bindings[i_binding];
+                    CGPUShaderResource* current_res = &reflection->shader_resources[i_res];
+                    current_res->set = current_binding->set;
+                    current_res->binding = current_binding->binding;
+                    current_res->stages = S->pReflect->shader_stage;
+                    current_res->type = RTLut[current_binding->descriptor_type];
+                    current_res->name = (const char8_t*)current_binding->name;
+                    current_res->name_hash =
+                        cgpu_name_hash(current_binding->name, strlen(current_binding->name));
+                    current_res->size = current_binding->count;
+                    // Solve Dimension
+                    if ((current_binding->type_description->type_flags & SPV_REFLECT_TYPE_FLAG_EXTERNAL_IMAGE) ||
+                        (current_binding->type_description->type_flags & SPV_REFLECT_TYPE_FLAG_EXTERNAL_SAMPLED_IMAGE))
+                    {
+                        if (current_binding->type_description->type_flags & SPV_REFLECT_TYPE_FLAG_ARRAY)
+                            current_res->dim = ArrDIMLut[current_binding->image.dim];
+                        else
+                            current_res->dim = DIMLut[current_binding->image.dim];
+                        if (current_binding->image.ms)
+                        {
+                            current_res->dim = current_res->dim & CGPU_TEX_DIMENSION_2D ? CGPU_TEX_DIMENSION_2DMS : current_res->dim;
+                            current_res->dim = current_res->dim & CGPU_TEX_DIMENSION_2D_ARRAY ? CGPU_TEX_DIMENSION_2DMS_ARRAY : current_res->dim;
+                        }
+                    }
+                }
+            }
+            // Fill Push Constants
+            for (uint32_t i = 0; i < ccount; i++)
+            {
+                CGPUShaderResource* current_res = &reflection->shader_resources[i_res + i];
+                current_res->set = 0;
+                current_res->type = CGPU_RESOURCE_TYPE_PUSH_CONSTANT;
+                current_res->binding = 0;
+                current_res->name = push_constants_name;
+                current_res->name_hash =
+                    cgpu_name_hash(current_res->name, strlen((const char*)current_res->name));
+                current_res->stages = S->pReflect->shader_stage;
+                current_res->size = root_sets[i]->size;
+                current_res->offset = root_sets[i]->offset;
+            }
+        }
+    }
+}
+
+void VkUtil_FreeShaderReflection(CGPUShaderLibrary_Vulkan* S)
+{
+    spvReflectDestroyShaderModule(S->pReflect);
+    if (S->super.entry_reflections)
+    {
+        for (uint32_t i = 0; i < S->super.entrys_count; i++)
+        {
+            CGPUShaderReflection* reflection = S->super.entry_reflections + i;
+            if (reflection->vertex_inputs) cgpu_free(reflection->vertex_inputs);
+            if (reflection->shader_resources) cgpu_free(reflection->shader_resources);
+        }
+    }
+    cgpu_free(S->super.entry_reflections);
+    cgpu_free(S->pReflect);
 }
 
 // VMA

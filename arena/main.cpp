@@ -2,60 +2,78 @@
 #include <SDL.h>
 #include "cgpu/api.h"
 #include "SDL_syswm.h"
-
-using namespace std;
+#include <fstream>
+#include <vector>
+#include <tuple>
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
-//void create_render_pipeline()
-//{
-//	uint32_t* vs_bytes, vs_length;
-//	uint32_t* fs_bytes, fs_length;
-//	read_shader_bytes("hot-triangle/vertex_shader", &vs_bytes, &vs_length, backend);
-//	read_shader_bytes("hot-triangle/fragment_shader", &fs_bytes, &fs_length, backend);
-//	CGPUShaderLibraryDescriptor vs_desc = {
-//		.name = u8"VertexShaderLibrary",
-//		.code = vs_bytes,
-//		.code_size = vs_length,
-//		.stage = CGPU_SHADER_STAGE_VERT,
-//	};
-//	CGPUShaderLibraryDescriptor ps_desc = {
-//		.name = u8"FragmentShaderLibrary",
-//		.code = fs_bytes,
-//		.code_size = fs_length,
-//		.stage = CGPU_SHADER_STAGE_FRAG,
-//	};
-//	CGPUShaderLibraryId vertex_shader = cgpu_create_shader_library(device, &vs_desc);
-//	CGPUShaderLibraryId fragment_shader = cgpu_create_shader_library(device, &ps_desc);
-//	free(vs_bytes);
-//	free(fs_bytes);
-//	CGPUShaderEntryDescriptor ppl_shaders[2];
-//	ppl_shaders[0].stage = CGPU_SHADER_STAGE_VERT;
-//	ppl_shaders[0].entry = u8"main";
-//	ppl_shaders[0].library = vertex_shader;
-//	ppl_shaders[1].stage = CGPU_SHADER_STAGE_FRAG;
-//	ppl_shaders[1].entry = u8"main";
-//	ppl_shaders[1].library = fragment_shader;
-//	CGPURootSignatureDescriptor rs_desc = {
-//		.shaders = ppl_shaders,
-//		.shader_count = 2
-//	};
-//	root_sig = cgpu_create_root_signature(device, &rs_desc);
-//	CGPUVertexLayout vertex_layout = { .attribute_count = 0 };
-//	CGPURenderPipelineDescriptor rp_desc = {
-//		.root_signature = root_sig,
-//		.vertex_shader = &ppl_shaders[0],
-//		.fragment_shader = &ppl_shaders[1],
-//		.vertex_layout = &vertex_layout,
-//		.color_formats = &views[0]->info.format,
-//		.render_target_count = 1,
-//		.prim_topology = CGPU_PRIM_TOPO_TRI_LIST,
-//	};
-//	pipeline = cgpu_create_render_pipeline(device, &rp_desc);
-//	cgpu_free_shader_library(vertex_shader);
-//	cgpu_free_shader_library(fragment_shader);
-//}
+std::vector<char> readFile(const std::string& filename)
+{
+	std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+	if (!file.is_open())
+	{
+		throw std::runtime_error("failed to open file!");
+	}
+
+	size_t fileSize = (size_t)file.tellg();
+	std::vector<char> buffer(fileSize);
+
+	file.seekg(0);
+	file.read(buffer.data(), fileSize);
+
+	file.close();
+	return buffer;
+}
+
+std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGPUDeviceId device, ECGPUFormat format)
+{
+	auto vertShaderCode = readFile("hello.vert.spv");
+	auto fragShaderCode = readFile("hello.frag.spv");
+	CGPUShaderLibraryDescriptor vs_desc = {
+		.name = u8"VertexShaderLibrary",
+		.code = reinterpret_cast<const uint32_t*>(vertShaderCode.data()),
+		.code_size = (uint32_t)vertShaderCode.size(),
+		.stage = CGPU_SHADER_STAGE_VERT,
+	};
+	CGPUShaderLibraryDescriptor ps_desc = {
+		.name = u8"FragmentShaderLibrary",
+		.code = reinterpret_cast<const uint32_t*>(fragShaderCode.data()),
+		.code_size = (uint32_t)fragShaderCode.size(),
+		.stage = CGPU_SHADER_STAGE_FRAG,
+	};
+	CGPUShaderLibraryId vertex_shader = cgpu_create_shader_library(device, &vs_desc);
+	CGPUShaderLibraryId fragment_shader = cgpu_create_shader_library(device, &ps_desc);
+	CGPUShaderEntryDescriptor ppl_shaders[2];
+	ppl_shaders[0].stage = CGPU_SHADER_STAGE_VERT;
+	ppl_shaders[0].entry = u8"main";
+	ppl_shaders[0].library = vertex_shader;
+	ppl_shaders[1].stage = CGPU_SHADER_STAGE_FRAG;
+	ppl_shaders[1].entry = u8"main";
+	ppl_shaders[1].library = fragment_shader;
+	CGPURootSignatureDescriptor rs_desc = {
+		.shaders = ppl_shaders,
+		.shader_count = 2
+	};
+	auto root_sig = cgpu_create_root_signature(device, &rs_desc);
+	CGPUVertexLayout vertex_layout = { .attribute_count = 0 };
+	ECGPUFormat formats[1] = { format };
+	CGPURenderPipelineDescriptor rp_desc = {
+		.root_signature = root_sig,
+		.vertex_shader = &ppl_shaders[0],
+		.fragment_shader = &ppl_shaders[1],
+		.vertex_layout = &vertex_layout,
+		.color_formats = formats,
+		.render_target_count = 1,
+		.prim_topology = CGPU_PRIM_TOPO_TRI_LIST,
+	};
+	auto pipeline = cgpu_create_render_pipeline(device, &rp_desc);
+	cgpu_free_shader_library(vertex_shader);
+	cgpu_free_shader_library(fragment_shader);
+	return { root_sig, pipeline };
+}
 
 int main(int argc, char** argv)
 {
@@ -138,6 +156,8 @@ int main(int argc, char** argv)
 			CGPUCommandBufferDescriptor cmd_desc = { .is_secondary = false };
 			auto cmd = cgpu_create_command_buffer(pool, &cmd_desc);
 
+			auto [root_sig, pipeline] = create_render_pipeline(device, views[0]->info.format);
+
 			// 窗口循环
 			SDL_Event e;
 			bool quit = false;
@@ -188,13 +208,12 @@ int main(int argc, char** argv)
 				cgpu_cmd_resource_barrier(cmd, &barrier_desc0);
 				CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass(cmd, &rp_desc);
 
-
+				cgpu_cmd_end_render_pass(cmd, rp_encoder);
 				CGPUTextureBarrier present_barrier = {
 					.texture = back_buffer,
 					.src_state = CGPU_RESOURCE_STATE_RENDER_TARGET,
 					.dst_state = CGPU_RESOURCE_STATE_PRESENT
 				};
-				cgpu_cmd_end_render_pass(cmd, rp_encoder);
 				CGPUResourceBarrierDescriptor barrier_desc1 = { .texture_barriers = &present_barrier, .texture_barriers_count = 1 };
 				cgpu_cmd_resource_barrier(cmd, &barrier_desc1);
 
@@ -218,6 +237,12 @@ int main(int argc, char** argv)
 
 			cgpu_wait_queue_idle(gfx_queue);
 			cgpu_wait_fences(&present_fence, 1);
+
+			cgpu_free_command_buffer(cmd);
+			cgpu_free_command_pool(pool);
+
+			cgpu_free_render_pipeline(pipeline);
+			cgpu_free_root_signature(root_sig);
 
 			for (uint32_t i = 0; i < swapchain->buffer_count; i++)
 			{

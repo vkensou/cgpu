@@ -1547,7 +1547,7 @@ CGPUShaderLibraryId cgpu_create_shader_library_vulkan(CGPUDeviceId device, const
     {
         D->mVkDeviceTable.vkCreateShaderModule(D->pVkDevice, &info, GLOBAL_VkAllocationCallbacks, &S->mShaderModule);
     }
-    // VkUtil_InitializeShaderReflection(device, S, desc);
+     VkUtil_InitializeShaderReflection(device, S, desc);
     return &S->super;
 }
 
@@ -1555,7 +1555,7 @@ void cgpu_free_shader_library_vulkan(CGPUShaderLibraryId library)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)library->device;
     CGPUShaderLibrary_Vulkan* S = (CGPUShaderLibrary_Vulkan*)library;
-    // VkUtil_FreeShaderReflection(S);
+     VkUtil_FreeShaderReflection(S);
     if (S->mShaderModule != VK_NULL_HANDLE)
     {
         D->mVkDeviceTable.vkDestroyShaderModule(D->pVkDevice, S->mShaderModule, GLOBAL_VkAllocationCallbacks);
