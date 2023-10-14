@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-
+#include <stdbool.h>
 #ifdef __cplusplus
     #define CGPU_NULL nullptr
 #else
@@ -21,38 +21,6 @@
 #define MAX_GPU_VENDOR_STRING_LENGTH 64
 #define MAX_GPU_DEBUG_NAME_LENGTH 128
 #define PSO_NAME_LENGTH 160
-
-#ifndef CGPU_EXTERN_C
-#ifdef __cplusplus
-    #define CGPU_EXTERN_C extern "C"
-#else
-    #define CGPU_EXTERN_C
-#endif
-#endif
-
-#ifndef CGPU_EXTERN_C_BEGIN
-#ifdef __cplusplus
-    #define CGPU_EXTERN_C_BEGIN extern "C" {
-#else
-    #define CGPU_EXTERN_C_BEGIN
-#endif
-#endif
-
-#ifndef CGPU_EXTERN_C_END
-#ifdef __cplusplus
-    #define CGPU_EXTERN_C_END }
-#else
-    #define CGPU_EXTERN_C_END
-#endif
-#endif
-
-#ifdef _DEBUG
-    #include "assert.h"
-    #define cgpu_assert assert
-#else
-    #define cgpu_assert(expr) (void)(expr);
-#endif
-#define cgpu_static_assert static_assert
 
 #if defined(__cplusplus)
     #define CGPU_UNUSED [[maybe_unused]]
@@ -82,6 +50,30 @@
     #endif
 #endif
 
+#ifndef CGPU_EXTERN_C
+#ifdef __cplusplus
+    #define CGPU_EXTERN_C extern "C"
+#else
+    #define CGPU_EXTERN_C
+#endif
+#endif
+
+#ifndef CGPU_EXTERN_C_BEGIN
+#ifdef __cplusplus
+    #define CGPU_EXTERN_C_BEGIN extern "C" {
+#else
+    #define CGPU_EXTERN_C_BEGIN
+#endif
+#endif
+
+#ifndef CGPU_EXTERN_C_END
+#ifdef __cplusplus
+    #define CGPU_EXTERN_C_END }
+#else
+    #define CGPU_EXTERN_C_END
+#endif
+#endif
+
 #if defined(_MSC_VER) && !defined(__clang__)
 #ifndef CGPU_FORCEINLINE
     #define CGPU_FORCEINLINE __forceinline
@@ -98,6 +90,12 @@
     #define CGPU_IF_CPP(...) __VA_ARGS__
 #else
     #define CGPU_IF_CPP(...)
+#endif
+
+#if defined(_MSC_VER)
+    #define CGPU_ALIGNAS(x) __declspec(align(x))
+#else
+    #define CGPU_ALIGNAS(x) __attribute__((aligned(x)))
 #endif
 
 #if defined(__x86_64__) || defined(_M_X64) || defined(_AMD64_) || defined(_M_AMD64)
@@ -127,4 +125,30 @@
     typedef int64_t host_ptr_t;
 #endif
 
-#define CGPU_DECLARE_ZERO(type, var) type var = { 0 };
+// PTR SIZE
+#if INTPTR_MAX == 0x7FFFFFFFFFFFFFFFLL
+    #define PTR_SIZE 8
+#elif INTPTR_MAX == 0x7FFFFFFF
+    #define PTR_SIZE 4
+#else
+    #error unsupported platform
+#endif
+
+#if __cplusplus >= 201100L
+#define CGPU_UTF8(str) u8##str
+#else
+#define CGPU_UTF8(str) str
+#endif
+
+#if __cpp_char8_t
+#define CHAR8_T_DEFINED
+#endif
+
+#ifndef CHAR8_T_DEFINED // If the user hasn't already defined these...
+    #if defined(EA_PLATFORM_APPLE)
+        #define char8_t char // The Apple debugger is too stupid to realize char8_t is typedef'd to char, so we #define it.
+    #else
+        typedef char char8_t;
+    #endif
+    #define CHAR8_T_DEFINED
+#endif
