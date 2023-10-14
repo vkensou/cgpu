@@ -5,6 +5,8 @@
 #include <fstream>
 #include <vector>
 #include <tuple>
+#include "imgui.h"
+#include "imgui_impl_sdl2.h"
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -126,6 +128,18 @@ int main(int argc, char** argv)
 			SDL_GetWindowWMInfo(window, &wmInfo);
 			auto surface = cgpu_surface_from_hwnd(device, wmInfo.info.win.window);
 
+			IMGUI_CHECKVERSION();
+			ImGui::CreateContext();
+			ImGuiIO& io = ImGui::GetIO(); (void)io;
+			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+			io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+			// Setup Dear ImGui style
+			ImGui::StyleColorsDark();
+			//ImGui::StyleColorsLight();
+
+			ImGui_ImplSDL2_InitForOther(window);
+
 			CGPUSwapChainDescriptor descriptor = {
 				.present_queues = &gfx_queue,
 				.present_queues_count = 1,
@@ -165,7 +179,10 @@ int main(int argc, char** argv)
 			{
 				while (SDL_PollEvent(&e))
 				{
+					ImGui_ImplSDL2_ProcessEvent(&e);
 					if (e.type == SDL_QUIT)
+						quit = true;
+					if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_CLOSE && e.window.windowID == SDL_GetWindowID(window))
 						quit = true;
 				}
 
@@ -249,6 +266,9 @@ int main(int argc, char** argv)
 
 			cgpu_free_command_buffer(cmd);
 			cgpu_free_command_pool(pool);
+
+			ImGui_ImplSDL2_Shutdown();
+			ImGui::DestroyContext();
 
 			cgpu_free_render_pipeline(pipeline);
 			cgpu_free_root_signature(root_sig);
