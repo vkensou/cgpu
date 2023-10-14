@@ -15,7 +15,7 @@ add_requires("xxhash")
 add_requires("parallel-hashmap")
 add_requires("libsdl")
 add_requires("spirv-reflect")
-add_requires("imgui")
+add_requires("imgui", {configs = {debug = true}})
 
 if is_os("windows") or is_os("linux") or is_os("android")  then
     option("use_vulkan")

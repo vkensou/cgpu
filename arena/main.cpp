@@ -7,6 +7,7 @@
 #include <tuple>
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
+#include "imgui_impl_cgpu.h"
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -30,10 +31,10 @@ std::vector<char> readFile(const std::string& filename)
 	return buffer;
 }
 
-std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGPUDeviceId device, ECGPUFormat format)
+std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGPUDeviceId device, ECGPUFormat format, const std::string& vertPath, const std::string& fragPath)
 {
-	auto vertShaderCode = readFile("hello.vert.spv");
-	auto fragShaderCode = readFile("hello.frag.spv");
+	auto vertShaderCode = readFile(vertPath);
+	auto fragShaderCode = readFile(fragPath);
 	CGPUShaderLibraryDescriptor vs_desc = {
 		.name = u8"VertexShaderLibrary",
 		.code = reinterpret_cast<const uint32_t*>(vertShaderCode.data()),
@@ -139,6 +140,11 @@ int main(int argc, char** argv)
 			//ImGui::StyleColorsLight();
 
 			ImGui_ImplSDL2_InitForOther(window);
+			ImGui_ImplCGPU_InitInfo init_info = {};
+			init_info.Instance = instance;
+			init_info.Device = device;
+			init_info.ImageCount = 3;
+			ImGui_ImplCGPU_Init(&init_info);
 
 			CGPUSwapChainDescriptor descriptor = {
 				.present_queues = &gfx_queue,
@@ -166,15 +172,19 @@ int main(int argc, char** argv)
 				views[i] = cgpu_create_texture_view(device, &view_desc);
 			}
 
+			auto [imgui_root_sig, imgui_pipeline] = create_render_pipeline(device, views[0]->info.format, "imgui.vert.spv", "imgui.frag.spv");
+			ImGui_ImplCGPU_CreateFontsTexture(gfx_queue, imgui_root_sig);
+
+			auto [root_sig, pipeline] = create_render_pipeline(device, views[0]->info.format, "hello.vert.spv", "hello.frag.spv");
+
 			auto pool = cgpu_create_command_pool(gfx_queue, CGPU_NULLPTR);
 			CGPUCommandBufferDescriptor cmd_desc = { .is_secondary = false };
 			auto cmd = cgpu_create_command_buffer(pool, &cmd_desc);
 
-			auto [root_sig, pipeline] = create_render_pipeline(device, views[0]->info.format);
-
 			// 窗口循环
 			SDL_Event e;
 			bool quit = false;
+			bool show_demo_window = true;
 			while (quit == false)
 			{
 				while (SDL_PollEvent(&e))
@@ -194,6 +204,14 @@ int main(int argc, char** argv)
 				auto backbuffer_index = cgpu_acquire_next_image(swapchain, &acquire_desc);
 				if (backbuffer_index >= swapchain->buffer_count)
 					continue;
+
+				ImGui_ImplCGPU_NewFrame();
+				ImGui_ImplSDL2_NewFrame();
+				ImGui::NewFrame();
+
+				if (show_demo_window)
+					ImGui::ShowDemoWindow(&show_demo_window);
+
 				const CGPUTextureId back_buffer = swapchain->back_buffers[backbuffer_index];
 				const CGPUTextureViewId back_buffer_view = views[backbuffer_index];
 
@@ -234,6 +252,10 @@ int main(int argc, char** argv)
 				cgpu_render_encoder_bind_pipeline(rp_encoder, pipeline);
 				cgpu_render_encoder_draw(rp_encoder, 3, 0);
 
+				ImGui::Render();
+				ImDrawData* draw_data = ImGui::GetDrawData();
+				ImGui_ImplCGPU_RenderDrawData(draw_data, rp_encoder, imgui_root_sig, imgui_pipeline);
+
 				cgpu_cmd_end_render_pass(cmd, rp_encoder);
 				CGPUTextureBarrier present_barrier = {
 					.texture = back_buffer,
@@ -267,8 +289,12 @@ int main(int argc, char** argv)
 			cgpu_free_command_buffer(cmd);
 			cgpu_free_command_pool(pool);
 
+			ImGui_ImplCGPU_Shutdown();
 			ImGui_ImplSDL2_Shutdown();
 			ImGui::DestroyContext();
+
+			cgpu_free_render_pipeline(imgui_pipeline);
+			cgpu_free_root_signature(imgui_root_sig);
 
 			cgpu_free_render_pipeline(pipeline);
 			cgpu_free_root_signature(root_sig);
