@@ -590,7 +590,7 @@ CGPUDescriptorSetId cgpu_create_descriptor_set_vulkan(CGPUDeviceId device, const
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     const size_t UpdateTemplateSize = RS->super.tables[table_index].resources_count * sizeof(VkDescriptorUpdateData);
     totalSize += UpdateTemplateSize;
-    CGPUDescriptorSet_Vulkan* Set = (CGPUDescriptorSet_Vulkan*)cgpu_calloc_aligned(1, totalSize, alignof(CGPUDescriptorSet_Vulkan));
+    CGPUDescriptorSet_Vulkan* Set = (CGPUDescriptorSet_Vulkan*)cgpu_calloc_aligned(1, totalSize, _Alignof(CGPUDescriptorSet_Vulkan));
     char8_t* pMem = (char8_t*)(Set + 1);
     // Allocate Descriptor Set
     VkUtil_ConsumeDescriptorSets(D->pDescriptorPool, &SetLayout->layout, &Set->pVkDescriptorSet, 1);
@@ -1380,7 +1380,7 @@ CGPUCommandBufferId cgpu_create_command_buffer_vulkan(CGPUCommandPoolId pool, co
     CGPUQueue_Vulkan* Q = (CGPUQueue_Vulkan*)P->super.queue;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)Q->super.device;
     CGPUCommandBuffer_Vulkan* Cmd = (CGPUCommandBuffer_Vulkan*)cgpu_calloc_aligned(
-    1, sizeof(CGPUCommandBuffer_Vulkan), alignof(CGPUCommandBuffer_Vulkan));
+    1, sizeof(CGPUCommandBuffer_Vulkan), _Alignof(CGPUCommandBuffer_Vulkan));
     cgpu_assert(Cmd);
 
     Cmd->mType = Q->super.type;
@@ -2334,7 +2334,7 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
         S = (CGPUSwapChain_Vulkan*)cgpu_calloc_aligned(1,
             sizeof(CGPUSwapChain_Vulkan) + 
             (sizeof(CGPUTexture_Vulkan) + sizeof(CGPUTextureInfo)) * buffer_count + 
-            sizeof(CGPUTextureId) * buffer_count, alignof(CGPUSwapChain_Vulkan));
+            sizeof(CGPUTextureId) * buffer_count, _Alignof(CGPUSwapChain_Vulkan));
     }
     S->pVkSwapChain = new_chain;
     S->super.buffer_count = buffer_count;
@@ -2429,7 +2429,7 @@ uint32_t cgpu_acquire_next_image_vulkan(CGPUSwapChainId swapchain, const struct 
 void cgpu_free_swapchain_vulkan(CGPUSwapChainId swapchain)
 {
     cgpu_free_swapchain_vulkan_impl(swapchain);
-    cgpu_free_aligned((void*)swapchain, alignof(CGPUSwapChain_Vulkan));
+    cgpu_free_aligned((void*)swapchain, _Alignof(CGPUSwapChain_Vulkan));
 }
 
 // exts

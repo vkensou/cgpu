@@ -101,12 +101,12 @@ typedef enum ECGPUBackend
     CGPU_BACKEND_MAX_ENUM_BIT = 0x7FFFFFFF
 } ECGPUBackend;
 
-static const char8_t* gCGPUBackendNames[CGPU_BACKEND_COUNT] = {
-    u8"vulkan",
-    u8"d3d12",
-    u8"d3d12(xbox)",
-    u8"agc",
-    u8"metal",
+static const char* gCGPUBackendNames[CGPU_BACKEND_COUNT] = {
+    "vulkan",
+    "d3d12",
+    "d3d12(xbox)",
+    "agc",
+    "metal",
 };
 
 typedef enum ECGPUQueueType

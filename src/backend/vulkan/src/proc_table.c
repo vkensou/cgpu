@@ -1,7 +1,7 @@
 #include "cgpu_vulkan.h"
 #include "cgpu_vulkan2.h"
-#include <cstdlib>
-#include <cstring>
+#include <stdlib.h>
+#include <string.h>
 
 const CGPUProcTable tbl_vk = {
     // Instance APIs

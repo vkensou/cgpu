@@ -17,7 +17,7 @@ CGPU_EXTERN_C uint64_t cgpu_export_shared_texture_handle_vulkan_win32(CGPUDevice
         T, shared_handle, info->width, info->height, info->depth);
 
 #ifdef _DEBUG
-    auto pid = (uint64_t)GetCurrentProcessId();
+    uint64_t pid = (uint64_t)GetCurrentProcessId();
     cgpu_assert(pid == (shared_handle >> 32));
 #endif
 
@@ -26,7 +26,7 @@ CGPU_EXTERN_C uint64_t cgpu_export_shared_texture_handle_vulkan_win32(CGPUDevice
 
 CGPU_EXTERN_C CGPUTextureId cgpu_import_shared_texture_handle_vulkan_win32(CGPUDeviceId device, const struct CGPUImportTextureDescriptor* desc)
 {
-    CGPUTextureDescriptor tex_desc = {};
+    CGPU_DECLARE_ZERO(CGPUTextureDescriptor, tex_desc);
     tex_desc.descriptors = CGPU_RESOURCE_TYPE_TEXTURE;
     tex_desc.flags = CGPU_INNER_TCF_IMPORT_SHARED_HANDLE;
     tex_desc.width = desc->width;
