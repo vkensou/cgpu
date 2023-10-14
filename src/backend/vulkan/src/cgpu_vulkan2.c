@@ -32,7 +32,7 @@ void cgpu_create_shader_objs_vulkan_impl(CGPURootSignatureId signature,
             {
                 isaInfos[i - 1].nextStage = isaInfos[i].stage;
             }
-            isaInfos[i].pName = (const char*)descs[i].entry.entry;
+            isaInfos[i].pName = descs[i].entry.entry;
             isaInfos[i].pCode = descs[i].shader_code;
             isaInfos[i].codeSize = descs[i].code_size;
         }
@@ -62,7 +62,7 @@ CGPULinkedShaderId cgpu_compile_and_link_shaders_vulkan(CGPURootSignatureId sign
     // CGPURootSignature_Vulkan* RS = (CGPURootSignature_Vulkan*)signature;
     if (D->mVkDeviceTable.vkCreateShadersEXT)
     {
-        CGPULinkedShader_Vulkan* linked = count ? (CGPULinkedShader_Vulkan*)cgpu_calloc(1, sizeof(CGPULinkedShader_Vulkan)) : CGPU_NULLPTR;
+        CGPULinkedShader_Vulkan* linked = count ? cgpu_calloc(1, sizeof(CGPULinkedShader_Vulkan)) : CGPU_NULLPTR;
         VkShaderEXT outShaders[CGPU_SHADER_STAGE_COUNT];
         cgpu_create_shader_objs_vulkan_impl(signature, descs, count, outShaders);
         for (uint32_t i = 0; i < count; i++)
@@ -87,11 +87,11 @@ void cgpu_compile_shaders_vulkan(CGPURootSignatureId signature, const struct CGP
     // CGPURootSignature_Vulkan* RS = (CGPURootSignature_Vulkan*)signature;
     if (D->mVkDeviceTable.vkCreateShadersEXT)
     {
-        VkShaderEXT* outShaders = (VkShaderEXT*)cgpu_calloc(count, sizeof(VkShaderEXT));
+        VkShaderEXT* outShaders = cgpu_calloc(count, sizeof(VkShaderEXT));
         cgpu_create_shader_objs_vulkan_impl(signature, descs, count, outShaders);
         for (uint32_t i = 0; i < count; i++)
         {
-            out_isas = (CGPUCompiledShaderId*)cgpu_calloc(1, sizeof(CGPUCompiledShader_Vulkan));
+            out_isas = cgpu_calloc(1, sizeof(CGPUCompiledShader_Vulkan));
             ((CGPUCompiledShader_Vulkan*)out_isas)->pVkShader = outShaders[i];
             ((CGPUCompiledShader_Vulkan*)out_isas)->super.device = signature->device;
             ((CGPUCompiledShader_Vulkan*)out_isas)->super.root_signature = signature;
@@ -157,7 +157,7 @@ void cgpu_free_linked_shader_vulkan(CGPULinkedShaderId shader)
 CGPUStateBufferId cgpu_create_state_buffer_vulkan(CGPUCommandBufferId cmd, const struct CGPUStateBufferDescriptor* desc)
 {
     CGPUCommandBuffer_Vulkan* CB = (CGPUCommandBuffer_Vulkan*)cmd;
-    CGPUStateBuffer_Vulkan* sb = (CGPUStateBuffer_Vulkan*)cgpu_calloc(1, sizeof(CGPUStateBuffer_Vulkan));
+    CGPUStateBuffer_Vulkan* sb = cgpu_calloc(1, sizeof(CGPUStateBuffer_Vulkan));
     sb->super.device = CB->super.device;
     sb->super.cmd = cmd;
     return &sb->super;
@@ -407,7 +407,7 @@ void cgpu_close_user_state_encoder_vulkan(CGPUUserStateEncoderId encoder)
 CGPUBinderId cgpu_create_binder_vulkan(CGPUCommandBufferId cmd)
 {    
     CGPUCommandBuffer_Vulkan* CB = (CGPUCommandBuffer_Vulkan*)cmd;
-    CGPUBinder_Vulkan* bdr = (CGPUBinder_Vulkan*)cgpu_calloc(1, sizeof(CGPUBinder_Vulkan));
+    CGPUBinder_Vulkan* bdr = cgpu_calloc(1, sizeof(CGPUBinder_Vulkan));
     bdr->super.device = CB->super.device;
     bdr->super.cmd = cmd;
     return &bdr->super;
@@ -428,7 +428,7 @@ void cgpu_binder_bind_vertex_layout_vulkan(CGPUBinderId binder, const struct CGP
     const uint64_t input_attrs_offset = dsize;
     dsize += (sizeof(VkVertexInputAttributeDescription2EXT) * input_attribute_count);
     
-    uint8_t* data = (uint8_t*)cgpu_calloc(1, dsize);
+    uint8_t* data = cgpu_calloc(1, dsize);
     VkVertexInputBindingDescription2EXT* input_bindings = (VkVertexInputBindingDescription2EXT*)data;
     VkVertexInputAttributeDescription2EXT* input_attributes = (VkVertexInputAttributeDescription2EXT*)(data + input_attrs_offset);
     {
