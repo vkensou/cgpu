@@ -183,6 +183,14 @@ int main(int argc, char** argv)
 				cgpu_reset_command_pool(pool);
 				cgpu_cmd_begin(cmd);
 
+				CGPUTextureBarrier draw_barrier = {
+					.texture = back_buffer,
+					.src_state = CGPU_RESOURCE_STATE_UNDEFINED,
+					.dst_state = CGPU_RESOURCE_STATE_RENDER_TARGET
+				};
+				CGPUResourceBarrierDescriptor barrier_desc0 = { .texture_barriers = &draw_barrier, .texture_barriers_count = 1 };
+				cgpu_cmd_resource_barrier(cmd, &barrier_desc0);
+
 				const CGPUClearValue clearColor = {
 					{ 0.f, 0.f, 0.f, 1.f }
 				};
@@ -199,13 +207,6 @@ int main(int argc, char** argv)
 					.depth_stencil = CGPU_NULLPTR,
 					.render_target_count = 1,
 				};
-				CGPUTextureBarrier draw_barrier = {
-					.texture = back_buffer,
-					.src_state = CGPU_RESOURCE_STATE_UNDEFINED,
-					.dst_state = CGPU_RESOURCE_STATE_RENDER_TARGET
-				};
-				CGPUResourceBarrierDescriptor barrier_desc0 = { .texture_barriers = &draw_barrier, .texture_barriers_count = 1 };
-				cgpu_cmd_resource_barrier(cmd, &barrier_desc0);
 				CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass(cmd, &rp_desc);
 
 				cgpu_render_encoder_set_viewport(rp_encoder,
