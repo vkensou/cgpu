@@ -10,7 +10,7 @@ CGPU_API void cgpu_free_surface_vulkan(CGPUDeviceId device, CGPUSurfaceId surfac
 #if defined(_WIN32) || defined(_WIN64)
 CGPU_API CGPUSurfaceId cgpu_surface_from_hwnd_vulkan(CGPUDeviceId device, HWND window);
 #elif defined(_MACOS)
-SKR_RUNTIME_API CGPUSurfaceId cgpu_surface_from_ns_view_vulkan(CGPUDeviceId device, CGPUNSView* window);
+CGPU_API CGPUSurfaceId cgpu_surface_from_ns_view_vulkan(CGPUDeviceId device, CGPUNSView* window);
 #endif
 
 #ifdef __cplusplus

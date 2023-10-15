@@ -37,7 +37,7 @@ void cgpu_create_shader_objs_vulkan_impl(CGPURootSignatureId signature,
             isaInfos[i].codeSize = descs[i].code_size;
         }
         CHECK_VKRESULT(D->mVkDeviceTable.vkCreateShadersEXT(D->pVkDevice, count, isaInfos, GLOBAL_VkAllocationCallbacks, outShaders));
-#ifdef SKR_PROFILE_ENABLE
+#ifdef CGPU_PROFILE_ENABLE
         if (D->mVkDeviceTable.vkGetShaderBinaryDataEXT)
         {
             for (uint32_t i = 0; i < count; i++)
@@ -110,7 +110,7 @@ void cgpu_free_compiled_shader_vulkan(CGPUCompiledShaderId shader)
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)shader->device;
     if (S)
     {
-#ifdef SKR_PROFILE_ENABLE
+#ifdef CGPU_PROFILE_ENABLE
         if (D->mVkDeviceTable.vkGetShaderBinaryDataEXT)
         {
             void* data; size_t size;
@@ -134,7 +134,7 @@ void cgpu_free_linked_shader_vulkan(CGPULinkedShaderId shader)
     {
         for (uint32_t i = 0; i < CGPU_SHADER_STAGE_COUNT; i++)
         {
-#ifdef SKR_PROFILE_ENABLE
+#ifdef CGPU_PROFILE_ENABLE
             if (D->mVkDeviceTable.vkGetShaderBinaryDataEXT)
             {
                 void* data; size_t size;
