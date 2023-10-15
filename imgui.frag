@@ -1,6 +1,8 @@
 // Copyright 2020 Google LLC
 
+[[vk::binding(0, 0)]]
 Texture2D fontTexture : register(t0);
+[[vk::binding(1, 0)]]
 SamplerState fontSampler : register(s0);
 
 struct VSOutput

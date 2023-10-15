@@ -31,7 +31,7 @@ std::vector<char> readFile(const std::string& filename)
 	return buffer;
 }
 
-std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGPUDeviceId device, ECGPUFormat format, const std::string& vertPath, const std::string& fragPath)
+std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGPUDeviceId device, ECGPUFormat format, const std::string& vertPath, const std::string& fragPath, const CGPUVertexLayout* vertex_layout, CGPUBlendStateDescriptor* blend_state, CGPUDepthStateDesc* depth_state, CGPURasterizerStateDescriptor* rasterizer_state)
 {
 	auto vertShaderCode = readFile(vertPath);
 	auto fragShaderCode = readFile(fragPath);
@@ -61,13 +61,15 @@ std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGP
 		.shader_count = 2
 	};
 	auto root_sig = cgpu_create_root_signature(device, &rs_desc);
-	CGPUVertexLayout vertex_layout = { .attribute_count = 0 };
 	ECGPUFormat formats[1] = { format };
 	CGPURenderPipelineDescriptor rp_desc = {
 		.root_signature = root_sig,
 		.vertex_shader = &ppl_shaders[0],
 		.fragment_shader = &ppl_shaders[1],
-		.vertex_layout = &vertex_layout,
+		.vertex_layout = vertex_layout,
+		.blend_state = blend_state,
+		.depth_state = depth_state,
+		.rasterizer_state = rasterizer_state,
 		.color_formats = formats,
 		.render_target_count = 1,
 		.prim_topology = CGPU_PRIM_TOPO_TRI_LIST,
@@ -172,10 +174,54 @@ int main(int argc, char** argv)
 				views[i] = cgpu_create_texture_view(device, &view_desc);
 			}
 
-			auto [imgui_root_sig, imgui_pipeline] = create_render_pipeline(device, views[0]->info.format, "imgui.vert.spv", "imgui.frag.spv");
+			CGPUVertexLayout imgui_vertex_layout = { 
+				.attribute_count = 3, 
+				.attributes = {
+					{ u8"POSITION", 1, CGPU_FORMAT_R32G32_SFLOAT, 0, 0, sizeof(float) * 2, CGPU_INPUT_RATE_VERTEX },
+					{ u8"TEXCOORD", 1, CGPU_FORMAT_R32G32_SFLOAT, 0, sizeof(float) * 2, sizeof(float) * 2, CGPU_INPUT_RATE_VERTEX },
+					{ u8"COLOR", 1, CGPU_FORMAT_R8G8B8A8_UNORM, 0, sizeof(float) * 4, sizeof(uint32_t), CGPU_INPUT_RATE_VERTEX },
+				}
+			};
+			CGPUBlendStateDescriptor imgui_blend_desc = {
+				.src_factors = { CGPU_BLEND_CONST_SRC_ALPHA },
+				.dst_factors = { CGPU_BLEND_CONST_ONE_MINUS_SRC_ALPHA },
+				.src_alpha_factors = { CGPU_BLEND_CONST_SRC_ALPHA },
+				.dst_alpha_factors = { CGPU_BLEND_CONST_ONE_MINUS_SRC_ALPHA },
+				.blend_modes = { CGPU_BLEND_MODE_ADD },
+				.blend_alpha_modes = { CGPU_BLEND_MODE_ADD },
+				.masks = { CGPU_COLOR_MASK_ALL },
+				.alpha_to_coverage = false,
+				.independent_blend = false,
+			};
+			CGPUDepthStateDesc imgui_depth_desc = {
+				.depth_test = false,
+				.depth_write = false,
+				.stencil_test = false,
+			};
+			CGPURasterizerStateDescriptor rasterizer_state = {
+				.cull_mode = CGPU_CULL_MODE_NONE,
+			};
+			auto [imgui_root_sig, imgui_pipeline] = create_render_pipeline(device, views[0]->info.format, "imgui.vert.spv", "imgui.frag.spv", &imgui_vertex_layout, &imgui_blend_desc, &imgui_depth_desc, &rasterizer_state);
 			ImGui_ImplCGPU_CreateFontsTexture(gfx_queue, imgui_root_sig);
 
-			auto [root_sig, pipeline] = create_render_pipeline(device, views[0]->info.format, "hello.vert.spv", "hello.frag.spv");
+			CGPUVertexLayout vertex_layout = { .attribute_count = 0 };
+			CGPUBlendStateDescriptor blend_desc = {
+				.src_factors = { CGPU_BLEND_CONST_ONE },
+				.dst_factors = { CGPU_BLEND_CONST_ZERO },
+				.src_alpha_factors = { CGPU_BLEND_CONST_ONE },
+				.dst_alpha_factors = { CGPU_BLEND_CONST_ZERO },
+				.blend_modes = { CGPU_BLEND_MODE_ADD },
+				.blend_alpha_modes = { CGPU_BLEND_MODE_ADD },
+				.masks = { CGPU_COLOR_MASK_ALL },
+				.alpha_to_coverage = false,
+				.independent_blend = false,
+			};
+			CGPUDepthStateDesc depth_desc = {
+				.depth_test = false,
+				.depth_write = false,
+				.stencil_test = false,
+			};
+			auto [root_sig, pipeline] = create_render_pipeline(device, views[0]->info.format, "hello.vert.spv", "hello.frag.spv", &vertex_layout, &blend_desc, &depth_desc, nullptr);
 
 			auto pool = cgpu_create_command_pool(gfx_queue, CGPU_NULLPTR);
 			CGPUCommandBufferDescriptor cmd_desc = { .is_secondary = false };

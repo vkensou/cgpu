@@ -58,7 +58,7 @@ static ImGui_ImplCGPU_Data* ImGui_ImplCGPU_GetBackendData()
     return ImGui::GetCurrentContext() ? (ImGui_ImplCGPU_Data*)ImGui::GetIO().BackendRendererUserData : nullptr;
 }
 
-static void CreateOrResizeBuffer(CGPUBufferId& buffer, size_t& p_buffer_size, size_t new_size, ECGPUResourceState state)
+static void CreateOrResizeBuffer(CGPUBufferId& buffer, size_t& p_buffer_size, size_t new_size, CGPUResourceTypes resourceType, ECGPUResourceState state)
 {
     ImGui_ImplCGPU_Data* bd = ImGui_ImplCGPU_GetBackendData();
     ImGui_ImplCGPU_InitInfo* v = &bd->CGPUInitInfo;
@@ -68,7 +68,7 @@ static void CreateOrResizeBuffer(CGPUBufferId& buffer, size_t& p_buffer_size, si
     CGPUBufferDescriptor buffer_desc = {
         .size = new_size,
         .name = u8"DataBuffer",
-        .descriptors = CGPU_RESOURCE_TYPE_RW_BUFFER,
+        .descriptors = resourceType,
         .memory_usage = CGPU_MEM_USAGE_GPU_ONLY,
         .flags = CGPU_BCF_HOST_VISIBLE,
         .start_state = state,
@@ -109,10 +109,10 @@ static void ImGui_ImplCGPU_SetupRenderState(ImDrawData* draw_data, CGPURenderPip
     {
         float scale[2];
         scale[0] = 2.0f / draw_data->DisplaySize.x;
-        scale[1] = 2.0f / draw_data->DisplaySize.y;
+        scale[1] = -2.0f / draw_data->DisplaySize.y;
         float translate[2];
-        translate[0] = -1.0f - draw_data->DisplayPos.x * scale[0];
-        translate[1] = -1.0f - draw_data->DisplayPos.y * scale[1];
+        translate[0] = -1.0f;
+        translate[1] = +1.0f;
         struct ConstantData
         {
             float scale[2];
@@ -159,9 +159,9 @@ void ImGui_ImplCGPU_RenderDrawData(ImDrawData* draw_data, CGPURenderPassEncoderI
         size_t vertex_size = draw_data->TotalVtxCount * sizeof(ImDrawVert);
         size_t index_size = draw_data->TotalIdxCount * sizeof(ImDrawIdx);
         if (rb->VertexBuffer == CGPU_NULL || rb->VertexBufferSize < vertex_size)
-            CreateOrResizeBuffer(rb->VertexBuffer, rb->VertexBufferSize, vertex_size, CGPU_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+            CreateOrResizeBuffer(rb->VertexBuffer, rb->VertexBufferSize, vertex_size, CGPU_RESOURCE_TYPE_VERTEX_BUFFER, CGPU_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
         if (rb->IndexBuffer == CGPU_NULL || rb->IndexBufferSize < index_size)
-            CreateOrResizeBuffer(rb->IndexBuffer, rb->IndexBufferSize, index_size, CGPU_RESOURCE_STATE_INDEX_BUFFER);
+            CreateOrResizeBuffer(rb->IndexBuffer, rb->IndexBufferSize, index_size, CGPU_RESOURCE_TYPE_INDEX_BUFFER, CGPU_RESOURCE_STATE_INDEX_BUFFER);
 
         // Upload vertex/index data into a single contiguous GPU buffer
         ImDrawVert* vtx_dst = nullptr;
@@ -240,7 +240,7 @@ void ImGui_ImplCGPU_RenderDrawData(ImDrawData* draw_data, CGPURenderPassEncoderI
                 //     desc_set[0] = bd->FontDescriptorSet;
                 // }
                 // vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bd->PipelineLayout, 0, 1, desc_set, 0, nullptr);
-                //cgpu_render_encoder_bind_descriptor_set(rp_encoder, bd->FontDescriptorSet);
+                cgpu_render_encoder_bind_descriptor_set(rp_encoder, bd->FontDescriptorSet);
 
                 // Draw
                 cgpu_render_encoder_draw_indexed(rp_encoder, pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset);
@@ -371,7 +371,7 @@ bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId ro
         .count = 1,
     };
 
-    //cgpu_update_descriptor_set(bd->FontDescriptorSet, datas, 2);
+    cgpu_update_descriptor_set(bd->FontDescriptorSet, datas, 2);
 
     return true;
 }
