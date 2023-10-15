@@ -136,6 +136,10 @@ int main(int argc, char** argv)
 			ImGuiIO& io = ImGui::GetIO(); (void)io;
 			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 			io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
+			io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
+			//io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
+			//io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
 
 			// Setup Dear ImGui style
 			ImGui::StyleColorsDark();
@@ -145,6 +149,8 @@ int main(int argc, char** argv)
 			ImGui_ImplCGPU_InitInfo init_info = {};
 			init_info.Instance = instance;
 			init_info.Device = device;
+			init_info.GfxQueue = gfx_queue;
+			init_info.PresentQueue = gfx_queue;
 			init_info.ImageCount = 3;
 			ImGui_ImplCGPU_Init(&init_info);
 
@@ -203,6 +209,7 @@ int main(int argc, char** argv)
 			};
 			auto [imgui_root_sig, imgui_pipeline] = create_render_pipeline(device, views[0]->info.format, "imgui.vert.spv", "imgui.frag.spv", &imgui_vertex_layout, &imgui_blend_desc, &imgui_depth_desc, &rasterizer_state);
 			ImGui_ImplCGPU_CreateFontsTexture(gfx_queue, imgui_root_sig);
+			ImGui_ImplCGPU_PostInit(imgui_root_sig, imgui_pipeline);
 
 			CGPUVertexLayout vertex_layout = { .attribute_count = 0 };
 			CGPUBlendStateDescriptor blend_desc = {
@@ -284,6 +291,22 @@ int main(int argc, char** argv)
 					}
 				}
 
+				ImGui_ImplCGPU_NewFrame();
+				ImGui_ImplSDL2_NewFrame();
+				ImGui::NewFrame();
+
+				if (show_demo_window)
+					ImGui::ShowDemoWindow(&show_demo_window);
+
+				ImGui::Render();
+
+				// Update and Render additional Platform Windows
+				if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+				{
+					ImGui::UpdatePlatformWindows();
+					ImGui::RenderPlatformWindowsDefault();
+				}
+
 				cgpu_wait_fences(&present_fence, 1);
 				CGPUAcquireNextDescriptor acquire_desc = {
 					.fence = present_fence
@@ -292,13 +315,6 @@ int main(int argc, char** argv)
 				auto backbuffer_index = cgpu_acquire_next_image(swapchain, &acquire_desc);
 				if (backbuffer_index >= swapchain->buffer_count)
 					continue;
-
-				ImGui_ImplCGPU_NewFrame();
-				ImGui_ImplSDL2_NewFrame();
-				ImGui::NewFrame();
-
-				if (show_demo_window)
-					ImGui::ShowDemoWindow(&show_demo_window);
 
 				const CGPUTextureId back_buffer = swapchain->back_buffers[backbuffer_index];
 				const CGPUTextureViewId back_buffer_view = views[backbuffer_index];
@@ -340,7 +356,6 @@ int main(int argc, char** argv)
 				cgpu_render_encoder_bind_pipeline(rp_encoder, pipeline);
 				cgpu_render_encoder_draw(rp_encoder, 3, 0);
 
-				ImGui::Render();
 				ImDrawData* draw_data = ImGui::GetDrawData();
 				ImGui_ImplCGPU_RenderDrawData(draw_data, rp_encoder, imgui_root_sig, imgui_pipeline);
 

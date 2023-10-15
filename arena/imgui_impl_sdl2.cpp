@@ -855,7 +855,14 @@ static void ImGui_ImplSDL2_CreateWindow(ImGuiViewport* viewport)
         SDL_GL_MakeCurrent(vd->Window, backup_context);
 
     viewport->PlatformHandle = (void*)vd->Window;
+#if defined(HAVE_WINAPIFAMILY_H)
+    SDL_SysWMinfo wmInfo;
+    SDL_VERSION(&wmInfo.version);
+    SDL_GetWindowWMInfo(vd->Window, &wmInfo);
+    viewport->PlatformHandleRaw = wmInfo.info.win.window;
+#else
     viewport->PlatformHandleRaw = nullptr;
+#endif
     SDL_SysWMinfo info;
     SDL_VERSION(&info.version);
     if (SDL_GetWindowWMInfo(vd->Window, &info))

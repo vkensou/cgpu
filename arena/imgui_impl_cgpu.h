@@ -51,8 +51,11 @@ struct ImGui_ImplCGPU_InitInfo
 {
     CGPUInstanceId                      Instance;
     CGPUDeviceId                        Device;
-    uint32_t                        ImageCount;             // >= MinImageCount
-
+    CGPUQueueId                         GfxQueue;
+    CGPUQueueId                         PresentQueue;
+    uint32_t                            ImageCount;             // >= MinImageCount
+    CGPURootSignatureId                 RootSig;
+    CGPURenderPipelineId                Pipeline;
     // Dynamic Rendering (Optional)
     ECGPUFormat                        ColorAttachmentFormat;  // Required for dynamic rendering
 
@@ -63,6 +66,7 @@ struct ImGui_ImplCGPU_InitInfo
 
 // Called by user code
 IMGUI_IMPL_API bool         ImGui_ImplCGPU_Init(ImGui_ImplCGPU_InitInfo* info);
+IMGUI_IMPL_API bool         ImGui_ImplCGPU_PostInit(CGPURootSignatureId root_sig, CGPURenderPipelineId pipeline);
 IMGUI_IMPL_API void         ImGui_ImplCGPU_Shutdown();
 IMGUI_IMPL_API void         ImGui_ImplCGPU_NewFrame();
 IMGUI_IMPL_API void         ImGui_ImplCGPU_RenderDrawData(ImDrawData* draw_data, CGPURenderPassEncoderId rp_encoder, CGPURootSignatureId root_sig, CGPURenderPipelineId pipeline);
