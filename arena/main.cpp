@@ -92,7 +92,7 @@ int main(int argc, char** argv)
 	else
 	{
 		// 创建窗口
-		SDL_Window* window = SDL_CreateWindow("HelloSDL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN);
+		SDL_Window* window = SDL_CreateWindow("HelloSDL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 		if (window == nullptr)
 		{
 			std::cout << "[Error]: Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
@@ -238,8 +238,50 @@ int main(int argc, char** argv)
 					ImGui_ImplSDL2_ProcessEvent(&e);
 					if (e.type == SDL_QUIT)
 						quit = true;
-					if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_CLOSE && e.window.windowID == SDL_GetWindowID(window))
-						quit = true;
+					else if (e.type == SDL_WINDOWEVENT)
+					{
+						if (e.window.event == SDL_WINDOWEVENT_CLOSE && e.window.windowID == SDL_GetWindowID(window))
+							quit = true;
+						else if (e.window.event == SDL_WINDOWEVENT_RESIZED || e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+						{
+							cgpu_wait_queue_idle(gfx_queue);
+							cgpu_wait_fences(&present_fence, 1);
+
+							for (uint32_t i = 0; i < swapchain->buffer_count; i++)
+							{
+								cgpu_free_texture_view(views[i]);
+							}
+							cgpu_free_swapchain(swapchain);
+							cgpu_free_surface(device, surface);
+
+							surface = cgpu_surface_from_hwnd(device, wmInfo.info.win.window);
+
+							CGPUSwapChainDescriptor descriptor = {
+								.present_queues = &gfx_queue,
+								.present_queues_count = 1,
+								.surface = surface,
+								.image_count = 3,
+								.width = SCREEN_WIDTH,
+								.height = SCREEN_HEIGHT,
+								.enable_vsync = true,
+								.format = CGPU_FORMAT_R8G8B8A8_UNORM,
+							};
+							swapchain = cgpu_create_swapchain(device, &descriptor);
+
+							for (uint32_t i = 0; i < swapchain->buffer_count; i++)
+							{
+								CGPUTextureViewDescriptor view_desc = {
+									.texture = swapchain->back_buffers[i],
+									.format = swapchain->back_buffers[i]->info->format,
+									.usages = CGPU_TVU_RTV_DSV,
+									.aspects = CGPU_TVA_COLOR,
+									.dims = CGPU_TEX_DIMENSION_2D,
+									.array_layer_count = 1,
+								};
+								views[i] = cgpu_create_texture_view(device, &view_desc);
+							}
+						}
+					}
 				}
 
 				cgpu_wait_fences(&present_fence, 1);
