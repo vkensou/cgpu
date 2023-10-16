@@ -300,13 +300,6 @@ int main(int argc, char** argv)
 
 				ImGui::Render();
 
-				// Update and Render additional Platform Windows
-				if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-				{
-					ImGui::UpdatePlatformWindows();
-					ImGui::RenderPlatformWindowsDefault();
-				}
-
 				cgpu_wait_fences(&present_fence, 1);
 				CGPUAcquireNextDescriptor acquire_desc = {
 					.fence = present_fence
@@ -384,6 +377,13 @@ int main(int argc, char** argv)
 					.index = (uint8_t)backbuffer_index,
 				};
 				cgpu_queue_present(gfx_queue, &present_desc);
+
+				// Update and Render additional Platform Windows
+				if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+				{
+					ImGui::UpdatePlatformWindows();
+					ImGui::RenderPlatformWindowsDefault();
+				}
 			}
 
 			cgpu_wait_queue_idle(gfx_queue);
