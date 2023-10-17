@@ -12,6 +12,84 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
+struct RenderWindow
+{
+	SDL_Window* window = nullptr;
+	SDL_SysWMinfo wmInfo;
+	CGPUSurfaceId surface = CGPU_NULLPTR;
+	CGPUSwapChainId swapchain = CGPU_NULLPTR;
+	CGPUTextureViewId swapchain_view[3] = { CGPU_NULLPTR };
+	CGPUDeviceId device = CGPU_NULLPTR;
+	CGPUQueueId present_queue = CGPU_NULLPTR;
+
+	RenderWindow(CGPUDeviceId device, CGPUQueueId present_queue, int width, int height, Uint32 flags)
+	{
+		this->device = device;
+		this->present_queue = present_queue;
+
+		window = SDL_CreateWindow("HelloSDL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+
+		SDL_VERSION(&wmInfo.version);
+		SDL_GetWindowWMInfo(window, &wmInfo);
+
+		CreateGPUResources();
+	}
+
+	~RenderWindow()
+	{
+		FreeGPUResources();
+	}
+
+	void FreeGPUResources()
+	{
+		for (uint32_t i = 0; i < swapchain->buffer_count; i++)
+		{
+			cgpu_free_texture_view(swapchain_view[i]);
+		}
+		cgpu_free_swapchain(swapchain);
+		cgpu_free_surface(device, surface);
+
+	}
+
+	void CreateGPUResources()
+	{
+		surface = cgpu_surface_from_hwnd(device, wmInfo.info.win.window);
+
+		int w, h;
+		SDL_GetWindowSize(window, &w, &h);
+		CGPUSwapChainDescriptor descriptor = {
+			.present_queues = &present_queue,
+			.present_queues_count = 1,
+			.surface = surface,
+			.image_count = 3,
+			.width = (uint32_t)w,
+			.height = (uint32_t)h,
+			.enable_vsync = true,
+			.format = CGPU_FORMAT_R8G8B8A8_UNORM,
+		};
+		swapchain = cgpu_create_swapchain(device, &descriptor);
+
+		for (uint32_t i = 0; i < swapchain->buffer_count; i++)
+		{
+			CGPUTextureViewDescriptor view_desc = {
+				.texture = swapchain->back_buffers[i],
+				.format = swapchain->back_buffers[i]->info->format,
+				.usages = CGPU_TVU_RTV_DSV,
+				.aspects = CGPU_TVA_COLOR,
+				.dims = CGPU_TEX_DIMENSION_2D,
+				.array_layer_count = 1,
+			};
+			swapchain_view[i] = cgpu_create_texture_view(device, &view_desc);
+		}
+	}
+
+	void OnResize()
+	{
+		FreeGPUResources();
+		CreateGPUResources();
+	}
+};
+
 std::vector<char> readFile(const std::string& filename)
 {
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -82,8 +160,33 @@ std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGP
 
 int main(int argc, char** argv)
 {
-	// 定义 SDL 窗口
-	SDL_Window* window = nullptr;
+	CGPUInstanceDescriptor instance_desc = {
+		.backend = CGPU_BACKEND_VULKAN,
+		.enable_debug_layer = true,
+		.enable_gpu_based_validation = true,
+		.enable_set_name = true
+	};
+	auto instance = cgpu_create_instance(&instance_desc);
+
+	uint32_t adapters_count = 0;
+	cgpu_enum_adapters(instance, CGPU_NULLPTR, &adapters_count);
+	CGPUAdapterId* adapters = (CGPUAdapterId*)_alloca(sizeof(CGPUAdapterId) * (adapters_count));
+	cgpu_enum_adapters(instance, adapters, &adapters_count);
+	auto adapter = adapters[0];
+
+	// Create device
+	CGPUQueueGroupDescriptor G = {
+		.queue_type = CGPU_QUEUE_TYPE_GRAPHICS,
+		.queue_count = 1
+	};
+	CGPUDeviceDescriptor device_desc = {
+		.queue_groups = &G,
+		.queue_group_count = 1
+	};
+	auto device = cgpu_create_device(adapter, &device_desc);
+	auto gfx_queue = cgpu_get_queue(device, CGPU_QUEUE_TYPE_GRAPHICS, 0);
+	auto present_fence = cgpu_create_fence(device);
+
 	// 初始化 SDL
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
@@ -91,45 +194,14 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		// 创建窗口
-		SDL_Window* window = SDL_CreateWindow("HelloSDL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
-		if (window == nullptr)
+		RenderWindow main_window(device, gfx_queue, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+
+		if (main_window.window == nullptr)
 		{
 			std::cout << "[Error]: Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
 		}
 		else
 		{
-			CGPUInstanceDescriptor instance_desc = {
-				.backend = CGPU_BACKEND_VULKAN,
-				.enable_debug_layer = true,
-				.enable_gpu_based_validation = true,
-				.enable_set_name = true
-			};
-			auto instance = cgpu_create_instance(&instance_desc);
-
-			uint32_t adapters_count = 0;
-			cgpu_enum_adapters(instance, CGPU_NULLPTR, &adapters_count);
-			CGPUAdapterId* adapters = (CGPUAdapterId*)_alloca(sizeof(CGPUAdapterId) * (adapters_count));
-			cgpu_enum_adapters(instance, adapters, &adapters_count);
-			auto adapter = adapters[0];
-
-			// Create device
-			CGPUQueueGroupDescriptor G = {
-				.queue_type = CGPU_QUEUE_TYPE_GRAPHICS,
-				.queue_count = 1
-			};
-			CGPUDeviceDescriptor device_desc = {
-				.queue_groups = &G,
-				.queue_group_count = 1
-			};
-			auto device = cgpu_create_device(adapter, &device_desc);
-			auto gfx_queue = cgpu_get_queue(device, CGPU_QUEUE_TYPE_GRAPHICS, 0);
-			auto present_fence = cgpu_create_fence(device);
-
-			SDL_SysWMinfo wmInfo;
-			SDL_VERSION(&wmInfo.version);
-			SDL_GetWindowWMInfo(window, &wmInfo);
-			auto surface = cgpu_surface_from_hwnd(device, wmInfo.info.win.window);
 
 			IMGUI_CHECKVERSION();
 			ImGui::CreateContext();
@@ -137,7 +209,7 @@ int main(int argc, char** argv)
 			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 			io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
-			io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
+			//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
 			//io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
 			//io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
 
@@ -145,7 +217,7 @@ int main(int argc, char** argv)
 			ImGui::StyleColorsDark();
 			//ImGui::StyleColorsLight();
 
-			ImGui_ImplSDL2_InitForOther(window);
+			ImGui_ImplSDL2_InitForOther(main_window.window);
 			ImGui_ImplCGPU_InitInfo init_info = {};
 			init_info.Instance = instance;
 			init_info.Device = device;
@@ -153,32 +225,6 @@ int main(int argc, char** argv)
 			init_info.PresentQueue = gfx_queue;
 			init_info.ImageCount = 3;
 			ImGui_ImplCGPU_Init(&init_info);
-
-			CGPUSwapChainDescriptor descriptor = {
-				.present_queues = &gfx_queue,
-				.present_queues_count = 1,
-				.surface = surface,
-				.image_count = 3,
-				.width = SCREEN_WIDTH,
-				.height = SCREEN_HEIGHT,
-				.enable_vsync = true,
-				.format = CGPU_FORMAT_R8G8B8A8_UNORM,
-			};
-			auto swapchain = cgpu_create_swapchain(device, &descriptor);
-			CGPUTextureViewId views[3];
-
-			for (uint32_t i = 0; i < swapchain->buffer_count; i++)
-			{
-				CGPUTextureViewDescriptor view_desc = {
-					.texture = swapchain->back_buffers[i],
-					.format = swapchain->back_buffers[i]->info->format,
-					.usages = CGPU_TVU_RTV_DSV,
-					.aspects = CGPU_TVA_COLOR,
-					.dims = CGPU_TEX_DIMENSION_2D,
-					.array_layer_count = 1,
-				};
-				views[i] = cgpu_create_texture_view(device, &view_desc);
-			}
 
 			CGPUVertexLayout imgui_vertex_layout = { 
 				.attribute_count = 3, 
@@ -207,7 +253,7 @@ int main(int argc, char** argv)
 			CGPURasterizerStateDescriptor rasterizer_state = {
 				.cull_mode = CGPU_CULL_MODE_NONE,
 			};
-			auto [imgui_root_sig, imgui_pipeline] = create_render_pipeline(device, views[0]->info.format, "imgui.vert.spv", "imgui.frag.spv", &imgui_vertex_layout, &imgui_blend_desc, &imgui_depth_desc, &rasterizer_state);
+			auto [imgui_root_sig, imgui_pipeline] = create_render_pipeline(device, main_window.swapchain_view[0]->info.format, "imgui.vert.spv", "imgui.frag.spv", &imgui_vertex_layout, &imgui_blend_desc, &imgui_depth_desc, &rasterizer_state);
 			ImGui_ImplCGPU_CreateFontsTexture(gfx_queue, imgui_root_sig);
 			ImGui_ImplCGPU_PostInit(imgui_root_sig, imgui_pipeline);
 
@@ -228,7 +274,7 @@ int main(int argc, char** argv)
 				.depth_write = false,
 				.stencil_test = false,
 			};
-			auto [root_sig, pipeline] = create_render_pipeline(device, views[0]->info.format, "hello.vert.spv", "hello.frag.spv", &vertex_layout, &blend_desc, &depth_desc, nullptr);
+			auto [root_sig, pipeline] = create_render_pipeline(device, main_window.swapchain_view[0]->info.format, "hello.vert.spv", "hello.frag.spv", &vertex_layout, &blend_desc, &depth_desc, nullptr);
 
 			auto pool = cgpu_create_command_pool(gfx_queue, CGPU_NULLPTR);
 			CGPUCommandBufferDescriptor cmd_desc = { .is_secondary = false };
@@ -247,45 +293,16 @@ int main(int argc, char** argv)
 						quit = true;
 					else if (e.type == SDL_WINDOWEVENT)
 					{
-						if (e.window.event == SDL_WINDOWEVENT_CLOSE && e.window.windowID == SDL_GetWindowID(window))
-							quit = true;
-						else if (e.window.event == SDL_WINDOWEVENT_RESIZED || e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+						if (e.window.windowID == SDL_GetWindowID(main_window.window))
 						{
-							cgpu_wait_queue_idle(gfx_queue);
-							cgpu_wait_fences(&present_fence, 1);
-
-							for (uint32_t i = 0; i < swapchain->buffer_count; i++)
+							if (e.window.event == SDL_WINDOWEVENT_CLOSE)
+								quit = true;
+							else if (e.window.event == SDL_WINDOWEVENT_RESIZED || e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
 							{
-								cgpu_free_texture_view(views[i]);
-							}
-							cgpu_free_swapchain(swapchain);
-							cgpu_free_surface(device, surface);
+								cgpu_wait_queue_idle(gfx_queue);
+								cgpu_wait_fences(&present_fence, 1);
 
-							surface = cgpu_surface_from_hwnd(device, wmInfo.info.win.window);
-
-							CGPUSwapChainDescriptor descriptor = {
-								.present_queues = &gfx_queue,
-								.present_queues_count = 1,
-								.surface = surface,
-								.image_count = 3,
-								.width = SCREEN_WIDTH,
-								.height = SCREEN_HEIGHT,
-								.enable_vsync = true,
-								.format = CGPU_FORMAT_R8G8B8A8_UNORM,
-							};
-							swapchain = cgpu_create_swapchain(device, &descriptor);
-
-							for (uint32_t i = 0; i < swapchain->buffer_count; i++)
-							{
-								CGPUTextureViewDescriptor view_desc = {
-									.texture = swapchain->back_buffers[i],
-									.format = swapchain->back_buffers[i]->info->format,
-									.usages = CGPU_TVU_RTV_DSV,
-									.aspects = CGPU_TVA_COLOR,
-									.dims = CGPU_TEX_DIMENSION_2D,
-									.array_layer_count = 1,
-								};
-								views[i] = cgpu_create_texture_view(device, &view_desc);
+								main_window.OnResize();
 							}
 						}
 					}
@@ -305,12 +322,12 @@ int main(int argc, char** argv)
 					.fence = present_fence
 				};
 
-				auto backbuffer_index = cgpu_acquire_next_image(swapchain, &acquire_desc);
-				if (backbuffer_index >= swapchain->buffer_count)
+				auto backbuffer_index = cgpu_acquire_next_image(main_window.swapchain, &acquire_desc);
+				if (backbuffer_index >= main_window.swapchain->buffer_count)
 					continue;
 
-				const CGPUTextureId back_buffer = swapchain->back_buffers[backbuffer_index];
-				const CGPUTextureViewId back_buffer_view = views[backbuffer_index];
+				const CGPUTextureId back_buffer = main_window.swapchain->back_buffers[backbuffer_index];
+				const CGPUTextureViewId back_buffer_view = main_window.swapchain_view[backbuffer_index];
 
 				cgpu_reset_command_pool(pool);
 				cgpu_cmd_begin(cmd);
@@ -371,7 +388,7 @@ int main(int argc, char** argv)
 
 				cgpu_wait_queue_idle(gfx_queue);
 				CGPUQueuePresentDescriptor present_desc = {
-					.swapchain = swapchain,
+					.swapchain = main_window.swapchain,
 					.wait_semaphores = CGPU_NULLPTR,
 					.wait_semaphore_count = 0,
 					.index = (uint8_t)backbuffer_index,
@@ -401,23 +418,16 @@ int main(int argc, char** argv)
 
 			cgpu_free_render_pipeline(pipeline);
 			cgpu_free_root_signature(root_sig);
-
-			for (uint32_t i = 0; i < swapchain->buffer_count; i++)
-			{
-				cgpu_free_texture_view(views[i]);
-			}
-			cgpu_free_swapchain(swapchain);
-			cgpu_free_surface(device, surface);
-
-			cgpu_free_fence(present_fence);
-			cgpu_free_queue(gfx_queue);
-			cgpu_free_device(device);
-			cgpu_free_instance(instance);
 		}
 	}
-	// 销毁窗口
-	SDL_DestroyWindow(window);
+
 	// 退出 SDL
 	SDL_Quit();
+
+	cgpu_free_fence(present_fence);
+	cgpu_free_queue(gfx_queue);
+	cgpu_free_device(device);
+	cgpu_free_instance(instance);
+
 	return 0;
 }
