@@ -36,10 +36,12 @@ struct RenderWindow
 		SDL_GetWindowWMInfo(window, &wmInfo);
 
 		CreateGPUResources();
+		CreateSyncObjects();
 	}
 
 	~RenderWindow()
 	{
+		FreeSyncObjects();
 		FreeGPUResources();
 	}
 
@@ -107,7 +109,7 @@ struct RenderWindow
 		CreateGPUResources();
 	}
 
-	std::tuple<bool, CGPUTextureId, CGPUTextureViewId> AcquireNextImage()
+	std::tuple<bool, CGPUTextureId, CGPUTextureViewId, CGPUSemaphoreId> AcquireNextImage()
 	{
 		CGPUAcquireNextDescriptor acquire_desc = {
 			.signal_semaphore = swapchain_prepared_semaphores[current_frame_index],
@@ -115,20 +117,22 @@ struct RenderWindow
 
 		current_swapchain_index = cgpu_acquire_next_image(swapchain, &acquire_desc);
 		if (current_swapchain_index < swapchain->buffer_count)
-			return { true, swapchain->back_buffers[current_swapchain_index], swapchain_views[current_swapchain_index] };
+			return { true, swapchain->back_buffers[current_swapchain_index], swapchain_views[current_swapchain_index], swapchain_prepared_semaphores[current_frame_index] };
 		else
-			return { false, CGPU_NULLPTR, CGPU_NULLPTR };
+			return { false, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR };
 	}
 
-	void Present()
+	void Present(CGPUSemaphoreId present_signal)
 	{
 		CGPUQueuePresentDescriptor present_desc = {
 			.swapchain = swapchain,
-			.wait_semaphores = CGPU_NULLPTR,
-			.wait_semaphore_count = 0,
+			.wait_semaphores = &present_signal,
+			.wait_semaphore_count = 1,
 			.index = (uint8_t)current_swapchain_index,
 		};
 		cgpu_queue_present(present_queue, &present_desc);
+
+		current_frame_index = (current_frame_index + 1) % 3;
 	}
 };
 
@@ -227,7 +231,11 @@ int main(int argc, char** argv)
 	};
 	auto device = cgpu_create_device(adapter, &device_desc);
 	auto gfx_queue = cgpu_get_queue(device, CGPU_QUEUE_TYPE_GRAPHICS, 0);
-	auto present_fence = cgpu_create_fence(device);
+	CGPUFenceId inflightFence[3];
+	for (int i = 0; i < 3; ++i)
+		inflightFence[i] = cgpu_create_fence(device);
+	auto render_finished_semaphore = cgpu_create_semaphore(device);
+	int current_frame_index = 0;
 
 	// 初始化 SDL
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -318,9 +326,14 @@ int main(int argc, char** argv)
 			};
 			auto [root_sig, pipeline] = create_render_pipeline(device, main_window.swapchain_views[0]->info.format, "hello.vert.spv", "hello.frag.spv", &vertex_layout, &blend_desc, &depth_desc, nullptr);
 
-			auto pool = cgpu_create_command_pool(gfx_queue, CGPU_NULLPTR);
+			CGPUCommandPoolId pools[3];
+			for (int i = 0; i < 3; ++i)
+				pools[i] = cgpu_create_command_pool(gfx_queue, CGPU_NULLPTR);
+
+			CGPUCommandBufferId cmds[3];
 			CGPUCommandBufferDescriptor cmd_desc = { .is_secondary = false };
-			auto cmd = cgpu_create_command_buffer(pool, &cmd_desc);
+			for (int i = 0; i < 3; ++i)
+				cmds[i] = cgpu_create_command_buffer(pools[i], &cmd_desc);
 
 			// 窗口循环
 			SDL_Event e;
@@ -342,7 +355,6 @@ int main(int argc, char** argv)
 							else if (e.window.event == SDL_WINDOWEVENT_RESIZED || e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
 							{
 								cgpu_wait_queue_idle(gfx_queue);
-								cgpu_wait_fences(&present_fence, 1);
 
 								main_window.OnResize();
 							}
@@ -359,14 +371,15 @@ int main(int argc, char** argv)
 
 				ImGui::Render();
 
-				cgpu_wait_fences(&present_fence, 1);
+				current_frame_index = (current_frame_index + 1) % 3;
+				cgpu_wait_fences(&inflightFence[current_frame_index], 1);
 
-				auto [acquired, back_buffer, back_buffer_view] = main_window.AcquireNextImage();
+				auto [acquired, back_buffer, back_buffer_view, prepared_semaphore] = main_window.AcquireNextImage();
 				if (!acquired)
 					continue;
 
-				cgpu_reset_command_pool(pool);
-				cgpu_cmd_begin(cmd);
+				cgpu_reset_command_pool(pools[current_frame_index]);
+				cgpu_cmd_begin(cmds[current_frame_index]);
 
 				CGPUTextureBarrier draw_barrier = {
 					.texture = back_buffer,
@@ -374,7 +387,7 @@ int main(int argc, char** argv)
 					.dst_state = CGPU_RESOURCE_STATE_RENDER_TARGET
 				};
 				CGPUResourceBarrierDescriptor barrier_desc0 = { .texture_barriers = &draw_barrier, .texture_barriers_count = 1 };
-				cgpu_cmd_resource_barrier(cmd, &barrier_desc0);
+				cgpu_cmd_resource_barrier(cmds[current_frame_index], &barrier_desc0);
 
 				const CGPUClearValue clearColor = {
 					{ 0.f, 0.f, 0.f, 1.f }
@@ -392,7 +405,7 @@ int main(int argc, char** argv)
 					.depth_stencil = CGPU_NULLPTR,
 					.render_target_count = 1,
 				};
-				CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass(cmd, &rp_desc);
+				CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass(cmds[current_frame_index], &rp_desc);
 
 				cgpu_render_encoder_set_viewport(rp_encoder,
 					0.0f, 0.0f,
@@ -405,26 +418,29 @@ int main(int argc, char** argv)
 				ImDrawData* draw_data = ImGui::GetDrawData();
 				ImGui_ImplCGPU_RenderDrawData(draw_data, rp_encoder, imgui_root_sig, imgui_pipeline);
 
-				cgpu_cmd_end_render_pass(cmd, rp_encoder);
+				cgpu_cmd_end_render_pass(cmds[current_frame_index], rp_encoder);
 				CGPUTextureBarrier present_barrier = {
 					.texture = back_buffer,
 					.src_state = CGPU_RESOURCE_STATE_RENDER_TARGET,
 					.dst_state = CGPU_RESOURCE_STATE_PRESENT
 				};
 				CGPUResourceBarrierDescriptor barrier_desc1 = { .texture_barriers = &present_barrier, .texture_barriers_count = 1 };
-				cgpu_cmd_resource_barrier(cmd, &barrier_desc1);
+				cgpu_cmd_resource_barrier(cmds[current_frame_index], &barrier_desc1);
 
-				cgpu_cmd_end(cmd);
+				cgpu_cmd_end(cmds[current_frame_index]);
 				// submit
 				CGPUQueueSubmitDescriptor submit_desc = {
-					.cmds = &cmd,
+					.cmds = &cmds[current_frame_index],
+					.signal_fence = inflightFence[current_frame_index],
+					.wait_semaphores = &prepared_semaphore,
+					.signal_semaphores = &render_finished_semaphore,
 					.cmds_count = 1,
+					.wait_semaphore_count = 1,
+					.signal_semaphore_count = 1,
 				};
 				cgpu_submit_queue(gfx_queue, &submit_desc);
 
-				cgpu_wait_queue_idle(gfx_queue);
-
-				main_window.Present();
+				main_window.Present(render_finished_semaphore);
 
 				// Update and Render additional Platform Windows
 				if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -435,10 +451,11 @@ int main(int argc, char** argv)
 			}
 
 			cgpu_wait_queue_idle(gfx_queue);
-			cgpu_wait_fences(&present_fence, 1);
 
-			cgpu_free_command_buffer(cmd);
-			cgpu_free_command_pool(pool);
+			for (int i = 0; i < 3; ++i)
+				cgpu_free_command_buffer(cmds[i]);
+			for (int i = 0; i < 3; ++i)
+				cgpu_free_command_pool(pools[i]);
 
 			ImGui_ImplCGPU_Shutdown();
 			ImGui_ImplSDL2_Shutdown();
@@ -455,7 +472,9 @@ int main(int argc, char** argv)
 	// 退出 SDL
 	SDL_Quit();
 
-	cgpu_free_fence(present_fence);
+	cgpu_free_semaphore(render_finished_semaphore);
+	for (int i = 0; i < 3; ++i)
+		cgpu_free_fence(inflightFence[i]);
 	cgpu_free_queue(gfx_queue);
 	cgpu_free_device(device);
 	cgpu_free_instance(instance);
