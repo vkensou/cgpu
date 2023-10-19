@@ -16,6 +16,7 @@ struct RenderWindow
 {
 	SDL_Window* window = nullptr;
 	SDL_SysWMinfo wmInfo;
+	ImGuiViewport* imgui_viewport;
 	CGPUSurfaceId surface = CGPU_NULLPTR;
 	CGPUSwapChainId swapchain = CGPU_NULLPTR;
 	CGPUTextureViewId swapchain_views[3] = { CGPU_NULLPTR };
@@ -24,6 +25,11 @@ struct RenderWindow
 	CGPUQueueId present_queue = CGPU_NULLPTR;
 	uint32_t current_swapchain_index = 0;
 	uint32_t current_frame_index = 0;
+	bool needResize = false;
+
+	CGPURenderPipelineId pipeline;
+	CGPURootSignatureId imgui_root_sig;
+	CGPURenderPipelineId imgui_pipeline;
 
 	RenderWindow(CGPUDeviceId device, CGPUQueueId present_queue, int width, int height, Uint32 flags)
 	{
@@ -47,12 +53,18 @@ struct RenderWindow
 
 	void FreeGPUResources()
 	{
+		if (!swapchain)
+			return;
+
 		for (uint32_t i = 0; i < swapchain->buffer_count; i++)
 		{
 			cgpu_free_texture_view(swapchain_views[i]);
+			swapchain_views[i] = CGPU_NULLPTR;
 		}
 		cgpu_free_swapchain(swapchain);
+		swapchain = CGPU_NULLPTR;
 		cgpu_free_surface(device, surface);
+		surface = CGPU_NULLPTR;
 	}
 
 	void FreeSyncObjects()
@@ -65,6 +77,9 @@ struct RenderWindow
 
 	void CreateGPUResources()
 	{
+		if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED)
+			return;
+
 		surface = cgpu_surface_from_hwnd(device, wmInfo.info.win.window);
 
 		int w, h;
@@ -93,6 +108,8 @@ struct RenderWindow
 			};
 			swapchain_views[i] = cgpu_create_texture_view(device, &view_desc);
 		}
+
+		needResize = false;
 	}
 
 	void CreateSyncObjects()
@@ -103,6 +120,11 @@ struct RenderWindow
 		}
 	}
 
+	void RequestResize()
+	{
+		needResize = true;
+	}
+
 	void OnResize()
 	{
 		FreeGPUResources();
@@ -111,6 +133,9 @@ struct RenderWindow
 
 	std::tuple<bool, CGPUTextureId, CGPUTextureViewId, CGPUSemaphoreId> AcquireNextImage()
 	{
+		if (!swapchain)
+			return { false, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR };
+
 		CGPUAcquireNextDescriptor acquire_desc = {
 			.signal_semaphore = swapchain_prepared_semaphores[current_frame_index],
 		};
@@ -133,6 +158,61 @@ struct RenderWindow
 		cgpu_queue_present(present_queue, &present_desc);
 
 		current_frame_index = (current_frame_index + 1) % 3;
+	}
+
+	void Render(CGPUCommandBufferId cmd)
+	{
+		auto back_buffer = swapchain->back_buffers[current_swapchain_index];
+		auto back_buffer_view = swapchain_views[current_swapchain_index];
+		auto prepared_semaphore = swapchain_prepared_semaphores[current_frame_index];
+
+		CGPUTextureBarrier draw_barrier = {
+			.texture = back_buffer,
+			.src_state = CGPU_RESOURCE_STATE_UNDEFINED,
+			.dst_state = CGPU_RESOURCE_STATE_RENDER_TARGET
+		};
+		CGPUResourceBarrierDescriptor barrier_desc0 = { .texture_barriers = &draw_barrier, .texture_barriers_count = 1 };
+		cgpu_cmd_resource_barrier(cmd, &barrier_desc0);
+
+		const CGPUClearValue clearColor = {
+			{ 0.f, 0.f, 0.f, 1.f }
+		};
+
+		CGPUColorAttachment screen_attachment = {
+			.view = back_buffer_view,
+			.load_action = CGPU_LOAD_ACTION_CLEAR,
+			.store_action = CGPU_STORE_ACTION_STORE,
+			.clear_color = clearColor,
+		};
+		CGPURenderPassDescriptor rp_desc = {
+			.sample_count = CGPU_SAMPLE_COUNT_1,
+			.color_attachments = &screen_attachment,
+			.depth_stencil = CGPU_NULLPTR,
+			.render_target_count = 1,
+		};
+		CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass(cmd, &rp_desc);
+
+		cgpu_render_encoder_set_viewport(rp_encoder,
+			0.0f, 0.0f,
+			(float)SCREEN_WIDTH, (float)SCREEN_HEIGHT,
+			0.f, 1.f);
+		cgpu_render_encoder_set_scissor(rp_encoder, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+		cgpu_render_encoder_bind_pipeline(rp_encoder, pipeline);
+		cgpu_render_encoder_draw(rp_encoder, 3, 0);
+
+		ImDrawData* draw_data = imgui_viewport->DrawData;
+		ImGui_ImplCGPU_RenderDrawData(draw_data, rp_encoder, imgui_root_sig, imgui_pipeline);
+
+		cgpu_cmd_end_render_pass(cmd, rp_encoder);
+		CGPUTextureBarrier present_barrier = {
+			.texture = back_buffer,
+			.src_state = CGPU_RESOURCE_STATE_RENDER_TARGET,
+			.dst_state = CGPU_RESOURCE_STATE_PRESENT
+		};
+		CGPUResourceBarrierDescriptor barrier_desc1 = { .texture_barriers = &present_barrier, .texture_barriers_count = 1 };
+		cgpu_cmd_resource_barrier(cmd, &barrier_desc1);
+
+		cgpu_cmd_end(cmd);
 	}
 };
 
@@ -237,6 +317,8 @@ int main(int argc, char** argv)
 	auto render_finished_semaphore = cgpu_create_semaphore(device);
 	int current_frame_index = 0;
 
+	std::vector<RenderWindow*> windows;
+
 	// 初始化 SDL
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
@@ -244,9 +326,10 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		RenderWindow main_window(device, gfx_queue, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+		RenderWindow* main_window = new RenderWindow(device, gfx_queue, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+		windows.push_back(main_window);
 
-		if (main_window.window == nullptr)
+		if (main_window->window == nullptr)
 		{
 			std::cout << "[Error]: Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
 		}
@@ -267,7 +350,7 @@ int main(int argc, char** argv)
 			ImGui::StyleColorsDark();
 			//ImGui::StyleColorsLight();
 
-			ImGui_ImplSDL2_InitForOther(main_window.window);
+			ImGui_ImplSDL2_InitForOther(main_window->window);
 			ImGui_ImplCGPU_InitInfo init_info = {};
 			init_info.Instance = instance;
 			init_info.Device = device;
@@ -303,9 +386,11 @@ int main(int argc, char** argv)
 			CGPURasterizerStateDescriptor rasterizer_state = {
 				.cull_mode = CGPU_CULL_MODE_NONE,
 			};
-			auto [imgui_root_sig, imgui_pipeline] = create_render_pipeline(device, main_window.swapchain_views[0]->info.format, "imgui.vert.spv", "imgui.frag.spv", &imgui_vertex_layout, &imgui_blend_desc, &imgui_depth_desc, &rasterizer_state);
+			auto [imgui_root_sig, imgui_pipeline] = create_render_pipeline(device, main_window->swapchain_views[0]->info.format, "imgui.vert.spv", "imgui.frag.spv", &imgui_vertex_layout, &imgui_blend_desc, &imgui_depth_desc, &rasterizer_state);
 			ImGui_ImplCGPU_CreateFontsTexture(gfx_queue, imgui_root_sig);
 			ImGui_ImplCGPU_PostInit(imgui_root_sig, imgui_pipeline);
+
+			main_window->imgui_viewport = ImGui::GetMainViewport();
 
 			CGPUVertexLayout vertex_layout = { .attribute_count = 0 };
 			CGPUBlendStateDescriptor blend_desc = {
@@ -324,7 +409,11 @@ int main(int argc, char** argv)
 				.depth_write = false,
 				.stencil_test = false,
 			};
-			auto [root_sig, pipeline] = create_render_pipeline(device, main_window.swapchain_views[0]->info.format, "hello.vert.spv", "hello.frag.spv", &vertex_layout, &blend_desc, &depth_desc, nullptr);
+			auto [root_sig, pipeline] = create_render_pipeline(device, main_window->swapchain_views[0]->info.format, "hello.vert.spv", "hello.frag.spv", &vertex_layout, &blend_desc, &depth_desc, nullptr);
+
+			main_window->pipeline = pipeline;
+			main_window->imgui_root_sig = imgui_root_sig;
+			main_window->imgui_pipeline = imgui_pipeline;
 
 			CGPUCommandPoolId pools[3];
 			for (int i = 0; i < 3; ++i)
@@ -334,6 +423,9 @@ int main(int argc, char** argv)
 			CGPUCommandBufferDescriptor cmd_desc = { .is_secondary = false };
 			for (int i = 0; i < 3; ++i)
 				cmds[i] = cgpu_create_command_buffer(pools[i], &cmd_desc);
+
+			std::vector<RenderWindow*> need_resize_windows;
+			std::vector<RenderWindow*> prepared_windows;
 
 			// 窗口循环
 			SDL_Event e;
@@ -348,18 +440,30 @@ int main(int argc, char** argv)
 						quit = true;
 					else if (e.type == SDL_WINDOWEVENT)
 					{
-						if (e.window.windowID == SDL_GetWindowID(main_window.window))
+						if (e.window.windowID == SDL_GetWindowID(main_window->window))
 						{
 							if (e.window.event == SDL_WINDOWEVENT_CLOSE)
 								quit = true;
 							else if (e.window.event == SDL_WINDOWEVENT_RESIZED || e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
 							{
-								cgpu_wait_queue_idle(gfx_queue);
-
-								main_window.OnResize();
+								main_window->RequestResize();
 							}
 						}
 					}
+				}
+
+				need_resize_windows.clear();
+				for (auto window : windows)
+				{
+					if (window->needResize)
+						need_resize_windows.push_back(window);
+				}
+
+				if (!need_resize_windows.empty())
+				{
+					cgpu_wait_queue_idle(gfx_queue);
+					for (auto window : need_resize_windows)
+						window->OnResize();
 				}
 
 				ImGui_ImplCGPU_NewFrame();
@@ -369,78 +473,48 @@ int main(int argc, char** argv)
 				if (show_demo_window)
 					ImGui::ShowDemoWindow(&show_demo_window);
 
-				ImGui::Render();
-
 				current_frame_index = (current_frame_index + 1) % 3;
 				cgpu_wait_fences(&inflightFence[current_frame_index], 1);
 
-				auto [acquired, back_buffer, back_buffer_view, prepared_semaphore] = main_window.AcquireNextImage();
-				if (!acquired)
+				prepared_windows.clear();
+				for (auto window : windows)
+				{
+					auto [acquired, back_buffer, back_buffer_view, prepared_semaphore] = window->AcquireNextImage();
+					if (acquired)
+						prepared_windows.push_back(window);
+					else
+						window->RequestResize();
+				}
+
+				if (prepared_windows.empty())
+				{
+					ImGui::EndFrame();
 					continue;
+				}
+
+				ImGui::Render();
 
 				cgpu_reset_command_pool(pools[current_frame_index]);
 				cgpu_cmd_begin(cmds[current_frame_index]);
 
-				CGPUTextureBarrier draw_barrier = {
-					.texture = back_buffer,
-					.src_state = CGPU_RESOURCE_STATE_UNDEFINED,
-					.dst_state = CGPU_RESOURCE_STATE_RENDER_TARGET
-				};
-				CGPUResourceBarrierDescriptor barrier_desc0 = { .texture_barriers = &draw_barrier, .texture_barriers_count = 1 };
-				cgpu_cmd_resource_barrier(cmds[current_frame_index], &barrier_desc0);
+				for (auto window : prepared_windows)
+				{
+					window->Render(cmds[current_frame_index]);
 
-				const CGPUClearValue clearColor = {
-					{ 0.f, 0.f, 0.f, 1.f }
-				};
+					// submit
+					CGPUQueueSubmitDescriptor submit_desc = {
+						.cmds = &cmds[current_frame_index],
+						.signal_fence = inflightFence[current_frame_index],
+						.wait_semaphores = &window->swapchain_prepared_semaphores[window->current_frame_index],
+						.signal_semaphores = &render_finished_semaphore,
+						.cmds_count = 1,
+						.wait_semaphore_count = 1,
+						.signal_semaphore_count = 1,
+					};
+					cgpu_submit_queue(gfx_queue, &submit_desc);
 
-				CGPUColorAttachment screen_attachment = {
-					.view = back_buffer_view,
-					.load_action = CGPU_LOAD_ACTION_CLEAR,
-					.store_action = CGPU_STORE_ACTION_STORE,
-					.clear_color = clearColor,
-				};
-				CGPURenderPassDescriptor rp_desc = {
-					.sample_count = CGPU_SAMPLE_COUNT_1,
-					.color_attachments = &screen_attachment,
-					.depth_stencil = CGPU_NULLPTR,
-					.render_target_count = 1,
-				};
-				CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass(cmds[current_frame_index], &rp_desc);
-
-				cgpu_render_encoder_set_viewport(rp_encoder,
-					0.0f, 0.0f,
-					(float)SCREEN_WIDTH, (float)SCREEN_HEIGHT,
-					0.f, 1.f);
-				cgpu_render_encoder_set_scissor(rp_encoder, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-				cgpu_render_encoder_bind_pipeline(rp_encoder, pipeline);
-				cgpu_render_encoder_draw(rp_encoder, 3, 0);
-
-				ImDrawData* draw_data = ImGui::GetDrawData();
-				ImGui_ImplCGPU_RenderDrawData(draw_data, rp_encoder, imgui_root_sig, imgui_pipeline);
-
-				cgpu_cmd_end_render_pass(cmds[current_frame_index], rp_encoder);
-				CGPUTextureBarrier present_barrier = {
-					.texture = back_buffer,
-					.src_state = CGPU_RESOURCE_STATE_RENDER_TARGET,
-					.dst_state = CGPU_RESOURCE_STATE_PRESENT
-				};
-				CGPUResourceBarrierDescriptor barrier_desc1 = { .texture_barriers = &present_barrier, .texture_barriers_count = 1 };
-				cgpu_cmd_resource_barrier(cmds[current_frame_index], &barrier_desc1);
-
-				cgpu_cmd_end(cmds[current_frame_index]);
-				// submit
-				CGPUQueueSubmitDescriptor submit_desc = {
-					.cmds = &cmds[current_frame_index],
-					.signal_fence = inflightFence[current_frame_index],
-					.wait_semaphores = &prepared_semaphore,
-					.signal_semaphores = &render_finished_semaphore,
-					.cmds_count = 1,
-					.wait_semaphore_count = 1,
-					.signal_semaphore_count = 1,
-				};
-				cgpu_submit_queue(gfx_queue, &submit_desc);
-
-				main_window.Present(render_finished_semaphore);
+					window->Present(render_finished_semaphore);
+				}
 
 				// Update and Render additional Platform Windows
 				if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -468,6 +542,10 @@ int main(int argc, char** argv)
 			cgpu_free_root_signature(root_sig);
 		}
 	}
+
+	for (auto window : windows)
+		delete window;
+	windows.clear();
 
 	// 退出 SDL
 	SDL_Quit();
