@@ -12,6 +12,18 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
+CGPUInstanceId instance;
+CGPUDeviceId device;
+CGPUQueueId gfx_queue;
+
+struct RenderWindow;
+std::vector<RenderWindow*> windows;
+
+CGPURootSignatureId imgui_root_sig;
+CGPURenderPipelineId imgui_pipeline;
+CGPURootSignatureId root_sig;
+CGPURenderPipelineId pipeline;
+
 struct FrameData
 {
 	CGPUFenceId inflightFence;
@@ -78,6 +90,7 @@ struct RenderWindow
 	uint32_t current_swapchain_index = 0;
 	uint32_t current_frame_index = 0;
 	bool needResize = false;
+	bool owned_window;
 
 	CGPURenderPipelineId pipeline;
 	CGPURootSignatureId imgui_root_sig;
@@ -89,6 +102,22 @@ struct RenderWindow
 		this->present_queue = present_queue;
 
 		window = SDL_CreateWindow("HelloSDL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+		owned_window = true;
+
+		SDL_VERSION(&wmInfo.version);
+		SDL_GetWindowWMInfo(window, &wmInfo);
+
+		CreateGPUResources();
+		CreateSyncObjects();
+	}
+
+	RenderWindow(CGPUDeviceId device, CGPUQueueId present_queue, SDL_Window* window)
+	{
+		this->device = device;
+		this->present_queue = present_queue;
+
+		this->window = window;
+		owned_window = false;
 
 		SDL_VERSION(&wmInfo.version);
 		SDL_GetWindowWMInfo(window, &wmInfo);
@@ -273,6 +302,8 @@ struct RenderWindow
 	}
 };
 
+static void ImGui_ImplArena_InitPlatformInterface();
+
 std::vector<char> readFile(const std::string& filename)
 {
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -349,7 +380,7 @@ int main(int argc, char** argv)
 		.enable_gpu_based_validation = true,
 		.enable_set_name = true
 	};
-	auto instance = cgpu_create_instance(&instance_desc);
+	instance = cgpu_create_instance(&instance_desc);
 
 	uint32_t adapters_count = 0;
 	cgpu_enum_adapters(instance, CGPU_NULLPTR, &adapters_count);
@@ -366,8 +397,8 @@ int main(int argc, char** argv)
 		.queue_groups = &G,
 		.queue_group_count = 1
 	};
-	auto device = cgpu_create_device(adapter, &device_desc);
-	auto gfx_queue = cgpu_get_queue(device, CGPU_QUEUE_TYPE_GRAPHICS, 0);
+	device = cgpu_create_device(adapter, &device_desc);
+	gfx_queue = cgpu_get_queue(device, CGPU_QUEUE_TYPE_GRAPHICS, 0);
 	FrameData frameDatas[3];
 	for (int i = 0; i < 3; ++i)
 	{
@@ -376,8 +407,6 @@ int main(int argc, char** argv)
 	}
 	auto render_finished_semaphore = cgpu_create_semaphore(device);
 	int current_frame_index = 0;
-
-	std::vector<RenderWindow*> windows;
 
 	// 初始化 SDL
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -402,7 +431,7 @@ int main(int argc, char** argv)
 			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 			io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
-			//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
+			io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
 			//io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
 			//io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
 
@@ -418,6 +447,7 @@ int main(int argc, char** argv)
 			init_info.PresentQueue = gfx_queue;
 			init_info.ImageCount = 3;
 			ImGui_ImplCGPU_Init(&init_info);
+			ImGui_ImplArena_InitPlatformInterface();
 
 			CGPUVertexLayout imgui_vertex_layout = { 
 				.attribute_count = 3, 
@@ -446,7 +476,10 @@ int main(int argc, char** argv)
 			CGPURasterizerStateDescriptor rasterizer_state = {
 				.cull_mode = CGPU_CULL_MODE_NONE,
 			};
-			auto [imgui_root_sig, imgui_pipeline] = create_render_pipeline(device, main_window->swapchain_views[0]->info.format, "imgui.vert.spv", "imgui.frag.spv", &imgui_vertex_layout, &imgui_blend_desc, &imgui_depth_desc, &rasterizer_state);
+			auto [_imgui_root_sig, _imgui_pipeline] = create_render_pipeline(device, main_window->swapchain_views[0]->info.format, "imgui.vert.spv", "imgui.frag.spv", &imgui_vertex_layout, &imgui_blend_desc, &imgui_depth_desc, &rasterizer_state);
+			imgui_root_sig = _imgui_root_sig;
+			imgui_pipeline = _imgui_pipeline;
+
 			ImGui_ImplCGPU_CreateFontsTexture(gfx_queue, imgui_root_sig);
 			ImGui_ImplCGPU_PostInit(imgui_root_sig, imgui_pipeline);
 
@@ -469,7 +502,9 @@ int main(int argc, char** argv)
 				.depth_write = false,
 				.stencil_test = false,
 			};
-			auto [root_sig, pipeline] = create_render_pipeline(device, main_window->swapchain_views[0]->info.format, "hello.vert.spv", "hello.frag.spv", &vertex_layout, &blend_desc, &depth_desc, nullptr);
+			auto [_root_sig, _pipeline] = create_render_pipeline(device, main_window->swapchain_views[0]->info.format, "hello.vert.spv", "hello.frag.spv", &vertex_layout, &blend_desc, &depth_desc, nullptr);
+			root_sig = _root_sig;
+			pipeline = _pipeline;
 
 			main_window->pipeline = pipeline;
 			main_window->imgui_root_sig = imgui_root_sig;
@@ -607,4 +642,75 @@ int main(int argc, char** argv)
 	cgpu_free_instance(instance);
 
 	return 0;
+}
+
+static void ImGui_ImplArena_CreateWindow(ImGuiViewport* viewport)
+{
+	RenderWindow* window = new RenderWindow(device, gfx_queue, (SDL_Window*)viewport->PlatformHandle);
+	windows.push_back(window);
+	ImGui_Arena_ViewportData* vd = IM_NEW(ImGui_Arena_ViewportData)();
+	vd->window = window;
+	viewport->RendererUserData = vd;
+
+	window->imgui_viewport = viewport;
+	window->pipeline = pipeline;
+	window->imgui_root_sig = imgui_root_sig;
+	window->imgui_pipeline = imgui_pipeline;
+}
+
+static void ImGui_ImplArena_DestroyWindow(ImGuiViewport* viewport)
+{
+	if (ImGui_Arena_ViewportData* vd = (ImGui_Arena_ViewportData*)viewport->RendererUserData)
+	{
+		auto window = vd->window;
+		windows.erase(std::remove(windows.begin(), windows.end(), window), windows.end());
+		delete window;
+
+		ImGui_ImplCGPU_WindowRenderBuffers* wrb = &vd->RenderBuffers;
+		for (uint32_t n = 0; n < wrb->Count; n++)
+		{
+			ImGui_ImplCGPU_FrameRenderBuffers* buffers = &wrb->FrameRenderBuffers[n];
+			if (buffers->VertexBuffer) { cgpu_free_buffer(buffers->VertexBuffer); buffers->VertexBuffer = CGPU_NULLPTR; }
+			if (buffers->IndexBuffer) { cgpu_free_buffer(buffers->IndexBuffer); buffers->IndexBuffer = CGPU_NULLPTR; }
+			buffers->VertexBufferSize = 0;
+			buffers->IndexBufferSize = 0;
+		}
+		IM_FREE(wrb->FrameRenderBuffers);
+		wrb->FrameRenderBuffers = nullptr;
+		wrb->Index = 0;
+		wrb->Count = 0;
+
+		IM_FREE(vd);
+	}
+
+	viewport->RendererUserData = nullptr;
+}
+
+static void ImGui_ImplArena_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)
+{
+	ImGui_Arena_ViewportData* vd = (ImGui_Arena_ViewportData*)viewport->RendererUserData;
+	if (!vd)
+		return;
+
+	vd->window->RequestResize();
+}
+
+static void ImGui_ImplArena_RenderWindow(ImGuiViewport* viewport, void*)
+{
+}
+
+static void ImGui_ImplArena_SwapBuffers(ImGuiViewport* viewport, void*)
+{
+}
+
+void ImGui_ImplArena_InitPlatformInterface()
+{
+	ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
+	if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		IM_ASSERT(platform_io.Platform_CreateVkSurface != nullptr && "Platform needs to setup the CreateVkSurface handler.");
+	platform_io.Renderer_CreateWindow = ImGui_ImplArena_CreateWindow;
+	platform_io.Renderer_DestroyWindow = ImGui_ImplArena_DestroyWindow;
+	platform_io.Renderer_SetWindowSize = ImGui_ImplArena_SetWindowSize;
+	platform_io.Renderer_RenderWindow = ImGui_ImplArena_RenderWindow;
+	platform_io.Renderer_SwapBuffers = ImGui_ImplArena_SwapBuffers;
 }

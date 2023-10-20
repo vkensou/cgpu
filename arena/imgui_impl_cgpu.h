@@ -74,4 +74,29 @@ IMGUI_IMPL_API bool         ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue,
 IMGUI_IMPL_API void         ImGui_ImplCGPU_DestroyFontUploadObjects();
 IMGUI_IMPL_API void         ImGui_ImplCGPU_SetMinImageCount(uint32_t min_image_count); // To override MinImageCount after initialization (e.g. if swap chain is recreated)
 
+struct ImGui_ImplCGPU_FrameRenderBuffers
+{
+    size_t        VertexBufferSize;
+    size_t        IndexBufferSize;
+    CGPUBufferId            VertexBuffer;
+    CGPUBufferId            IndexBuffer;
+};
+
+struct ImGui_ImplCGPU_WindowRenderBuffers
+{
+    uint32_t            Index;
+    uint32_t            Count;
+    ImGui_ImplCGPU_FrameRenderBuffers* FrameRenderBuffers;
+};
+
+struct RenderWindow;
+struct ImGui_Arena_ViewportData
+{
+    RenderWindow* window;
+
+    ImGui_ImplCGPU_WindowRenderBuffers RenderBuffers;
+
+    ImGui_Arena_ViewportData() { memset(&RenderBuffers, 0, sizeof(RenderBuffers)); }
+};
+
 #endif // #ifndef IMGUI_DISABLE

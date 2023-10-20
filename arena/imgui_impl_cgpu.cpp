@@ -9,14 +9,6 @@
 #pragma warning (disable: 4127) // condition expression is constant
 #endif
 
-struct ImGui_ImplCGPU_FrameRenderBuffers
-{
-    size_t        VertexBufferSize;
-    size_t        IndexBufferSize;
-    CGPUBufferId            VertexBuffer;
-    CGPUBufferId            IndexBuffer;
-};
-
 struct ImGui_ImplCGPU_Window
 {
     int                 Width;
@@ -45,12 +37,6 @@ struct ImGui_ImplCGPU_Window
 };
 // Each viewport will hold 1 ImGui_ImplCGPUH_WindowRenderBuffers
 // [Please zero-clear before use!]
-struct ImGui_ImplCGPU_WindowRenderBuffers
-{
-    uint32_t            Index;
-    uint32_t            Count;
-    ImGui_ImplCGPU_FrameRenderBuffers*   FrameRenderBuffers;
-};
 
 // For multi-viewport support:
 // Helper structure we store in the void* RendererUserData field of each ImGuiViewport to easily retrieve our backend data.
@@ -184,7 +170,7 @@ void ImGui_ImplCGPU_RenderDrawData(ImDrawData* draw_data, CGPURenderPassEncoderI
 //         pipeline = bd->Pipeline;
 
     // Allocate array to store enough vertex/index buffers
-    ImGui_ImplCGPU_ViewportData* viewport_renderer_data = (ImGui_ImplCGPU_ViewportData*)draw_data->OwnerViewport->RendererUserData;
+    ImGui_Arena_ViewportData* viewport_renderer_data = (ImGui_Arena_ViewportData*)draw_data->OwnerViewport->RendererUserData;
     IM_ASSERT(viewport_renderer_data != nullptr);
     ImGui_ImplCGPU_WindowRenderBuffers* wrb = &viewport_renderer_data->RenderBuffers;
     if (wrb->FrameRenderBuffers == nullptr)
@@ -452,10 +438,10 @@ bool    ImGui_ImplCGPU_Init(ImGui_ImplCGPU_InitInfo* info)
 
     // Our render function expect RendererUserData to be storing the window render buffer we need (for the main viewport we won't use ->Window)
     ImGuiViewport* main_viewport = ImGui::GetMainViewport();
-    main_viewport->RendererUserData = IM_NEW(ImGui_ImplCGPU_ViewportData)();
+    main_viewport->RendererUserData = IM_NEW(ImGui_Arena_ViewportData)();
 
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-        ImGui_ImplCGPU_InitPlatformInterface();
+    //if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    //    ImGui_ImplCGPU_InitPlatformInterface();
 
     return true;
 }
@@ -480,11 +466,11 @@ void ImGui_ImplCGPU_Shutdown()
 
     // Manually delete main viewport render data in-case we haven't initialized for viewports
     ImGuiViewport* main_viewport = ImGui::GetMainViewport();
-    if (ImGui_ImplCGPU_ViewportData* vd = (ImGui_ImplCGPU_ViewportData*)main_viewport->RendererUserData)
+    if (ImGui_Arena_ViewportData* vd = (ImGui_Arena_ViewportData*)main_viewport->RendererUserData)
         IM_DELETE(vd);
     main_viewport->RendererUserData = nullptr;
 
-    ImGui_ImplCGPU_ShutdownPlatformInterface();
+    //ImGui_ImplCGPU_ShutdownPlatformInterface();
 
     io.BackendRendererName = nullptr;
     io.BackendRendererUserData = nullptr;
@@ -520,8 +506,8 @@ void ImGui_ImplCGPUH_DestroyWindowRenderBuffers(CGPUDeviceId device, ImGui_ImplC
 void ImGui_ImplCGPU_DestroyAllViewportsRenderBuffers(CGPUDeviceId device)
 {
     ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
-    for (int n = 0; n < platform_io.Viewports.Size; n++)
-        if (ImGui_ImplCGPU_ViewportData* vd = (ImGui_ImplCGPU_ViewportData*)platform_io.Viewports[n]->RendererUserData)
+    for (int n = 0; n < 1; n++)
+        if (ImGui_Arena_ViewportData* vd = (ImGui_Arena_ViewportData*)platform_io.Viewports[n]->RendererUserData)
             ImGui_ImplCGPUH_DestroyWindowRenderBuffers(device, &vd->RenderBuffers);
 }
 
