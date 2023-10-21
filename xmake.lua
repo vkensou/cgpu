@@ -15,6 +15,7 @@ add_requires("xxhash")
 add_requires("parallel-hashmap")
 add_requires("libsdl")
 add_requires("spirv-reflect")
+add_requires("imgui v1.89.8-docking", {configs = {debug = true}})
 
 if is_os("windows") or is_os("linux") or is_os("android")  then
     option("use_vulkan")
@@ -65,5 +66,6 @@ target("arena")
 
     add_deps("cgpu")
     add_packages("libsdl")
+    add_packages("imgui")
 
     add_files("arena/*.cpp")

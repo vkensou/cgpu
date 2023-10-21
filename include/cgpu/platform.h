@@ -74,6 +74,10 @@
 #endif
 #endif
 
+#if defined(_WIN32) || defined(_WIN64)
+#define CGPU_OS_WINDOWS
+#endif
+
 #if defined(_MSC_VER) && !defined(__clang__)
 #ifndef CGPU_FORCEINLINE
     #define CGPU_FORCEINLINE __forceinline
