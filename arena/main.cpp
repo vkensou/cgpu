@@ -212,10 +212,12 @@ struct RenderWindow
 		CreateGPUResources();
 	}
 
-	std::tuple<bool, CGPUTextureId, CGPUTextureViewId, CGPUSemaphoreId> AcquireNextImage()
+	bool AcquireNextImage()
 	{
+		current_frame_index = (current_frame_index + 1) % 3;
+
 		if (!swapchain)
-			return { false, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR };
+			return false;
 
 		CGPUAcquireNextDescriptor acquire_desc = {
 			.signal_semaphore = swapchain_prepared_semaphores[current_frame_index],
@@ -223,9 +225,9 @@ struct RenderWindow
 
 		current_swapchain_index = cgpu_acquire_next_image(swapchain, &acquire_desc);
 		if (current_swapchain_index < swapchain->buffer_count)
-			return { true, swapchain->back_buffers[current_swapchain_index], swapchain_views[current_swapchain_index], swapchain_prepared_semaphores[current_frame_index] };
+			return true;
 		else
-			return { false, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR };
+			return false;
 	}
 
 	void Present(CGPUSemaphoreId present_signal)
@@ -237,8 +239,6 @@ struct RenderWindow
 			.index = (uint8_t)current_swapchain_index,
 		};
 		cgpu_queue_present(present_queue, &present_desc);
-
-		current_frame_index = (current_frame_index + 1) % 3;
 	}
 
 	void Render(CGPUCommandBufferId cmd)
@@ -570,8 +570,7 @@ int main(int argc, char** argv)
 				prepared_windows.clear();
 				for (auto window : windows)
 				{
-					auto [acquired, back_buffer, back_buffer_view, prepared_semaphore] = window->AcquireNextImage();
-					if (acquired)
+					if (window->AcquireNextImage())
 						prepared_windows.push_back(window);
 					else
 						window->RequestResize();
