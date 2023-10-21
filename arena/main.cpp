@@ -92,7 +92,7 @@ struct RenderWindow
 	bool needResize = false;
 	bool owned_window;
 
-	CGPURenderPipelineId pipeline;
+	CGPURenderPipelineId pipeline = CGPU_NULLPTR;
 	CGPURootSignatureId imgui_root_sig;
 	CGPURenderPipelineId imgui_pipeline;
 
@@ -283,8 +283,11 @@ struct RenderWindow
 			(float)w, (float)h,
 			0.f, 1.f);
 		cgpu_render_encoder_set_scissor(rp_encoder, 0, 0, w, h);
-		cgpu_render_encoder_bind_pipeline(rp_encoder, pipeline);
-		cgpu_render_encoder_draw(rp_encoder, 3, 0);
+		if (pipeline)
+		{
+			cgpu_render_encoder_bind_pipeline(rp_encoder, pipeline);
+			cgpu_render_encoder_draw(rp_encoder, 3, 0);
+		}
 
 		ImDrawData* draw_data = imgui_viewport->DrawData;
 		ImGui_ImplCGPU_RenderDrawData(draw_data, rp_encoder, imgui_root_sig, imgui_pipeline);
@@ -512,6 +515,7 @@ int main(int argc, char** argv)
 
 			std::vector<RenderWindow*> need_resize_windows;
 			std::vector<RenderWindow*> prepared_windows;
+			std::vector<CGPUSemaphoreId> wait_semaphores;
 
 			// 窗口循环
 			SDL_Event e;
@@ -587,19 +591,28 @@ int main(int argc, char** argv)
 				{
 					auto cmd = cur_frame_data.request();
 					window->Render(cmd);
+				}
 
-					// submit
-					CGPUQueueSubmitDescriptor submit_desc = {
-						.cmds = &cmd,
-						.signal_fence = cur_frame_data.inflightFence,
-						.wait_semaphores = &window->swapchain_prepared_semaphores[window->current_frame_index],
-						.signal_semaphores = &render_finished_semaphore,
-						.cmds_count = 1,
-						.wait_semaphore_count = 1,
-						.signal_semaphore_count = 1,
-					};
-					cgpu_submit_queue(gfx_queue, &submit_desc);
+				wait_semaphores.clear();
+				for (auto window : prepared_windows)
+				{
+					wait_semaphores.push_back(window->swapchain_prepared_semaphores[window->current_frame_index]);
+				}
 
+				// submit
+				CGPUQueueSubmitDescriptor submit_desc = {
+					.cmds = cur_frame_data.allocated_cmds.data(),
+					.signal_fence = cur_frame_data.inflightFence,
+					.wait_semaphores = wait_semaphores.data(),
+					.signal_semaphores = &render_finished_semaphore,
+					.cmds_count = (uint32_t)cur_frame_data.allocated_cmds.size(),
+					.wait_semaphore_count = (uint32_t)wait_semaphores.size(),
+					.signal_semaphore_count = 1,
+				};
+				cgpu_submit_queue(gfx_queue, &submit_desc);
+
+				for (auto window : prepared_windows)
+				{
 					window->Present(render_finished_semaphore);
 				}
 
@@ -607,7 +620,6 @@ int main(int argc, char** argv)
 				if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 				{
 					ImGui::UpdatePlatformWindows();
-					ImGui::RenderPlatformWindowsDefault();
 				}
 			}
 
@@ -653,7 +665,6 @@ static void ImGui_ImplArena_CreateWindow(ImGuiViewport* viewport)
 	viewport->RendererUserData = vd;
 
 	window->imgui_viewport = viewport;
-	window->pipeline = pipeline;
 	window->imgui_root_sig = imgui_root_sig;
 	window->imgui_pipeline = imgui_pipeline;
 }
