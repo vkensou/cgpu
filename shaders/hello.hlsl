@@ -18,13 +18,19 @@ struct VSInput
 struct VSOutput
 {
 	float4 Pos : SV_POSITION;
-[[vk::location(0)]] float3 Color : COLOR0;
+    [[vk::location(0)]]
+    float3 Color : COLOR0;
 };
 
-VSOutput main(VSInput input)
+VSOutput vert(VSInput input)
 {
 	VSOutput output = (VSOutput)0;
 	output.Color = colors[input.vertexId];
 	output.Pos = positions[input.vertexId];
 	return output;
+}
+
+float4 frag(VSOutput input) : SV_TARGET
+{
+	return float4(input.Color, 1);
 }
