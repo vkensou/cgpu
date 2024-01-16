@@ -22,6 +22,7 @@ struct VSOutput
     float3 Color : COLOR0;
 };
 
+[shader("vertex")]
 VSOutput vert(VSInput input)
 {
 	VSOutput output = (VSOutput)0;
@@ -30,6 +31,7 @@ VSOutput vert(VSInput input)
 	return output;
 }
 
+[shader("pixel")]
 float4 frag(VSOutput input) : SV_TARGET
 {
 	return float4(input.Color, 1);

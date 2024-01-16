@@ -26,6 +26,7 @@ struct VSOutput
     float4 Color : COLOR0;
 };
 
+[shader("vertex")]
 VSOutput vert(VSInput input)
 {
 	VSOutput output = (VSOutput)0;
@@ -40,6 +41,7 @@ Texture2D fontTexture : register(t0);
 [[vk::binding(1, 0)]]
 SamplerState fontSampler : register(s0);
 
+[shader("pixel")]
 float4 frag(VSOutput input) : SV_TARGET
 {
 	return input.Color * fontTexture.Sample(fontSampler, input.UV);
