@@ -74,6 +74,11 @@ CGPU_API void cgpu_queue_map_packed_mips_vulkan(CGPUQueueId queue, const struct 
 CGPU_API void cgpu_queue_unmap_packed_mips_vulkan(CGPUQueueId queue, const struct CGPUTiledTexturePackedMips* regions);
 CGPU_API void cgpu_free_queue_vulkan(CGPUQueueId queue);
 
+CGPU_API CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struct CGPURenderPassDescriptor* desc);
+CGPU_API CGPUFramebufferId cgpu_create_framebuffer_vulkan(CGPUDeviceId device, const struct CGPUFramebufferDescriptor* desc);
+CGPU_API void cgpu_free_render_pass_vulkan(CGPURenderPassId render_pass);
+CGPU_API void cgpu_free_framebuffer_vulkan(CGPUFramebufferId framebuffer);
+
 // Command APIs
 CGPU_API CGPUCommandPoolId cgpu_create_command_pool_vulkan(CGPUQueueId queue, const CGPUCommandPoolDescriptor* desc);
 CGPU_API CGPUCommandBufferId cgpu_create_command_buffer_vulkan(CGPUCommandPoolId pool, const struct CGPUCommandBufferDescriptor* desc);
@@ -308,6 +313,16 @@ typedef struct CGPUQueryPool_Vulkan {
     VkQueryPool pVkQueryPool;
     VkQueryType mType;
 } CGPUQueryPool_Vulkan;
+
+typedef struct CGPURenderPass_Vulkan {
+    CGPURenderPass super;
+    VkRenderPass pVkRenderPass;
+} CGPURenderPass_Vulkan;
+
+typedef struct CGPUFramebuffer_Vulkan {
+    CGPUFramebuffer super;
+    VkFramebuffer pVkFramebuffer;
+} CGPUFramebuffer_Vulkan;
 
 typedef struct CGPUCommandBuffer_Vulkan {
     CGPUCommandBuffer super;

@@ -53,6 +53,12 @@ const CGPUProcTable tbl_vk = {
     .queue_unmap_packed_mips = &cgpu_queue_unmap_packed_mips_vulkan,
     .free_queue = &cgpu_free_queue_vulkan,
 
+    // RenderPass APIs
+    .create_render_pass = &cgpu_create_render_pass_vulkan,
+    .create_framebuffer = &cgpu_create_framebuffer,
+    .free_render_pass = &cgpu_free_render_pass,
+    .free_framebuffer = &cgpu_free_framebuffer,
+
     // Command APIs
     .create_command_pool = &cgpu_create_command_pool_vulkan,
     .create_command_buffer = &cgpu_create_command_buffer_vulkan,

@@ -28,6 +28,8 @@ DEFINE_CGPU_OBJECT(CGPUDevice)
 DEFINE_CGPU_OBJECT(CGPUQueue)
 DEFINE_CGPU_OBJECT(CGPUSemaphore)
 DEFINE_CGPU_OBJECT(CGPUFence)
+DEFINE_CGPU_OBJECT(CGPURenderPass)
+DEFINE_CGPU_OBJECT(CGPUFramebuffer)
 DEFINE_CGPU_OBJECT(CGPUCommandPool)
 DEFINE_CGPU_OBJECT(CGPUCommandBuffer)
 DEFINE_CGPU_OBJECT(CGPUSwapChain)
@@ -240,6 +242,16 @@ CGPU_API void cgpu_queue_unmap_packed_mips(CGPUQueueId queue, const struct CGPUT
 typedef void (*CGPUProcQueueUnmapPackedMips)(CGPUQueueId queue, const struct CGPUTiledTexturePackedMips* regions);
 CGPU_API void cgpu_free_queue(CGPUQueueId queue);
 typedef void (*CGPUProcFreeQueue)(CGPUQueueId queue);
+
+// RenderPass APIs
+CGPU_API CGPURenderPassId cgpu_create_render_pass(CGPUDeviceId device, const struct CGPURenderPassDescriptor* desc);
+typedef CGPURenderPassId (*CGPUProcCreateRenderPass)(CGPUDeviceId device, const struct CGPURenderPassDescriptor* desc);
+CGPU_API CGPUFramebufferId cgpu_create_framebuffer(CGPUDeviceId device, const struct CGPUFramebufferDescriptor* desc);
+typedef CGPUFramebufferId(*CGPUProcCreateFramebuffer)(CGPUDeviceId device, const struct CGPUFramebufferDescriptor* desc);
+CGPU_API void cgpu_free_render_pass(CGPURenderPassId render_pass);
+typedef void (*CGPUProcFreeRenderPass)(CGPURenderPassId render_pass);
+CGPU_API void cgpu_free_framebuffer(CGPUFramebufferId framebuffer);
+typedef void (*CGPUProcFreeFramebuffer)(CGPUFramebufferId framebuffer);
 
 // Command APIs
 CGPU_API CGPUCommandPoolId cgpu_create_command_pool(CGPUQueueId queue, const struct CGPUCommandPoolDescriptor* desc);
@@ -528,6 +540,12 @@ typedef struct CGPUProcTable {
     const CGPUProcQueueMapPackedMips queue_map_packed_mips;
     const CGPUProcQueueUnmapPackedMips queue_unmap_packed_mips;
     const CGPUProcFreeQueue free_queue;
+
+    // RenderPass APIs
+    const CGPUProcCreateRenderPass create_render_pass;
+    const CGPUProcCreateFramebuffer create_framebuffer;
+    const CGPUProcFreeRenderPass free_render_pass;
+    const CGPUProcFreeFramebuffer free_framebuffer;
 
     // Command APIs
     const CGPUProcCreateCommandPool create_command_pool;
@@ -1185,6 +1203,7 @@ typedef struct CGPUComputePassDescriptor {
 typedef struct CGPUColorAttachment {
     CGPUTextureViewId view;
     CGPUTextureViewId resolve_view;
+    ECGPUFormat format;
     ECGPULoadAction load_action;
     ECGPUStoreAction store_action;
     CGPUClearValue clear_color;
@@ -1193,6 +1212,7 @@ typedef struct CGPUColorAttachment {
 // caution: this must be a restrict flatten-POD struct (no array pointer, no c-str, ...) cause we directly hash it in cgpux.hpp
 typedef struct CGPUDepthStencilAttachment {
     CGPUTextureViewId view;
+    ECGPUFormat format;
     ECGPULoadAction depth_load_action;
     ECGPUStoreAction depth_store_action;
     float clear_depth;
@@ -1211,6 +1231,24 @@ typedef struct CGPURenderPassDescriptor {
     const CGPUDepthStencilAttachment* depth_stencil;
     uint32_t render_target_count;
 } CGPURenderPassDescriptor;
+
+typedef struct CGPURenderPass {
+    CGPUDeviceId device;
+} CGPURenderPass;
+
+typedef struct CGPUFramebufferDescriptor {
+    const char8_t* name;
+    CGPURenderPass* renderpass;
+    uint32_t attachment_count;
+    const CGPUTextureViewId* attachments;
+    uint32_t width;
+    uint32_t height;
+    uint32_t layers;
+} CGPUFramebufferDescriptor;
+
+typedef struct CGPUFramebuffer {
+    CGPUDeviceId device;
+} CGPUFramebuffer;
 
 typedef struct CGPURootSignaturePoolDescriptor {
     const char8_t* name;
