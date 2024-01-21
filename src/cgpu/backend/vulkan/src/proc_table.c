@@ -55,9 +55,9 @@ const CGPUProcTable tbl_vk = {
 
     // RenderPass APIs
     .create_render_pass = &cgpu_create_render_pass_vulkan,
-    .create_framebuffer = &cgpu_create_framebuffer,
-    .free_render_pass = &cgpu_free_render_pass,
-    .free_framebuffer = &cgpu_free_framebuffer,
+    .create_framebuffer = &cgpu_create_framebuffer_vulkan,
+    .free_render_pass = &cgpu_free_render_pass_vulkan,
+    .free_framebuffer = &cgpu_free_framebuffer_vulkan,
 
     // Command APIs
     .create_command_pool = &cgpu_create_command_pool_vulkan,
@@ -119,6 +119,7 @@ const CGPUProcTable tbl_vk = {
 
     // Render CMDs
     .cmd_begin_render_pass = &cgpu_cmd_begin_render_pass_vulkan,
+    .cmd_begin_render_pass2 = &cgpu_cmd_begin_render_pass2_vulkan,
     .render_encoder_set_shading_rate = &cgpu_render_encoder_set_shading_rate_vulkan,
     .render_encoder_bind_descriptor_set = cgpu_render_encoder_bind_descriptor_set_vulkan,
     .render_encoder_bind_pipeline = &cgpu_render_encoder_bind_pipeline_vulkan,

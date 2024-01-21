@@ -1033,26 +1033,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
         .blendConstants = {0.0f,0.0f,0.0f,0.0f},
     };
     // Create a stub render pass
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    cgpu_assert(desc->render_target_count >= 0);
-    VkUtil_RenderPassDesc rp_desc = {
-        .mColorAttachmentCount = desc->render_target_count,
-        .mSampleCount = desc->sample_count,
-        .mDepthStencilFormat = desc->depth_stencil_format
-    };
-    for (uint32_t i = 0; i < desc->render_target_count; i++)
-    {
-        rp_desc.pColorFormats[i] = desc->color_formats[i];
-        if(desc->color_resolve_disable_mask & (CGPU_SLOT_0 << i))
-        {
-            rp_desc.pResolveMasks[i] = false;
-        }
-        else if(rp_desc.mSampleCount != CGPU_SAMPLE_COUNT_1)
-        {
-            rp_desc.pResolveMasks[i] = true;
-        }
-    }
-    VkUtil_FindOrCreateRenderPass(D, &rp_desc, &render_pass);
+    CGPURenderPass_Vulkan* R = (CGPURenderPass_Vulkan*)desc->render_pass;
     VkGraphicsPipelineCreateInfo pipelineInfo = {
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
         .stageCount = stage_count,
@@ -1066,8 +1047,8 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
         .pColorBlendState = &cbs,
         .pDynamicState = &dys,
         .layout = RS->pPipelineLayout,
-        .renderPass = render_pass,
-        .subpass = 0,
+        .renderPass = R->pVkRenderPass,
+        .subpass = desc->subpass,
         .basePipelineHandle = VK_NULL_HANDLE,
     };
     VkResult createResult = D->mVkDeviceTable.vkCreateGraphicsPipelines(D->pVkDevice,
@@ -1346,7 +1327,7 @@ void cgpu_free_queue_vulkan(CGPUQueueId queue)
 CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struct CGPURenderPassDescriptor* desc)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
-    CGPURenderPass_Vulkan* P = cgpu_calloc(1, sizeof(CGPURenderPass_Vulkan));
+    CGPURenderPass_Vulkan* R = cgpu_calloc(1, sizeof(CGPURenderPass_Vulkan));
     cgpu_assert(VK_NULL_HANDLE != D->pVkDevice);
     uint32_t colorAttachmentCount = desc->render_target_count;
     uint32_t colorResolveAttachmentCount = 0;
@@ -1441,15 +1422,20 @@ CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struc
         .dependencyCount = 0,
         .pDependencies = NULL
     };
-    CHECK_VKRESULT(D->mVkDeviceTable.vkCreateRenderPass(D->pVkDevice, &create_info, GLOBAL_VkAllocationCallbacks, &P->pVkRenderPass));
-    return &P->super;
+    CHECK_VKRESULT(D->mVkDeviceTable.vkCreateRenderPass(D->pVkDevice, &create_info, GLOBAL_VkAllocationCallbacks, &R->pVkRenderPass));
+    return &R->super;
 }
 
 CGPUFramebufferId cgpu_create_framebuffer_vulkan(CGPUDeviceId device, const struct CGPUFramebufferDescriptor* desc)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPURenderPass_Vulkan* R = (CGPURenderPass_Vulkan*)desc->renderpass;
-    CGPUFramebuffer_Vulkan* P = cgpu_calloc(1, sizeof(CGPUFramebuffer_Vulkan));
+    CGPUFramebuffer_Vulkan* F = cgpu_calloc_aligned(1, sizeof(CGPUFramebuffer_Vulkan) + sizeof(CGPUFramebufferInfo), _Alignof(CGPUFramebuffer_Vulkan));
+    CGPUFramebufferInfo* info = (CGPUFramebufferInfo*)(F + 1);
+    F->super.info = info;
+    info->width = desc->width;
+    info->height = desc->height;
+
     cgpu_assert(VK_NULL_HANDLE != D->pVkDevice);
     cgpu_assert(R && R->pVkRenderPass);
 
@@ -1472,8 +1458,8 @@ CGPUFramebufferId cgpu_create_framebuffer_vulkan(CGPUDeviceId device, const stru
         .layers = desc->layers,
     };
 
-    CHECK_VKRESULT(D->mVkDeviceTable.vkCreateFramebuffer(D->pVkDevice, &add_info, GLOBAL_VkAllocationCallbacks, &P->pVkFramebuffer));
-    return &P->super;
+    CHECK_VKRESULT(D->mVkDeviceTable.vkCreateFramebuffer(D->pVkDevice, &add_info, GLOBAL_VkAllocationCallbacks, &F->pVkFramebuffer));
+    return &F->super;
 }
 void cgpu_free_render_pass_vulkan(CGPURenderPassId render_pass)
 {
@@ -1489,7 +1475,7 @@ void cgpu_free_framebuffer_vulkan(CGPUFramebufferId framebuffer)
     CGPUFramebuffer_Vulkan* F = (CGPUFramebuffer_Vulkan*)framebuffer;
     cgpu_assert(F->pVkFramebuffer);
     D->mVkDeviceTable.vkDestroyFramebuffer(D->pVkDevice, F->pVkFramebuffer, GLOBAL_VkAllocationCallbacks);
-    cgpu_free(F);
+    cgpu_free_aligned(F, _Alignof(CGPUFramebuffer_Vulkan));
 }
 
 VkCommandPool allocate_transient_command_pool(CGPUDevice_Vulkan* D, CGPUQueueId queue)
@@ -2105,6 +2091,57 @@ CGPURenderPassEncoderId cgpu_cmd_begin_render_pass_vulkan(CGPUCommandBufferId cm
         .pClearValues = clearValues
     };
     D->mVkDeviceTable.vkCmdBeginRenderPass(Cmd->pVkCmdBuf, &begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    Cmd->pRenderPass = render_pass;
+    return (CGPURenderPassEncoderId)cmd;
+}
+
+CGPURenderPassEncoderId cgpu_cmd_begin_render_pass2_vulkan(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info)
+{
+    CGPUCommandBuffer_Vulkan* Cmd = (CGPUCommandBuffer_Vulkan*)cmd;
+    const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)cmd->device;
+    CGPURenderPass_Vulkan* R = (CGPURenderPass_Vulkan*)begin_info->render_pass;
+    CGPUFramebuffer_Vulkan* F = (CGPUFramebuffer_Vulkan*)begin_info->framebuffer;
+    VkRenderPass render_pass = R->pVkRenderPass;
+    VkFramebuffer pFramebuffer = F->pVkFramebuffer;
+
+    // Cmd begin render pass
+    VkClearValue clearValues[2 * CGPU_MAX_MRT_COUNT + 1] = { 0 };
+    uint32_t clearCount = begin_info->clear_value_count;
+    for (uint32_t i = 0; i < begin_info->clear_value_count; i++)
+    {
+        if (begin_info->clear_values[i].is_color)
+        {
+            clearValues[i].color.float32[0] = begin_info->clear_values[i].color[0];
+            clearValues[i].color.float32[1] = begin_info->clear_values[i].color[1];
+            clearValues[i].color.float32[2] = begin_info->clear_values[i].color[2];
+            clearValues[i].color.float32[3] = begin_info->clear_values[i].color[3];
+        }
+        else
+        {
+            clearValues[i].depthStencil.depth = begin_info->clear_values[i].depth;
+            clearValues[i].depthStencil.stencil = begin_info->clear_values[i].stencil;
+        }
+    }
+    VkRect2D render_area = {
+        .offset = {
+            .x = 0,
+            .y = 0,
+        },
+        .extent = {
+            .width = begin_info->framebuffer->info->width,
+            .height = begin_info->framebuffer->info->height,
+        },
+    };
+    VkRenderPassBeginInfo vk_begin_info = {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+        .pNext = VK_NULL_HANDLE,
+        .renderPass = render_pass,
+        .framebuffer = pFramebuffer,
+        .renderArea = render_area,
+        .clearValueCount = clearCount,
+        .pClearValues = clearValues
+    };
+    D->mVkDeviceTable.vkCmdBeginRenderPass(Cmd->pVkCmdBuf, &vk_begin_info, VK_SUBPASS_CONTENTS_INLINE);
     Cmd->pRenderPass = render_pass;
     return (CGPURenderPassEncoderId)cmd;
 }

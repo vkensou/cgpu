@@ -350,8 +350,24 @@ CGPU_API void cgpu_cmd_end_compute_pass(CGPUCommandBufferId cmd, CGPUComputePass
 typedef void (*CGPUProcCmdEndComputePass)(CGPUCommandBufferId cmd, CGPUComputePassEncoderId encoder);
 
 // Render Pass
+typedef struct CGPUClearValue2
+{
+    float color[4];
+    float depth;
+    uint32_t stencil;
+    bool is_color;
+} CGPUClearValue2;
+typedef struct CGPUBeginRenderPassInfo
+{
+    CGPURenderPassId render_pass;
+    CGPUFramebufferId framebuffer;
+    uint32_t clear_value_count;
+    const CGPUClearValue2* clear_values;
+} CGPUBeginRenderPassInfo;
 CGPU_API CGPURenderPassEncoderId cgpu_cmd_begin_render_pass(CGPUCommandBufferId cmd, const struct CGPURenderPassDescriptor* desc);
 typedef CGPURenderPassEncoderId (*CGPUProcCmdBeginRenderPass)(CGPUCommandBufferId cmd, const struct CGPURenderPassDescriptor* desc);
+CGPU_API CGPURenderPassEncoderId cgpu_cmd_begin_render_pass2(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info);
+typedef CGPURenderPassEncoderId(*CGPUProcCmdBeginRenderPass2)(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info);
 CGPU_API void cgpu_render_encoder_set_shading_rate(CGPURenderPassEncoderId encoder, ECGPUShadingRate shading_rate, ECGPUShadingRateCombiner post_rasterizer_rate, ECGPUShadingRateCombiner final_rate);
 typedef void (*CGPUProcRenderEncoderSetShadingRate)(CGPURenderPassEncoderId encoder, ECGPUShadingRate shading_rate, ECGPUShadingRateCombiner post_rasterizer_rate, ECGPUShadingRateCombiner final_rate);
 CGPU_API void cgpu_render_encoder_bind_descriptor_set(CGPURenderPassEncoderId encoder, CGPUDescriptorSetId set);
@@ -607,6 +623,7 @@ typedef struct CGPUProcTable {
 
     // Render CMDs
     const CGPUProcCmdBeginRenderPass cmd_begin_render_pass;
+    const CGPUProcCmdBeginRenderPass2 cmd_begin_render_pass2;
     const CGPUProcRenderEncoderSetShadingRate render_encoder_set_shading_rate;
     const CGPUProcRenderEncoderBindDescriptorSet render_encoder_bind_descriptor_set;
     const CGPUProcRenderEncoderBindPipeline render_encoder_bind_pipeline;
@@ -1238,7 +1255,7 @@ typedef struct CGPURenderPass {
 
 typedef struct CGPUFramebufferDescriptor {
     const char8_t* name;
-    CGPURenderPass* renderpass;
+    CGPURenderPassId renderpass;
     uint32_t attachment_count;
     const CGPUTextureViewId* attachments;
     uint32_t width;
@@ -1246,8 +1263,14 @@ typedef struct CGPUFramebufferDescriptor {
     uint32_t layers;
 } CGPUFramebufferDescriptor;
 
+typedef struct CGPUFramebufferInfo {
+    uint32_t width;
+    uint32_t height;
+} CGPUFramebufferInfo;
+
 typedef struct CGPUFramebuffer {
     CGPUDeviceId device;
+    const CGPUFramebufferInfo* info;
 } CGPUFramebuffer;
 
 typedef struct CGPURootSignaturePoolDescriptor {
@@ -1362,9 +1385,10 @@ typedef struct CGPURenderPipelineDescriptor {
     const CGPUBlendStateDescriptor* blend_state;
     const CGPUDepthStateDescriptor* depth_state;
     const CGPURasterizerStateDescriptor* rasterizer_state;
-
     // caution: if any of these platten parameters have been changed, the hasher in cgpux.hpp must be updated
 
+    CGPURenderPassId render_pass;
+    uint32_t subpass;
     const ECGPUFormat* color_formats;
     uint32_t render_target_count;
     ECGPUSampleCount sample_count;

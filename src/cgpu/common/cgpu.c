@@ -866,6 +866,18 @@ CGPURenderPassEncoderId cgpu_cmd_begin_render_pass(CGPUCommandBufferId cmd, cons
     return ecd;
 }
 
+CGPURenderPassEncoderId cgpu_cmd_begin_render_pass2(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info)
+{
+    cgpu_assert(cmd != CGPU_NULLPTR && "fatal: call on NULL cmdbuffer!");
+    cgpu_assert(cmd->device != CGPU_NULLPTR && "fatal: call on NULL device!");
+    const CGPUProcCmdBeginRenderPass2 fn_begin_render_pass2 = cmd->device->proc_table_cache->cmd_begin_render_pass2;
+    cgpu_assert(fn_begin_render_pass2 && "cmd_begin_render_pass2 Proc Missing!");
+    CGPURenderPassEncoderId ecd = (CGPURenderPassEncoderId)fn_begin_render_pass2(cmd, begin_info);
+    CGPUCommandBuffer* Cmd = (CGPUCommandBuffer*)cmd;
+    Cmd->current_dispatch = CGPU_PIPELINE_TYPE_GRAPHICS;
+    return ecd;
+}
+
 void cgpu_render_encoder_set_shading_rate(CGPURenderPassEncoderId encoder, ECGPUShadingRate shading_rate, ECGPUShadingRateCombiner post_rasterizer_rate, ECGPUShadingRateCombiner final_rate)
 {
     cgpu_assert(encoder != CGPU_NULLPTR && "fatal: call on NULL compute encoder!");

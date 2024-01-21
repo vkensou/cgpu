@@ -144,6 +144,7 @@ CGPU_API void cgpu_cmd_end_compute_pass_vulkan(CGPUCommandBufferId cmd, CGPUComp
 
 // Render CMDs
 CGPU_API CGPURenderPassEncoderId cgpu_cmd_begin_render_pass_vulkan(CGPUCommandBufferId cmd, const struct CGPURenderPassDescriptor* desc);
+CGPU_API CGPURenderPassEncoderId cgpu_cmd_begin_render_pass2_vulkan(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info);
 CGPU_API void cgpu_render_encoder_set_shading_rate_vulkan(CGPURenderPassEncoderId encoder, ECGPUShadingRate shading_rate, ECGPUShadingRateCombiner post_rasterizer_rate, ECGPUShadingRateCombiner final_rate);
 CGPU_API void cgpu_render_encoder_bind_descriptor_set_vulkan(CGPURenderPassEncoderId encoder, CGPUDescriptorSetId set);
 CGPU_API void cgpu_render_encoder_set_viewport_vulkan(CGPURenderPassEncoderId encoder, float x, float y, float width, float height, float min_depth, float max_depth);
