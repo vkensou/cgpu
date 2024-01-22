@@ -1348,14 +1348,9 @@ typedef struct CGPURenderPipelineDescriptor {
 
     CGPURenderPassId render_pass;
     uint32_t subpass;
-    const ECGPUFormat* color_formats;
     uint32_t render_target_count;
     ECGPUSampleCount sample_count;
-    uint32_t sample_quality;
-    ECGPUSlotMask color_resolve_disable_mask;
-    ECGPUFormat depth_stencil_format;
     ECGPUPrimitiveTopology prim_topology;
-    bool enable_indirect_command;
 } CGPURenderPipelineDescriptor;
 
 typedef struct CGPUMemoryPoolDescriptor {

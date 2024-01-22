@@ -380,7 +380,6 @@ std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGP
 		.rasterizer_state = rasterizer_state,
 		.render_pass = render_pass,
 		.subpass = subpass,
-		.color_formats = formats,
 		.render_target_count = 1,
 		.prim_topology = CGPU_PRIM_TOPO_TRI_LIST,
 	};
