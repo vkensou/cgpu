@@ -70,97 +70,6 @@ public:
     std::vector<const char*> device_layers;
 };
 
-struct CGPUCachedRenderPass {
-    VkRenderPass pass;
-    size_t timestamp;
-};
-
-struct CGPUCachedFramebuffer {
-    VkFramebuffer framebuffer;
-    size_t timestamp;
-};
-
-struct CGPUVkPassTable //
-{
-    struct rpdesc_hash {
-        size_t operator()(const VkUtil_RenderPassDesc& a) const
-        {
-            return cgpu_hash(&a, sizeof(VkUtil_RenderPassDesc), CGPU_NAME_HASH_SEED);
-        }  
-    };
-    struct rpdesc_eq
-    {
-        inline bool operator()(const VkUtil_RenderPassDesc& a, const VkUtil_RenderPassDesc& b) const
-        {
-            if (a.mColorAttachmentCount != b.mColorAttachmentCount) return false;
-            return std::memcmp(&a, &b, sizeof(VkUtil_RenderPassDesc)) == 0;
-        }
-    };
-
-    struct fbdesc_hash {
-        size_t operator()(const VkUtil_FramebufferDesc& a) const
-        {
-            return cgpu_hash(&a, sizeof(VkUtil_FramebufferDesc), CGPU_NAME_HASH_SEED);
-        }
-    };
-    struct fbdesc_eq
-    {
-        inline bool operator()(const VkUtil_FramebufferDesc& a, const VkUtil_FramebufferDesc& b) const
-        {
-            if (a.pRenderPass != b.pRenderPass) return false;
-            if (a.mAttachmentCount != b.mAttachmentCount) return false;
-            return std::memcmp(&a, &b, sizeof(VkUtil_RenderPassDesc)) == 0;
-        }
-    };
-
-    phmap::flat_hash_map<VkUtil_RenderPassDesc, CGPUCachedRenderPass, rpdesc_hash, rpdesc_eq> cached_renderpasses;
-    phmap::flat_hash_map<VkUtil_FramebufferDesc, CGPUCachedFramebuffer, fbdesc_hash, fbdesc_eq> cached_framebuffers;
-};
-
-VkFramebuffer VkUtil_FramebufferTableTryFind(struct CGPUVkPassTable* table, const VkUtil_FramebufferDesc* desc)
-{
-    const auto& iter = table->cached_framebuffers.find(*desc);
-    if (iter != table->cached_framebuffers.end())
-    {
-        return iter->second.framebuffer;
-    }
-    return VK_NULL_HANDLE;
-}
-
-void VkUtil_FramebufferTableAdd(struct CGPUVkPassTable* table, const struct VkUtil_FramebufferDesc* desc, VkFramebuffer framebuffer)
-{
-    const auto& iter = table->cached_framebuffers.find(*desc);
-    if (iter != table->cached_framebuffers.end())
-    {
-        cgpu_warn(u8"Vulkan Framebuffer with this desc already exists!");
-    }
-    // TODO: Add timestamp
-    CGPUCachedFramebuffer new_fb = { framebuffer, 0 };
-    table->cached_framebuffers[*desc] = new_fb;
-}
-
-VkRenderPass VkUtil_RenderPassTableTryFind(struct CGPUVkPassTable* table, const struct VkUtil_RenderPassDesc* desc)
-{
-    const auto& iter = table->cached_renderpasses.find(*desc);
-    if (iter != table->cached_renderpasses.end())
-    {
-        return iter->second.pass;
-    }
-    return VK_NULL_HANDLE;
-}
-
-void VkUtil_RenderPassTableAdd(struct CGPUVkPassTable* table, const struct VkUtil_RenderPassDesc* desc, VkRenderPass pass)
-{
-    const auto& iter = table->cached_renderpasses.find(*desc);
-    if (iter != table->cached_renderpasses.end())
-    {
-        cgpu_warn(u8"Vulkan Pass with this desc already exists!");
-    }
-    // TODO: Add timestamp
-    CGPUCachedRenderPass new_pass = { pass, 0 };
-    table->cached_renderpasses[*desc] = new_pass;
-}
-
 struct CGPUVkExtensionsTable : public phmap::flat_hash_map<std::string, bool, std::hash<std::string>> //
 {
     static void ConstructForAllAdapters(struct CGPUInstance_Vulkan* I, const VkUtil_Blackboard& blackboard)
@@ -488,8 +397,6 @@ CGPUDeviceId cgpu_create_device_vulkan(CGPUAdapterId adapter, const CGPUDeviceDe
     VkUtil_CreateVMAAllocator(I, A, D);
     // Create Descriptor Heap
     D->pDescriptorPool = VkUtil_CreateDescriptorPool(D);
-    // Create pass table
-    D->pPassTable = cgpu_new<CGPUVkPassTable>();
     return &D->super;
 }
 
@@ -498,16 +405,6 @@ void cgpu_free_device_vulkan(CGPUDeviceId device)
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)device->adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)device->adapter->instance;
-
-    for (auto& iter : D->pPassTable->cached_renderpasses)
-    {
-        D->mVkDeviceTable.vkDestroyRenderPass(D->pVkDevice, iter.second.pass, GLOBAL_VkAllocationCallbacks);
-    }
-    for (auto& iter : D->pPassTable->cached_framebuffers)
-    {
-        D->mVkDeviceTable.vkDestroyFramebuffer(D->pVkDevice, iter.second.framebuffer, GLOBAL_VkAllocationCallbacks);
-    }
-    cgpu_delete(D->pPassTable);
 
     for (uint32_t i = 0; i < VK_MAX_MEMORY_TYPES; i++)
     {

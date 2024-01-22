@@ -143,7 +143,6 @@ CGPU_API void cgpu_compute_encoder_dispatch_vulkan(CGPUComputePassEncoderId enco
 CGPU_API void cgpu_cmd_end_compute_pass_vulkan(CGPUCommandBufferId cmd, CGPUComputePassEncoderId encoder);
 
 // Render CMDs
-CGPU_API CGPURenderPassEncoderId cgpu_cmd_begin_render_pass_vulkan(CGPUCommandBufferId cmd, const struct CGPURenderPassDescriptor* desc);
 CGPU_API CGPURenderPassEncoderId cgpu_cmd_begin_render_pass2_vulkan(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info);
 CGPU_API void cgpu_render_encoder_set_shading_rate_vulkan(CGPURenderPassEncoderId encoder, ECGPUShadingRate shading_rate, ECGPUShadingRateCombiner post_rasterizer_rate, ECGPUShadingRateCombiner final_rate);
 CGPU_API void cgpu_render_encoder_bind_descriptor_set_vulkan(CGPURenderPassEncoderId encoder, CGPUDescriptorSetId set);
@@ -275,8 +274,6 @@ typedef struct CGPUDevice_Vulkan {
     void* pExternalMemoryVmaPoolNexts[VK_MAX_MEMORY_TYPES];
     // struct VmaPool_T* pDedicatedAllocationVmaPools[VK_MAX_MEMORY_TYPES];
     struct VolkDeviceTable mVkDeviceTable;
-    // Created renderpass table
-    struct CGPUVkPassTable* pPassTable;
     uint32_t next_shared_id;
 } CGPUDevice_Vulkan;
 
