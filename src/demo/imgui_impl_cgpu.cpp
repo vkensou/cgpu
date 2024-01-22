@@ -682,7 +682,7 @@ static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)
     CGPUResourceBarrierDescriptor barrier_desc0 = { .texture_barriers = &draw_barrier, .texture_barriers_count = 1 };
     cgpu_cmd_resource_barrier(wd->Command, &barrier_desc0);
 
-    const CGPUClearValue2 clearColor2 = {
+    const CGPUClearValue clearColor = {
         .color = { 0.f, 0.f, 0.f, 1.f },
         .is_color = true,
     };
@@ -691,7 +691,7 @@ static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)
         .render_pass = v->RenderPass,
         .framebuffer = wd->Framebuffers[wd->FrameIndex],
         .clear_value_count = 1,
-        .clear_values = &clearColor2,
+        .clear_values = &clearColor,
     };
 
     CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass(wd->Command, &begin_info);

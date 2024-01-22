@@ -350,19 +350,12 @@ CGPU_API void cgpu_cmd_end_compute_pass(CGPUCommandBufferId cmd, CGPUComputePass
 typedef void (*CGPUProcCmdEndComputePass)(CGPUCommandBufferId cmd, CGPUComputePassEncoderId encoder);
 
 // Render Pass
-typedef struct CGPUClearValue2
-{
-    float color[4];
-    float depth;
-    uint32_t stencil;
-    bool is_color;
-} CGPUClearValue2;
 typedef struct CGPUBeginRenderPassInfo
 {
     CGPURenderPassId render_pass;
     CGPUFramebufferId framebuffer;
     uint32_t clear_value_count;
-    const CGPUClearValue2* clear_values;
+    const struct CGPUClearValue* clear_values;
 } CGPUBeginRenderPassInfo;
 CGPU_API CGPURenderPassEncoderId cgpu_cmd_begin_render_pass(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info);
 typedef CGPURenderPassEncoderId(*CGPUProcCmdBeginRenderPass)(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info);
@@ -965,34 +958,13 @@ typedef struct CGPUDescriptorData {
     uint32_t count;
 } CGPUDescriptorData;
 
-typedef union CGPUClearValue
+typedef struct CGPUClearValue
 {
-    struct
-    {
-        float r;
-        float g;
-        float b;
-        float a;
-    };
-    struct
-    {
-        float depth;
-        uint32_t stencil;
-    };
+    float color[4];
+    float depth;
+    uint8_t stencil;
+    bool is_color;
 } CGPUClearValue;
-
-static const CGPUClearValue fastclear_0000 = {
-    { 0.f, 0.f, 0.f, 0.f }
-};
-static const CGPUClearValue fastclear_0001 = {
-    { 0.f, 0.f, 0.f, 1.f }
-};
-static const CGPUClearValue fastclear_1110 = {
-    { 1.f, 1.f, 1.f, 1.f }
-};
-static const CGPUClearValue fastclear_1111 = {
-    { 1.f, 1.f, 1.f, 1.f }
-};
 
 typedef struct CGPUSwapChain {
     CGPUDeviceId device;
@@ -1203,8 +1175,6 @@ typedef struct CGPUSwapChainDescriptor {
     bool enable_vsync;
     /// We can toggle to using FLIP model if app desires
     bool use_flip_swap_effect;
-    /// Clear Value.
-    float clear_value[4];
     /// format
     ECGPUFormat format;
 } CGPUSwapChainDescriptor;
@@ -1535,8 +1505,6 @@ typedef struct CGPUTextureDescriptor {
     const void* native_handle;
     /// Texture creation flags (decides memory allocation strategy, sharing access,...)
     CGPUTextureCreationFlags flags;
-    /// Optimized clear value (recommended to use this same value when clearing the rendertarget)
-    CGPUClearValue clear_value;
     /// Width
     uint64_t width;
     /// Height

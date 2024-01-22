@@ -277,7 +277,7 @@ struct RenderWindow
 		CGPUResourceBarrierDescriptor barrier_desc0 = { .texture_barriers = &draw_barrier, .texture_barriers_count = 1 };
 		cgpu_cmd_resource_barrier(cmd, &barrier_desc0);
 
-		const CGPUClearValue2 clearColor2 = {
+		const CGPUClearValue clearColor = {
 			.color = { 0.f, 0.f, 0.f, 1.f },
 			.is_color = true,
 		};
@@ -286,7 +286,7 @@ struct RenderWindow
 			.render_pass = this->render_pass,
 			.framebuffer = this->swapchain_framebuffer[current_swapchain_index],
 			.clear_value_count = 1,
-			.clear_values = &clearColor2,
+			.clear_values = &clearColor,
 		};
 
 		CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass(cmd, &begin_info);
