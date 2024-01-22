@@ -1827,7 +1827,7 @@ void cgpu_cmd_end_compute_pass_vulkan(CGPUCommandBufferId cmd, CGPUComputePassEn
 }
 
 // Render CMDs
-CGPURenderPassEncoderId cgpu_cmd_begin_render_pass2_vulkan(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info)
+CGPURenderPassEncoderId cgpu_cmd_begin_render_pass_vulkan(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info)
 {
     CGPUCommandBuffer_Vulkan* Cmd = (CGPUCommandBuffer_Vulkan*)cmd;
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)cmd->device;

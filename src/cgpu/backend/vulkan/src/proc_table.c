@@ -118,7 +118,7 @@ const CGPUProcTable tbl_vk = {
     .cmd_end_compute_pass = &cgpu_cmd_end_compute_pass_vulkan,
 
     // Render CMDs
-    .cmd_begin_render_pass2 = &cgpu_cmd_begin_render_pass2_vulkan,
+    .cmd_begin_render_pass = &cgpu_cmd_begin_render_pass_vulkan,
     .render_encoder_set_shading_rate = &cgpu_render_encoder_set_shading_rate_vulkan,
     .render_encoder_bind_descriptor_set = cgpu_render_encoder_bind_descriptor_set_vulkan,
     .render_encoder_bind_pipeline = &cgpu_render_encoder_bind_pipeline_vulkan,

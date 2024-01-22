@@ -711,7 +711,7 @@ static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)
         .clear_values = &clearColor2,
     };
 
-    CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass2(wd->Command, &begin_info);
+    CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass(wd->Command, &begin_info);
 
     ImGui_ImplCGPU_RenderDrawData(viewport->DrawData, rp_encoder, v->RootSig, v->Pipeline);
 

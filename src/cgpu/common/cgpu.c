@@ -854,13 +854,13 @@ void cgpu_cmd_end_compute_pass(CGPUCommandBufferId cmd, CGPUComputePassEncoderId
 }
 
 // Render CMDs
-CGPURenderPassEncoderId cgpu_cmd_begin_render_pass2(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info)
+CGPURenderPassEncoderId cgpu_cmd_begin_render_pass(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info)
 {
     cgpu_assert(cmd != CGPU_NULLPTR && "fatal: call on NULL cmdbuffer!");
     cgpu_assert(cmd->device != CGPU_NULLPTR && "fatal: call on NULL device!");
-    const CGPUProcCmdBeginRenderPass2 fn_begin_render_pass2 = cmd->device->proc_table_cache->cmd_begin_render_pass2;
-    cgpu_assert(fn_begin_render_pass2 && "cmd_begin_render_pass2 Proc Missing!");
-    CGPURenderPassEncoderId ecd = (CGPURenderPassEncoderId)fn_begin_render_pass2(cmd, begin_info);
+    const CGPUProcCmdBeginRenderPass fn_begin_render_pass = cmd->device->proc_table_cache->cmd_begin_render_pass;
+    cgpu_assert(fn_begin_render_pass && "cmd_begin_render_pass Proc Missing!");
+    CGPURenderPassEncoderId ecd = (CGPURenderPassEncoderId)fn_begin_render_pass(cmd, begin_info);
     CGPUCommandBuffer* Cmd = (CGPUCommandBuffer*)cmd;
     Cmd->current_dispatch = CGPU_PIPELINE_TYPE_GRAPHICS;
     return ecd;

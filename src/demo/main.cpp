@@ -306,7 +306,7 @@ struct RenderWindow
 			.clear_values = &clearColor2,
 		};
 
-		CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass2(cmd, &begin_info);
+		CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass(cmd, &begin_info);
 
 		cgpu_render_encoder_set_viewport(rp_encoder,
 			0.0f, 0.0f,
