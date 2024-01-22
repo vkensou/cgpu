@@ -1215,26 +1215,18 @@ typedef struct CGPUComputePassDescriptor {
 
 // caution: this must be a restrict flatten-POD struct (no array pointer, no c-str, ...) cause we directly hash it in cgpux.hpp
 typedef struct CGPUColorAttachment {
-    CGPUTextureViewId view;
-    CGPUTextureViewId resolve_view;
     ECGPUFormat format;
     ECGPULoadAction load_action;
     ECGPUStoreAction store_action;
-    CGPUClearValue clear_color;
 } CGPUColorAttachment;
 
 // caution: this must be a restrict flatten-POD struct (no array pointer, no c-str, ...) cause we directly hash it in cgpux.hpp
 typedef struct CGPUDepthStencilAttachment {
-    CGPUTextureViewId view;
     ECGPUFormat format;
     ECGPULoadAction depth_load_action;
     ECGPUStoreAction depth_store_action;
-    float clear_depth;
-    uint8_t write_depth;
     ECGPULoadAction stencil_load_action;
     ECGPUStoreAction stencil_store_action;
-    uint32_t clear_stencil;
-    uint8_t write_stencil;
 } CGPUDepthStencilAttachment;
 
 typedef struct CGPURenderPassDescriptor {

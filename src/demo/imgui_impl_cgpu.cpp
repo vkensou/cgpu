@@ -682,26 +682,9 @@ static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)
     CGPUResourceBarrierDescriptor barrier_desc0 = { .texture_barriers = &draw_barrier, .texture_barriers_count = 1 };
     cgpu_cmd_resource_barrier(wd->Command, &barrier_desc0);
 
-    const CGPUClearValue clearColor = {
-    { 0.f, 0.f, 0.f, 1.f }
-    };
-
-    CGPUColorAttachment screen_attachment = {
-        .view = back_buffer_view,
-        .load_action = CGPU_LOAD_ACTION_CLEAR,
-        .store_action = CGPU_STORE_ACTION_STORE,
-        .clear_color = clearColor,
-    };
-    CGPURenderPassDescriptor rp_desc = {
-        .sample_count = CGPU_SAMPLE_COUNT_1,
-        .color_attachments = &screen_attachment,
-        .depth_stencil = CGPU_NULLPTR,
-        .render_target_count = 1,
-    };
-
     const CGPUClearValue2 clearColor2 = {
-    .color = { 0.f, 0.f, 0.f, 1.f },
-    .is_color = true,
+        .color = { 0.f, 0.f, 0.f, 1.f },
+        .is_color = true,
     };
 
     CGPUBeginRenderPassInfo begin_info = {
