@@ -28,6 +28,8 @@ DEFINE_CGPU_OBJECT(CGPUDevice)
 DEFINE_CGPU_OBJECT(CGPUQueue)
 DEFINE_CGPU_OBJECT(CGPUSemaphore)
 DEFINE_CGPU_OBJECT(CGPUFence)
+DEFINE_CGPU_OBJECT(CGPURenderPass)
+DEFINE_CGPU_OBJECT(CGPUFramebuffer)
 DEFINE_CGPU_OBJECT(CGPUCommandPool)
 DEFINE_CGPU_OBJECT(CGPUCommandBuffer)
 DEFINE_CGPU_OBJECT(CGPUSwapChain)
@@ -241,6 +243,16 @@ typedef void (*CGPUProcQueueUnmapPackedMips)(CGPUQueueId queue, const struct CGP
 CGPU_API void cgpu_free_queue(CGPUQueueId queue);
 typedef void (*CGPUProcFreeQueue)(CGPUQueueId queue);
 
+// RenderPass APIs
+CGPU_API CGPURenderPassId cgpu_create_render_pass(CGPUDeviceId device, const struct CGPURenderPassDescriptor* desc);
+typedef CGPURenderPassId (*CGPUProcCreateRenderPass)(CGPUDeviceId device, const struct CGPURenderPassDescriptor* desc);
+CGPU_API CGPUFramebufferId cgpu_create_framebuffer(CGPUDeviceId device, const struct CGPUFramebufferDescriptor* desc);
+typedef CGPUFramebufferId(*CGPUProcCreateFramebuffer)(CGPUDeviceId device, const struct CGPUFramebufferDescriptor* desc);
+CGPU_API void cgpu_free_render_pass(CGPURenderPassId render_pass);
+typedef void (*CGPUProcFreeRenderPass)(CGPURenderPassId render_pass);
+CGPU_API void cgpu_free_framebuffer(CGPUFramebufferId framebuffer);
+typedef void (*CGPUProcFreeFramebuffer)(CGPUFramebufferId framebuffer);
+
 // Command APIs
 CGPU_API CGPUCommandPoolId cgpu_create_command_pool(CGPUQueueId queue, const struct CGPUCommandPoolDescriptor* desc);
 typedef CGPUCommandPoolId (*CGPUProcCreateCommandPool)(CGPUQueueId queue, const struct CGPUCommandPoolDescriptor* desc);
@@ -338,8 +350,15 @@ CGPU_API void cgpu_cmd_end_compute_pass(CGPUCommandBufferId cmd, CGPUComputePass
 typedef void (*CGPUProcCmdEndComputePass)(CGPUCommandBufferId cmd, CGPUComputePassEncoderId encoder);
 
 // Render Pass
-CGPU_API CGPURenderPassEncoderId cgpu_cmd_begin_render_pass(CGPUCommandBufferId cmd, const struct CGPURenderPassDescriptor* desc);
-typedef CGPURenderPassEncoderId (*CGPUProcCmdBeginRenderPass)(CGPUCommandBufferId cmd, const struct CGPURenderPassDescriptor* desc);
+typedef struct CGPUBeginRenderPassInfo
+{
+    CGPURenderPassId render_pass;
+    CGPUFramebufferId framebuffer;
+    uint32_t clear_value_count;
+    const struct CGPUClearValue* clear_values;
+} CGPUBeginRenderPassInfo;
+CGPU_API CGPURenderPassEncoderId cgpu_cmd_begin_render_pass(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info);
+typedef CGPURenderPassEncoderId(*CGPUProcCmdBeginRenderPass)(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info);
 CGPU_API void cgpu_render_encoder_set_shading_rate(CGPURenderPassEncoderId encoder, ECGPUShadingRate shading_rate, ECGPUShadingRateCombiner post_rasterizer_rate, ECGPUShadingRateCombiner final_rate);
 typedef void (*CGPUProcRenderEncoderSetShadingRate)(CGPURenderPassEncoderId encoder, ECGPUShadingRate shading_rate, ECGPUShadingRateCombiner post_rasterizer_rate, ECGPUShadingRateCombiner final_rate);
 CGPU_API void cgpu_render_encoder_bind_descriptor_set(CGPURenderPassEncoderId encoder, CGPUDescriptorSetId set);
@@ -528,6 +547,12 @@ typedef struct CGPUProcTable {
     const CGPUProcQueueMapPackedMips queue_map_packed_mips;
     const CGPUProcQueueUnmapPackedMips queue_unmap_packed_mips;
     const CGPUProcFreeQueue free_queue;
+
+    // RenderPass APIs
+    const CGPUProcCreateRenderPass create_render_pass;
+    const CGPUProcCreateFramebuffer create_framebuffer;
+    const CGPUProcFreeRenderPass free_render_pass;
+    const CGPUProcFreeFramebuffer free_framebuffer;
 
     // Command APIs
     const CGPUProcCreateCommandPool create_command_pool;
@@ -933,34 +958,13 @@ typedef struct CGPUDescriptorData {
     uint32_t count;
 } CGPUDescriptorData;
 
-typedef union CGPUClearValue
+typedef struct CGPUClearValue
 {
-    struct
-    {
-        float r;
-        float g;
-        float b;
-        float a;
-    };
-    struct
-    {
-        float depth;
-        uint32_t stencil;
-    };
+    float color[4];
+    float depth;
+    uint8_t stencil;
+    bool is_color;
 } CGPUClearValue;
-
-static const CGPUClearValue fastclear_0000 = {
-    { 0.f, 0.f, 0.f, 0.f }
-};
-static const CGPUClearValue fastclear_0001 = {
-    { 0.f, 0.f, 0.f, 1.f }
-};
-static const CGPUClearValue fastclear_1110 = {
-    { 1.f, 1.f, 1.f, 1.f }
-};
-static const CGPUClearValue fastclear_1111 = {
-    { 1.f, 1.f, 1.f, 1.f }
-};
 
 typedef struct CGPUSwapChain {
     CGPUDeviceId device;
@@ -1171,8 +1175,6 @@ typedef struct CGPUSwapChainDescriptor {
     bool enable_vsync;
     /// We can toggle to using FLIP model if app desires
     bool use_flip_swap_effect;
-    /// Clear Value.
-    float clear_value[4];
     /// format
     ECGPUFormat format;
 } CGPUSwapChainDescriptor;
@@ -1183,24 +1185,18 @@ typedef struct CGPUComputePassDescriptor {
 
 // caution: this must be a restrict flatten-POD struct (no array pointer, no c-str, ...) cause we directly hash it in cgpux.hpp
 typedef struct CGPUColorAttachment {
-    CGPUTextureViewId view;
-    CGPUTextureViewId resolve_view;
+    ECGPUFormat format;
     ECGPULoadAction load_action;
     ECGPUStoreAction store_action;
-    CGPUClearValue clear_color;
 } CGPUColorAttachment;
 
 // caution: this must be a restrict flatten-POD struct (no array pointer, no c-str, ...) cause we directly hash it in cgpux.hpp
 typedef struct CGPUDepthStencilAttachment {
-    CGPUTextureViewId view;
+    ECGPUFormat format;
     ECGPULoadAction depth_load_action;
     ECGPUStoreAction depth_store_action;
-    float clear_depth;
-    uint8_t write_depth;
     ECGPULoadAction stencil_load_action;
     ECGPUStoreAction stencil_store_action;
-    uint32_t clear_stencil;
-    uint8_t write_stencil;
 } CGPUDepthStencilAttachment;
 
 typedef struct CGPURenderPassDescriptor {
@@ -1211,6 +1207,30 @@ typedef struct CGPURenderPassDescriptor {
     const CGPUDepthStencilAttachment* depth_stencil;
     uint32_t render_target_count;
 } CGPURenderPassDescriptor;
+
+typedef struct CGPURenderPass {
+    CGPUDeviceId device;
+} CGPURenderPass;
+
+typedef struct CGPUFramebufferDescriptor {
+    const char8_t* name;
+    CGPURenderPassId renderpass;
+    uint32_t attachment_count;
+    const CGPUTextureViewId* attachments;
+    uint32_t width;
+    uint32_t height;
+    uint32_t layers;
+} CGPUFramebufferDescriptor;
+
+typedef struct CGPUFramebufferInfo {
+    uint32_t width;
+    uint32_t height;
+} CGPUFramebufferInfo;
+
+typedef struct CGPUFramebuffer {
+    CGPUDeviceId device;
+    const CGPUFramebufferInfo* info;
+} CGPUFramebuffer;
 
 typedef struct CGPURootSignaturePoolDescriptor {
     const char8_t* name;
@@ -1324,17 +1344,13 @@ typedef struct CGPURenderPipelineDescriptor {
     const CGPUBlendStateDescriptor* blend_state;
     const CGPUDepthStateDescriptor* depth_state;
     const CGPURasterizerStateDescriptor* rasterizer_state;
-
     // caution: if any of these platten parameters have been changed, the hasher in cgpux.hpp must be updated
 
-    const ECGPUFormat* color_formats;
+    CGPURenderPassId render_pass;
+    uint32_t subpass;
     uint32_t render_target_count;
     ECGPUSampleCount sample_count;
-    uint32_t sample_quality;
-    ECGPUSlotMask color_resolve_disable_mask;
-    ECGPUFormat depth_stencil_format;
     ECGPUPrimitiveTopology prim_topology;
-    bool enable_indirect_command;
 } CGPURenderPipelineDescriptor;
 
 typedef struct CGPUMemoryPoolDescriptor {
@@ -1484,8 +1500,6 @@ typedef struct CGPUTextureDescriptor {
     const void* native_handle;
     /// Texture creation flags (decides memory allocation strategy, sharing access,...)
     CGPUTextureCreationFlags flags;
-    /// Optimized clear value (recommended to use this same value when clearing the rendertarget)
-    CGPUClearValue clear_value;
     /// Width
     uint64_t width;
     /// Height

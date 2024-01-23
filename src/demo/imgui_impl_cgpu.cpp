@@ -15,6 +15,7 @@ struct ImGui_ImplCGPU_Window
     int                 Height;
     CGPUSwapChainId     Swapchain;
     CGPUTextureViewId*  Backbuffers;
+    CGPUFramebufferId*  Framebuffers;
     CGPUSurfaceId       Surface;
     CGPUCommandPoolId   CommandPool;
     CGPUCommandBufferId Command;
@@ -517,7 +518,7 @@ void ImGui_ImplCGPU_DestroyAllViewportsRenderBuffers(CGPUDeviceId device)
 // If you are new to dear imgui or creating a new binding for dear imgui, it is recommended that you completely ignore this section first..
 //--------------------------------------------------------------------------------------------------------
 
-static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQueueId present_queue, uint32_t image_count, void* windowHandle, uint32_t width, uint32_t height)
+static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQueueId present_queue, CGPURenderPassId render_pass, uint32_t image_count, void* windowHandle, uint32_t width, uint32_t height)
 {
     wd->Surface = cgpu_surface_from_native_view(device, windowHandle);
 
@@ -537,6 +538,7 @@ static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQue
     wd->ImageCount = wd->Swapchain->buffer_count;
     wd->FrameIndex = 0xffffffff;
     wd->Backbuffers = (CGPUTextureViewId*)IM_ALLOC(sizeof(CGPUTextureViewId) * wd->ImageCount);
+    wd->Framebuffers = (CGPUFramebufferId*)IM_ALLOC(sizeof(CGPUFramebufferId) * wd->ImageCount);
     for (int i = 0; i < wd->ImageCount; ++i)
     {
         CGPUTextureViewDescriptor view_desc = {
@@ -548,6 +550,16 @@ static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQue
             .array_layer_count = 1,
         };
         wd->Backbuffers[i] = cgpu_create_texture_view(device, &view_desc);
+
+        CGPUFramebufferDescriptor framebuffer_desc = {
+            .renderpass = render_pass,
+            .attachment_count = 1,
+            .attachments = &wd->Backbuffers[i],
+            .width = width,
+            .height = height,
+            .layers = 1,
+        };
+        wd->Framebuffers[i] = cgpu_create_framebuffer(device, &framebuffer_desc);
     }
 
     wd->SurfaceFormat = wd->Swapchain->back_buffers[0]->info->format;
@@ -564,6 +576,14 @@ static void FreeWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device)
         }
         IM_FREE(wd->Backbuffers);
         wd->Backbuffers = nullptr;
+    }
+    if (wd->Framebuffers) {
+        for (int i = 0; i < wd->ImageCount; ++i)
+        {
+            cgpu_free_framebuffer(wd->Framebuffers[i]);
+        }
+        IM_FREE(wd->Framebuffers);
+        wd->Framebuffers = nullptr;
     }
     if (wd->Swapchain) { cgpu_free_swapchain(wd->Swapchain); wd->Swapchain = nullptr; }
     if (wd->Surface) { cgpu_free_surface(device, wd->Surface); wd->Surface = nullptr; }
@@ -585,7 +605,7 @@ static void ImGui_ImplCGPU_CreateWindow(ImGuiViewport* viewport)
     wd->UseDynamicRendering = true;
     vd->WindowOwned = true;
 
-    CreateWindow(wd, v->Device, v->PresentQueue, v->ImageCount, viewport->PlatformHandleRaw, (uint32_t)viewport->WorkSize.x, (uint32_t)viewport->WorkSize.y);
+    CreateWindow(wd, v->Device, v->PresentQueue, v->RenderPass, v->ImageCount, viewport->PlatformHandleRaw, (uint32_t)viewport->WorkSize.x, (uint32_t)viewport->WorkSize.y);
 
     wd->CommandPool = cgpu_create_command_pool(v->PresentQueue, CGPU_NULLPTR);
     CGPUCommandBufferDescriptor cmd_desc = { .is_secondary = false };
@@ -629,7 +649,7 @@ static void ImGui_ImplCGPU_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)
 
     ImGui_ImplCGPU_Window* wd = &vd->Window;
     FreeWindow(wd, v->Device);
-    CreateWindow(wd, v->Device, v->PresentQueue, v->ImageCount, viewport->PlatformHandleRaw, (uint32_t)viewport->WorkSize.x, (uint32_t)viewport->WorkSize.y);
+    CreateWindow(wd, v->Device, v->PresentQueue, v->RenderPass, v->ImageCount, viewport->PlatformHandleRaw, (uint32_t)viewport->WorkSize.x, (uint32_t)viewport->WorkSize.y);
 }
 
 static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)
@@ -663,22 +683,18 @@ static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)
     cgpu_cmd_resource_barrier(wd->Command, &barrier_desc0);
 
     const CGPUClearValue clearColor = {
-    { 0.f, 0.f, 0.f, 1.f }
+        .color = { 0.f, 0.f, 0.f, 1.f },
+        .is_color = true,
     };
 
-    CGPUColorAttachment screen_attachment = {
-        .view = back_buffer_view,
-        .load_action = CGPU_LOAD_ACTION_CLEAR,
-        .store_action = CGPU_STORE_ACTION_STORE,
-        .clear_color = clearColor,
+    CGPUBeginRenderPassInfo begin_info = {
+        .render_pass = v->RenderPass,
+        .framebuffer = wd->Framebuffers[wd->FrameIndex],
+        .clear_value_count = 1,
+        .clear_values = &clearColor,
     };
-    CGPURenderPassDescriptor rp_desc = {
-        .sample_count = CGPU_SAMPLE_COUNT_1,
-        .color_attachments = &screen_attachment,
-        .depth_stencil = CGPU_NULLPTR,
-        .render_target_count = 1,
-    };
-    CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass(wd->Command, &rp_desc);
+
+    CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass(wd->Command, &begin_info);
 
     ImGui_ImplCGPU_RenderDrawData(viewport->DrawData, rp_encoder, v->RootSig, v->Pipeline);
 

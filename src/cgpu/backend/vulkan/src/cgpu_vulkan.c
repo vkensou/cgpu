@@ -5,30 +5,6 @@
 
 #include <string.h>
 
-static void VkUtil_FindOrCreateFrameBuffer(const CGPUDevice_Vulkan* D, const struct VkUtil_FramebufferDesc* pDesc, VkFramebuffer* ppFramebuffer)
-{
-    VkFramebuffer found = VkUtil_FramebufferTableTryFind(D->pPassTable, pDesc);
-    if (found != VK_NULL_HANDLE)
-    {
-        *ppFramebuffer = found;
-        return;
-    }
-    cgpu_assert(VK_NULL_HANDLE != D->pVkDevice);
-    VkFramebufferCreateInfo add_info = {
-        .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-        .pNext = NULL,
-        .flags = 0,
-        .renderPass = pDesc->pRenderPass,
-        .attachmentCount = pDesc->mAttachmentCount,
-        .pAttachments = pDesc->pImageViews,
-        .width = pDesc->mWidth,
-        .height = pDesc->mHeight,
-        .layers = pDesc->mLayers,
-    };
-    CHECK_VKRESULT(vkCreateFramebuffer(D->pVkDevice, &add_info, GLOBAL_VkAllocationCallbacks, ppFramebuffer));
-    VkUtil_FramebufferTableAdd(D->pPassTable, pDesc, *ppFramebuffer);
-}
-
 // TODO: recycle cached render passes
 FORCEINLINE static void VkUtil_FreeFramebuffer(CGPUDevice_Vulkan* D, VkFramebuffer pFramebuffer)
 {
@@ -40,112 +16,6 @@ FORCEINLINE static void VkUtil_FreeFramebuffer(CGPUDevice_Vulkan* D, VkFramebuff
 FORCEINLINE static void VkUtil_FreeRenderPass(CGPUDevice_Vulkan* D, VkRenderPass pRenderPass)
 {
     D->mVkDeviceTable.vkDestroyRenderPass(D->pVkDevice, pRenderPass, GLOBAL_VkAllocationCallbacks);
-}
-
-static void VkUtil_FindOrCreateRenderPass(const CGPUDevice_Vulkan* D, const VkUtil_RenderPassDesc* pDesc, VkRenderPass* ppRenderPass)
-{
-    VkRenderPass found = VkUtil_RenderPassTableTryFind(D->pPassTable, pDesc);
-    if (found != VK_NULL_HANDLE)
-    {
-        *ppRenderPass = found;
-        return;
-    }
-    cgpu_assert(VK_NULL_HANDLE != D->pVkDevice);
-    uint32_t colorAttachmentCount = pDesc->mColorAttachmentCount;
-    uint32_t colorResolveAttachmentCount = 0;
-    uint32_t depthAttachmentCount = (pDesc->mDepthStencilFormat != CGPU_FORMAT_UNDEFINED) ? 1 : 0;
-    VkAttachmentDescription attachments[2 * CGPU_MAX_MRT_COUNT + 1] = { 0 };
-    VkAttachmentReference color_attachment_refs[CGPU_MAX_MRT_COUNT] = { 0 };
-    VkAttachmentReference color_resolve_attachment_refs[CGPU_MAX_MRT_COUNT] = { 0 };
-    VkAttachmentReference depth_stencil_attachment_ref[1] = { 0 };
-    VkSampleCountFlagBits sample_count = VkUtil_SampleCountTranslateToVk(pDesc->mSampleCount);
-    // Fill out attachment descriptions and references
-    uint32_t ssidx = 0;
-    // Color
-    for (uint32_t i = 0; i < colorAttachmentCount; i++)
-    {
-        // descriptions
-        attachments[ssidx].flags = 0;
-        attachments[ssidx].format = (VkFormat)VkUtil_FormatTranslateToVk(pDesc->pColorFormats[i]);
-        attachments[ssidx].samples = sample_count;
-        attachments[ssidx].loadOp = gVkAttachmentLoadOpTranslator[pDesc->pLoadActionsColor[i]];
-        attachments[ssidx].storeOp = gVkAttachmentStoreOpTranslator[pDesc->pStoreActionsColor[i]];
-        attachments[ssidx].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        attachments[ssidx].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        // references
-        color_attachment_refs[i].attachment = ssidx;
-        color_attachment_refs[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        ssidx++;
-    }
-    // Color Resolve
-    for (uint32_t i = 0; i < colorAttachmentCount; i++)
-    {
-        if (pDesc->pResolveMasks[i])
-        {
-            attachments[ssidx].flags = 0;
-            attachments[ssidx].format = (VkFormat)VkUtil_FormatTranslateToVk(pDesc->pColorFormats[i]);
-            attachments[ssidx].samples = VK_SAMPLE_COUNT_1_BIT;
-            attachments[ssidx].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-            attachments[ssidx].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-            attachments[ssidx].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            attachments[ssidx].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            // references
-            color_resolve_attachment_refs[i].attachment = ssidx;
-            color_resolve_attachment_refs[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            ssidx++;
-            colorResolveAttachmentCount++;
-        }
-        else
-        {
-            color_resolve_attachment_refs[i].attachment = VK_ATTACHMENT_UNUSED;
-        }
-    }
-    // Depth stencil
-    if (depthAttachmentCount > 0)
-    {
-        attachments[ssidx].flags = 0;
-        attachments[ssidx].format = (VkFormat)VkUtil_FormatTranslateToVk(pDesc->mDepthStencilFormat);
-        attachments[ssidx].samples = sample_count;
-        attachments[ssidx].loadOp = gVkAttachmentLoadOpTranslator[pDesc->mLoadActionDepth];
-        attachments[ssidx].storeOp = gVkAttachmentStoreOpTranslator[pDesc->mStoreActionDepth];
-        attachments[ssidx].stencilLoadOp = gVkAttachmentLoadOpTranslator[pDesc->mLoadActionStencil];
-        attachments[ssidx].stencilStoreOp = gVkAttachmentStoreOpTranslator[pDesc->mStoreActionStencil];
-        attachments[ssidx].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        attachments[ssidx].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        depth_stencil_attachment_ref[0].attachment = ssidx;
-        depth_stencil_attachment_ref[0].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        ssidx++;
-    }
-    uint32_t attachment_count = colorAttachmentCount;
-    attachment_count += depthAttachmentCount;
-    attachment_count += colorResolveAttachmentCount;
-    void* render_pass_next = NULL;
-    // Fill Description
-    VkSubpassDescription subpass = {
-        .flags = 0,
-        .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-        .inputAttachmentCount = 0,
-        .pInputAttachments = NULL,
-        .colorAttachmentCount = colorAttachmentCount,
-        .pColorAttachments = color_attachment_refs,
-        .pResolveAttachments = colorResolveAttachmentCount ? color_resolve_attachment_refs : VK_NULL_HANDLE,
-        .pDepthStencilAttachment = (depthAttachmentCount > 0) ? depth_stencil_attachment_ref : VK_NULL_HANDLE,
-        .preserveAttachmentCount = 0,
-        .pPreserveAttachments = NULL
-    };
-    VkRenderPassCreateInfo create_info = {
-        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-        .pNext = render_pass_next,
-        .flags = 0,
-        .attachmentCount = attachment_count,
-        .pAttachments = attachments,
-        .subpassCount = 1,
-        .pSubpasses = &subpass,
-        .dependencyCount = 0,
-        .pDependencies = NULL
-    };
-    CHECK_VKRESULT(D->mVkDeviceTable.vkCreateRenderPass(D->pVkDevice, &create_info, GLOBAL_VkAllocationCallbacks, ppRenderPass));
-    VkUtil_RenderPassTableAdd(D->pPassTable, pDesc, *ppRenderPass);
 }
 
 void cgpu_query_instance_features_vulkan(CGPUInstanceId instance, struct CGPUInstanceFeatures* features)
@@ -1033,26 +903,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
         .blendConstants = {0.0f,0.0f,0.0f,0.0f},
     };
     // Create a stub render pass
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    cgpu_assert(desc->render_target_count >= 0);
-    VkUtil_RenderPassDesc rp_desc = {
-        .mColorAttachmentCount = desc->render_target_count,
-        .mSampleCount = desc->sample_count,
-        .mDepthStencilFormat = desc->depth_stencil_format
-    };
-    for (uint32_t i = 0; i < desc->render_target_count; i++)
-    {
-        rp_desc.pColorFormats[i] = desc->color_formats[i];
-        if(desc->color_resolve_disable_mask & (CGPU_SLOT_0 << i))
-        {
-            rp_desc.pResolveMasks[i] = false;
-        }
-        else if(rp_desc.mSampleCount != CGPU_SAMPLE_COUNT_1)
-        {
-            rp_desc.pResolveMasks[i] = true;
-        }
-    }
-    VkUtil_FindOrCreateRenderPass(D, &rp_desc, &render_pass);
+    CGPURenderPass_Vulkan* R = (CGPURenderPass_Vulkan*)desc->render_pass;
     VkGraphicsPipelineCreateInfo pipelineInfo = {
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
         .stageCount = stage_count,
@@ -1066,8 +917,8 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
         .pColorBlendState = &cbs,
         .pDynamicState = &dys,
         .layout = RS->pPipelineLayout,
-        .renderPass = render_pass,
-        .subpass = 0,
+        .renderPass = R->pVkRenderPass,
+        .subpass = desc->subpass,
         .basePipelineHandle = VK_NULL_HANDLE,
     };
     VkResult createResult = D->mVkDeviceTable.vkCreateGraphicsPipelines(D->pVkDevice,
@@ -1341,6 +1192,160 @@ void cgpu_free_queue_vulkan(CGPUQueueId queue)
     }
 #endif
     cgpu_free((void*)queue);
+}
+
+CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struct CGPURenderPassDescriptor* desc)
+{
+    CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
+    CGPURenderPass_Vulkan* R = cgpu_calloc(1, sizeof(CGPURenderPass_Vulkan));
+    cgpu_assert(VK_NULL_HANDLE != D->pVkDevice);
+    uint32_t colorAttachmentCount = desc->render_target_count;
+    uint32_t colorResolveAttachmentCount = 0;
+    uint32_t depthAttachmentCount = (desc->depth_stencil != NULL && desc->depth_stencil->format != CGPU_FORMAT_UNDEFINED) ? 1 : 0;
+    VkAttachmentDescription attachments[CGPU_MAX_MRT_COUNT + 1] = { 0 };
+    VkAttachmentReference color_attachment_refs[CGPU_MAX_MRT_COUNT] = { 0 };
+    VkAttachmentReference color_resolve_attachment_refs[CGPU_MAX_MRT_COUNT] = { 0 };
+    VkAttachmentReference depth_stencil_attachment_ref[1] = { 0 };
+    VkSampleCountFlagBits sample_count = VkUtil_SampleCountTranslateToVk(desc->sample_count);
+    // Fill out attachment descriptions and references
+    uint32_t ssidx = 0;
+    // Color
+    for (uint32_t i = 0; i < colorAttachmentCount; i++)
+    {
+        // descriptions
+        attachments[ssidx].flags = 0;
+        attachments[ssidx].format = (VkFormat)VkUtil_FormatTranslateToVk(desc->color_attachments[i].format);
+        attachments[ssidx].samples = sample_count;
+        attachments[ssidx].loadOp = gVkAttachmentLoadOpTranslator[desc->color_attachments[i].load_action];
+        attachments[ssidx].storeOp = gVkAttachmentStoreOpTranslator[desc->color_attachments[i].store_action];
+        attachments[ssidx].initialLayout = desc->color_attachments[i].load_action == CGPU_LOAD_ACTION_LOAD ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[ssidx].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        // references
+        color_attachment_refs[i].attachment = ssidx;
+        color_attachment_refs[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        ssidx++;
+    }
+    // Color Resolve
+    //for (uint32_t i = 0; i < colorAttachmentCount; i++)
+    //{
+    //    if (desc->pResolveMasks[i])
+    //    {
+    //        attachments[ssidx].flags = 0;
+    //        attachments[ssidx].format = (VkFormat)VkUtil_FormatTranslateToVk(desc->pColorFormats[i]);
+    //        attachments[ssidx].samples = VK_SAMPLE_COUNT_1_BIT;
+    //        attachments[ssidx].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    //        attachments[ssidx].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    //        attachments[ssidx].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    //        attachments[ssidx].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    //        // references
+    //        color_resolve_attachment_refs[i].attachment = ssidx;
+    //        color_resolve_attachment_refs[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    //        ssidx++;
+    //        colorResolveAttachmentCount++;
+    //    }
+    //    else
+    //    {
+    //        color_resolve_attachment_refs[i].attachment = VK_ATTACHMENT_UNUSED;
+    //    }
+    //}
+    // Depth stencil
+    if (depthAttachmentCount > 0)
+    {
+        attachments[ssidx].flags = 0;
+        attachments[ssidx].format = (VkFormat)VkUtil_FormatTranslateToVk(desc->depth_stencil->format);
+        attachments[ssidx].samples = sample_count;
+        attachments[ssidx].loadOp = gVkAttachmentLoadOpTranslator[desc->depth_stencil->depth_load_action];
+        attachments[ssidx].storeOp = gVkAttachmentStoreOpTranslator[desc->depth_stencil->depth_store_action];
+        attachments[ssidx].stencilLoadOp = gVkAttachmentLoadOpTranslator[desc->depth_stencil->stencil_load_action];
+        attachments[ssidx].stencilStoreOp = gVkAttachmentStoreOpTranslator[desc->depth_stencil->stencil_store_action];
+        attachments[ssidx].initialLayout = desc->depth_stencil->depth_load_action == CGPU_LOAD_ACTION_LOAD || desc->depth_stencil->stencil_load_action == CGPU_LOAD_ACTION_LOAD ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[ssidx].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depth_stencil_attachment_ref[0].attachment = ssidx;
+        depth_stencil_attachment_ref[0].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        ssidx++;
+    }
+    uint32_t attachment_count = colorAttachmentCount;
+    attachment_count += depthAttachmentCount;
+    attachment_count += colorResolveAttachmentCount;
+    void* render_pass_next = NULL;
+    // Fill Description
+    VkSubpassDescription subpass = {
+        .flags = 0,
+        .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+        .inputAttachmentCount = 0,
+        .pInputAttachments = NULL,
+        .colorAttachmentCount = colorAttachmentCount,
+        .pColorAttachments = color_attachment_refs,
+        .pResolveAttachments = VK_NULL_HANDLE,
+        .pDepthStencilAttachment = (depthAttachmentCount > 0) ? depth_stencil_attachment_ref : VK_NULL_HANDLE,
+        .preserveAttachmentCount = 0,
+        .pPreserveAttachments = NULL
+    };
+    VkRenderPassCreateInfo create_info = {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+        .pNext = render_pass_next,
+        .flags = 0,
+        .attachmentCount = attachment_count,
+        .pAttachments = attachments,
+        .subpassCount = 1,
+        .pSubpasses = &subpass,
+        .dependencyCount = 0,
+        .pDependencies = NULL
+    };
+    CHECK_VKRESULT(D->mVkDeviceTable.vkCreateRenderPass(D->pVkDevice, &create_info, GLOBAL_VkAllocationCallbacks, &R->pVkRenderPass));
+    return &R->super;
+}
+
+CGPUFramebufferId cgpu_create_framebuffer_vulkan(CGPUDeviceId device, const struct CGPUFramebufferDescriptor* desc)
+{
+    CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
+    CGPURenderPass_Vulkan* R = (CGPURenderPass_Vulkan*)desc->renderpass;
+    CGPUFramebuffer_Vulkan* F = cgpu_calloc_aligned(1, sizeof(CGPUFramebuffer_Vulkan) + sizeof(CGPUFramebufferInfo), _Alignof(CGPUFramebuffer_Vulkan));
+    CGPUFramebufferInfo* info = (CGPUFramebufferInfo*)(F + 1);
+    F->super.info = info;
+    info->width = desc->width;
+    info->height = desc->height;
+
+    cgpu_assert(VK_NULL_HANDLE != D->pVkDevice);
+    cgpu_assert(R && R->pVkRenderPass);
+
+    VkImageView imageViews[CGPU_MAX_MRT_COUNT + 1] = { 0 };
+    for (uint32_t i = 0; i < desc->attachment_count; ++i)
+    {
+        CGPUTextureView_Vulkan* t = (CGPUTextureView_Vulkan*)desc->attachments[i];
+        imageViews[i] = t->pVkRTVDSVDescriptor;
+    }
+
+    VkFramebufferCreateInfo add_info = {
+        .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+        .pNext = NULL,
+        .flags = 0,
+        .renderPass = R->pVkRenderPass,
+        .attachmentCount = desc->attachment_count,
+        .pAttachments = imageViews,
+        .width = desc->width,
+        .height = desc->height,
+        .layers = desc->layers,
+    };
+
+    CHECK_VKRESULT(D->mVkDeviceTable.vkCreateFramebuffer(D->pVkDevice, &add_info, GLOBAL_VkAllocationCallbacks, &F->pVkFramebuffer));
+    return &F->super;
+}
+void cgpu_free_render_pass_vulkan(CGPURenderPassId render_pass)
+{
+    CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)render_pass->device;
+    CGPURenderPass_Vulkan* R = (CGPURenderPass_Vulkan*)render_pass;
+    cgpu_assert(R->pVkRenderPass);
+    D->mVkDeviceTable.vkDestroyRenderPass(D->pVkDevice, R->pVkRenderPass, GLOBAL_VkAllocationCallbacks);
+    cgpu_free(R);
+}
+void cgpu_free_framebuffer_vulkan(CGPUFramebufferId framebuffer)
+{
+    CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)framebuffer->device;
+    CGPUFramebuffer_Vulkan* F = (CGPUFramebuffer_Vulkan*)framebuffer;
+    cgpu_assert(F->pVkFramebuffer);
+    D->mVkDeviceTable.vkDestroyFramebuffer(D->pVkDevice, F->pVkFramebuffer, GLOBAL_VkAllocationCallbacks);
+    cgpu_free_aligned(F, _Alignof(CGPUFramebuffer_Vulkan));
 }
 
 VkCommandPool allocate_transient_command_pool(CGPUDevice_Vulkan* D, CGPUQueueId queue)
@@ -1822,118 +1827,31 @@ void cgpu_cmd_end_compute_pass_vulkan(CGPUCommandBufferId cmd, CGPUComputePassEn
 }
 
 // Render CMDs
-CGPURenderPassEncoderId cgpu_cmd_begin_render_pass_vulkan(CGPUCommandBufferId cmd, const struct CGPURenderPassDescriptor* desc)
+CGPURenderPassEncoderId cgpu_cmd_begin_render_pass_vulkan(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info)
 {
     CGPUCommandBuffer_Vulkan* Cmd = (CGPUCommandBuffer_Vulkan*)cmd;
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)cmd->device;
-    // Find or create render pass
-    uint32_t Width, Height;
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    {
-        VkUtil_RenderPassDesc rpdesc = {
-            .mColorAttachmentCount = desc->render_target_count,
-            .mSampleCount = desc->sample_count,
-            .mDepthStencilFormat =
-                desc->depth_stencil ?
-                (desc->depth_stencil->view ? desc->depth_stencil->view->info.format : CGPU_FORMAT_UNDEFINED) :
-                CGPU_FORMAT_UNDEFINED,
-            .mLoadActionDepth =
-                desc->depth_stencil ? desc->depth_stencil->depth_load_action : CGPU_LOAD_ACTION_DONTCARE,
-            .mStoreActionDepth =
-                desc->depth_stencil ? desc->depth_stencil->depth_store_action : CGPU_STORE_ACTION_STORE,
-            .mLoadActionStencil =
-                desc->depth_stencil ? desc->depth_stencil->stencil_load_action : CGPU_LOAD_ACTION_DONTCARE,
-            .mStoreActionStencil =
-                desc->depth_stencil ? desc->depth_stencil->stencil_store_action : CGPU_STORE_ACTION_STORE
-        };
-        for (uint32_t i = 0; i < desc->render_target_count; i++)
-        {
-            CGPUTextureId tex = desc->color_attachments[i].view->info.texture;
-            const CGPUTextureInfo* info = tex->info;
+    CGPURenderPass_Vulkan* R = (CGPURenderPass_Vulkan*)begin_info->render_pass;
+    CGPUFramebuffer_Vulkan* F = (CGPUFramebuffer_Vulkan*)begin_info->framebuffer;
+    VkRenderPass render_pass = R->pVkRenderPass;
+    VkFramebuffer pFramebuffer = F->pVkFramebuffer;
 
-            rpdesc.pResolveMasks[i] = (desc->sample_count != CGPU_SAMPLE_COUNT_1) &&
-                                      (desc->color_attachments[i].resolve_view != NULL);
-            rpdesc.pColorFormats[i] = desc->color_attachments[i].view->info.format;
-            rpdesc.pLoadActionsColor[i] = desc->color_attachments[i].load_action;
-            rpdesc.pStoreActionsColor[i] = desc->color_attachments[i].store_action;
-            Width = (uint32_t)info->width;
-            Height = (uint32_t)info->height;
-        }
-        VkUtil_FindOrCreateRenderPass(D, &rpdesc, &render_pass);
-    }
-    // Find or create framebuffer
-    VkFramebuffer pFramebuffer = VK_NULL_HANDLE;
-    {
-        VkUtil_FramebufferDesc fbDesc = {
-            .pRenderPass = render_pass,
-            .mAttachmentCount = 0,
-            .mWidth = Width,
-            .mHeight = Height,
-            .mLayers = 1
-        };
-        uint32_t idx = 0;
-        for (uint32_t i = 0; i < desc->render_target_count; i++)
-        {
-            CGPUTextureView_Vulkan* TVV = (CGPUTextureView_Vulkan*)desc->color_attachments[i].view;
-            fbDesc.pImageViews[idx] = TVV->pVkRTVDSVDescriptor;
-            fbDesc.mLayers = TVV->super.info.array_layer_count;
-            fbDesc.mAttachmentCount += 1;
-            idx++;
-        }
-        for (uint32_t i = 0; i < desc->render_target_count; i++)
-        {
-            CGPUTextureView_Vulkan* TVV_Resolve = (CGPUTextureView_Vulkan*)desc->color_attachments[i].resolve_view;
-            if (TVV_Resolve && (desc->sample_count != CGPU_SAMPLE_COUNT_1))
-            {
-                fbDesc.pImageViews[idx] = TVV_Resolve->pVkRTVDSVDescriptor;
-                fbDesc.mAttachmentCount += 1;
-                idx++;
-            }
-        }
-        if (desc->depth_stencil != CGPU_NULLPTR && desc->depth_stencil->view != CGPU_NULLPTR)
-        {
-            CGPUTextureView_Vulkan* TVV = (CGPUTextureView_Vulkan*)desc->depth_stencil->view;
-            fbDesc.pImageViews[idx] = TVV->pVkRTVDSVDescriptor;
-            fbDesc.mLayers = TVV->super.info.array_layer_count;
-            fbDesc.mAttachmentCount += 1;
-            idx++;
-        }
-        if (desc->render_target_count)
-            cgpu_assert(fbDesc.mLayers == 1 && "MRT pass supports only one layer!");
-        VkUtil_FindOrCreateFrameBuffer(D, &fbDesc, &pFramebuffer);
-    }
     // Cmd begin render pass
     VkClearValue clearValues[2 * CGPU_MAX_MRT_COUNT + 1] = { 0 };
-    uint32_t clearCount = 0;
-    for (uint32_t i = 0; i < desc->render_target_count; i++)
+    uint32_t clearCount = begin_info->clear_value_count;
+    for (uint32_t i = 0; i < begin_info->clear_value_count; i++)
     {
-        CGPUClearValue clearValue = desc->color_attachments[i].clear_color;
-        if (desc->color_attachments[i].load_action == CGPU_LOAD_ACTION_CLEAR)
+        if (begin_info->clear_values[i].is_color)
         {
-            clearValues[i].color.float32[0] = clearValue.r;
-            clearValues[i].color.float32[1] = clearValue.g;
-            clearValues[i].color.float32[2] = clearValue.b;
-            clearValues[i].color.float32[3] = clearValue.a;
-            clearCount++;
+            clearValues[i].color.float32[0] = begin_info->clear_values[i].color[0];
+            clearValues[i].color.float32[1] = begin_info->clear_values[i].color[1];
+            clearValues[i].color.float32[2] = begin_info->clear_values[i].color[2];
+            clearValues[i].color.float32[3] = begin_info->clear_values[i].color[3];
         }
-    }
-    // clear msaa resolve targets
-    for (uint32_t i = 0; i < desc->render_target_count; i++)
-    {
-        if (desc->color_attachments[i].load_action == CGPU_LOAD_ACTION_CLEAR)
-            if (desc->color_attachments[i].resolve_view)
-            {
-                clearCount++;
-            }
-    }
-    // depth stencil clear
-    if (desc->depth_stencil)
-    {
-        if (desc->depth_stencil->depth_load_action == CGPU_LOAD_ACTION_CLEAR)
+        else
         {
-            clearValues[clearCount].depthStencil.depth = desc->depth_stencil->clear_depth;
-            clearValues[clearCount].depthStencil.stencil = desc->depth_stencil->clear_stencil;
-            clearCount++;
+            clearValues[i].depthStencil.depth = begin_info->clear_values[i].depth;
+            clearValues[i].depthStencil.stencil = begin_info->clear_values[i].stencil;
         }
     }
     VkRect2D render_area = {
@@ -1942,11 +1860,11 @@ CGPURenderPassEncoderId cgpu_cmd_begin_render_pass_vulkan(CGPUCommandBufferId cm
             .y = 0,
         },
         .extent = {
-            .width = Width,
-            .height = Height,
+            .width = begin_info->framebuffer->info->width,
+            .height = begin_info->framebuffer->info->height,
         },
     };
-    VkRenderPassBeginInfo begin_info = {
+    VkRenderPassBeginInfo vk_begin_info = {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .pNext = VK_NULL_HANDLE,
         .renderPass = render_pass,
@@ -1955,7 +1873,7 @@ CGPURenderPassEncoderId cgpu_cmd_begin_render_pass_vulkan(CGPUCommandBufferId cm
         .clearValueCount = clearCount,
         .pClearValues = clearValues
     };
-    D->mVkDeviceTable.vkCmdBeginRenderPass(Cmd->pVkCmdBuf, &begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    D->mVkDeviceTable.vkCmdBeginRenderPass(Cmd->pVkCmdBuf, &vk_begin_info, VK_SUBPASS_CONTENTS_INLINE);
     Cmd->pRenderPass = render_pass;
     return (CGPURenderPassEncoderId)cmd;
 }

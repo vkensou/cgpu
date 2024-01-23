@@ -53,6 +53,7 @@ struct ImGui_ImplCGPU_InitInfo
     CGPUDeviceId                        Device;
     CGPUQueueId                         GfxQueue;
     CGPUQueueId                         PresentQueue;
+    CGPURenderPassId                    RenderPass;
     uint32_t                            ImageCount;             // >= MinImageCount
     CGPURootSignatureId                 RootSig;
     CGPURenderPipelineId                Pipeline;

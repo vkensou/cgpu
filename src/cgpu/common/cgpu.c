@@ -570,6 +570,46 @@ void cgpu_free_queue(CGPUQueueId queue)
     return;
 }
 
+CGPU_API CGPURenderPassId cgpu_create_render_pass(CGPUDeviceId device, const struct CGPURenderPassDescriptor* desc)
+{
+    cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
+    const CGPUProcCreateRenderPass fn_create_render_pass = device->proc_table_cache->create_render_pass;
+    cgpu_assert(fn_create_render_pass && "fn_create_render_pass Proc Missing!");
+    CGPURenderPass* render_pass = (CGPURenderPass*)fn_create_render_pass(device, desc);
+    render_pass->device = device;
+    return render_pass;
+}
+
+CGPU_API CGPUFramebufferId cgpu_create_framebuffer(CGPUDeviceId device, const struct CGPUFramebufferDescriptor* desc)
+{
+    cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
+    const CGPUProcCreateFramebuffer fn_create_framebuffer = device->proc_table_cache->create_framebuffer;
+    cgpu_assert(fn_create_framebuffer && "fn_create_framebuffer Proc Missing!");
+    CGPUFramebuffer* framebuffer = (CGPUFramebuffer*)fn_create_framebuffer(device, desc);
+    framebuffer->device = device;
+    return framebuffer;
+}
+
+CGPU_API void cgpu_free_render_pass(CGPURenderPassId render_pass)
+{
+    cgpu_assert(render_pass != CGPU_NULLPTR && "fatal: call on NULL queue!");
+    cgpu_assert(render_pass->device != CGPU_NULLPTR && "fatal: call on NULL device!");
+    cgpu_assert(render_pass->device->proc_table_cache->free_render_pass && "free_render_pass Proc Missing!");
+
+    render_pass->device->proc_table_cache->free_render_pass(render_pass);
+    return;
+}
+
+CGPU_API void cgpu_free_framebuffer(CGPUFramebufferId framebuffer)
+{
+    cgpu_assert(framebuffer != CGPU_NULLPTR && "fatal: call on NULL queue!");
+    cgpu_assert(framebuffer->device != CGPU_NULLPTR && "fatal: call on NULL device!");
+    cgpu_assert(framebuffer->device->proc_table_cache->free_framebuffer && "free_framebuffer Proc Missing!");
+
+    framebuffer->device->proc_table_cache->free_framebuffer(framebuffer);
+    return;
+}
+
 CGPU_API CGPUCommandPoolId cgpu_create_command_pool(CGPUQueueId queue,
 const CGPUCommandPoolDescriptor* desc)
 {
@@ -814,13 +854,13 @@ void cgpu_cmd_end_compute_pass(CGPUCommandBufferId cmd, CGPUComputePassEncoderId
 }
 
 // Render CMDs
-CGPURenderPassEncoderId cgpu_cmd_begin_render_pass(CGPUCommandBufferId cmd, const struct CGPURenderPassDescriptor* desc)
+CGPURenderPassEncoderId cgpu_cmd_begin_render_pass(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info)
 {
     cgpu_assert(cmd != CGPU_NULLPTR && "fatal: call on NULL cmdbuffer!");
     cgpu_assert(cmd->device != CGPU_NULLPTR && "fatal: call on NULL device!");
     const CGPUProcCmdBeginRenderPass fn_begin_render_pass = cmd->device->proc_table_cache->cmd_begin_render_pass;
     cgpu_assert(fn_begin_render_pass && "cmd_begin_render_pass Proc Missing!");
-    CGPURenderPassEncoderId ecd = (CGPURenderPassEncoderId)fn_begin_render_pass(cmd, desc);
+    CGPURenderPassEncoderId ecd = (CGPURenderPassEncoderId)fn_begin_render_pass(cmd, begin_info);
     CGPUCommandBuffer* Cmd = (CGPUCommandBuffer*)cmd;
     Cmd->current_dispatch = CGPU_PIPELINE_TYPE_GRAPHICS;
     return ecd;
