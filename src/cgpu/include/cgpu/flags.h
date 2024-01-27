@@ -6,6 +6,16 @@ CGPU_EXTERN_C_BEGIN
 #endif
 
 // enums
+typedef enum ECGPULogSeverity
+{
+    CGPU_LOG_TRACE, 
+    CGPU_LOG_DEBUG, 
+    CGPU_LOG_INFO, 
+    CGPU_LOG_WARNING, 
+    CGPU_LOG_ERROR, 
+    CGPU_LOG_FATAL 
+} ECGPULogSeverity;
+
 typedef enum ECGPUNvAPI_Status
 {
     CGPU_NVAPI_OK = 0, //!< Success. Request is completed.

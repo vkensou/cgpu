@@ -67,6 +67,8 @@ CGPU_API CGPUInstanceId cgpu_create_instance(const CGPUInstanceDescriptor* desc)
     instance->backend = desc->backend;
     instance->proc_table = tbl;
     instance->surfaces_table = s_tbl;
+    instance->log_callback = desc->log_callback;
+    instance->log_callback_user_data = desc->log_callback_user_data;
     if(!instance->runtime_table) 
         instance->runtime_table = cgpu_create_runtime_table();
     

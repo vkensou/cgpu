@@ -792,6 +792,8 @@ typedef struct CGPUAdapterDetail {
     CGPUVendorPreset vendor_preset;
 } CGPUAdapterDetail;
 
+typedef void (*cgpu_log_callback_fn)(void* user_data, ECGPULogSeverity severity, const char* fmt, ...);
+
 // Objects (Heap Safety)
 typedef struct CGPUInstance {
     const CGPUProcTable* proc_table;
@@ -802,6 +804,8 @@ typedef struct CGPUInstance {
     ECGPUNvAPI_Status nvapi_status;
     ECGPUAGSReturnCode ags_status;
     bool enable_set_name;
+    cgpu_log_callback_fn log_callback;
+    void* log_callback_user_data;
 } CGPUInstance;
 
 typedef struct CGPUAdapter {
@@ -988,6 +992,8 @@ typedef struct CGPUInstanceDescriptor {
     bool enable_debug_layer;
     bool enable_gpu_based_validation;
     bool enable_set_name;
+    cgpu_log_callback_fn log_callback;
+    void* log_callback_user_data;
 } CGPUInstanceDescriptor;
 
 typedef struct CGPUQueueGroupDescriptor {
