@@ -8,6 +8,7 @@
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_cgpu.h"
+#include <stdarg.h>
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -389,13 +390,22 @@ std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGP
 	return { root_sig, pipeline };
 }
 
+void log(void* user_data, ECGPULogSeverity severity, const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	vprintf(fmt, args);
+	va_end(args);
+}
+
 int main(int argc, char** argv)
 {
 	CGPUInstanceDescriptor instance_desc = {
 		.backend = CGPU_BACKEND_VULKAN,
 		.enable_debug_layer = true,
 		.enable_gpu_based_validation = true,
-		.enable_set_name = true
+		.enable_set_name = true,
+		.log_callback = log,
 	};
 	instance = cgpu_create_instance(&instance_desc);
 

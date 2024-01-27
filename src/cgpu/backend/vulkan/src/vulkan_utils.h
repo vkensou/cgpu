@@ -141,12 +141,12 @@ typedef struct VkUtil_FramebufferDesc {
     uint32_t mLayers;
 } VkUtil_FramebufferDesc;
 
-#define CHECK_VKRESULT(exp)                                                             \
+#define CHECK_VKRESULT(instance, exp)                                                             \
     {                                                                                   \
         VkResult vkres = (exp);                                                         \
         if (VK_SUCCESS != vkres)                                                        \
         {                                                                               \
-            cgpu_error((const char8_t*)"VKRESULT %s: FAILED with VkResult: %d", #exp, (uint32_t)vkres); \
+            cgpu_error(instance, (const char8_t*)"VKRESULT %s: FAILED with VkResult: %d\n", #exp, (uint32_t)vkres); \
             cgpu_assert(0);                                                             \
         }                                                                               \
     }

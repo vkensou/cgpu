@@ -193,11 +193,11 @@ CGPUBufferId cgpu_create_buffer_vulkan(CGPUDeviceId device, const struct CGPUBuf
         {
             if (!(formatProps.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT))
             {
-                cgpu_warn("Failed to create uniform texel buffer view for format %u", (uint32_t)desc->format);
+                cgpu_warn(device->adapter->instance, "Failed to create uniform texel buffer view for format %u\n", (uint32_t)desc->format);
             }
             else
             {
-                CHECK_VKRESULT(vkCreateBufferView(D->pVkDevice, &viewInfo, GLOBAL_VkAllocationCallbacks, &B->pVkUniformTexelView));
+                CHECK_VKRESULT(device->adapter->instance, vkCreateBufferView(D->pVkDevice, &viewInfo, GLOBAL_VkAllocationCallbacks, &B->pVkUniformTexelView));
             }
         }
         // Setup Storage Texel View
@@ -205,11 +205,11 @@ CGPUBufferId cgpu_create_buffer_vulkan(CGPUDeviceId device, const struct CGPUBuf
         {
             if (!(formatProps.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT))
             {
-                cgpu_warn("Failed to create storage texel buffer view for format %u", (uint32_t)desc->format);
+                cgpu_warn(device->adapter->instance, "Failed to create storage texel buffer view for format %u\n", (uint32_t)desc->format);
             }
             else
             {
-                CHECK_VKRESULT(vkCreateBufferView(D->pVkDevice, &viewInfo, GLOBAL_VkAllocationCallbacks, &B->pVkStorageTexelView));
+                CHECK_VKRESULT(device->adapter->instance, vkCreateBufferView(D->pVkDevice, &viewInfo, GLOBAL_VkAllocationCallbacks, &B->pVkStorageTexelView));
             }
         }
     }
@@ -502,11 +502,11 @@ void VkUtil_ImportSharedTexture(CGPUQueue_Vulkan* Q, VmaAllocationCreateInfo* pM
         pImageCreateInfo, pMemReq, &memoryType);
     if (findResult != VK_SUCCESS)
     {
-        cgpu_error("Failed to find memory type for image");
+        cgpu_error(D->super.adapter->instance, "Failed to find memory type for image\n");
     }
     // import memory
     VkResult importRes = D->mVkDeviceTable.vkCreateImage(D->pVkDevice, pImageCreateInfo, GLOBAL_VkAllocationCallbacks, outImage);
-    CHECK_VKRESULT(importRes);
+    CHECK_VKRESULT(D->super.adapter->instance, importRes);
     VkMemoryDedicatedRequirements MemoryDedicatedRequirements = { VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS };
     VkMemoryRequirements2 MemoryRequirements2 = { VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
     MemoryRequirements2.pNext = &MemoryDedicatedRequirements;
@@ -520,15 +520,15 @@ void VkUtil_ImportSharedTexture(CGPUQueue_Vulkan* Q, VmaAllocationCreateInfo* pM
         .allocationSize = MemoryRequirements2.memoryRequirements.size, // this is valid for import allocations
         .memoryTypeIndex = memoryType,
     }; 
-    cgpu_info("Importing external memory %ls allocation of size %llu", win32Name, importAllocation.allocationSize);
+    cgpu_info(D->super.adapter->instance, "Importing external memory %ls allocation of size %llu\n", win32Name, importAllocation.allocationSize);
     importRes = D->mVkDeviceTable.vkAllocateMemory(D->pVkDevice, &importAllocation, GLOBAL_VkAllocationCallbacks, outMemory);
-    CHECK_VKRESULT(importRes);
+    CHECK_VKRESULT(D->super.adapter->instance, importRes);
     // bind memory
     importRes = D->mVkDeviceTable.vkBindImageMemory(D->pVkDevice, *outImage, *outMemory, 0);
-    CHECK_VKRESULT(importRes);
+    CHECK_VKRESULT(D->super.adapter->instance, importRes);
     if (importRes == VK_SUCCESS)
     {
-        cgpu_trace("Imported image %p with allocation %p", *outImage, *outMemory);
+        cgpu_trace(D->super.adapter->instance, "Imported image %p with allocation %p\n", *outImage, *outMemory);
     }
 }
 
@@ -550,7 +550,7 @@ void VkUtil_AllocateSharedTexture(CGPUQueue_Vulkan* Q, VmaAllocationCreateInfo* 
     pWin32ExportMemoryInfo->pAttributes = CGPU_NULLPTR;
     pExportMemoryInfo->pNext = pWin32ExportMemoryInfo;
     pExportMemoryInfo->handleTypes = exportFlags;
-    cgpu_trace("Exporting texture with name %ls size %dx%dx%d", win32Name, desc->width, desc->height, desc->depth);
+    cgpu_trace(D->super.adapter->instance, "Exporting texture with name %ls size %dx%dx%d\n", win32Name, desc->width, desc->height, desc->depth);
 #else
     exportMemoryInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 #endif
@@ -560,7 +560,7 @@ void VkUtil_AllocateSharedTexture(CGPUQueue_Vulkan* Q, VmaAllocationCreateInfo* 
     VkResult findResult = vmaFindMemoryTypeIndexForImageInfo(D->pVmaAllocator, pImageCreateInfo, pMemReq, &memoryType);
     if (findResult != VK_SUCCESS)
     {
-        cgpu_error("Failed to find memory type for image");
+        cgpu_error(D->super.adapter->instance, "Failed to find memory type for image\n");
     }
     if (D->pExternalMemoryVmaPools[memoryType] == CGPU_NULLPTR)
     {
@@ -596,7 +596,7 @@ VkSparseImageMemoryRequirements VkUtil_FillTiledTextureInfo(CGPUDevice_Vulkan* D
     // Check requested image size against hardware sparse limit
     if (sparseImageMemoryReqs.size > A->mPhysicalDeviceProps.properties.limits.sparseAddressSpaceSize)
     {
-        cgpu_error("Requested sparse image size exceeds supported sparse address space size!");
+        cgpu_error(D->super.adapter->instance, "Requested sparse image size exceeds supported sparse address space size!\n");
     }
     // Get sparse memory requirements
     // Count
@@ -608,7 +608,7 @@ VkSparseImageMemoryRequirements VkUtil_FillTiledTextureInfo(CGPUDevice_Vulkan* D
     CGPU_DECLARE_ZERO_VLA(VkSparseImageMemoryRequirements, sparseMemoryReqs, sparseMemoryReqsCount);
     if (sparseMemoryReqsCount == 0)
     {
-        cgpu_error("No memory requirements for the sparse image!");
+        cgpu_error(D->super.adapter->instance, "No memory requirements for the sparse image!\n");
     }
     else
     {
@@ -634,9 +634,9 @@ VkSparseImageMemoryRequirements VkUtil_FillTiledTextureInfo(CGPUDevice_Vulkan* D
     {
         if (noneStandardLayoutFound)
         {
-            cgpu_error("Only found non-standard sparse block size layout!");
+            cgpu_error(D->super.adapter->instance, "Only found non-standard sparse block size layout!\n");
         }
-        cgpu_error("Could not find sparse image memory requirements for color aspect bit!");
+        cgpu_error(D->super.adapter->instance, "Could not find sparse image memory requirements for color aspect bit!\n");
     }
 
     // iterate all mips and calculate the total number of tiles
@@ -697,7 +697,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
 {
     if (desc->sample_count > CGPU_SAMPLE_COUNT_1 && desc->mip_levels > 1)
     {
-        cgpu_error("Multi-Sampled textures cannot have mip maps");
+        cgpu_error(device->adapter->instance, "Multi-Sampled textures cannot have mip maps\n");
         cgpu_assert(false);
         return CGPU_NULLPTR;
     }
@@ -808,7 +808,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
         if ((desc->flags & CGPU_TCF_ALIASING_RESOURCE) || (desc->flags & CGPU_TCF_TILED_RESOURCE))
         {
             VkResult res = D->mVkDeviceTable.vkCreateImage(D->pVkDevice, &imageCreateInfo, GLOBAL_VkAllocationCallbacks, &pVkImage);
-            CHECK_VKRESULT(res);
+            CHECK_VKRESULT(device->adapter->instance, res);
         }
         else
         {
@@ -865,7 +865,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
                 VkResult res = vmaCreateImage(D->pVmaAllocator,
                     &imageCreateInfo, &mem_reqs, &pVkImage,
                     &vmaAllocation, &alloc_info);
-                CHECK_VKRESULT(res);
+                CHECK_VKRESULT(device->adapter->instance, res);
             }
             else // Multi-planar formats
             {
@@ -1075,7 +1075,7 @@ void cgpu_queue_map_packed_mips_vulkan(CGPUQueueId queue, const struct CGPUTiled
         // do allocations
         VkResult result = vmaAllocateMemoryPages(D->pVmaAllocator, &memReqs, 
             &vmaAllocInfo, 1, &pAllocation, &AllocationInfo);
-        CHECK_VKRESULT(result);
+        CHECK_VKRESULT(queue->device->adapter->instance, result);
 
         pMapping->pVkAllocation = pAllocation;
 
@@ -1096,7 +1096,7 @@ void cgpu_queue_map_packed_mips_vulkan(CGPUQueueId queue, const struct CGPUTiled
     bindSparseInfo.pImageOpaqueBinds = bindInfos;
 
     VkResult result = D->mVkDeviceTable.vkQueueBindSparse(Q->pVkQueue, (uint32_t)1, &bindSparseInfo, VK_NULL_HANDLE);
-    CHECK_VKRESULT(result);
+    CHECK_VKRESULT(queue->device->adapter->instance, result);
     
     // mark mapping requests as complete
     for (uint32_t i = 0; i < N; i++)
@@ -1171,7 +1171,7 @@ void cgpu_queue_map_tiled_texture_vulkan(CGPUQueueId queue, const struct CGPUTil
     // do allocations
     VkResult result = vmaAllocateMemoryPages(D->pVmaAllocator, &memReqs, &vmaAllocInfo, 
         TotalTileCount, pAllocations, pAllocationInfos);
-    CHECK_VKRESULT(result);
+    CHECK_VKRESULT(queue->device->adapter->instance, result);
 
     // do mapping
     uint32_t AllocateTileCount = 0;
@@ -1223,7 +1223,7 @@ void cgpu_queue_map_tiled_texture_vulkan(CGPUQueueId queue, const struct CGPUTil
     bindSparseInfo.pImageBinds = &imageMemoryBindInfo;
 
     result = D->mVkDeviceTable.vkQueueBindSparse(Q->pVkQueue, (uint32_t)1, &bindSparseInfo, VK_NULL_HANDLE);
-    CHECK_VKRESULT(result);
+    CHECK_VKRESULT(queue->device->adapter->instance, result);
     
     // mark mapping requests as complete
     CGPUTiledTextureInfo* pModTiledInfo = (CGPUTiledTextureInfo*)T->super.tiled_resource;
@@ -1309,7 +1309,7 @@ void cgpu_free_texture_vulkan(CGPUTextureId texture)
             }
             else if (isSinglePlane)
             {
-                cgpu_trace("Freeing texture allocation %p \n\t size: %dx%dx%d owns_image: %d imported: %d", 
+                cgpu_trace(D->super.adapter->instance, "Freeing texture allocation %p \n\t size: %dx%dx%d owns_image: %d imported: %d\n",
                     T->pVkImage, pInfo->width, pInfo->height, pInfo->depth, pInfo->owns_image, pInfo->is_imported);
                 vmaDestroyImage(D->pVmaAllocator, T->pVkImage, T->pVkAllocation);
             }
@@ -1321,7 +1321,7 @@ void cgpu_free_texture_vulkan(CGPUTextureId texture)
         }
         else
         {
-            cgpu_trace("Freeing texture %p \n\t size: %dx%dx%d owns_image: %d imported: %d", 
+            cgpu_trace(D->super.adapter->instance, "Freeing texture %p \n\t size: %dx%dx%d owns_image: %d imported: %d\n",
                     T->pVkImage, pInfo->width, pInfo->height, pInfo->depth, pInfo->owns_image, pInfo->is_imported);
 
             D->mVkDeviceTable.vkDestroyImage(D->pVkDevice, T->pVkImage, GLOBAL_VkAllocationCallbacks);
@@ -1375,7 +1375,7 @@ CGPUTextureViewId cgpu_create_texture_view_vulkan(CGPUDeviceId device, const str
         case VK_IMAGE_TYPE_3D:
             if (desc->array_layer_count > 1)
             {
-                cgpu_error("Cannot support 3D Texture Array in Vulkan");
+                cgpu_error(device->adapter->instance, "Cannot support 3D Texture Array in Vulkan\n");
                 cgpu_assert(false);
             }
             view_type = VK_IMAGE_VIEW_TYPE_3D;
@@ -1419,7 +1419,7 @@ CGPUTextureViewId cgpu_create_texture_view_vulkan(CGPUDeviceId device, const str
     };
     if (desc->usages & CGPU_TVU_SRV)
     {
-        CHECK_VKRESULT(D->mVkDeviceTable.vkCreateImageView(D->pVkDevice, &srvDesc, GLOBAL_VkAllocationCallbacks, &TV->pVkSRVDescriptor));
+        CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreateImageView(D->pVkDevice, &srvDesc, GLOBAL_VkAllocationCallbacks, &TV->pVkSRVDescriptor));
     }
     // UAV
     if (desc->usages & CGPU_TVU_UAV)
@@ -1430,12 +1430,12 @@ CGPUTextureViewId cgpu_create_texture_view_vulkan(CGPUDeviceId device, const str
         if (uavDesc.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY || uavDesc.viewType == VK_IMAGE_VIEW_TYPE_CUBE)
             uavDesc.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
         uavDesc.subresourceRange.baseMipLevel = desc->base_mip_level;
-        CHECK_VKRESULT(D->mVkDeviceTable.vkCreateImageView(D->pVkDevice, &uavDesc, GLOBAL_VkAllocationCallbacks, &TV->pVkUAVDescriptor));
+        CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreateImageView(D->pVkDevice, &uavDesc, GLOBAL_VkAllocationCallbacks, &TV->pVkUAVDescriptor));
     }
     // RTV & DSV
     if (desc->usages & CGPU_TVU_RTV_DSV)
     {
-        CHECK_VKRESULT(D->mVkDeviceTable.vkCreateImageView(D->pVkDevice, &srvDesc, GLOBAL_VkAllocationCallbacks, &TV->pVkRTVDSVDescriptor));
+        CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreateImageView(D->pVkDevice, &srvDesc, GLOBAL_VkAllocationCallbacks, &TV->pVkRTVDSVDescriptor));
     }
     return &TV->super;
 }
@@ -1521,7 +1521,7 @@ CGPUSamplerId cgpu_create_sampler_vulkan(CGPUDeviceId device, const struct CGPUS
         .borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK,
         .unnormalizedCoordinates = VK_FALSE
     };
-    CHECK_VKRESULT(D->mVkDeviceTable.vkCreateSampler(D->pVkDevice, &sampler_info, GLOBAL_VkAllocationCallbacks, &S->pVkSampler));
+    CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreateSampler(D->pVkDevice, &sampler_info, GLOBAL_VkAllocationCallbacks, &S->pVkSampler));
     return &S->super;
 }
 
