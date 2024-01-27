@@ -1089,12 +1089,12 @@ void cgpu_submit_queue_vulkan(CGPUQueueId queue, const struct CGPUQueueSubmitDes
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .pNext = NULL,
         .waitSemaphoreCount = waitCount,
-        .pWaitSemaphores = wait_semaphores,
-        .pWaitDstStageMask = wait_stages,
+        .pWaitSemaphores = waitCount > 0 ? wait_semaphores : VK_NULL_HANDLE,
+        .pWaitDstStageMask = waitCount > 0 ? wait_stages : VK_NULL_HANDLE,
         .commandBufferCount = CmdCount,
         .pCommandBuffers = vkCmds,
         .signalSemaphoreCount = signalCount,
-        .pSignalSemaphores = signal_semaphores,
+        .pSignalSemaphores = signalCount > 0 ? signal_semaphores : VK_NULL_HANDLE,
     };
 #ifdef CGPU_THREAD_SAFETY
     if (Q->pMutex) skr_mutex_acquire(Q->pMutex);
@@ -1151,7 +1151,7 @@ void cgpu_queue_present_vulkan(CGPUQueueId queue, const struct CGPUQueuePresentD
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
             .pNext = VK_NULL_HANDLE,
             .waitSemaphoreCount = waitCount,
-            .pWaitSemaphores = wait_semaphores,
+            .pWaitSemaphores = waitCount > 0 ? wait_semaphores : VK_NULL_HANDLE,
             .swapchainCount = 1,
             .pSwapchains = &SC->pVkSwapChain,
             .pImageIndices = &presentIndex,
@@ -1218,7 +1218,7 @@ CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struc
         attachments[ssidx].samples = sample_count;
         attachments[ssidx].loadOp = gVkAttachmentLoadOpTranslator[desc->color_attachments[i].load_action];
         attachments[ssidx].storeOp = gVkAttachmentStoreOpTranslator[desc->color_attachments[i].store_action];
-        attachments[ssidx].initialLayout = desc->color_attachments[i].load_action == CGPU_LOAD_ACTION_LOAD ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[ssidx].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         attachments[ssidx].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         // references
         color_attachment_refs[i].attachment = ssidx;
@@ -1258,7 +1258,7 @@ CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struc
         attachments[ssidx].storeOp = gVkAttachmentStoreOpTranslator[desc->depth_stencil->depth_store_action];
         attachments[ssidx].stencilLoadOp = gVkAttachmentLoadOpTranslator[desc->depth_stencil->stencil_load_action];
         attachments[ssidx].stencilStoreOp = gVkAttachmentStoreOpTranslator[desc->depth_stencil->stencil_store_action];
-        attachments[ssidx].initialLayout = desc->depth_stencil->depth_load_action == CGPU_LOAD_ACTION_LOAD || desc->depth_stencil->stencil_load_action == CGPU_LOAD_ACTION_LOAD ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[ssidx].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         attachments[ssidx].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         depth_stencil_attachment_ref[0].attachment = ssidx;
         depth_stencil_attachment_ref[0].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -1575,6 +1575,10 @@ void cgpu_cmd_resource_barrier_vulkan(CGPUCommandBufferId cmd, const struct CGPU
     VkUtil_DeterminePipelineStageFlags(A, srcAccessFlags, (ECGPUQueueType)Cmd->mType);
     VkPipelineStageFlags dstStageMask =
     VkUtil_DeterminePipelineStageFlags(A, dstAccessFlags, (ECGPUQueueType)Cmd->mType);
+    if (srcStageMask == 0)
+        srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    if (dstStageMask == 0)
+        dstStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     if (bufferBarrierCount || imageBarrierCount)
     {
         D->mVkDeviceTable.vkCmdPipelineBarrier(Cmd->pVkCmdBuf,

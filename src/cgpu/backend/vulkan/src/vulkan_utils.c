@@ -41,6 +41,17 @@ VkUtil_MessageToSkip kSkippedMessages[] = {
     { "UNASSIGNED-BestPractices-vkCreateDevice-deprecated-extension" },
 };
 
+bool VkUtil_IsExtensionEnabled(CGPUAdapter_Vulkan* VkAdapter, const char* extension_name)
+{
+    for (uint32_t i = 0; i < VkAdapter->mExtensionsCount; ++i)
+    {
+        if (strcmp(VkAdapter->pExtensionNames[i], extension_name) == 0)
+        {
+            return true;
+        }
+    }
+    return false;
+}
 
 FORCEINLINE bool VkUtil_TryIgnoreMessage(const char* MessageId, bool Scan)
 {
@@ -249,8 +260,6 @@ const char* const* device_extensions, uint32_t device_extension_count)
 #else
             vkGetPhysicalDeviceFeatures2(pysicalDevices[i], &VkAdapter->mPhysicalDeviceFeatures);
 #endif
-            // Enumerate Format Supports
-            VkUtil_EnumFormatSupports(VkAdapter);
             // Query Physical Device Layers Properties
             VkUtil_SelectPhysicalDeviceLayers(VkAdapter, device_layers, device_layers_count);
             // Query Physical Device Extension Properties
@@ -259,6 +268,8 @@ const char* const* device_extensions, uint32_t device_extension_count)
             VkUtil_SelectQueueIndices(VkAdapter);
             // Record Adapter Detail
             VkUtil_RecordAdapterDetail(VkAdapter);
+            // Enumerate Format Supports
+            VkUtil_EnumFormatSupports(VkAdapter);
         }
     }
     else
@@ -694,7 +705,6 @@ void VkUitl_QueryDynamicPipelineStates(CGPUAdapter_Vulkan* VkAdapter, uint32_t* 
         VK_DYNAMIC_STATE_BLEND_CONSTANTS,
         VK_DYNAMIC_STATE_DEPTH_BOUNDS,
         VK_DYNAMIC_STATE_STENCIL_REFERENCE,
-        VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR 
     };
     uint32_t base_states_count = sizeof(base_states) / sizeof(VkDynamicState);
     uint32_t total_states_count = base_states_count;
@@ -851,27 +861,53 @@ void VkUtil_SelectQueueIndices(CGPUAdapter_Vulkan* VkAdapter)
     }
 }
 
+FORCEINLINE void VkUtil_CheckFormatSupport(CGPUAdapter_Vulkan* VkAdapter, CGPUAdapterDetail* adapter_detail, uint32_t i)
+{
+	VkFormat fmt = (VkFormat)VkUtil_FormatTranslateToVk((ECGPUFormat)i);
+	if (fmt == VK_FORMAT_UNDEFINED) return;
+
+	VkFormatProperties formatSupport;
+	vkGetPhysicalDeviceFormatProperties(VkAdapter->pPhysicalDevice, fmt, &formatSupport);
+	adapter_detail->format_supports[i].shader_read =
+		(formatSupport.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0;
+	adapter_detail->format_supports[i].shader_write =
+		(formatSupport.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0;
+	adapter_detail->format_supports[i].render_target_write =
+		(formatSupport.optimalTilingFeatures &
+			(VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) != 0;
+}
+
 void VkUtil_EnumFormatSupports(CGPUAdapter_Vulkan* VkAdapter)
 {
+    bool supportPVRTC = VkUtil_IsExtensionEnabled(VkAdapter, VK_IMG_FORMAT_PVRTC_EXTENSION_NAME);
+
     CGPUAdapterDetail* adapter_detail = (CGPUAdapterDetail*)&VkAdapter->adapter_detail;
+
     for (uint32_t i = 0; i < CGPU_FORMAT_COUNT; ++i)
     {
-        VkFormatProperties formatSupport;
         adapter_detail->format_supports[i].shader_read = 0;
         adapter_detail->format_supports[i].shader_write = 0;
         adapter_detail->format_supports[i].render_target_write = 0;
-        VkFormat fmt = (VkFormat)VkUtil_FormatTranslateToVk((ECGPUFormat)i);
-        if (fmt == VK_FORMAT_UNDEFINED) continue;
-
-        vkGetPhysicalDeviceFormatProperties(VkAdapter->pPhysicalDevice, fmt, &formatSupport);
-        adapter_detail->format_supports[i].shader_read =
-            (formatSupport.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0;
-        adapter_detail->format_supports[i].shader_write =
-            (formatSupport.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0;
-        adapter_detail->format_supports[i].render_target_write =
-            (formatSupport.optimalTilingFeatures &
-                (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) != 0;
     }
+
+    for (uint32_t i = 0; i < CGPU_FORMAT_PVRTC1_2BPP_UNORM; ++i)
+    {
+        VkUtil_CheckFormatSupport(VkAdapter, adapter_detail, i);
+    }
+
+    if (supportPVRTC)
+    {
+        for (uint32_t i = CGPU_FORMAT_PVRTC1_2BPP_UNORM; i < CGPU_FORMAT_ETC2_R8G8B8_UNORM; ++i)
+        {
+            VkUtil_CheckFormatSupport(VkAdapter, adapter_detail, i);
+        }
+    }
+
+    for (uint32_t i = CGPU_FORMAT_ETC2_R8G8B8_UNORM; i < CGPU_FORMAT_COUNT; ++i)
+    {
+        VkUtil_CheckFormatSupport(VkAdapter, adapter_detail, i);
+    }
+
     return;
 }
 
