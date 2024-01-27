@@ -436,9 +436,6 @@ CGPU_FORCEINLINE static VkPipelineStageFlags VkUtil_DeterminePipelineStageFlags(
 	if ((accessFlags & (VK_ACCESS_HOST_READ_BIT | VK_ACCESS_HOST_WRITE_BIT)) != 0)
 		flags |= VK_PIPELINE_STAGE_HOST_BIT;
 
-	if (flags == 0)
-		flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-
     return flags;
 }
 
