@@ -271,7 +271,7 @@ struct RenderWindow
 
 		CGPUTextureBarrier draw_barrier = {
 			.texture = back_buffer,
-			.src_state = CGPU_RESOURCE_STATE_PRESENT,
+			.src_state = CGPU_RESOURCE_STATE_UNDEFINED,
 			.dst_state = CGPU_RESOURCE_STATE_RENDER_TARGET
 		};
 		CGPUResourceBarrierDescriptor barrier_desc0 = { .texture_barriers = &draw_barrier, .texture_barriers_count = 1 };
