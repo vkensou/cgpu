@@ -1312,7 +1312,7 @@ void cgpu_free_swapchain(CGPUSwapChainId swapchain)
     cgpu_assert(swapchain->device->proc_table_cache->create_swapchain && "create_swapchain Proc Missing!");
 
     CGPUTextureInfo* pInfo = (CGPUTextureInfo*)swapchain->back_buffers[0]->info;
-    cgpu_trace(swapchain->device->adapter->instance, "cgpu_free_swapchain: swapchain(%dx%d) %p freed, buffers:  [%p, %p]",
+    cgpu_trace(swapchain->device->adapter->instance, "cgpu_free_swapchain: swapchain(%dx%d) %p freed, buffers:  [%p, %p]\n",
         pInfo->width, pInfo->height, swapchain,
         swapchain->back_buffers[0], swapchain->back_buffers[1]);
 

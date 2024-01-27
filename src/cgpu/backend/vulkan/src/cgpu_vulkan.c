@@ -926,7 +926,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
     cgpu_freeN(dyn_states, kVkPSOMemoryPoolName);
     if (createResult != VK_SUCCESS)
     {
-        cgpu_fatal(device->adapter->instance, "CGPU VULKAN: Failed to create Graphics Pipeline! Error Code: %d", createResult);
+        cgpu_fatal(device->adapter->instance, "CGPU VULKAN: Failed to create Graphics Pipeline! Error Code: %d\n", createResult);
     }
     return &RP->super;
 }
@@ -1102,7 +1102,7 @@ void cgpu_submit_queue_vulkan(CGPUQueueId queue, const struct CGPUQueueSubmitDes
     VkResult res = D->mVkDeviceTable.vkQueueSubmit(Q->pVkQueue, 1, &submit_info, F ? F->pVkFence : VK_NULL_HANDLE);
     if(res != VK_SUCCESS)
     {
-        cgpu_fatal(D->super.adapter->instance, u8"CGPU VULKAN: Failed to submit queue! Error code: %d", res);
+        cgpu_fatal(D->super.adapter->instance, u8"CGPU VULKAN: Failed to submit queue! Error code: %d\n", res);
         if (res == VK_ERROR_DEVICE_LOST)
         {
             ((CGPUDevice*)queue->device)->is_lost = true;
