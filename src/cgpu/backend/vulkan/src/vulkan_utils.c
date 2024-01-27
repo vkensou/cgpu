@@ -542,7 +542,7 @@ struct VkUtil_DescriptorPool* VkUtil_CreateDescriptorPool(CGPUDevice_Vulkan* D)
         .poolSizeCount = CGPU_VK_DESCRIPTOR_TYPE_RANGE_SIZE,
         .pPoolSizes = gDescriptorPoolSizes,
     };
-    CHECK_VKRESULT(D->mVkDeviceTable.vkCreateDescriptorPool(
+    CHECK_VKRESULT(D->super.adapter->instance, D->mVkDeviceTable.vkCreateDescriptorPool(
         D->pVkDevice, &poolCreateInfo, GLOBAL_VkAllocationCallbacks, &Pool->pVkDescPool));
     return Pool;
 }
@@ -615,7 +615,7 @@ const VkDescriptorSetLayoutBinding* bindings, uint32_t bindings_count)
         .bindingCount = bindings_count,
         .pBindings = bindings,
     };
-    CHECK_VKRESULT(D->mVkDeviceTable.vkCreateDescriptorSetLayout(
+    CHECK_VKRESULT(D->super.adapter->instance, D->mVkDeviceTable.vkCreateDescriptorSetLayout(
     D->pVkDevice, &layout_info, GLOBAL_VkAllocationCallbacks, &out_layout));
     return out_layout;
 }
