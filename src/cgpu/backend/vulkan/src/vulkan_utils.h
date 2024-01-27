@@ -298,7 +298,9 @@ CGPU_UNUSED static const char* cgpu_wanted_device_exts[] = {
     /************************************************************************/
     // Descriptor Update Template Extension for efficient descriptor set updates
     /************************************************************************/
+#if VK_KHR_descriptor_update_template
     VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME,
+#endif
     /************************************************************************/
     // RDNA2 Extensions
     /************************************************************************/

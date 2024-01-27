@@ -389,7 +389,7 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
                 .set = param_table->set_index,
             };
             set_to_record->mUpdateEntriesCount = update_entry_count;
-            CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreateDescriptorUpdateTemplate(D->pVkDevice,
+            CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreateDescriptorUpdateTemplateKHR(D->pVkDevice,
                 &template_info, GLOBAL_VkAllocationCallbacks, &set_to_record->pUpdateTemplate));
         }
         cgpu_free(template_entries);
@@ -425,7 +425,7 @@ void cgpu_free_root_signature_vulkan(CGPURootSignatureId signature)
         if (set_to_free->layout != VK_NULL_HANDLE)
             D->mVkDeviceTable.vkDestroyDescriptorSetLayout(D->pVkDevice, set_to_free->layout, GLOBAL_VkAllocationCallbacks);
         if (set_to_free->pUpdateTemplate != VK_NULL_HANDLE)
-            D->mVkDeviceTable.vkDestroyDescriptorUpdateTemplate(D->pVkDevice, set_to_free->pUpdateTemplate, GLOBAL_VkAllocationCallbacks);
+            D->mVkDeviceTable.vkDestroyDescriptorUpdateTemplateKHR(D->pVkDevice, set_to_free->pUpdateTemplate, GLOBAL_VkAllocationCallbacks);
     }
     cgpu_free(RS->pVkSetLayouts);
     cgpu_free(RS->pSetLayouts);
