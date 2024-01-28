@@ -104,6 +104,7 @@ cgpu_static_assert(sizeof(CGPUBuffer_Vulkan) <= 8 * sizeof(uint64_t), "Acquire S
 CGPUBufferId cgpu_create_buffer_vulkan(CGPUDeviceId device, const struct CGPUBufferDescriptor* desc)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)device->adapter;
     // Create VkBufferCreateInfo
     VkBufferCreateInfo add_info = VkUtil_CreateBufferCreateInfo(A, desc);
@@ -152,7 +153,7 @@ CGPUBufferId cgpu_create_buffer_vulkan(CGPUDeviceId device, const struct CGPUBuf
         cgpu_assert(0 && "VMA failed to create buffer!");
         return CGPU_NULLPTR;
     }
-    CGPUBuffer_Vulkan* B = cgpu_calloc_aligned(1, sizeof(CGPUBuffer_Vulkan) + sizeof(CGPUBufferInfo), _Alignof(CGPUBuffer_Vulkan));
+    CGPUBuffer_Vulkan* B = cgpu_calloc_aligned(allocator, 1, sizeof(CGPUBuffer_Vulkan) + sizeof(CGPUBufferInfo), _Alignof(CGPUBuffer_Vulkan));
     CGPUBufferInfo* info = (CGPUBufferInfo*)(B + 1);
     B->super.info = info;
     B->pVkAllocation = mVmaAllocation;
@@ -432,6 +433,7 @@ void cgpu_free_buffer_vulkan(CGPUBufferId buffer)
 {
     CGPUBuffer_Vulkan* B = (CGPUBuffer_Vulkan*)buffer;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)B->super.device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     cgpu_assert(B->pVkAllocation && "pVkAllocation must not be null!");
     if (B->pVkUniformTexelView)
     {
@@ -444,7 +446,7 @@ void cgpu_free_buffer_vulkan(CGPUBufferId buffer)
         B->pVkStorageTexelView = VK_NULL_HANDLE;
     }
     vmaDestroyBuffer(D->pVmaAllocator, B->pVkBuffer, B->pVkAllocation);
-    cgpu_free_aligned(B, _Alignof(CGPUBuffer_Vulkan));
+    cgpu_free_aligned(allocator, B, _Alignof(CGPUBuffer_Vulkan));
 }
 
 // Texture/TextureView APIs
@@ -590,6 +592,7 @@ VkSparseImageMemoryRequirements VkUtil_FillTiledTextureInfo(CGPUDevice_Vulkan* D
 {
     VkImage pVkImage = T->pVkImage;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     // Get memory requirements
     VkMemoryRequirements sparseImageMemoryReqs;
     // Sparse image memory requirement counts
@@ -645,7 +648,7 @@ VkSparseImageMemoryRequirements VkUtil_FillTiledTextureInfo(CGPUDevice_Vulkan* D
     uint32_t subres_cnt = layers * desc->mip_levels;
     uint32_t total_tiles_count = 0;
 
-    CGPUTiledTextureInfo* pTiledInfo = cgpu_calloc_aligned(1, 
+    CGPUTiledTextureInfo* pTiledInfo = cgpu_calloc_aligned(allocator, 1,
         sizeof(CGPUTiledTextureInfo) + subres_cnt * sizeof(CGPUTiledSubresourceInfo), 
         _Alignof(CGPUTiledTextureInfo));
     CGPUTiledSubresourceInfo* pSubresInfos = (CGPUTiledSubresourceInfo*)(pTiledInfo + 1);
@@ -883,7 +886,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
     }
     
     // create texture object
-    CGPUTexture_Vulkan* T = cgpu_calloc_aligned(1, totalSize, _Alignof(CGPUTexture_Vulkan));
+    CGPUTexture_Vulkan* T = cgpu_calloc_aligned(allocator, 1, totalSize, _Alignof(CGPUTexture_Vulkan));
     cgpu_assert(T);
     T->pVkImage = pVkImage;
     
@@ -895,7 +898,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
     {
         VkSparseImageMemoryRequirements sparseReq = VkUtil_FillTiledTextureInfo(D, T, desc, &memTypBits);
         const CGPUTiledTextureInfo* pTiledInfo = T->super.tiled_resource;
-        pVkTileMappings = cgpu_calloc_aligned(pTiledInfo->packed_mip_start, sizeof(CGPUTileTextureSubresourceMapping_Vulkan), _Alignof(CGPUTileTextureSubresourceMapping_Vulkan));
+        pVkTileMappings = cgpu_calloc_aligned(allocator, pTiledInfo->packed_mip_start, sizeof(CGPUTileTextureSubresourceMapping_Vulkan), _Alignof(CGPUTileTextureSubresourceMapping_Vulkan));
         for (uint32_t i = 0; i < pTiledInfo->packed_mip_start; i++)
         {
             const uint32_t X = pTiledInfo->subresources[i].width_in_tiles;
@@ -906,14 +909,14 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
                 .Y = Y,
                 .Z = Z,
                 .mVkMemoryTypeBits = memTypBits,
-                .mappings = cgpu_calloc_aligned(X * Y * Z, sizeof(CGPUTileMapping_Vulkan), _Alignof(CGPUTileMapping_Vulkan))
+                .mappings = cgpu_calloc_aligned(allocator, X * Y * Z, sizeof(CGPUTileMapping_Vulkan), _Alignof(CGPUTileMapping_Vulkan))
             };
             memcpy(&pVkTileMappings[i], &SM, sizeof(CGPUTileTextureSubresourceMapping_Vulkan));
         }
         const bool SingleTail = (sparseReq.formatProperties.flags & VK_SPARSE_IMAGE_FORMAT_SINGLE_MIPTAIL_BIT);
         T->mPackedMappingsCount = SingleTail ? 1 : arraySize;
         T->mSingleTail = SingleTail;
-        pVkPackedMappings = cgpu_calloc_aligned(T->mPackedMappingsCount, sizeof(CGPUTileTexturePackedMipMapping_Vulkan), _Alignof(CGPUTileTexturePackedMipMapping_Vulkan));
+        pVkPackedMappings = cgpu_calloc_aligned(allocator, T->mPackedMappingsCount, sizeof(CGPUTileTexturePackedMipMapping_Vulkan), _Alignof(CGPUTileTexturePackedMipMapping_Vulkan));
         for (uint32_t i = 0; i < T->mPackedMappingsCount; i++)
         {
             pVkPackedMappings[i].mVkSparseTailStride = sparseReq.imageMipTailStride;
@@ -1292,6 +1295,7 @@ CGPUTextureId cgpu_import_shared_texture_handle_vulkan(CGPUDeviceId device, cons
 void cgpu_free_texture_vulkan(CGPUTextureId texture)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)texture->device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     CGPUTexture_Vulkan* T = (CGPUTexture_Vulkan*)texture;
     const CGPUTextureInfo* pInfo = T->super.info;
     if (T->pVkImage != VK_NULL_HANDLE)
@@ -1343,26 +1347,27 @@ void cgpu_free_texture_vulkan(CGPUTextureId texture)
                     for (uint32_t y = 0; y < subres->Y; y++)
                         for (uint32_t z = 0; z < subres->Z; z++)
                             VkUtil_UnmapTileMappingAt(T, subres, x, y, z);
-                cgpu_free_aligned(subres->mappings, _Alignof(CGPUTileMapping_Vulkan));
+                cgpu_free_aligned(allocator, subres->mappings, _Alignof(CGPUTileMapping_Vulkan));
             }
         }
-        cgpu_free_aligned(T->pVkTileMappings, _Alignof(CGPUTileTextureSubresourceMapping_Vulkan));
+        cgpu_free_aligned(allocator, T->pVkTileMappings, _Alignof(CGPUTileTextureSubresourceMapping_Vulkan));
 
         for (uint32_t n = 0; n < T->mPackedMappingsCount; n++)
             VkUtil_UnmapPackedMappingAt(T, n);
-        cgpu_free_aligned(T->pVkPackedMappings, _Alignof(CGPUTileTexturePackedMipMapping_Vulkan));
+        cgpu_free_aligned(allocator, T->pVkPackedMappings, _Alignof(CGPUTileTexturePackedMipMapping_Vulkan));
     }
     if (T->super.tiled_resource)
-        cgpu_free_aligned((void*)T->super.tiled_resource, _Alignof(CGPUTiledTextureInfo));
-    cgpu_free_aligned(T, _Alignof(CGPUTexture_Vulkan));
+        cgpu_free_aligned(allocator, (void*)T->super.tiled_resource, _Alignof(CGPUTiledTextureInfo));
+    cgpu_free_aligned(allocator, T, _Alignof(CGPUTexture_Vulkan));
 }
 
 CGPUTextureViewId cgpu_create_texture_view_vulkan(CGPUDeviceId device, const struct CGPUTextureViewDescriptor* desc)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)desc->texture->device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     CGPUTexture_Vulkan* T = (CGPUTexture_Vulkan*)desc->texture;
     const CGPUTextureInfo* pInfo = T->super.info;
-    CGPUTextureView_Vulkan* TV = cgpu_calloc_aligned(1, sizeof(CGPUTextureView_Vulkan), _Alignof(CGPUTextureView_Vulkan));
+    CGPUTextureView_Vulkan* TV = cgpu_calloc_aligned(allocator, 1, sizeof(CGPUTextureView_Vulkan), _Alignof(CGPUTextureView_Vulkan));
     VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
     VkImageType mImageType = pInfo->is_cube ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
     switch (mImageType)
@@ -1447,6 +1452,7 @@ CGPUTextureViewId cgpu_create_texture_view_vulkan(CGPUDeviceId device, const str
 void cgpu_free_texture_view_vulkan(CGPUTextureViewId render_target)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)render_target->device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     CGPUTextureView_Vulkan* TV = (CGPUTextureView_Vulkan*)render_target;
     // Free descriptors
     if (VK_NULL_HANDLE != TV->pVkSRVDescriptor)
@@ -1455,7 +1461,7 @@ void cgpu_free_texture_view_vulkan(CGPUTextureViewId render_target)
         D->mVkDeviceTable.vkDestroyImageView(D->pVkDevice, TV->pVkRTVDSVDescriptor, GLOBAL_VkAllocationCallbacks);
     if (VK_NULL_HANDLE != TV->pVkUAVDescriptor)
         D->mVkDeviceTable.vkDestroyImageView(D->pVkDevice, TV->pVkUAVDescriptor, GLOBAL_VkAllocationCallbacks);
-    cgpu_free_aligned(TV, _Alignof(CGPUTextureView_Vulkan));
+    cgpu_free_aligned(allocator, TV, _Alignof(CGPUTextureView_Vulkan));
 }
 
 bool cgpu_try_bind_aliasing_texture_vulkan(CGPUDeviceId device, const struct CGPUTextureAliasingBindDescriptor* desc)
@@ -1504,7 +1510,8 @@ bool cgpu_try_bind_aliasing_texture_vulkan(CGPUDeviceId device, const struct CGP
 CGPUSamplerId cgpu_create_sampler_vulkan(CGPUDeviceId device, const struct CGPUSamplerDescriptor* desc)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
-    CGPUSampler_Vulkan* S = cgpu_calloc_aligned(1, sizeof(CGPUSampler_Vulkan), _Alignof(CGPUSampler_Vulkan));
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
+    CGPUSampler_Vulkan* S = cgpu_calloc_aligned(allocator, 1, sizeof(CGPUSampler_Vulkan), _Alignof(CGPUSampler_Vulkan));
     VkSamplerCreateInfo sampler_info = {
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
         .pNext = NULL,
@@ -1533,8 +1540,9 @@ void cgpu_free_sampler_vulkan(CGPUSamplerId sampler)
 {
     CGPUSampler_Vulkan* S = (CGPUSampler_Vulkan*)sampler;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)sampler->device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     D->mVkDeviceTable.vkDestroySampler(D->pVkDevice, S->pVkSampler, GLOBAL_VkAllocationCallbacks);
-    cgpu_free_aligned(S, _Alignof(CGPUSampler_Vulkan));
+    cgpu_free_aligned(allocator, S, _Alignof(CGPUSampler_Vulkan));
 }
 
 // Shader APIs

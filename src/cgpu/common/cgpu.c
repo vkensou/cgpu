@@ -95,10 +95,12 @@ CGPU_API void cgpu_free_instance(CGPUInstanceId instance)
     cgpu_assert(instance != CGPU_NULLPTR && "fatal: can't destroy NULL instance!");
     cgpu_assert(instance->proc_table->free_instance && "free_instance Proc Missing!");
 
+    const CGPUAllocator* allocator = &instance->allocator;
+
     struct CGPURuntimeTable* runtime_table = instance->runtime_table;
     cgpu_early_free_runtime_table(runtime_table);
+    cgpu_free_runtime_table(allocator, runtime_table);
     instance->proc_table->free_instance(instance);
-    cgpu_free_runtime_table(runtime_table);
 
     // SkrCZoneEnd(zz);
 }

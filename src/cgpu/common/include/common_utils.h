@@ -12,7 +12,7 @@ CGPU_EXTERN_C_BEGIN
 
 struct CGPURuntimeTable* cgpu_create_runtime_table(const CGPUAllocator* allocator);
 void cgpu_early_free_runtime_table(struct CGPURuntimeTable* table);
-void cgpu_free_runtime_table(struct CGPURuntimeTable* table);
+void cgpu_free_runtime_table(const CGPUAllocator* allocator, struct CGPURuntimeTable* table);
 void cgpu_runtime_table_add_queue(CGPUQueueId queue, ECGPUQueueType type, uint32_t index);
 CGPUQueueId cgpu_runtime_table_try_get_queue(CGPUDeviceId device, ECGPUQueueType type, uint32_t index);
 
@@ -32,7 +32,7 @@ CGPURootSignatureId CGPUUtil_AddSignature(CGPURootSignaturePoolId pool, CGPURoot
 // TODO: signature pool statics
 //void CGPUUtil_AllSignatures(CGPURootSignaturePoolId pool, CGPURootSignatureId* signatures, uint32_t* count);
 bool CGPUUtil_PoolFreeSignature(CGPURootSignaturePoolId pool, CGPURootSignatureId sig);
-void CGPUUtil_FreeRootSignaturePool(CGPURootSignaturePoolId pool);
+void CGPUUtil_FreeRootSignaturePool(const CGPUAllocator* allocator, CGPURootSignaturePoolId pool);
 
 #define cgpu_round_up(value, multiple) ((((value) + (multiple)-1) / (multiple)) * (multiple))
 #define cgpu_round_down(value, multiple) ((value) - (value) % (multiple))
@@ -105,54 +105,48 @@ CGPU_FORCEINLINE static void logger_default(void* user_data, ECGPULogSeverity se
 
 #define CGPU_UNIMPLEMENTED_FUNCTION()
 
-CGPU_FORCEINLINE static void* cgpu_malloc_default(void* user_data, size_t size, void* pool)
+CGPU_FORCEINLINE static void* cgpu_malloc_default(void* user_data, size_t size, const void* pool)
 {
     return malloc(size);
 }
 
-CGPU_FORCEINLINE static void* cgpu_calloc_default(void* user_data, size_t count, size_t size, void* pool)
+CGPU_FORCEINLINE static void* cgpu_calloc_default(void* user_data, size_t count, size_t size, const void* pool)
 {
     return calloc(count, size);
 }
 
-CGPU_FORCEINLINE static void cgpu_free_default(void* user_data, void* ptr, void* pool)
+CGPU_FORCEINLINE static void cgpu_free_default(void* user_data, void* ptr, const void* pool)
 {
     free(ptr);
 }
 
-CGPU_FORCEINLINE static void* cgpu_malloc_aligned_default(void* user_data, size_t size, size_t alignment, void* pool)
+CGPU_FORCEINLINE static void* cgpu_malloc_aligned_default(void* user_data, size_t size, size_t alignment, const void* pool)
 {
     return _aligned_malloc(size, alignment);
 }
 
-CGPU_FORCEINLINE static void* cgpu_calloc_aligned_default(void* user_data, size_t count, size_t size, size_t alignment, void* pool)
+CGPU_FORCEINLINE static void* cgpu_calloc_aligned_default(void* user_data, size_t count, size_t size, size_t alignment, const void* pool)
 {
     void* memory = _aligned_malloc(count * size, alignment);
     if (memory != NULL) memset(memory, 0, count * size);
     return memory;
 }
 
-CGPU_FORCEINLINE static void cgpu_free_aligned_default(void* user_data, void* ptr, size_t alignment, void* pool)
+CGPU_FORCEINLINE static void cgpu_free_aligned_default(void* user_data, void* ptr, size_t alignment, const void* pool)
 {
     _aligned_free(ptr);
 }
 
-CGPU_FORCEINLINE static void* _aligned_calloc(size_t nelem, size_t elsize, size_t alignment)
-{
-    void* memory = _aligned_malloc(nelem * elsize, alignment);
-    if (memory != NULL) memset(memory, 0, nelem * elsize);
-    return memory;
-}
-    #define cgpu_malloc(allocator, size) (allocator)->malloc((allocator)->user_data, size, 0)
-    #define cgpu_malloc_aligned(allocator, size, alignment) (allocator)->malloc_aligned((allocator)->user_data, size, alignment, 0)
-    #define cgpu_malloc_alignedN(size, alignment, ...)  _aligned_malloc(size, alignment)
-    #define cgpu_calloc(allocator, count, size) (allocator)->calloc((allocator)->user_data, count, size, 0)
-    #define cgpu_callocN(count, size, ...) calloc((count), (size))
-    #define cgpu_calloc_aligned _aligned_calloc
-    #define cgpu_free(allocator, ptr) (allocator)->free((allocator)->user_data, ptr, 0)
-    #define cgpu_freeN(ptr, ...) free(ptr)
-    #define cgpu_free_aligned(ptr, alignment) _aligned_free(ptr)
-    #define cgpu_free_alignedN(ptr, alignment, ...) _aligned_free((ptr), (alignment))
+#define cgpu_malloc(allocator, size) (allocator)->malloc((allocator)->user_data, size, 0)
+#define cgpu_malloc_aligned(allocator, size, alignment) (allocator)->malloc_aligned((allocator)->user_data, size, alignment, 0)
+#define cgpu_malloc_alignedN(allocator, size, alignment, pool) (allocator)->malloc_aligned((allocator)->user_data, size, alignment, pool)
+#define cgpu_calloc(allocator, count, size) (allocator)->calloc((allocator)->user_data, count, size, 0)
+#define cgpu_callocN(allocator, count, size, pool) (allocator)->calloc((allocator)->user_data, count, size, pool)
+#define cgpu_calloc_aligned(allocator, count, size, alignment) (allocator)->calloc_aligned((allocator)->user_data, count, size, alignment, 0)
+#define cgpu_free(allocator, ptr) (allocator)->free((allocator)->user_data, ptr, 0)
+#define cgpu_freeN(allocator, ptr, pool) (allocator)->free((allocator)->user_data, ptr, pool)
+#define cgpu_free_aligned(allocator, ptr, alignment) (allocator)->free_aligned((allocator)->user_data, ptr, alignment, 0)
+#define cgpu_free_alignedN(allocator, ptr, alignment, pool) (allocator)->free_aligned((allocator)->user_data, ptr, alignment, pool)
 
 #ifdef __cplusplus
 #include <utility>
@@ -180,9 +174,9 @@ T* cgpu_new_aligned(const CGPUAllocator* allocator, Args&&... args)
 }
 
 template <typename T, typename... Args>
-T* cgpu_new_sized(uint64_t size, Args&&... args)
+T* cgpu_new_sized(const CGPUAllocator* allocator, uint64_t size, Args&&... args)
 {
-    void* ptr = cgpu_calloc_aligned(1, size, alignof(T));
+    void* ptr = cgpu_calloc_aligned(allocator, 1, size, alignof(T));
     return cgpu_new_placed<T>(ptr, std::forward<Args>(args)...);
 }
 
@@ -193,9 +187,9 @@ void cgpu_delete_placed(T* object)
 }
 
 template <typename T>
-void cgpu_delete(T* object)
+void cgpu_delete(const CGPUAllocator* allocator, T* object)
 {
     cgpu_delete_placed(object);
-    cgpu_free_aligned(object, alignof(T));
+    cgpu_free_aligned(allocator, object, alignof(T));
 }
 #endif

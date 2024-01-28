@@ -93,9 +93,9 @@ void cgpu_early_free_runtime_table(struct CGPURuntimeTable* table)
     table->early_sweep();
 }
 
-void cgpu_free_runtime_table(struct CGPURuntimeTable* table)
+void cgpu_free_runtime_table(const CGPUAllocator* allocator, struct CGPURuntimeTable* table)
 {
-    cgpu_delete(table);
+    cgpu_delete(allocator, table);
 }
 
 void cgpu_runtime_table_add_queue(CGPUQueueId queue, ECGPUQueueType type, uint32_t index)

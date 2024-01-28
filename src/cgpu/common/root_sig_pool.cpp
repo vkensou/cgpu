@@ -213,8 +213,8 @@ bool CGPUUtil_PoolFreeSignature(CGPURootSignaturePoolId pool, CGPURootSignatureI
     return P->deallocate(sig);
 }
 
-void CGPUUtil_FreeRootSignaturePool(CGPURootSignaturePoolId pool)
+void CGPUUtil_FreeRootSignaturePool(const CGPUAllocator* allocator, CGPURootSignaturePoolId pool)
 {
     auto P = (CGPURootSignaturePoolImpl*)pool;
-    cgpu_delete(P);
+    cgpu_delete(allocator, P);
 }

@@ -368,21 +368,21 @@ void cgpu_free_instance_vulkan(CGPUInstanceId instance)
         auto& Adapter = to_destroy->pVulkanAdapters[i];
         cgpu_free(allocator, Adapter.pQueueFamilyProperties);
         // free extensions cache
-        cgpu_delete(Adapter.pExtensionsTable);
+        cgpu_delete(allocator, Adapter.pExtensionsTable);
         cgpu_free(allocator, Adapter.pExtensionNames);
         cgpu_free(allocator, Adapter.pExtensionProperties);
 
         // free layers cache
-        cgpu_delete(Adapter.pLayersTable);
+        cgpu_delete(allocator, Adapter.pLayersTable);
         cgpu_free(allocator, Adapter.pLayerNames);
         cgpu_free(allocator, Adapter.pLayerProperties);
     }
     // free extensions cache
-    cgpu_delete(to_destroy->pExtensionsTable);
+    cgpu_delete(allocator, to_destroy->pExtensionsTable);
     cgpu_free(allocator, to_destroy->pExtensionNames);
     cgpu_free(allocator, to_destroy->pExtensionProperties);
     // free layers cache
-    cgpu_delete(to_destroy->pLayersTable);
+    cgpu_delete(allocator, to_destroy->pLayersTable);
     cgpu_free(allocator, to_destroy->pLayerNames);
     cgpu_free(allocator, to_destroy->pLayerProperties);
 
