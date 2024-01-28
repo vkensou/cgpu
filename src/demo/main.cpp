@@ -390,7 +390,7 @@ std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGP
 	return { root_sig, pipeline };
 }
 
-void log(void* user_data, ECGPULogSeverity severity, const char* fmt, ...)
+void demo_log(void* user_data, ECGPULogSeverity severity, const char* fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
@@ -446,7 +446,7 @@ int main(int argc, char** argv)
 		.enable_gpu_based_validation = true,
 		.enable_set_name = true,
 		.logger = {
-			.log_callback = log
+			.log_callback = demo_log
 		},
 		.allocator = {
 			.malloc_fn = demo_malloc,
