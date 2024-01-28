@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 CGPU_EXTERN_C_BEGIN
 
@@ -86,12 +88,20 @@ CGPU_EXTERN_C size_t cgpu_hash(const void* buffer, size_t size, size_t seed);
         memset((void*)(var), 0, sizeof(type) * (num));
 #endif
 
-#define cgpu_trace(instance, fmt, ...) {if((instance)->logger.log_callback!=CGPU_NULLPTR)((instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_TRACE, fmt, __VA_ARGS__));}
-#define cgpu_debug(instance, fmt, ...) {if((instance)->logger.log_callback!=CGPU_NULLPTR)((instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_DEBUG, fmt, __VA_ARGS__));}
-#define cgpu_info(instance, fmt, ...) {if((instance)->logger.log_callback!=CGPU_NULLPTR)((instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_INFO, fmt, __VA_ARGS__));}
-#define cgpu_warn(instance, fmt, ...) {if((instance)->logger.log_callback!=CGPU_NULLPTR)((instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_WARNING, fmt, __VA_ARGS__));}
-#define cgpu_error(instance, fmt, ...) {if((instance)->logger.log_callback!=CGPU_NULLPTR)((instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_ERROR, fmt, __VA_ARGS__));}
-#define cgpu_fatal(instance, fmt, ...) {if((instance)->logger.log_callback!=CGPU_NULLPTR)((instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_FATAL, fmt, __VA_ARGS__));}
+CGPU_FORCEINLINE static void logger_default(void* user_data, ECGPULogSeverity severity, const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vprintf(fmt, args);
+    va_end(args);
+}
+
+#define cgpu_trace(instance, fmt, ...) {(instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_TRACE, fmt, __VA_ARGS__);}
+#define cgpu_debug(instance, fmt, ...) {(instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_DEBUG, fmt, __VA_ARGS__);}
+#define cgpu_info(instance, fmt, ...) {(instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_INFO, fmt, __VA_ARGS__);}
+#define cgpu_warn(instance, fmt, ...) {(instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_WARNING, fmt, __VA_ARGS__);}
+#define cgpu_error(instance, fmt, ...) {(instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_ERROR, fmt, __VA_ARGS__);}
+#define cgpu_fatal(instance, fmt, ...) {(instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_FATAL, fmt, __VA_ARGS__);}
 
 #define CGPU_UNIMPLEMENTED_FUNCTION()
 

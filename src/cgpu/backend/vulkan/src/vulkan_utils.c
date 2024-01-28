@@ -1117,8 +1117,6 @@ VkUtil_DebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity
         return VK_FALSE;
 
     CGPUInstance_Vulkan* I = pUserData;
-    if (I->super.logger.log_callback == NULL)
-        return VK_FALSE;
 
     switch (messageSeverity)
     {
@@ -1148,8 +1146,6 @@ VkUtil_DebugReportCallback(
         return VK_FALSE;
 
     CGPUInstance_Vulkan* I = pUserData;
-    if (I->super.logger.log_callback == NULL)
-        return VK_FALSE;
 
     switch (flags)
     {
