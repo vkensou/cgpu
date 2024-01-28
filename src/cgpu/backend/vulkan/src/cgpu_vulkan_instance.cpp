@@ -374,10 +374,12 @@ CGPUDeviceId cgpu_create_device_vulkan(CGPUAdapterId adapter, const CGPUDeviceDe
     // Create Device
     CGPU_DECLARE_ZERO(VkDeviceCreateInfo, createInfo)
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pNext = &A->mPhysicalDeviceFeatures;
+    if (vkGetPhysicalDeviceFeatures2KHR || I->apiVersion >= VK_API_VERSION_1_1)
+        createInfo.pNext = &A->mPhysicalDeviceFeatures;
+    else
+        createInfo.pEnabledFeatures = &A->mPhysicalDeviceFeatures.features;
     createInfo.queueCreateInfoCount = (uint32_t)queueCreateInfos.size();
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
-    createInfo.pEnabledFeatures = NULL;
     createInfo.enabledExtensionCount = A->mExtensionsCount;
     createInfo.ppEnabledExtensionNames = A->pExtensionNames;
     createInfo.enabledLayerCount = A->mLayersCount;

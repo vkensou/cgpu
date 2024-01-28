@@ -210,7 +210,10 @@ const char* const* device_extensions, uint32_t device_extension_count)
                 ppNext = &VkAdapter->mPhysicalDeviceFragmentShadingRateProps.pNext;
 #endif
             }
-            vkGetPhysicalDeviceProperties2KHR(pysicalDevices[i], &VkAdapter->mPhysicalDeviceProps);
+            if (vkGetPhysicalDeviceProperties2KHR)
+                vkGetPhysicalDeviceProperties2KHR(pysicalDevices[i], &VkAdapter->mPhysicalDeviceProps);
+            else
+                vkGetPhysicalDeviceProperties(pysicalDevices[i], &VkAdapter->mPhysicalDeviceProps.properties);
             // Query Physical Device Features
             VkAdapter->mPhysicalDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
             // Append pNexts
@@ -259,11 +262,16 @@ const char* const* device_extensions, uint32_t device_extension_count)
                 ppNext = &VkAdapter->mPhysicalDeviceShaderObjectFeatures.pNext;
 #endif
             }
+            if (vkGetPhysicalDeviceFeatures2KHR || I->apiVersion >= VK_API_VERSION_1_1)
+            {
 #ifndef NX64
-            vkGetPhysicalDeviceFeatures2KHR(pysicalDevices[i], &VkAdapter->mPhysicalDeviceFeatures);
+                vkGetPhysicalDeviceFeatures2KHR(pysicalDevices[i], &VkAdapter->mPhysicalDeviceFeatures);
 #else
-            vkGetPhysicalDeviceFeatures2(pysicalDevices[i], &VkAdapter->mPhysicalDeviceFeatures);
+                vkGetPhysicalDeviceFeatures2(pysicalDevices[i], &VkAdapter->mPhysicalDeviceFeatures);
 #endif
+            }
+            else
+                vkGetPhysicalDeviceFeatures(pysicalDevices[i], &VkAdapter->mPhysicalDeviceFeatures.features);
             // Query Physical Device Layers Properties
             VkUtil_SelectPhysicalDeviceLayers(VkAdapter, device_layers, device_layers_count);
             // Query Physical Device Extension Properties
@@ -686,7 +694,6 @@ void VkUtil_QueryHostVisbleVramInfo(CGPUAdapter_Vulkan* VkAdapter)
                     adapter_detail->host_visible_vram_budget = mem_prop.memoryHeaps[heap_index].size;
                     break;
                 }
-                break;
             }
         }
     }
