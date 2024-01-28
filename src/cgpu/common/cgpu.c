@@ -68,7 +68,7 @@ CGPU_API CGPUInstanceId cgpu_create_instance(const CGPUInstanceDescriptor* desc)
     instance->proc_table = tbl;
     instance->surfaces_table = s_tbl;
     if(!instance->runtime_table) 
-        instance->runtime_table = cgpu_create_runtime_table();
+        instance->runtime_table = cgpu_create_runtime_table(&instance->allocator);
     
     // SkrCZoneEnd(zz);
 
@@ -1049,7 +1049,7 @@ void cgpu_free_shader_library(CGPUShaderLibraryId library)
     const CGPUDeviceId device = library->device;
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
     // handle name string
-    cgpu_free((void*)library->name);
+    cgpu_free(&device->adapter->instance->allocator, (void*)library->name);
 
     CGPUProcFreeShaderLibrary fn_free_shader_library = device->proc_table_cache->free_shader_library;
     cgpu_assert(fn_free_shader_library && "free_shader_library Proc Missing!");

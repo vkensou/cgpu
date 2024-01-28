@@ -185,8 +185,9 @@ void cgpu_free_fence_vulkan(CGPUFenceId fence)
 {
     CGPUFence_Vulkan* F = (CGPUFence_Vulkan*)fence;
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)fence->device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     D->mVkDeviceTable.vkDestroyFence(D->pVkDevice, F->pVkFence, GLOBAL_VkAllocationCallbacks);
-    cgpu_free(F);
+    cgpu_free(allocator, F);
 }
 
 CGPUSemaphoreId cgpu_create_semaphore_vulkan(CGPUDeviceId device)
@@ -207,9 +208,10 @@ CGPUSemaphoreId cgpu_create_semaphore_vulkan(CGPUDeviceId device)
 void cgpu_free_semaphore_vulkan(CGPUSemaphoreId semaphore)
 {
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)semaphore->device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     CGPUSemaphore_Vulkan* Semaphore = (CGPUSemaphore_Vulkan*)semaphore;
     D->mVkDeviceTable.vkDestroySemaphore(D->pVkDevice, Semaphore->pVkSemaphore, GLOBAL_VkAllocationCallbacks);
-    cgpu_free(Semaphore);
+    cgpu_free(allocator, Semaphore);
 }
 
 uint32_t get_set_count(uint32_t set_index_mask)
@@ -229,8 +231,9 @@ uint32_t get_set_count(uint32_t set_index_mask)
 CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const struct CGPURootSignatureDescriptor* desc)
 {
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     CGPURootSignature_Vulkan* RS = cgpu_calloc(1, sizeof(CGPURootSignature_Vulkan));
-    CGPUUtil_InitRSParamTables((CGPURootSignature*)RS, desc);
+    CGPUUtil_InitRSParamTables((CGPURootSignature*)RS, desc, allocator);
     // [RS POOL] ALLOCATION
     if (desc->pool)
     {
@@ -319,7 +322,7 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
             VkUtil_ConsumeDescriptorSets(D->pDescriptorPool, &RS->pSetLayouts[set_index].layout,
                 &RS->pSetLayouts[set_index].pEmptyDescSet, 1);
 
-            if (bindings_count) cgpu_free(vkbindings);
+            if (bindings_count) cgpu_free(allocator, vkbindings);
         }
         set_index++;
         set_index_mask >>= 1;
@@ -394,7 +397,7 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
                 CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreateDescriptorUpdateTemplateKHR(D->pVkDevice,
                     &template_info, GLOBAL_VkAllocationCallbacks, &set_to_record->pUpdateTemplate));
             }
-            cgpu_free(template_entries);
+            cgpu_free(allocator, template_entries);
         }
     }
     // [RS POOL] INSERTION
@@ -412,6 +415,7 @@ void cgpu_free_root_signature_vulkan(CGPURootSignatureId signature)
 {
     CGPURootSignature_Vulkan* RS = (CGPURootSignature_Vulkan*)signature;
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)signature->device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     // [RS POOL] FREE
     if (signature->pool)
     {
@@ -430,16 +434,16 @@ void cgpu_free_root_signature_vulkan(CGPURootSignatureId signature)
         if (set_to_free->pUpdateTemplate != VK_NULL_HANDLE)
             D->mVkDeviceTable.vkDestroyDescriptorUpdateTemplateKHR(D->pVkDevice, set_to_free->pUpdateTemplate, GLOBAL_VkAllocationCallbacks);
     }
-    cgpu_free(RS->pVkSetLayouts);
-    cgpu_free(RS->pSetLayouts);
-    cgpu_free(RS->pPushConstRanges);
+    cgpu_free(allocator, RS->pVkSetLayouts);
+    cgpu_free(allocator, RS->pSetLayouts);
+    cgpu_free(allocator, RS->pPushConstRanges);
     D->mVkDeviceTable.vkDestroyPipelineLayout(D->pVkDevice, RS->pPipelineLayout, GLOBAL_VkAllocationCallbacks);
-    cgpu_free(RS);
+    cgpu_free(allocator, RS);
 }
 
 CGPURootSignaturePoolId cgpu_create_root_signature_pool_vulkan(CGPUDeviceId device, const struct CGPURootSignaturePoolDescriptor* desc)
 {
-    return CGPUUtil_CreateRootSignaturePool(desc);
+    return CGPUUtil_CreateRootSignaturePool(&device->adapter->instance->allocator, desc);
 }
 
 void cgpu_free_root_signature_pool_vulkan(CGPURootSignaturePoolId pool)
@@ -767,8 +771,9 @@ void cgpu_free_compute_pipeline_vulkan(CGPUComputePipelineId pipeline)
 {
     CGPUComputePipeline_Vulkan* PPL = (CGPUComputePipeline_Vulkan*)pipeline;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)pipeline->device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     D->mVkDeviceTable.vkDestroyPipeline(D->pVkDevice, PPL->pVkPipeline, GLOBAL_VkAllocationCallbacks);
-    cgpu_free(PPL);
+    cgpu_free(allocator, PPL);
 }
 
 /* clang-format off */
@@ -1116,9 +1121,10 @@ void cgpu_free_query_pool_vulkan(CGPUQueryPoolId pool)
 {
     CGPUQueryPool_Vulkan* P = (CGPUQueryPool_Vulkan*)pool;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)pool->device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     D->mVkDeviceTable.vkDestroyQueryPool(
     D->pVkDevice, P->pVkQueryPool, GLOBAL_VkAllocationCallbacks);
-    cgpu_free(P);
+    cgpu_free(allocator, P);
 }
 
 CGPUMemoryPoolId cgpu_create_memory_pool_vulkan(CGPUDeviceId device, const struct CGPUMemoryPoolDescriptor* desc)
@@ -1319,6 +1325,7 @@ float cgpu_queue_get_timestamp_period_ns_vulkan(CGPUQueueId queue)
 
 void cgpu_free_queue_vulkan(CGPUQueueId queue)
 {
+    const CGPUAllocator* allocator = &queue->device->adapter->instance->allocator;
     CGPUQueue_Vulkan* Q = (CGPUQueue_Vulkan*)queue;
     if (Q->pInnerCmdBuffer) cgpu_free_command_buffer(Q->pInnerCmdBuffer);
     if (Q->pInnerCmdPool) cgpu_free_command_pool(Q->pInnerCmdPool);
@@ -1330,7 +1337,7 @@ void cgpu_free_queue_vulkan(CGPUQueueId queue)
         cgpu_free(Q->pMutex);
     }
 #endif
-    cgpu_free((void*)queue);
+    cgpu_free(allocator, (void*)queue);
 }
 
 CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struct CGPURenderPassDescriptor* desc)
@@ -1473,10 +1480,11 @@ CGPUFramebufferId cgpu_create_framebuffer_vulkan(CGPUDeviceId device, const stru
 void cgpu_free_render_pass_vulkan(CGPURenderPassId render_pass)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)render_pass->device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     CGPURenderPass_Vulkan* R = (CGPURenderPass_Vulkan*)render_pass;
     cgpu_assert(R->pVkRenderPass);
     D->mVkDeviceTable.vkDestroyRenderPass(D->pVkDevice, R->pVkRenderPass, GLOBAL_VkAllocationCallbacks);
-    cgpu_free(R);
+    cgpu_free(allocator, R);
 }
 void cgpu_free_framebuffer_vulkan(CGPUFramebufferId framebuffer)
 {
@@ -1563,9 +1571,10 @@ void cgpu_free_command_buffer_vulkan(CGPUCommandBufferId cmd)
 void cgpu_free_command_pool_vulkan(CGPUCommandPoolId pool)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)pool->queue->device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     CGPUCommandPool_Vulkan* P = (CGPUCommandPool_Vulkan*)pool;
     free_transient_command_pool(D, P->pVkCmdPool);
-    cgpu_free(P);
+    cgpu_free(allocator, P);
 }
 
 // CMDs

@@ -13,7 +13,8 @@
 
 bool VkUtil_InitializeEnvironment(struct CGPUInstance* Inst)
 {
-    Inst->runtime_table = cgpu_create_runtime_table();
+    const CGPUAllocator* allocator = &Inst->allocator;
+    Inst->runtime_table = cgpu_create_runtime_table(allocator);
     // VOLK
 #if !defined(NX64)
     VkResult volkInit = volkInitialize();
@@ -459,18 +460,19 @@ void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vu
 
 void VkUtil_FreeShaderReflection(CGPUShaderLibrary_Vulkan* S)
 {
+    const CGPUAllocator* allocator = &S->super.device->adapter->instance->allocator;
     spvReflectDestroyShaderModule(S->pReflect);
     if (S->super.entry_reflections)
     {
         for (uint32_t i = 0; i < S->super.entrys_count; i++)
         {
             CGPUShaderReflection* reflection = S->super.entry_reflections + i;
-            if (reflection->vertex_inputs) cgpu_free(reflection->vertex_inputs);
-            if (reflection->shader_resources) cgpu_free(reflection->shader_resources);
+            if (reflection->vertex_inputs) cgpu_free(allocator, reflection->vertex_inputs);
+            if (reflection->shader_resources) cgpu_free(allocator, reflection->shader_resources);
         }
     }
-    cgpu_free(S->super.entry_reflections);
-    cgpu_free(S->pReflect);
+    cgpu_free(allocator, S->super.entry_reflections);
+    cgpu_free(allocator, S->pReflect);
 }
 
 // VMA
@@ -604,6 +606,7 @@ void VkUtil_ReturnDescriptorSets(struct VkUtil_DescriptorPool* pPool, VkDescript
 void VkUtil_FreeDescriptorPool(struct VkUtil_DescriptorPool* DescPool)
 {
     CGPUDevice_Vulkan* D = DescPool->Device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     D->mVkDeviceTable.vkDestroyDescriptorPool(D->pVkDevice, DescPool->pVkDescPool, GLOBAL_VkAllocationCallbacks);
 #ifdef CGPU_THREAD_SAFETY
     if (DescPool->pMutex)
@@ -612,7 +615,7 @@ void VkUtil_FreeDescriptorPool(struct VkUtil_DescriptorPool* DescPool)
         cgpu_free(DescPool->pMutex);
     }
 #endif
-    cgpu_free(DescPool);
+    cgpu_free(allocator, DescPool);
 }
 
 VkDescriptorSetLayout VkUtil_CreateDescriptorSetLayout(CGPUDevice_Vulkan* D,

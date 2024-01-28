@@ -707,6 +707,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
     CGPUQueue_Vulkan* Q = (CGPUQueue_Vulkan*)desc->owner_queue;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)device->adapter;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
 
     bool owns_image = false;
     bool is_allocation_dedicated = false;
@@ -873,7 +874,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
             }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
             if (win32Name != CGPU_NULLPTR) 
-                cgpu_free(win32Name);
+                cgpu_free(allocator, win32Name);
 #endif
             is_allocation_dedicated = mem_reqs.flags & VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
             can_alias_alloc = mem_reqs.flags & VMA_ALLOCATION_CREATE_CAN_ALIAS_BIT;
@@ -1036,6 +1037,7 @@ void VkUtil_UnmapPackedMappingAt(CGPUTexture_Vulkan* T, uint32_t n)
 void cgpu_queue_map_packed_mips_vulkan(CGPUQueueId queue, const struct CGPUTiledTexturePackedMips* regions)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)queue->device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     CGPUQueue_Vulkan* Q = (CGPUQueue_Vulkan*)queue;
     uint32_t N = 0;
     for (uint32_t i = 0; i < regions->packed_mip_count; i++)
@@ -1110,7 +1112,7 @@ void cgpu_queue_map_packed_mips_vulkan(CGPUQueueId queue, const struct CGPUTiled
         skr_atomicu64_add_relaxed(&pModTiledInfo->alive_pack_count, 1);
     }
 
-    cgpu_free(opaqueBinds);
+    cgpu_free(allocator, opaqueBinds);
 }
 
 void cgpu_queue_unmap_packed_mips_vulkan(CGPUQueueId queue, const struct CGPUTiledTexturePackedMips* regions)
@@ -1129,6 +1131,7 @@ void cgpu_queue_map_tiled_texture_vulkan(CGPUQueueId queue, const struct CGPUTil
     const uint32_t kPageSize = VK_SPARSE_PAGE_STANDARD_SIZE;
     const uint32_t RegionCount = regions->region_count;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)queue->device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     CGPUQueue_Vulkan* Q = (CGPUQueue_Vulkan*)queue;
     CGPUTexture_Vulkan* T = (CGPUTexture_Vulkan*)regions->texture;
     const CGPUTiledTextureInfo* pTiledInfo = T->super.tiled_resource;
@@ -1233,7 +1236,7 @@ void cgpu_queue_map_tiled_texture_vulkan(CGPUQueueId queue, const struct CGPUTil
         skr_atomicu64_add_relaxed(&pModTiledInfo->alive_tiles_count, 1);
     }
 
-    cgpu_free(ArgMemory);
+    cgpu_free(allocator, ArgMemory);
 }
 
 void cgpu_queue_unmap_tiled_texture_vulkan(CGPUQueueId queue, const struct CGPUTiledTextureRegions* regions)
@@ -1554,11 +1557,12 @@ CGPUShaderLibraryId cgpu_create_shader_library_vulkan(CGPUDeviceId device, const
 void cgpu_free_shader_library_vulkan(CGPUShaderLibraryId library)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)library->device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     CGPUShaderLibrary_Vulkan* S = (CGPUShaderLibrary_Vulkan*)library;
      VkUtil_FreeShaderReflection(S);
     if (S->mShaderModule != VK_NULL_HANDLE)
     {
         D->mVkDeviceTable.vkDestroyShaderModule(D->pVkDevice, S->mShaderModule, GLOBAL_VkAllocationCallbacks);
     }
-    cgpu_free(S);
+    cgpu_free(allocator, S);
 }

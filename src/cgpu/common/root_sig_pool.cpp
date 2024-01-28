@@ -185,9 +185,9 @@ protected:
     phmap::flat_hash_map<CGPURootSignatureId, uint32_t> counterMap;
 };
 
-CGPURootSignaturePoolId CGPUUtil_CreateRootSignaturePool(const CGPURootSignaturePoolDescriptor* desc)
+CGPURootSignaturePoolId CGPUUtil_CreateRootSignaturePool(const CGPUAllocator* allocator, const CGPURootSignaturePoolDescriptor* desc)
 {
-    return cgpu_new_aligned<CGPURootSignaturePoolImpl>(desc->name);
+    return cgpu_new_aligned<CGPURootSignaturePoolImpl>(allocator, desc->name);
 }
 
 CGPURootSignatureId CGPUUtil_TryAllocateSignature(CGPURootSignaturePoolId pool, CGPURootSignature* RSTables, const struct CGPURootSignatureDescriptor* desc)

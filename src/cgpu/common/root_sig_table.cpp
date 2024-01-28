@@ -29,12 +29,12 @@ bool CGPUUtil_ShaderResourceIsRootConst(CGPUShaderResource* resource, const stru
     return false;
 }
 
-inline static char8_t* duplicate_string(const char8_t* src_string)
+inline static char8_t* duplicate_string(const char8_t* src_string, const CGPUAllocator* allocator)
 {
     if (src_string != CGPU_NULLPTR)
     {
         const size_t source_len = strlen((const char*)src_string);
-        char8_t* result = (char8_t*)cgpu_malloc(sizeof(char8_t) * (1 + source_len));
+        char8_t* result = (char8_t*)cgpu_malloc(allocator, sizeof(char8_t) * (1 + source_len));
 #ifdef _WIN32
         strcpy_s((char*)result, source_len + 1, (const char*)src_string);
 #else
@@ -53,7 +53,7 @@ inline static char8_t* duplicate_string(const char8_t* src_string)
 //   拥有相同set、binding以及type的、出现在不同ShaderStage中的ShaderResource会被合并Stage
 // 3.切分行
 //   按照Set把合并好的Resource分割并放进roosting::tables中
-void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSignatureDescriptor* desc)
+void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSignatureDescriptor* desc, const CGPUAllocator* allocator)
 {
     CGPUShaderReflection* entry_reflections[32] = { 0 };
     // Pick shader reflection data
@@ -217,12 +217,12 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
     for (uint32_t i = 0; i < RS->push_constant_count; i++)
     {
         CGPUShaderResource* dst = RS->push_constants + i;
-        dst->name = duplicate_string(dst->name);
+        dst->name = duplicate_string(dst->name, allocator);
     }
     for (uint32_t i = 0; i < RS->static_sampler_count; i++)
     {
         CGPUShaderResource* dst = RS->static_samplers + i;
-        dst->name = duplicate_string(dst->name);
+        dst->name = duplicate_string(dst->name, allocator);
     }
     for (uint32_t i = 0; i < RS->table_count; i++)
     {
@@ -230,13 +230,14 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
         for (uint32_t j = 0; j < set_to_record->resources_count; j++)
         {
             CGPUShaderResource* dst = &set_to_record->resources[j];
-            dst->name = duplicate_string(dst->name);
+            dst->name = duplicate_string(dst->name, allocator);
         }
     }
 }
 
 void CGPUUtil_FreeRSParamTables(CGPURootSignature* RS)
 {
+    const CGPUAllocator* allocator = &RS->device->adapter->instance->allocator;
     if (RS->tables != CGPU_NULLPTR)
     {
         for (uint32_t i_set = 0; i_set < RS->table_count; i_set++)
@@ -249,13 +250,13 @@ void CGPUUtil_FreeRSParamTables(CGPURootSignature* RS)
                     CGPUShaderResource* binding_to_free = &param_table->resources[i_binding];
                     if (binding_to_free->name != CGPU_NULLPTR)
                     {
-                        cgpu_free((char8_t*)binding_to_free->name);
+                        cgpu_free(allocator, (char8_t*)binding_to_free->name);
                     }
                 }
-                cgpu_free(param_table->resources);
+                cgpu_free(allocator, param_table->resources);
             }
         }
-        cgpu_free(RS->tables);
+        cgpu_free(allocator, RS->tables);
     }
     if (RS->push_constants != CGPU_NULLPTR)
     {
@@ -264,10 +265,10 @@ void CGPUUtil_FreeRSParamTables(CGPURootSignature* RS)
             CGPUShaderResource* binding_to_free = RS->push_constants + i;
             if (binding_to_free->name != CGPU_NULLPTR)
             {
-                cgpu_free((char8_t*)binding_to_free->name);
+                cgpu_free(allocator, (char8_t*)binding_to_free->name);
             }
         }
-        cgpu_free(RS->push_constants);
+        cgpu_free(allocator, RS->push_constants);
     }
     if (RS->static_samplers != CGPU_NULLPTR)
     {
@@ -276,10 +277,10 @@ void CGPUUtil_FreeRSParamTables(CGPURootSignature* RS)
             CGPUShaderResource* binding_to_free = RS->static_samplers + i;
             if (binding_to_free->name != CGPU_NULLPTR)
             {
-                cgpu_free((char8_t*)binding_to_free->name);
+                cgpu_free(allocator, (char8_t*)binding_to_free->name);
             }
         }
-        cgpu_free(RS->static_samplers);
+        cgpu_free(allocator, RS->static_samplers);
     }
 }
 }

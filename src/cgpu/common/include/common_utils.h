@@ -10,7 +10,7 @@
 
 CGPU_EXTERN_C_BEGIN
 
-struct CGPURuntimeTable* cgpu_create_runtime_table();
+struct CGPURuntimeTable* cgpu_create_runtime_table(const CGPUAllocator* allocator);
 void cgpu_early_free_runtime_table(struct CGPURuntimeTable* table);
 void cgpu_free_runtime_table(struct CGPURuntimeTable* table);
 void cgpu_runtime_table_add_queue(CGPUQueueId queue, ECGPUQueueType type, uint32_t index);
@@ -22,11 +22,11 @@ void cgpu_runtime_table_add_early_sweep_callback(struct CGPURuntimeTable* table,
 void* cgpu_runtime_table_try_get_custom_data(struct CGPURuntimeTable* table, const char* key);
 bool cgpu_runtime_table_remove_custom_data(struct CGPURuntimeTable* table, const char* key);
 
-void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSignatureDescriptor* desc);
+void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSignatureDescriptor* desc, const CGPUAllocator* allocator);
 void CGPUUtil_FreeRSParamTables(CGPURootSignature* RS);
 
 // check for slot-overlapping and try get a signature from pool
-CGPURootSignaturePoolId CGPUUtil_CreateRootSignaturePool(const CGPURootSignaturePoolDescriptor* desc);
+CGPURootSignaturePoolId CGPUUtil_CreateRootSignaturePool(const CGPUAllocator* allocator, const CGPURootSignaturePoolDescriptor* desc);
 CGPURootSignatureId CGPUUtil_TryAllocateSignature(CGPURootSignaturePoolId pool, CGPURootSignature* RSTables, const struct CGPURootSignatureDescriptor* desc);
 CGPURootSignatureId CGPUUtil_AddSignature(CGPURootSignaturePoolId pool, CGPURootSignature* sig, const CGPURootSignatureDescriptor* desc);
 // TODO: signature pool statics
@@ -105,20 +105,51 @@ CGPU_FORCEINLINE static void logger_default(void* user_data, ECGPULogSeverity se
 
 #define CGPU_UNIMPLEMENTED_FUNCTION()
 
+CGPU_FORCEINLINE static void* cgpu_malloc_default(void* user_data, size_t size, void* pool)
+{
+    return malloc(size);
+}
+
+CGPU_FORCEINLINE static void* cgpu_calloc_default(void* user_data, size_t count, size_t size, void* pool)
+{
+    return calloc(count, size);
+}
+
+CGPU_FORCEINLINE static void cgpu_free_default(void* user_data, void* ptr, void* pool)
+{
+    free(ptr);
+}
+
+CGPU_FORCEINLINE static void* cgpu_malloc_aligned_default(void* user_data, size_t size, size_t alignment, void* pool)
+{
+    return _aligned_malloc(size, alignment);
+}
+
+CGPU_FORCEINLINE static void* cgpu_calloc_aligned_default(void* user_data, size_t count, size_t size, size_t alignment, void* pool)
+{
+    void* memory = _aligned_malloc(count * size, alignment);
+    if (memory != NULL) memset(memory, 0, count * size);
+    return memory;
+}
+
+CGPU_FORCEINLINE static void cgpu_free_aligned_default(void* user_data, void* ptr, size_t alignment, void* pool)
+{
+    _aligned_free(ptr);
+}
+
 CGPU_FORCEINLINE static void* _aligned_calloc(size_t nelem, size_t elsize, size_t alignment)
 {
     void* memory = _aligned_malloc(nelem * elsize, alignment);
     if (memory != NULL) memset(memory, 0, nelem * elsize);
     return memory;
 }
-    #define cgpu_malloc malloc
-    #define cgpu_malloc_aligned _aligned_malloc
+    #define cgpu_malloc(allocator, size) (allocator)->malloc((allocator)->user_data, size, 0)
+    #define cgpu_malloc_aligned(allocator, size, alignment) (allocator)->malloc_aligned((allocator)->user_data, size, alignment, 0)
     #define cgpu_malloc_alignedN(size, alignment, ...)  _aligned_malloc(size, alignment)
     #define cgpu_calloc calloc
     #define cgpu_callocN(count, size, ...) calloc((count), (size))
     #define cgpu_calloc_aligned _aligned_calloc
-    #define cgpu_memalign _aligned_malloc
-    #define cgpu_free free
+    #define cgpu_free(allocator, ptr) (allocator)->free((allocator)->user_data, ptr, 0)
     #define cgpu_freeN(ptr, ...) free(ptr)
     #define cgpu_free_aligned(ptr, alignment) _aligned_free(ptr)
     #define cgpu_free_alignedN(ptr, alignment, ...) _aligned_free((ptr), (alignment))
@@ -132,18 +163,18 @@ T* cgpu_new_placed(void* memory, Args&&... args)
 }
 
 template <typename T, typename... Args>
-T* cgpu_new(Args&&... args)
+T* cgpu_new(const CGPUAllocator* allocator, Args&&... args)
 {
-    void* pMemory = cgpu_malloc_aligned(sizeof(T), alignof(T));
+    void* pMemory = cgpu_malloc_aligned(allocator, sizeof(T), alignof(T));
     memset(pMemory, 0, sizeof(T));
     cgpu_assert(pMemory != nullptr);
     return new (pMemory) T{ std::forward<Args>(args)... };
 }
 
 template <typename T, typename... Args>
-T* cgpu_new_aligned(Args&&... args)
+T* cgpu_new_aligned(const CGPUAllocator* allocator, Args&&... args)
 {
-    void* pMemory = cgpu_malloc_aligned(sizeof(T), alignof(T));
+    void* pMemory = cgpu_malloc_aligned(allocator, sizeof(T), alignof(T));
     cgpu_assert(pMemory != nullptr);
     return new (pMemory) T{ std::forward<Args>(args)... };
 }
