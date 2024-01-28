@@ -792,7 +792,38 @@ typedef struct CGPUAdapterDetail {
     CGPUVendorPreset vendor_preset;
 } CGPUAdapterDetail;
 
+// Log Callback
 typedef void (*cgpu_log_callback_fn)(void* user_data, ECGPULogSeverity severity, const char* fmt, ...);
+
+// Memory Delegates
+typedef void* (*cgpu_malloc_fn)(void* user_data, size_t size);
+typedef void* (*cgpu_calloc_fn)(void* user_data, size_t count, size_t size);
+typedef void* (*cgpu_free_fn)(void* user_data, void* ptr);
+typedef void* (*cgpu_malloc_aligned_fn)(void* user_data, size_t size, size_t alignment);
+typedef void* (*cgpu_calloc_aligned_fn)(void* user_data, size_t count, size_t size, size_t alignment);
+typedef void* (*cgpu_free_aligned_fn)(void* user_data, void* ptr, size_t alignment);
+
+typedef void* (*cgpu_mallocN_fn)(void* user_data, size_t size, void* pool);
+typedef void* (*cgpu_callocN_fn)(void* user_data, size_t count, size_t size, void* pool);
+typedef void* (*cgpu_freeN_fn)(void* user_data, void* ptr, void* pool);
+typedef void* (*cgpu_malloc_alignedN_fn)(void* user_data, size_t size, size_t alignment, void* pool);
+typedef void* (*cgpu_calloc_alignedN_fn)(void* user_data, size_t count, size_t size, size_t alignment, void* pool);
+typedef void* (*cgpu_free_alignedN_fn)(void* user_data, void* ptr, size_t alignment, void* pool);
+
+typedef struct CGPUAllocator {
+    cgpu_malloc_fn malloc;
+    cgpu_calloc_fn calloc;
+    cgpu_free_fn free;
+    cgpu_malloc_aligned_fn malloc_aligned;
+    cgpu_calloc_aligned_fn calloc_aligned;
+    cgpu_free_aligned_fn free_aligned;
+    cgpu_mallocN_fn mallocN;
+    cgpu_callocN_fn callocN;
+    cgpu_freeN_fn freeN;
+    cgpu_malloc_alignedN_fn malloc_alignedN;
+    cgpu_calloc_alignedN_fn calloc_alignedN;
+    cgpu_free_alignedN_fn free_alignedN;
+} CGPUAllocator;
 
 // Objects (Heap Safety)
 typedef struct CGPUInstance {
@@ -806,6 +837,7 @@ typedef struct CGPUInstance {
     bool enable_set_name;
     cgpu_log_callback_fn log_callback;
     void* log_callback_user_data;
+    CGPUAllocator allocator;
 } CGPUInstance;
 
 typedef struct CGPUAdapter {
@@ -994,6 +1026,7 @@ typedef struct CGPUInstanceDescriptor {
     bool enable_set_name;
     cgpu_log_callback_fn log_callback;
     void* log_callback_user_data;
+    CGPUAllocator allocator;
 } CGPUInstanceDescriptor;
 
 typedef struct CGPUQueueGroupDescriptor {
