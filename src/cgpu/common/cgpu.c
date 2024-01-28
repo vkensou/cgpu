@@ -463,7 +463,7 @@ CGPUQueueId cgpu_get_queue(CGPUDeviceId device, ECGPUQueueType type, uint32_t in
     CGPUQueueId created = cgpu_runtime_table_try_get_queue(device, type, index);
     if (created != NULL)
     {
-        cgpu_warn(device->adapter->instance, "You should not call cgpu_get_queue "
+        cgpu_warn(&device->adapter->instance->logger, "You should not call cgpu_get_queue "
                   "with a specific index & type for multiple times!\n"
                   "       Please get for only once and reuse the handle!\n");
         return created;
@@ -1278,7 +1278,7 @@ CGPUSwapChainId cgpu_create_swapchain(CGPUDeviceId device, const CGPUSwapChainDe
     CGPUTextureInfo* pInfo = (CGPUTextureInfo*)swapchain->back_buffers[0]->info;
     cgpu_assert(swapchain && "fatal cgpu_create_swapchain: NULL swapchain id returned from backend.");
     swapchain->device = device;
-    cgpu_trace(device->adapter->instance, "cgpu_create_swapchain: swapchain(%dx%d) %p created, buffers: [%p, %p], surface: %p\n",
+    cgpu_trace(&device->adapter->instance->logger, "cgpu_create_swapchain: swapchain(%dx%d) %p created, buffers: [%p, %p], surface: %p\n",
         pInfo->width, pInfo->height, swapchain,
         swapchain->back_buffers[0], swapchain->back_buffers[1], desc->surface);
 
@@ -1315,7 +1315,7 @@ void cgpu_free_swapchain(CGPUSwapChainId swapchain)
     cgpu_assert(swapchain->device->proc_table_cache->create_swapchain && "create_swapchain Proc Missing!");
 
     CGPUTextureInfo* pInfo = (CGPUTextureInfo*)swapchain->back_buffers[0]->info;
-    cgpu_trace(swapchain->device->adapter->instance, "cgpu_free_swapchain: swapchain(%dx%d) %p freed, buffers:  [%p, %p]\n",
+    cgpu_trace(&swapchain->device->adapter->instance->logger, "cgpu_free_swapchain: swapchain(%dx%d) %p freed, buffers:  [%p, %p]\n",
         pInfo->width, pInfo->height, swapchain,
         swapchain->back_buffers[0], swapchain->back_buffers[1]);
 

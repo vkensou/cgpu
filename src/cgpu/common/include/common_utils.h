@@ -96,12 +96,12 @@ CGPU_FORCEINLINE static void logger_default(void* user_data, ECGPULogSeverity se
     va_end(args);
 }
 
-#define cgpu_trace(instance, fmt, ...) {(instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_TRACE, fmt, __VA_ARGS__);}
-#define cgpu_debug(instance, fmt, ...) {(instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_DEBUG, fmt, __VA_ARGS__);}
-#define cgpu_info(instance, fmt, ...) {(instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_INFO, fmt, __VA_ARGS__);}
-#define cgpu_warn(instance, fmt, ...) {(instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_WARNING, fmt, __VA_ARGS__);}
-#define cgpu_error(instance, fmt, ...) {(instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_ERROR, fmt, __VA_ARGS__);}
-#define cgpu_fatal(instance, fmt, ...) {(instance)->logger.log_callback((instance)->logger.log_callback_user_data, CGPU_LOG_FATAL, fmt, __VA_ARGS__);}
+#define cgpu_trace(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_TRACE, fmt, __VA_ARGS__);}
+#define cgpu_debug(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_DEBUG, fmt, __VA_ARGS__);}
+#define cgpu_info(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_INFO, fmt, __VA_ARGS__);}
+#define cgpu_warn(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_WARNING, fmt, __VA_ARGS__);}
+#define cgpu_error(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_ERROR, fmt, __VA_ARGS__);}
+#define cgpu_fatal(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_FATAL, fmt, __VA_ARGS__);}
 
 #define CGPU_UNIMPLEMENTED_FUNCTION()
 

@@ -36,7 +36,7 @@ void cgpu_create_shader_objs_vulkan_impl(CGPURootSignatureId signature,
             isaInfos[i].pCode = descs[i].shader_code;
             isaInfos[i].codeSize = descs[i].code_size;
         }
-        CHECK_VKRESULT(D->super.adapter->instance, D->mVkDeviceTable.vkCreateShadersEXT(D->pVkDevice, count, isaInfos, GLOBAL_VkAllocationCallbacks, outShaders));
+        CHECK_VKRESULT(&D->super.adapter->instance->logger, D->mVkDeviceTable.vkCreateShadersEXT(D->pVkDevice, count, isaInfos, GLOBAL_VkAllocationCallbacks, outShaders));
 #ifdef CGPU_PROFILE_ENABLE
         if (D->mVkDeviceTable.vkGetShaderBinaryDataEXT)
         {

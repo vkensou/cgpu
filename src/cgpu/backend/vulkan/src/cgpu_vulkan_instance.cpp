@@ -294,7 +294,7 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
     {
         if (!desc->enable_debug_layer)
         {
-            cgpu_warn(&(I->super), "Vulkan GpuBasedValidation enabled while ValidationLayer is closed, there'll be no effect.\n");
+            cgpu_warn(&(I->super.logger), "Vulkan GpuBasedValidation enabled while ValidationLayer is closed, there'll be no effect.\n");
         }
 #if VK_HEADER_VERSION >= 108
         validationFeaturesExt.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
@@ -302,14 +302,14 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
         validationFeaturesExt.pEnabledValidationFeatures = enabledValidationFeatures;
         createInfo.pNext = &validationFeaturesExt;
 #else
-        cgpu_warn("Vulkan GpuBasedValidation enabled but VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT is not supported!\n");
+        cgpu_warn(&(I->super.logger), "Vulkan GpuBasedValidation enabled but VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT is not supported!\n");
 #endif
     }
 
     auto instRes = (int32_t)vkCreateInstance(&createInfo, GLOBAL_VkAllocationCallbacks, &I->pVkInstance);
     if (instRes != VK_SUCCESS)
     {
-        cgpu_fatal(&(I->super), "Vulkan: failed to create instance with code %d\n", instRes);
+        cgpu_fatal(&(I->super.logger), "Vulkan: failed to create instance with code %d\n", instRes);
         cgpu_assert(0 && "Vulkan: failed to create instance!");
     }
     CGPUVkLayersTable::ConstructForInstance(I, blackboard);

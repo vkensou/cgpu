@@ -129,7 +129,7 @@ CGPUFenceId cgpu_create_fence_vulkan(CGPUDeviceId device)
         .flags = 0,
     };
 
-    CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreateFence(
+    CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkCreateFence(
     D->pVkDevice, &add_info, GLOBAL_VkAllocationCallbacks, &F->pVkFence));
     F->mSubmitted = false;
     return &F->super;
@@ -201,7 +201,7 @@ CGPUSemaphoreId cgpu_create_semaphore_vulkan(CGPUDeviceId device)
         .pNext = NULL,
         .flags = 0
     };
-    CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreateSemaphore(D->pVkDevice,
+    CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkCreateSemaphore(D->pVkDevice,
     &semaphore_info, GLOBAL_VkAllocationCallbacks, &(Semaphore->pVkSemaphore)));
     Semaphore->mSignaled = false;
     return &Semaphore->super;
@@ -319,7 +319,7 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
                 .bindingCount = i_binding,
                 .pBindings = vkbindings,
             };
-            CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreateDescriptorSetLayout(D->pVkDevice,
+            CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkCreateDescriptorSetLayout(D->pVkDevice,
                 &setLayoutInfo, GLOBAL_VkAllocationCallbacks, &RS->pSetLayouts[set_index].layout));
             VkUtil_ConsumeDescriptorSets(D->pDescriptorPool, &RS->pSetLayouts[set_index].layout,
                 &RS->pSetLayouts[set_index].pEmptyDescSet, 1);
@@ -360,7 +360,7 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
         .pushConstantRangeCount = RS->super.push_constant_count,
         .pPushConstantRanges = RS->pPushConstRanges
     };
-    CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreatePipelineLayout(D->pVkDevice, &pipeline_info, GLOBAL_VkAllocationCallbacks, &RS->pPipelineLayout));
+    CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkCreatePipelineLayout(D->pVkDevice, &pipeline_info, GLOBAL_VkAllocationCallbacks, &RS->pPipelineLayout));
     // Create Update Templates
     if (D->mVkDeviceTable.vkCreateDescriptorUpdateTemplateKHR)
     {
@@ -396,7 +396,7 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
                     .set = param_table->set_index,
                 };
                 set_to_record->mUpdateEntriesCount = update_entry_count;
-                CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreateDescriptorUpdateTemplateKHR(D->pVkDevice,
+                CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkCreateDescriptorUpdateTemplateKHR(D->pVkDevice,
                     &template_info, GLOBAL_VkAllocationCallbacks, &set_to_record->pUpdateTemplate));
             }
             cgpu_free(allocator, template_entries);
@@ -768,7 +768,7 @@ CGPUComputePipelineId cgpu_create_compute_pipeline_vulkan(CGPUDeviceId device, c
         .basePipelineHandle = 0,
         .basePipelineIndex = 0
     };
-    CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreateComputePipelines(D->pVkDevice,
+    CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkCreateComputePipelines(D->pVkDevice,
     D->pPipelineCache, 1, &pipeline_info, GLOBAL_VkAllocationCallbacks, &PPL->pVkPipeline));
     return &PPL->super;
 }
@@ -1077,7 +1077,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
     cgpu_freeN(allocator, dyn_states, kVkPSOMemoryPoolName);
     if (createResult != VK_SUCCESS)
     {
-        cgpu_fatal(device->adapter->instance, "CGPU VULKAN: Failed to create Graphics Pipeline! Error Code: %d\n", createResult);
+        cgpu_fatal(&device->adapter->instance->logger, "CGPU VULKAN: Failed to create Graphics Pipeline! Error Code: %d\n", createResult);
     }
     return &RP->super;
 }
@@ -1121,7 +1121,7 @@ CGPUQueryPoolId cgpu_create_query_pool_vulkan(CGPUDeviceId device, const struct 
     createInfo.queryType = P->mType;
     createInfo.flags = 0;
     createInfo.pipelineStatistics = 0;
-    CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreateQueryPool(
+    CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkCreateQueryPool(
     D->pVkDevice, &createInfo, GLOBAL_VkAllocationCallbacks, &P->pVkQueryPool));
     return &P->super;
 }
@@ -1257,7 +1257,7 @@ void cgpu_submit_queue_vulkan(CGPUQueueId queue, const struct CGPUQueueSubmitDes
     VkResult res = D->mVkDeviceTable.vkQueueSubmit(Q->pVkQueue, 1, &submit_info, F ? F->pVkFence : VK_NULL_HANDLE);
     if(res != VK_SUCCESS)
     {
-        cgpu_fatal(D->super.adapter->instance, u8"CGPU VULKAN: Failed to submit queue! Error code: %d\n", res);
+        cgpu_fatal(&D->super.adapter->instance->logger, u8"CGPU VULKAN: Failed to submit queue! Error code: %d\n", res);
         if (res == VK_ERROR_DEVICE_LOST)
         {
             ((CGPUDevice*)queue->device)->is_lost = true;
@@ -1449,7 +1449,7 @@ CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struc
         .dependencyCount = 0,
         .pDependencies = NULL
     };
-    CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreateRenderPass(D->pVkDevice, &create_info, GLOBAL_VkAllocationCallbacks, &R->pVkRenderPass));
+    CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkCreateRenderPass(D->pVkDevice, &create_info, GLOBAL_VkAllocationCallbacks, &R->pVkRenderPass));
     return &R->super;
 }
 
@@ -1486,7 +1486,7 @@ CGPUFramebufferId cgpu_create_framebuffer_vulkan(CGPUDeviceId device, const stru
         .layers = desc->layers,
     };
 
-    CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreateFramebuffer(D->pVkDevice, &add_info, GLOBAL_VkAllocationCallbacks, &F->pVkFramebuffer));
+    CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkCreateFramebuffer(D->pVkDevice, &add_info, GLOBAL_VkAllocationCallbacks, &F->pVkFramebuffer));
     return &F->super;
 }
 void cgpu_free_render_pass_vulkan(CGPURenderPassId render_pass)
@@ -1520,7 +1520,7 @@ VkCommandPool allocate_transient_command_pool(CGPUDevice_Vulkan* D, CGPUQueueId 
         .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
         .queueFamilyIndex = (uint32_t)A->mQueueFamilyIndices[queue->type]
     };
-    CHECK_VKRESULT(queue->device->adapter->instance, D->mVkDeviceTable.vkCreateCommandPool(
+    CHECK_VKRESULT(&queue->device->adapter->instance->logger, D->mVkDeviceTable.vkCreateCommandPool(
         D->pVkDevice, &create_info, GLOBAL_VkAllocationCallbacks, &P));
         
     return P;
@@ -1562,7 +1562,7 @@ CGPUCommandBufferId cgpu_create_command_buffer_vulkan(CGPUCommandPoolId pool, co
         .level = desc->is_secondary ? VK_COMMAND_BUFFER_LEVEL_SECONDARY : VK_COMMAND_BUFFER_LEVEL_PRIMARY,
         .commandBufferCount = 1
     };
-    CHECK_VKRESULT(pool->queue->device->adapter->instance, D->mVkDeviceTable.vkAllocateCommandBuffers(D->pVkDevice, &alloc_info, &(Cmd->pVkCmdBuf)));
+    CHECK_VKRESULT(&pool->queue->device->adapter->instance->logger, D->mVkDeviceTable.vkAllocateCommandBuffers(D->pVkDevice, &alloc_info, &(Cmd->pVkCmdBuf)));
     return &Cmd->super;
 }
 
@@ -1570,7 +1570,7 @@ void cgpu_reset_command_pool_vulkan(CGPUCommandPoolId pool)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)pool->queue->device;
     CGPUCommandPool_Vulkan* P = (CGPUCommandPool_Vulkan*)pool;
-    CHECK_VKRESULT(pool->queue->device->adapter->instance, D->mVkDeviceTable.vkResetCommandPool(D->pVkDevice, P->pVkCmdPool, 0));
+    CHECK_VKRESULT(&pool->queue->device->adapter->instance->logger, D->mVkDeviceTable.vkResetCommandPool(D->pVkDevice, P->pVkCmdPool, 0));
 }
 
 void cgpu_free_command_buffer_vulkan(CGPUCommandBufferId cmd)
@@ -1604,7 +1604,7 @@ void cgpu_cmd_begin_vulkan(CGPUCommandBufferId cmd)
         .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
         .pInheritanceInfo = NULL
     };
-    CHECK_VKRESULT(cmd->device->adapter->instance, D->mVkDeviceTable.vkBeginCommandBuffer(Cmd->pVkCmdBuf, &begin_info));
+    CHECK_VKRESULT(&cmd->device->adapter->instance->logger, D->mVkDeviceTable.vkBeginCommandBuffer(Cmd->pVkCmdBuf, &begin_info));
     Cmd->pBoundPipelineLayout = CGPU_NULL;
 }
 
@@ -1824,7 +1824,7 @@ void cgpu_cmd_end_vulkan(CGPUCommandBufferId cmd)
 {
     CGPUCommandBuffer_Vulkan* Cmd = (CGPUCommandBuffer_Vulkan*)cmd;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)cmd->device;
-    CHECK_VKRESULT(cmd->device->adapter->instance, D->mVkDeviceTable.vkEndCommandBuffer(Cmd->pVkCmdBuf));
+    CHECK_VKRESULT(&cmd->device->adapter->instance->logger, D->mVkDeviceTable.vkEndCommandBuffer(Cmd->pVkCmdBuf));
 }
 
 // Events & Markser
@@ -2209,7 +2209,7 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
     VkSurfaceKHR vkSurface = (VkSurfaceKHR)desc->surface;
 
     VkSurfaceCapabilitiesKHR caps = { 0 };
-    CHECK_VKRESULT(device->adapter->instance, vkGetPhysicalDeviceSurfaceCapabilitiesKHR(A->pPhysicalDevice, vkSurface, &caps));
+    CHECK_VKRESULT(&device->adapter->instance->logger, vkGetPhysicalDeviceSurfaceCapabilitiesKHR(A->pPhysicalDevice, vkSurface, &caps));
     if ((caps.maxImageCount > 0) && (desc->image_count > caps.maxImageCount))
     {
         ((CGPUSwapChainDescriptor*)desc)->image_count = caps.maxImageCount;
@@ -2223,11 +2223,11 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
     CGPU_DECLARE_ZERO(VkSurfaceFormatKHR, surface_format)
     surface_format.format = VK_FORMAT_UNDEFINED;
     uint32_t surfaceFormatCount = 0;
-    CHECK_VKRESULT(device->adapter->instance, vkGetPhysicalDeviceSurfaceFormatsKHR(
+    CHECK_VKRESULT(&device->adapter->instance->logger, vkGetPhysicalDeviceSurfaceFormatsKHR(
     A->pPhysicalDevice, vkSurface, &surfaceFormatCount, CGPU_NULLPTR));
     // Allocate and get surface formats
     CGPU_DECLARE_ZERO_VLA(VkSurfaceFormatKHR, formats, surfaceFormatCount)
-    CHECK_VKRESULT(device->adapter->instance, vkGetPhysicalDeviceSurfaceFormatsKHR(
+    CHECK_VKRESULT(&device->adapter->instance->logger, vkGetPhysicalDeviceSurfaceFormatsKHR(
     A->pPhysicalDevice, vkSurface, &surfaceFormatCount, formats))
 
     // Only undefined format support found, force use B8G8R8A8
@@ -2269,11 +2269,11 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
     VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
     uint32_t swapChainImageCount = 0;
     // Get present mode count
-    CHECK_VKRESULT(device->adapter->instance, vkGetPhysicalDeviceSurfacePresentModesKHR(
+    CHECK_VKRESULT(&device->adapter->instance->logger, vkGetPhysicalDeviceSurfacePresentModesKHR(
     A->pPhysicalDevice, vkSurface, &swapChainImageCount, NULL));
     // Allocate and get present modes
     CGPU_DECLARE_ZERO_VLA(VkPresentModeKHR, modes, swapChainImageCount)
-    CHECK_VKRESULT(device->adapter->instance, vkGetPhysicalDeviceSurfacePresentModesKHR(
+    CHECK_VKRESULT(&device->adapter->instance->logger, vkGetPhysicalDeviceSurfacePresentModesKHR(
     A->pPhysicalDevice, vkSurface, &swapChainImageCount, modes));
     // Select Preferred Present Mode
     VkPresentModeKHR preferredModeList[] = {
@@ -2416,7 +2416,7 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
     }
 
     // Get swapchain images
-    CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkGetSwapchainImagesKHR(D->pVkDevice, new_chain, &buffer_count, VK_NULL_HANDLE));
+    CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkGetSwapchainImagesKHR(D->pVkDevice, new_chain, &buffer_count, VK_NULL_HANDLE));
     CGPUSwapChain_Vulkan* S = old;
     if (!old)
     {
@@ -2428,7 +2428,7 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
     S->pVkSwapChain = new_chain;
     S->super.buffer_count = buffer_count;
     CGPU_DECLARE_ZERO_VLA(VkImage, vimages, S->super.buffer_count)
-    CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkGetSwapchainImagesKHR(D->pVkDevice, S->pVkSwapChain, &S->super.buffer_count, vimages));
+    CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkGetSwapchainImagesKHR(D->pVkDevice, S->pVkSwapChain, &S->super.buffer_count, vimages));
     
     struct THeader
     {
