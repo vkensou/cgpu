@@ -177,9 +177,12 @@ const char* const* device_extensions, uint32_t device_extension_count)
             {
                 void** ppNext = &VkAdapter->mPhysicalDeviceProps.pNext;
                 VkAdapter->mSubgroupProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES;
-                VkAdapter->mSubgroupProperties.pNext = NULL;
-                *ppNext = &VkAdapter->mSubgroupProperties;
-                ppNext = &VkAdapter->mSubgroupProperties.pNext;
+                if (I->apiVersion >= VK_API_VERSION_1_1)
+                {
+                    VkAdapter->mSubgroupProperties.pNext = NULL;
+                    *ppNext = &VkAdapter->mSubgroupProperties;
+                    ppNext = &VkAdapter->mSubgroupProperties.pNext;
+                }
 #if VK_KHR_depth_stencil_resolve
                 VkAdapter->mPhysicalDeviceDepthStencilResolveProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES_KHR;
                 *ppNext = &VkAdapter->mPhysicalDeviceDepthStencilResolveProps;
@@ -207,7 +210,10 @@ const char* const* device_extensions, uint32_t device_extension_count)
                 ppNext = &VkAdapter->mPhysicalDeviceFragmentShadingRateProps.pNext;
 #endif
             }
-            vkGetPhysicalDeviceProperties2KHR(pysicalDevices[i], &VkAdapter->mPhysicalDeviceProps);
+            if (vkGetPhysicalDeviceProperties2KHR)
+                vkGetPhysicalDeviceProperties2KHR(pysicalDevices[i], &VkAdapter->mPhysicalDeviceProps);
+            else
+                vkGetPhysicalDeviceProperties(pysicalDevices[i], &VkAdapter->mPhysicalDeviceProps.properties);
             // Query Physical Device Features
             VkAdapter->mPhysicalDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
             // Append pNexts
@@ -256,11 +262,16 @@ const char* const* device_extensions, uint32_t device_extension_count)
                 ppNext = &VkAdapter->mPhysicalDeviceShaderObjectFeatures.pNext;
 #endif
             }
+            if (vkGetPhysicalDeviceFeatures2KHR || I->apiVersion >= VK_API_VERSION_1_1)
+            {
 #ifndef NX64
-            vkGetPhysicalDeviceFeatures2KHR(pysicalDevices[i], &VkAdapter->mPhysicalDeviceFeatures);
+                vkGetPhysicalDeviceFeatures2KHR(pysicalDevices[i], &VkAdapter->mPhysicalDeviceFeatures);
 #else
-            vkGetPhysicalDeviceFeatures2(pysicalDevices[i], &VkAdapter->mPhysicalDeviceFeatures);
+                vkGetPhysicalDeviceFeatures2(pysicalDevices[i], &VkAdapter->mPhysicalDeviceFeatures);
 #endif
+            }
+            else
+                vkGetPhysicalDeviceFeatures(pysicalDevices[i], &VkAdapter->mPhysicalDeviceFeatures.features);
             // Query Physical Device Layers Properties
             VkUtil_SelectPhysicalDeviceLayers(VkAdapter, device_layers, device_layers_count);
             // Query Physical Device Extension Properties
@@ -683,7 +694,6 @@ void VkUtil_QueryHostVisbleVramInfo(CGPUAdapter_Vulkan* VkAdapter)
                     adapter_detail->host_visible_vram_budget = mem_prop.memoryHeaps[heap_index].size;
                     break;
                 }
-                break;
             }
         }
     }
@@ -881,6 +891,7 @@ FORCEINLINE void VkUtil_CheckFormatSupport(CGPUAdapter_Vulkan* VkAdapter, CGPUAd
 void VkUtil_EnumFormatSupports(CGPUAdapter_Vulkan* VkAdapter)
 {
     bool supportPVRTC = VkUtil_IsExtensionEnabled(VkAdapter, VK_IMG_FORMAT_PVRTC_EXTENSION_NAME);
+    bool supportYCbCr = VkUtil_IsExtensionEnabled(VkAdapter, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
 
     CGPUAdapterDetail* adapter_detail = (CGPUAdapterDetail*)&VkAdapter->adapter_detail;
 
@@ -904,7 +915,20 @@ void VkUtil_EnumFormatSupports(CGPUAdapter_Vulkan* VkAdapter)
         }
     }
 
-    for (uint32_t i = CGPU_FORMAT_ETC2_R8G8B8_UNORM; i < CGPU_FORMAT_COUNT; ++i)
+    for (uint32_t i = CGPU_FORMAT_ETC2_R8G8B8_UNORM; i < CGPU_FORMAT_G16B16G16R16_422_UNORM; ++i)
+    {
+        VkUtil_CheckFormatSupport(VkAdapter, adapter_detail, i);
+    }
+
+    if (supportYCbCr)
+    {
+        for (uint32_t i = CGPU_FORMAT_G16B16G16R16_422_UNORM; i < CGPU_FORMAT_G16_B16R16_2PLANE_422_UNORM + 1; ++i)
+        {
+            VkUtil_CheckFormatSupport(VkAdapter, adapter_detail, i);
+        }
+    }
+
+    for (uint32_t i = CGPU_FORMAT_G16_B16R16_2PLANE_422_UNORM + 1; i < CGPU_FORMAT_COUNT; ++i)
     {
         VkUtil_CheckFormatSupport(VkAdapter, adapter_detail, i);
     }

@@ -357,42 +357,45 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
     };
     CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreatePipelineLayout(D->pVkDevice, &pipeline_info, GLOBAL_VkAllocationCallbacks, &RS->pPipelineLayout));
     // Create Update Templates
-    for (uint32_t i_table = 0; i_table < RS->super.table_count; i_table++)
+    if (D->mVkDeviceTable.vkCreateDescriptorUpdateTemplateKHR)
     {
-        CGPUParameterTable* param_table = &RS->super.tables[i_table];
-        SetLayout_Vulkan* set_to_record = &RS->pSetLayouts[param_table->set_index];
-        uint32_t update_entry_count = param_table->resources_count;
-        VkDescriptorUpdateTemplateEntry* template_entries = cgpu_calloc(
-            param_table->resources_count, sizeof(VkDescriptorUpdateTemplateEntry));
-        for (uint32_t i_iter = 0; i_iter < param_table->resources_count; i_iter++)
+        for (uint32_t i_table = 0; i_table < RS->super.table_count; i_table++)
         {
-            uint32_t i_binding = param_table->resources[i_iter].binding;
-            VkDescriptorUpdateTemplateEntry* this_entry = template_entries + i_iter;
-            this_entry->descriptorCount = param_table->resources[i_iter].size;
-            this_entry->descriptorType = VkUtil_TranslateResourceType(param_table->resources[i_iter].type);
-            this_entry->dstBinding = i_binding;
-            this_entry->dstArrayElement = 0;
-            this_entry->stride = sizeof(VkDescriptorUpdateData);
-            this_entry->offset = this_entry->dstBinding * this_entry->stride;
+            CGPUParameterTable* param_table = &RS->super.tables[i_table];
+            SetLayout_Vulkan* set_to_record = &RS->pSetLayouts[param_table->set_index];
+            uint32_t update_entry_count = param_table->resources_count;
+            VkDescriptorUpdateTemplateEntry* template_entries = cgpu_calloc(
+                param_table->resources_count, sizeof(VkDescriptorUpdateTemplateEntry));
+            for (uint32_t i_iter = 0; i_iter < param_table->resources_count; i_iter++)
+            {
+                uint32_t i_binding = param_table->resources[i_iter].binding;
+                VkDescriptorUpdateTemplateEntry* this_entry = template_entries + i_iter;
+                this_entry->descriptorCount = param_table->resources[i_iter].size;
+                this_entry->descriptorType = VkUtil_TranslateResourceType(param_table->resources[i_iter].type);
+                this_entry->dstBinding = i_binding;
+                this_entry->dstArrayElement = 0;
+                this_entry->stride = sizeof(VkDescriptorUpdateData);
+                this_entry->offset = this_entry->dstBinding * this_entry->stride;
+            }
+            if (update_entry_count > 0)
+            {
+                VkDescriptorUpdateTemplateCreateInfo template_info = {
+                    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO,
+                    .pNext = NULL,
+                    .descriptorUpdateEntryCount = update_entry_count,
+                    .pDescriptorUpdateEntries = template_entries,
+                    .templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET_KHR,
+                    .descriptorSetLayout = set_to_record->layout,
+                    .pipelineBindPoint = gPipelineBindPoint[RS->super.pipeline_type],
+                    .pipelineLayout = RS->pPipelineLayout,
+                    .set = param_table->set_index,
+                };
+                set_to_record->mUpdateEntriesCount = update_entry_count;
+                CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreateDescriptorUpdateTemplateKHR(D->pVkDevice,
+                    &template_info, GLOBAL_VkAllocationCallbacks, &set_to_record->pUpdateTemplate));
+            }
+            cgpu_free(template_entries);
         }
-        if (update_entry_count > 0)
-        {
-            VkDescriptorUpdateTemplateCreateInfo template_info = {
-                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO,
-                .pNext = NULL,
-                .descriptorUpdateEntryCount = update_entry_count,
-                .pDescriptorUpdateEntries = template_entries,
-                .templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET_KHR,
-                .descriptorSetLayout = set_to_record->layout,
-                .pipelineBindPoint = gPipelineBindPoint[RS->super.pipeline_type],
-                .pipelineLayout = RS->pPipelineLayout,
-                .set = param_table->set_index,
-            };
-            set_to_record->mUpdateEntriesCount = update_entry_count;
-            CHECK_VKRESULT(device->adapter->instance, D->mVkDeviceTable.vkCreateDescriptorUpdateTemplate(D->pVkDevice,
-                &template_info, GLOBAL_VkAllocationCallbacks, &set_to_record->pUpdateTemplate));
-        }
-        cgpu_free(template_entries);
     }
     // [RS POOL] INSERTION
     if (desc->pool)
@@ -425,7 +428,7 @@ void cgpu_free_root_signature_vulkan(CGPURootSignatureId signature)
         if (set_to_free->layout != VK_NULL_HANDLE)
             D->mVkDeviceTable.vkDestroyDescriptorSetLayout(D->pVkDevice, set_to_free->layout, GLOBAL_VkAllocationCallbacks);
         if (set_to_free->pUpdateTemplate != VK_NULL_HANDLE)
-            D->mVkDeviceTable.vkDestroyDescriptorUpdateTemplate(D->pVkDevice, set_to_free->pUpdateTemplate, GLOBAL_VkAllocationCallbacks);
+            D->mVkDeviceTable.vkDestroyDescriptorUpdateTemplateKHR(D->pVkDevice, set_to_free->pUpdateTemplate, GLOBAL_VkAllocationCallbacks);
     }
     cgpu_free(RS->pVkSetLayouts);
     cgpu_free(RS->pSetLayouts);
@@ -485,40 +488,42 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
     }
     SetLayout_Vulkan* SetLayout = &RS->pSetLayouts[set->index];
     const CGPUParameterTable* ParamTable = &RS->super.tables[table_index];
-    VkDescriptorUpdateData* pUpdateData = Set->pUpdateData;
-    memset(pUpdateData, 0, count * sizeof(VkDescriptorUpdateData));
-    bool dirty = false;
-    for (uint32_t i = 0; i < count; i++)
+    if (SetLayout->pUpdateTemplate)
     {
-        // Descriptor Info
-        const CGPUDescriptorData* pParam = datas + i;
-        const CGPUShaderResource* ResData = CGPU_NULLPTR;
-        if (pParam->name != CGPU_NULLPTR)
+        VkDescriptorUpdateData* pUpdateData = Set->pUpdateData;
+        memset(pUpdateData, 0, count * sizeof(VkDescriptorUpdateData));
+        bool dirty = false;
+        for (uint32_t i = 0; i < count; i++)
         {
-            size_t argNameHash = cgpu_name_hash(pParam->name, strlen(pParam->name));
-            for (uint32_t p = 0; p < ParamTable->resources_count; p++)
+            // Descriptor Info
+            const CGPUDescriptorData* pParam = datas + i;
+            const CGPUShaderResource* ResData = CGPU_NULLPTR;
+            if (pParam->name != CGPU_NULLPTR)
             {
-                if (ParamTable->resources[p].name_hash == argNameHash)
+                size_t argNameHash = cgpu_name_hash(pParam->name, strlen(pParam->name));
+                for (uint32_t p = 0; p < ParamTable->resources_count; p++)
                 {
-                    ResData = ParamTable->resources + p;
+                    if (ParamTable->resources[p].name_hash == argNameHash)
+                    {
+                        ResData = ParamTable->resources + p;
+                    }
                 }
             }
-        }
-        else
-        {
-            for (uint32_t p = 0; p < ParamTable->resources_count; p++)
+            else
             {
-                if (ParamTable->resources[p].binding == pParam->binding)
+                for (uint32_t p = 0; p < ParamTable->resources_count; p++)
                 {
-                    ResData = ParamTable->resources + p;
+                    if (ParamTable->resources[p].binding == pParam->binding)
+                    {
+                        ResData = ParamTable->resources + p;
+                    }
                 }
             }
-        }
-        // Update Info
-        const uint32_t arrayCount = cgpu_max(1U, pParam->count);
-        const ECGPUResourceType resourceType = (ECGPUResourceType)ResData->type;
-        switch (resourceType)
-        {
+            // Update Info
+            const uint32_t arrayCount = cgpu_max(1U, pParam->count);
+            const ECGPUResourceType resourceType = (ECGPUResourceType)ResData->type;
+            switch (resourceType)
+            {
             case CGPU_RESOURCE_TYPE_RW_TEXTURE:
             case CGPU_RESOURCE_TYPE_TEXTURE: {
                 cgpu_assert(pParam->textures && "cgpu_assert: Binding NULL texture(s)");
@@ -533,7 +538,7 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
                         TextureViews[arr]->pVkUAVDescriptor :
                         TextureViews[arr]->pVkSRVDescriptor;
                     Data->mImageInfo.imageLayout =
-                    ResData->type == CGPU_RESOURCE_TYPE_RW_TEXTURE ?
+                        ResData->type == CGPU_RESOURCE_TYPE_RW_TEXTURE ?
                         VK_IMAGE_LAYOUT_GENERAL :
                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                     Data->mImageInfo.sampler = VK_NULL_HANDLE;
@@ -579,11 +584,145 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
             default:
                 cgpu_assert(0 && ResData->type && "Descriptor Type not supported!");
                 break;
+            }
+        }
+        if (dirty)
+        {
+            D->mVkDeviceTable.vkUpdateDescriptorSetWithTemplateKHR(D->pVkDevice, Set->pVkDescriptorSet, SetLayout->pUpdateTemplate, Set->pUpdateData);
         }
     }
-    if (dirty)
+    else
     {
-        D->mVkDeviceTable.vkUpdateDescriptorSetWithTemplateKHR(D->pVkDevice, Set->pVkDescriptorSet, SetLayout->pUpdateTemplate, Set->pUpdateData);
+        VkDescriptorBufferInfo m_descriptorBuffers[6];
+        VkDescriptorImageInfo m_descriptorSamplers[16];
+        VkDescriptorImageInfo m_descriptorInputSamplers[16];
+        VkWriteDescriptorSet m_descriptorWrites[38];
+
+        uint32_t bufferCount = 0;
+        uint32_t textureCount = 0;
+        uint32_t writeCount = 0;
+
+        bool dirty = false;
+        for (uint32_t i = 0; i < count; ++i)
+        {
+            const CGPUDescriptorData* pParam = datas + i;
+            const uint32_t arrayCount = cgpu_max(1U, pParam->count);
+            const ECGPUResourceType resourceType = (ECGPUResourceType)pParam->binding_type;
+            switch (resourceType)
+            {
+            case CGPU_RESOURCE_TYPE_RW_TEXTURE:
+            case CGPU_RESOURCE_TYPE_TEXTURE: {
+                cgpu_assert(pParam->textures && "cgpu_assert: Binding NULL texture(s)");
+                CGPUTextureView_Vulkan** TextureViews = (CGPUTextureView_Vulkan**)pParam->textures;
+                for (uint32_t arr = 0; arr < arrayCount; ++arr)
+                {
+                    cgpu_assert(pParam->textures[arr] && "cgpu_assert: Binding NULL texture!");
+                    VkDescriptorImageInfo* imageInfo = m_descriptorSamplers + textureCount;
+                    imageInfo->imageLayout =
+                        resourceType == CGPU_RESOURCE_TYPE_RW_TEXTURE
+                        ? VK_IMAGE_LAYOUT_GENERAL
+                        : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    imageInfo->imageView =
+                        resourceType == CGPU_RESOURCE_TYPE_RW_TEXTURE
+                        ? TextureViews[arr]->pVkUAVDescriptor
+                        : TextureViews[arr]->pVkSRVDescriptor;
+                    imageInfo->sampler = VK_NULL_HANDLE;
+                    ++textureCount;
+
+                    VkWriteDescriptorSet* writeInfo = m_descriptorWrites + writeCount;
+                    writeInfo->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                    writeInfo->pNext = VK_NULL_HANDLE;
+                    writeInfo->dstSet = Set->pVkDescriptorSet;
+                    writeInfo->dstBinding = pParam->binding;
+                    writeInfo->dstArrayElement = 0;
+                    writeInfo->descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                    writeInfo->descriptorCount = 1;
+                    writeInfo->pImageInfo = imageInfo;
+                    writeInfo->pBufferInfo = VK_NULL_HANDLE;
+                    writeInfo->pTexelBufferView = VK_NULL_HANDLE;
+                    ++writeCount;
+
+                    dirty = true;
+                }
+                break;
+            }
+            case CGPU_RESOURCE_TYPE_SAMPLER: {
+                cgpu_assert(pParam->samplers && "cgpu_assert: Binding NULL Sampler(s)");
+                CGPUSampler_Vulkan** Samplers = (CGPUSampler_Vulkan**)pParam->samplers;
+                for (uint32_t arr = 0; arr < arrayCount; ++arr)
+                {
+                    cgpu_assert(pParam->samplers[arr] && "cgpu_assert: Binding NULL Sampler!");
+                    VkDescriptorImageInfo* imageInfo = m_descriptorSamplers + textureCount;
+                    imageInfo->imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                    imageInfo->imageView = VK_NULL_HANDLE;
+                    imageInfo->sampler = Samplers[arr]->pVkSampler;
+                    ++textureCount;
+
+                    VkWriteDescriptorSet* writeInfo = m_descriptorWrites + writeCount;
+                    writeInfo->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                    writeInfo->pNext = VK_NULL_HANDLE;
+                    writeInfo->dstSet = Set->pVkDescriptorSet;
+                    writeInfo->dstBinding = pParam->binding;
+                    writeInfo->dstArrayElement = 0;
+                    writeInfo->descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+                    writeInfo->descriptorCount = 1;
+                    writeInfo->pImageInfo = imageInfo;
+                    writeInfo->pBufferInfo = VK_NULL_HANDLE;
+                    writeInfo->pTexelBufferView = VK_NULL_HANDLE;
+                    ++writeCount;
+
+                    dirty = true;
+                }
+                break;
+            }
+            case CGPU_RESOURCE_TYPE_UNIFORM_BUFFER:
+            case CGPU_RESOURCE_TYPE_BUFFER:
+            case CGPU_RESOURCE_TYPE_BUFFER_RAW:
+            case CGPU_RESOURCE_TYPE_RW_BUFFER:
+            case CGPU_RESOURCE_TYPE_RW_BUFFER_RAW: {
+                cgpu_assert(pParam->buffers && "cgpu_assert: Binding NULL Buffer(s)!");
+                CGPUBuffer_Vulkan** Buffers = (CGPUBuffer_Vulkan**)pParam->buffers;
+                for (uint32_t arr = 0; arr < arrayCount; ++arr)
+                {
+                    cgpu_assert(pParam->buffers[arr] && "cgpu_assert: Binding NULL Buffer!");
+                    VkDescriptorBufferInfo* bufferInfo = m_descriptorBuffers + bufferCount;
+                    bufferInfo->buffer = Buffers[arr]->pVkBuffer;
+                    bufferInfo->offset = Buffers[arr]->mOffset;
+                    bufferInfo->range = VK_WHOLE_SIZE;
+                    if (pParam->buffers_params.offsets)
+                    {
+                        bufferInfo->offset = pParam->buffers_params.offsets[arr];
+                        bufferInfo->range = pParam->buffers_params.sizes[arr];
+                    }
+                    ++bufferCount;
+
+                    VkWriteDescriptorSet* writeInfo = m_descriptorWrites + writeCount;
+                    writeInfo->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                    writeInfo->pNext = VK_NULL_HANDLE;
+                    writeInfo->dstSet = Set->pVkDescriptorSet;
+                    writeInfo->dstBinding = pParam->binding;
+                    writeInfo->dstArrayElement = 0;
+                    writeInfo->descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    writeInfo->descriptorCount = 1;
+                    writeInfo->pImageInfo = VK_NULL_HANDLE;
+                    writeInfo->pBufferInfo = bufferInfo;
+                    writeInfo->pTexelBufferView = VK_NULL_HANDLE;
+                    ++writeCount;
+
+                    dirty = true;
+                }
+                break;
+            }
+            default:
+                cgpu_assert(0 && resourceType && "Descriptor Type not supported!");
+                break;
+            }
+
+            if ((textureCount == 16 || bufferCount == 6 || writeCount == 38) || (i == count - 1 && writeCount > 0))
+            {
+                D->mVkDeviceTable.vkUpdateDescriptorSets(D->pVkDevice, writeCount, m_descriptorWrites, 0, VK_NULL_HANDLE);
+            }
+        }
     }
 }
 

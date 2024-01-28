@@ -209,7 +209,11 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "No Engine";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_1;
+
+    uint32_t apiVersion;
+    vkEnumerateInstanceVersion(&apiVersion);
+    appInfo.apiVersion = apiVersion;
+    I->apiVersion = apiVersion;
 
     // Select Instance Layers & Layer Extensions
     VkUtil_SelectInstanceLayers(I,
@@ -370,10 +374,12 @@ CGPUDeviceId cgpu_create_device_vulkan(CGPUAdapterId adapter, const CGPUDeviceDe
     // Create Device
     CGPU_DECLARE_ZERO(VkDeviceCreateInfo, createInfo)
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pNext = &A->mPhysicalDeviceFeatures;
+    if (vkGetPhysicalDeviceFeatures2KHR || I->apiVersion >= VK_API_VERSION_1_1)
+        createInfo.pNext = &A->mPhysicalDeviceFeatures;
+    else
+        createInfo.pEnabledFeatures = &A->mPhysicalDeviceFeatures.features;
     createInfo.queueCreateInfoCount = (uint32_t)queueCreateInfos.size();
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
-    createInfo.pEnabledFeatures = NULL;
     createInfo.enabledExtensionCount = A->mExtensionsCount;
     createInfo.ppEnabledExtensionNames = A->pExtensionNames;
     createInfo.enabledLayerCount = A->mLayersCount;
