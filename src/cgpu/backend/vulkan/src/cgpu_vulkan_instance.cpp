@@ -213,6 +213,7 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
     uint32_t apiVersion;
     vkEnumerateInstanceVersion(&apiVersion);
     appInfo.apiVersion = apiVersion;
+    I->apiVersion = apiVersion;
 
     // Select Instance Layers & Layer Extensions
     VkUtil_SelectInstanceLayers(I,

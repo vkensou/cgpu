@@ -165,6 +165,7 @@ typedef struct CGPUInstance_Vulkan {
     VkDebugUtilsMessengerEXT pVkDebugUtilsMessenger;
     VkDebugReportCallbackEXT pVkDebugReport;
     struct CGPUAdapter_Vulkan* pVulkanAdapters;
+    uint32_t apiVersion;
     uint32_t mPhysicalDeviceCount;
 
     // Layers of Instance

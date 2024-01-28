@@ -177,9 +177,12 @@ const char* const* device_extensions, uint32_t device_extension_count)
             {
                 void** ppNext = &VkAdapter->mPhysicalDeviceProps.pNext;
                 VkAdapter->mSubgroupProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES;
-                VkAdapter->mSubgroupProperties.pNext = NULL;
-                *ppNext = &VkAdapter->mSubgroupProperties;
-                ppNext = &VkAdapter->mSubgroupProperties.pNext;
+                if (I->apiVersion >= VK_API_VERSION_1_1)
+                {
+                    VkAdapter->mSubgroupProperties.pNext = NULL;
+                    *ppNext = &VkAdapter->mSubgroupProperties;
+                    ppNext = &VkAdapter->mSubgroupProperties.pNext;
+                }
 #if VK_KHR_depth_stencil_resolve
                 VkAdapter->mPhysicalDeviceDepthStencilResolveProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES_KHR;
                 *ppNext = &VkAdapter->mPhysicalDeviceDepthStencilResolveProps;
