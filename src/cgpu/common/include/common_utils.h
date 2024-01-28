@@ -137,16 +137,16 @@ CGPU_FORCEINLINE static void cgpu_free_aligned_default(void* user_data, void* pt
     _aligned_free(ptr);
 }
 
-#define cgpu_malloc(allocator, size) (allocator)->malloc((allocator)->user_data, size, 0)
-#define cgpu_malloc_aligned(allocator, size, alignment) (allocator)->malloc_aligned((allocator)->user_data, size, alignment, 0)
-#define cgpu_malloc_alignedN(allocator, size, alignment, pool) (allocator)->malloc_aligned((allocator)->user_data, size, alignment, pool)
-#define cgpu_calloc(allocator, count, size) (allocator)->calloc((allocator)->user_data, count, size, 0)
-#define cgpu_callocN(allocator, count, size, pool) (allocator)->calloc((allocator)->user_data, count, size, pool)
-#define cgpu_calloc_aligned(allocator, count, size, alignment) (allocator)->calloc_aligned((allocator)->user_data, count, size, alignment, 0)
-#define cgpu_free(allocator, ptr) (allocator)->free((allocator)->user_data, ptr, 0)
-#define cgpu_freeN(allocator, ptr, pool) (allocator)->free((allocator)->user_data, ptr, pool)
-#define cgpu_free_aligned(allocator, ptr, alignment) (allocator)->free_aligned((allocator)->user_data, ptr, alignment, 0)
-#define cgpu_free_alignedN(allocator, ptr, alignment, pool) (allocator)->free_aligned((allocator)->user_data, ptr, alignment, pool)
+#define cgpu_malloc(allocator, size) (allocator)->malloc_fn((allocator)->user_data, size, 0)
+#define cgpu_malloc_aligned(allocator, size, alignment) (allocator)->malloc_aligned_fn((allocator)->user_data, size, alignment, 0)
+#define cgpu_malloc_alignedN(allocator, size, alignment, pool) (allocator)->malloc_aligned_fn((allocator)->user_data, size, alignment, pool)
+#define cgpu_calloc(allocator, count, size) (allocator)->calloc_fn((allocator)->user_data, count, size, 0)
+#define cgpu_callocN(allocator, count, size, pool) (allocator)->calloc_fn((allocator)->user_data, count, size, pool)
+#define cgpu_calloc_aligned(allocator, count, size, alignment) (allocator)->calloc_aligned_fn((allocator)->user_data, count, size, alignment, 0)
+#define cgpu_free(allocator, ptr) (allocator)->free_fn((allocator)->user_data, ptr, 0)
+#define cgpu_freeN(allocator, ptr, pool) (allocator)->free_fn((allocator)->user_data, ptr, pool)
+#define cgpu_free_aligned(allocator, ptr, alignment) (allocator)->free_aligned_fn((allocator)->user_data, ptr, alignment, 0)
+#define cgpu_free_alignedN(allocator, ptr, alignment, pool) (allocator)->free_aligned_fn((allocator)->user_data, ptr, alignment, pool)
 
 #ifdef __cplusplus
 #include <utility>

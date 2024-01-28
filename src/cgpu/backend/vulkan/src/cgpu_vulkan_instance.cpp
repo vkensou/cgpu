@@ -202,11 +202,11 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
     cgpu_malloc_aligned_fn malloc_aligned_fn;
     cgpu_calloc_aligned_fn calloc_aligned_fn;
     cgpu_free_aligned_fn free_aligned_fn;
-    if (desc->allocator.malloc && desc->allocator.calloc && desc->allocator.free)
+    if (desc->allocator.malloc_fn && desc->allocator.calloc_fn && desc->allocator.free_fn)
     {
-        malloc_fn = desc->allocator.malloc;
-        calloc_fn = desc->allocator.calloc;
-        free_fn = desc->allocator.free;
+        malloc_fn = desc->allocator.malloc_fn;
+        calloc_fn = desc->allocator.calloc_fn;
+        free_fn = desc->allocator.free_fn;
     }
     else
     {
@@ -214,11 +214,11 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
         calloc_fn = cgpu_calloc_default;
         free_fn = cgpu_free_default;
     }
-    if (desc->allocator.malloc_aligned && desc->allocator.calloc_aligned && desc->allocator.free_aligned)
+    if (desc->allocator.malloc_aligned_fn && desc->allocator.calloc_aligned_fn && desc->allocator.free_aligned_fn)
     {
-        malloc_aligned_fn = desc->allocator.malloc_aligned;
-        calloc_aligned_fn = desc->allocator.calloc_aligned;
-        free_aligned_fn = desc->allocator.free_aligned;
+        malloc_aligned_fn = desc->allocator.malloc_aligned_fn;
+        calloc_aligned_fn = desc->allocator.calloc_aligned_fn;
+        free_aligned_fn = desc->allocator.free_aligned_fn;
     }
     else
     {
@@ -237,12 +237,12 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
         I->super.logger.log_callback = logger_default;
     I->super.logger.log_callback_user_data = desc->logger.log_callback_user_data;
 
-    I->super.allocator.malloc = malloc_fn;
-    I->super.allocator.calloc = calloc_fn;
-    I->super.allocator.free = free_fn;
-    I->super.allocator.malloc_aligned = malloc_aligned_fn;
-    I->super.allocator.calloc_aligned = calloc_aligned_fn;
-    I->super.allocator.free_aligned = free_aligned_fn;
+    I->super.allocator.malloc_fn = malloc_fn;
+    I->super.allocator.calloc_fn = calloc_fn;
+    I->super.allocator.free_fn = free_fn;
+    I->super.allocator.malloc_aligned_fn = malloc_aligned_fn;
+    I->super.allocator.calloc_aligned_fn = calloc_aligned_fn;
+    I->super.allocator.free_aligned_fn = free_aligned_fn;
     I->super.allocator.user_data = desc->allocator.user_data;
 
     // Initialize Environment

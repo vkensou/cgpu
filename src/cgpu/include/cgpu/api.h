@@ -810,12 +810,12 @@ typedef void* (*cgpu_calloc_aligned_fn)(void* user_data, size_t count, size_t si
 typedef void (*cgpu_free_aligned_fn)(void* user_data, void* ptr, size_t alignment, const void* pool);
 
 typedef struct CGPUAllocator {
-    cgpu_malloc_fn malloc;
-    cgpu_calloc_fn calloc;
-    cgpu_free_fn free;
-    cgpu_malloc_aligned_fn malloc_aligned;
-    cgpu_calloc_aligned_fn calloc_aligned;
-    cgpu_free_aligned_fn free_aligned;
+    cgpu_malloc_fn malloc_fn;
+    cgpu_calloc_fn calloc_fn;
+    cgpu_free_fn free_fn;
+    cgpu_malloc_aligned_fn malloc_aligned_fn;
+    cgpu_calloc_aligned_fn calloc_aligned_fn;
+    cgpu_free_aligned_fn free_aligned_fn;
     void* user_data;
 } CGPUAllocator;
 

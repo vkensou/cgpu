@@ -449,12 +449,12 @@ int main(int argc, char** argv)
 			.log_callback = log
 		},
 		.allocator = {
-			.malloc = demo_malloc,
-			.calloc = demo_calloc,
-			.free = demo_free,
-			.malloc_aligned = demo_malloc_aligned,
-			.calloc_aligned = demo_calloc_aligned,
-			.free_aligned = demo_free_aligned,
+			.malloc_fn = demo_malloc,
+			.calloc_fn = demo_calloc,
+			.free_fn = demo_free,
+			.malloc_aligned_fn = demo_malloc_aligned,
+			.calloc_aligned_fn = demo_calloc_aligned,
+			.free_aligned_fn = demo_free_aligned,
 		},
 	};
 	instance = cgpu_create_instance(&instance_desc);
