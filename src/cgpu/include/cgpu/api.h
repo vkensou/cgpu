@@ -803,17 +803,21 @@ typedef struct CGPULogger
 
 // Memory Delegates
 typedef void* (*cgpu_malloc_fn)(void* user_data, size_t size, const void* pool);
+typedef void* (*cgpu_realloc_fn)(void* user_data, void* ptr, size_t size, const void* pool);
 typedef void* (*cgpu_calloc_fn)(void* user_data, size_t count, size_t size, const void* pool);
 typedef void (*cgpu_free_fn)(void* user_data, void* ptr, const void* pool);
 typedef void* (*cgpu_malloc_aligned_fn)(void* user_data, size_t size, size_t alignment, const void* pool);
+typedef void* (*cgpu_realloc_aligned_fn)(void* user_data, void* ptr, size_t size, size_t alignment, const void* pool);
 typedef void* (*cgpu_calloc_aligned_fn)(void* user_data, size_t count, size_t size, size_t alignment, const void* pool);
 typedef void (*cgpu_free_aligned_fn)(void* user_data, void* ptr, size_t alignment, const void* pool);
 
 typedef struct CGPUAllocator {
     cgpu_malloc_fn malloc_fn;
+    cgpu_realloc_fn realloc_fn;
     cgpu_calloc_fn calloc_fn;
     cgpu_free_fn free_fn;
     cgpu_malloc_aligned_fn malloc_aligned_fn;
+    cgpu_realloc_aligned_fn realloc_aligned_fn;
     cgpu_calloc_aligned_fn calloc_aligned_fn;
     cgpu_free_aligned_fn free_aligned_fn;
     void* user_data;

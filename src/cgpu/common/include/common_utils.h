@@ -110,6 +110,11 @@ CGPU_FORCEINLINE static void* cgpu_malloc_default(void* user_data, size_t size, 
     return malloc(size);
 }
 
+CGPU_FORCEINLINE static void* cgpu_realloc_default(void* user_data, void* ptr, size_t size, const void* pool)
+{
+    return realloc(ptr, size);
+}
+
 CGPU_FORCEINLINE static void* cgpu_calloc_default(void* user_data, size_t count, size_t size, const void* pool)
 {
     return calloc(count, size);
@@ -123,6 +128,11 @@ CGPU_FORCEINLINE static void cgpu_free_default(void* user_data, void* ptr, const
 CGPU_FORCEINLINE static void* cgpu_malloc_aligned_default(void* user_data, size_t size, size_t alignment, const void* pool)
 {
     return _aligned_malloc(size, alignment);
+}
+
+CGPU_FORCEINLINE static void* cgpu_realloc_aligned_default(void* user_data, void* ptr, size_t size, size_t alignment, const void* pool)
+{
+    return _aligned_realloc(ptr, size, alignment);
 }
 
 CGPU_FORCEINLINE static void* cgpu_calloc_aligned_default(void* user_data, size_t count, size_t size, size_t alignment, const void* pool)

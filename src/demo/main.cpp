@@ -405,6 +405,13 @@ void* demo_malloc(void* user_data, size_t size, const void* pool)
 	return malloc(size);
 }
 
+void* demo_realloc(void* user_data, void* ptr, size_t size, const void* pool)
+{
+	malloced -= ptr ? _msize(ptr) : 0;
+	malloced += size;
+	return realloc(ptr, size);
+}
+
 void* demo_calloc(void* user_data, size_t count, size_t size, const void* pool)
 {
 	malloced += count * size;
@@ -422,6 +429,13 @@ void* demo_malloc_aligned(void* user_data, size_t size, size_t alignment, const 
 {
 	aligned_malloced += size;
 	return _aligned_malloc(size, alignment);
+}
+
+void* demo_realloc_aligned(void* user_data, void* ptr, size_t size, size_t alignment, const void* pool)
+{
+	aligned_malloced -= ptr ? _aligned_msize(ptr, alignment, 0) : 0;
+	aligned_malloced += size;
+	return _aligned_realloc(ptr, size, alignment);
 }
 
 void* demo_calloc_aligned(void* user_data, size_t count, size_t size, size_t alignment, const void* pool)
@@ -450,9 +464,11 @@ int main(int argc, char** argv)
 		},
 		.allocator = {
 			.malloc_fn = demo_malloc,
+			.realloc_fn = demo_realloc,
 			.calloc_fn = demo_calloc,
 			.free_fn = demo_free,
 			.malloc_aligned_fn = demo_malloc_aligned,
+			.realloc_aligned_fn = demo_realloc_aligned,
 			.calloc_aligned_fn = demo_calloc_aligned,
 			.free_aligned_fn = demo_free_aligned,
 		},
