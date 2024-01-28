@@ -155,12 +155,13 @@ const char* const* device_layers, uint32_t device_layers_count,
 const char* const* device_extensions, uint32_t device_extension_count)
 {
     cgpu_assert((I->mPhysicalDeviceCount == 0) && "VkUtil_QueryAllAdapters should only be called once!");
+    const CGPUAllocator* allocator = &I->super.allocator;
 
     vkEnumeratePhysicalDevices(I->pVkInstance, &I->mPhysicalDeviceCount, CGPU_NULLPTR);
     if (I->mPhysicalDeviceCount != 0)
     {
         I->pVulkanAdapters =
-        cgpu_calloc(I->mPhysicalDeviceCount, sizeof(CGPUAdapter_Vulkan));
+        cgpu_calloc(allocator, I->mPhysicalDeviceCount, sizeof(CGPUAdapter_Vulkan));
         CGPU_DECLARE_ZERO_VLA(VkPhysicalDevice, pysicalDevices, I->mPhysicalDeviceCount)
         vkEnumeratePhysicalDevices(I->pVkInstance, &I->mPhysicalDeviceCount, pysicalDevices);
         for (uint32_t i = 0; i < I->mPhysicalDeviceCount; i++)
@@ -274,11 +275,11 @@ const char* const* device_extensions, uint32_t device_extension_count)
             else
                 vkGetPhysicalDeviceFeatures(pysicalDevices[i], &VkAdapter->mPhysicalDeviceFeatures.features);
             // Query Physical Device Layers Properties
-            VkUtil_SelectPhysicalDeviceLayers(VkAdapter, device_layers, device_layers_count);
+            VkUtil_SelectPhysicalDeviceLayers(VkAdapter, device_layers, device_layers_count, allocator);
             // Query Physical Device Extension Properties
-            VkUtil_SelectPhysicalDeviceExtensions(VkAdapter, device_extensions, device_extension_count);
+            VkUtil_SelectPhysicalDeviceExtensions(VkAdapter, device_extensions, device_extension_count, allocator);
             // Select Queue Indices
-            VkUtil_SelectQueueIndices(VkAdapter);
+            VkUtil_SelectQueueIndices(VkAdapter, allocator);
             // Record Adapter Detail
             VkUtil_RecordAdapterDetail(VkAdapter);
             // Enumerate Format Supports
@@ -343,13 +344,14 @@ static ECGPUTextureDimension ArrDIMLut[SpvDimSubpassData + 1] = {
 const char8_t* push_constants_name = u8"push_constants";
 void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vulkan* S, const struct CGPUShaderLibraryDescriptor* desc)
 {
-    S->pReflect = cgpu_calloc(1, sizeof(SpvReflectShaderModule));
+    const CGPUAllocator* allocator = &device->adapter->instance->allocator;
+    S->pReflect = cgpu_calloc(allocator, 1, sizeof(SpvReflectShaderModule));
     SpvReflectResult spvRes = spvReflectCreateShaderModule(desc->code_size, desc->code, S->pReflect);
     (void)spvRes;
     cgpu_assert(spvRes == SPV_REFLECT_RESULT_SUCCESS && "Failed to Reflect Shader!");
     uint32_t entry_count = S->pReflect->entry_point_count;
     S->super.entrys_count = entry_count;
-    S->super.entry_reflections = cgpu_calloc(entry_count, sizeof(CGPUShaderReflection));
+    S->super.entry_reflections = cgpu_calloc(allocator, entry_count, sizeof(CGPUShaderReflection));
     for (uint32_t i = 0; i < entry_count; i++)
     {
         // Initialize Common Reflection Data
@@ -376,7 +378,7 @@ void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vu
             if ((entry->shader_stage & SPV_REFLECT_SHADER_STAGE_VERTEX_BIT))
             {
                 reflection->vertex_inputs_count = icount;
-                reflection->vertex_inputs = cgpu_calloc(icount, sizeof(CGPUVertexInput));
+                reflection->vertex_inputs = cgpu_calloc(allocator, icount, sizeof(CGPUVertexInput));
                 // Handle Vertex Inputs
                 for (uint32_t i = 0; i < icount; i++)
                 {
@@ -406,7 +408,7 @@ void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vu
             }
             bcount += ccount;
             reflection->shader_resources_count = bcount;
-            reflection->shader_resources = cgpu_calloc(bcount, sizeof(CGPUShaderResource));
+            reflection->shader_resources = cgpu_calloc(allocator, bcount, sizeof(CGPUShaderResource));
             // Fill Shader Resources
             uint32_t i_res = 0;
             for (uint32_t i_set = 0; i_set < scount; i_set++)
@@ -537,7 +539,8 @@ void VkUtil_FreePipelineCache(CGPUInstance_Vulkan* I, CGPUAdapter_Vulkan* A, CGP
 // API Objects Helpers
 struct VkUtil_DescriptorPool* VkUtil_CreateDescriptorPool(CGPUDevice_Vulkan* D)
 {
-    VkUtil_DescriptorPool* Pool = cgpu_calloc(1, sizeof(VkUtil_DescriptorPool));
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
+    VkUtil_DescriptorPool* Pool = cgpu_calloc(allocator, 1, sizeof(VkUtil_DescriptorPool));
 #ifdef CGPU_THREAD_SAFETY
     Pool->pMutex = cgpu_calloc(1, sizeof(SMutex));
     skr_init_mutex(Pool->pMutex);
@@ -838,13 +841,13 @@ void VkUtil_RecordAdapterDetail(CGPUAdapter_Vulkan* VkAdapter)
     VkUtil_QueryHostVisbleVramInfo(VkAdapter);
 }
 
-void VkUtil_SelectQueueIndices(CGPUAdapter_Vulkan* VkAdapter)
+void VkUtil_SelectQueueIndices(CGPUAdapter_Vulkan* VkAdapter, const CGPUAllocator* allocator)
 {
     // Query Queue Information.
     vkGetPhysicalDeviceQueueFamilyProperties(
         VkAdapter->pPhysicalDevice, &VkAdapter->mQueueFamiliesCount,
         CGPU_NULLPTR);
-    VkAdapter->pQueueFamilyProperties = cgpu_calloc(
+    VkAdapter->pQueueFamilyProperties = cgpu_calloc(allocator,
     VkAdapter->mQueueFamiliesCount, sizeof(VkQueueFamilyProperties));
         vkGetPhysicalDeviceQueueFamilyProperties(VkAdapter->pPhysicalDevice,
         &VkAdapter->mQueueFamiliesCount, VkAdapter->pQueueFamilyProperties);
@@ -942,12 +945,13 @@ void VkUtil_EnumFormatSupports(CGPUAdapter_Vulkan* VkAdapter)
 void VkUtil_SelectInstanceLayers(struct CGPUInstance_Vulkan* vkInstance,
 const char* const* instance_layers, uint32_t instance_layers_count)
 {
+    const CGPUAllocator* allocator = &vkInstance->super.allocator;
     uint32_t count = 0;
     vkEnumerateInstanceLayerProperties(&count, NULL);
     if (count != 0)
     {
-        vkInstance->pLayerNames = cgpu_calloc(instance_layers_count, sizeof(const char*));
-        vkInstance->pLayerProperties = cgpu_calloc(instance_layers_count, sizeof(VkLayerProperties));
+        vkInstance->pLayerNames = cgpu_calloc(allocator, instance_layers_count, sizeof(const char*));
+        vkInstance->pLayerProperties = cgpu_calloc(allocator, instance_layers_count, sizeof(VkLayerProperties));
 
         CGPU_DECLARE_ZERO_VLA(VkLayerProperties, layer_props, count)
         vkEnumerateInstanceLayerProperties(&count, layer_props);
@@ -974,13 +978,14 @@ const char* const* instance_layers, uint32_t instance_layers_count)
 void VkUtil_SelectInstanceExtensions(struct CGPUInstance_Vulkan* VkInstance,
 const char* const* instance_extensions, uint32_t instance_extension_count)
 {
+    const CGPUAllocator* allocator = &VkInstance->super.allocator;
     const char* layer_name = NULL; // Query Vulkan implementation or by implicitly enabled layers
     uint32_t count = 0;
     vkEnumerateInstanceExtensionProperties(layer_name, &count, NULL);
     if (count > 0)
     {
-        VkInstance->pExtensionProperties = cgpu_calloc(instance_extension_count, sizeof(VkExtensionProperties));
-        VkInstance->pExtensionNames = cgpu_calloc(instance_extension_count, sizeof(const char*));
+        VkInstance->pExtensionProperties = cgpu_calloc(allocator, instance_extension_count, sizeof(VkExtensionProperties));
+        VkInstance->pExtensionNames = cgpu_calloc(allocator, instance_extension_count, sizeof(const char*));
 
         CGPU_DECLARE_ZERO_VLA(VkExtensionProperties, ext_props, count)
         vkEnumerateInstanceExtensionProperties(layer_name, &count, ext_props);
@@ -1005,14 +1010,14 @@ const char* const* instance_extensions, uint32_t instance_extension_count)
 }
 
 void VkUtil_SelectPhysicalDeviceLayers(struct CGPUAdapter_Vulkan* VkAdapter,
-const char* const* device_layers, uint32_t device_layers_count)
+const char* const* device_layers, uint32_t device_layers_count, const CGPUAllocator* allocator)
 {
     uint32_t count;
     vkEnumerateDeviceLayerProperties(VkAdapter->pPhysicalDevice, &count, NULL);
     if (count != 0)
     {
-        VkAdapter->pLayerNames = cgpu_calloc(device_layers_count, sizeof(const char*));
-        VkAdapter->pLayerProperties = cgpu_calloc(device_layers_count, sizeof(VkLayerProperties));
+        VkAdapter->pLayerNames = cgpu_calloc(allocator, device_layers_count, sizeof(const char*));
+        VkAdapter->pLayerProperties = cgpu_calloc(allocator, device_layers_count, sizeof(VkLayerProperties));
 
         CGPU_DECLARE_ZERO_VLA(VkLayerProperties, layer_props, count)
         vkEnumerateDeviceLayerProperties(VkAdapter->pPhysicalDevice, &count, layer_props);
@@ -1036,15 +1041,15 @@ const char* const* device_layers, uint32_t device_layers_count)
 }
 
 void VkUtil_SelectPhysicalDeviceExtensions(struct CGPUAdapter_Vulkan* VkAdapter,
-const char* const* device_extensions, uint32_t device_extension_count)
+const char* const* device_extensions, uint32_t device_extension_count, const CGPUAllocator* allocator)
 {
     const char* layer_name = NULL; // Query Vulkan implementation or by implicitly enabled layers
     uint32_t count = 0;
     vkEnumerateDeviceExtensionProperties(VkAdapter->pPhysicalDevice, layer_name, &count, NULL);
     if (count > 0)
     {
-        VkAdapter->pExtensionProperties = cgpu_calloc(device_extension_count, sizeof(VkExtensionProperties));
-        VkAdapter->pExtensionNames = cgpu_calloc(device_extension_count, sizeof(const char*));
+        VkAdapter->pExtensionProperties = cgpu_calloc(allocator, device_extension_count, sizeof(VkExtensionProperties));
+        VkAdapter->pExtensionNames = cgpu_calloc(allocator, device_extension_count, sizeof(const char*));
 
         CGPU_DECLARE_ZERO_VLA(VkExtensionProperties, ext_props, count)
         vkEnumerateDeviceExtensionProperties(VkAdapter->pPhysicalDevice, layer_name, &count, ext_props);

@@ -538,6 +538,7 @@ void VkUtil_AllocateSharedTexture(CGPUQueue_Vulkan* Q, VmaAllocationCreateInfo* 
     VkExportMemoryWin32HandleInfoKHR* pWin32ExportMemoryInfo)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)Q->super.device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     pImageCreateInfo->pNext = pExternalInfo;
     const VkExternalMemoryHandleTypeFlags exportFlags = 
         VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT | 
@@ -564,7 +565,7 @@ void VkUtil_AllocateSharedTexture(CGPUQueue_Vulkan* Q, VmaAllocationCreateInfo* 
     }
     if (D->pExternalMemoryVmaPools[memoryType] == CGPU_NULLPTR)
     {
-        D->pExternalMemoryVmaPoolNexts[memoryType] = cgpu_calloc(1, sizeof(VkExportMemoryAllocateInfoKHR));
+        D->pExternalMemoryVmaPoolNexts[memoryType] = cgpu_calloc(allocator, 1, sizeof(VkExportMemoryAllocateInfoKHR));
         VkExportMemoryAllocateInfoKHR* Next = (VkExportMemoryAllocateInfoKHR*)D->pExternalMemoryVmaPoolNexts[memoryType];
         Next->sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR;
         VmaPoolCreateInfo poolCreateInfo = {
@@ -832,7 +833,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
                 CGPUImportTextureDescriptor* pImportDesc = (CGPUImportTextureDescriptor*)desc->native_handle;
                 unique_id = pImportDesc->shared_handle;
                 int size_needed = swprintf(CGPU_NULL, 0, nameFormat, unique_id);
-                win32Name = cgpu_calloc(1 + size_needed, sizeof(wchar_t));
+                win32Name = cgpu_calloc(allocator, 1 + size_needed, sizeof(wchar_t));
                 swprintf(win32Name, 1 + size_needed, nameFormat, unique_id);
                 VkUtil_ImportSharedTexture(Q, &mem_reqs, &imageCreateInfo, desc, win32Name, 
                     &externalInfo, &win32ImportInfo, &pVkImage, &pVkDeviceMemory);
@@ -844,7 +845,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
                 uint64_t shared_id = D->next_shared_id++;
                 unique_id = (pid << 32) | shared_id;
                 int size_needed = swprintf(CGPU_NULL, 0, nameFormat, unique_id);
-                win32Name = cgpu_calloc(1 + size_needed, sizeof(wchar_t));
+                win32Name = cgpu_calloc(allocator, 1 + size_needed, sizeof(wchar_t));
                 swprintf(win32Name, 1 + size_needed, nameFormat, unique_id);
                 VkUtil_AllocateSharedTexture(Q, &mem_reqs, &imageCreateInfo, desc, win32Name, 
                     &externalInfo, &exportMemoryInfo, &win32ExportMemoryInfo);
@@ -1055,7 +1056,7 @@ void cgpu_queue_map_packed_mips_vulkan(CGPUQueueId queue, const struct CGPUTiled
         return;
     
     uint32_t M = 0;
-    VkSparseMemoryBind* opaqueBinds = cgpu_calloc(N, sizeof(VkSparseMemoryBind) + sizeof(VkSparseImageOpaqueMemoryBindInfo));
+    VkSparseMemoryBind* opaqueBinds = cgpu_calloc(allocator, N, sizeof(VkSparseMemoryBind) + sizeof(VkSparseImageOpaqueMemoryBindInfo));
     VkSparseImageOpaqueMemoryBindInfo* bindInfos = (VkSparseImageOpaqueMemoryBindInfo*)(opaqueBinds + N);
     for (uint32_t i = 0; i < regions->packed_mip_count; i++)
     {
@@ -1161,7 +1162,7 @@ void cgpu_queue_map_tiled_texture_vulkan(CGPUQueueId queue, const struct CGPUTil
     }
     if (!TotalTileCount) return;
 
-    void* ArgMemory = cgpu_calloc(TotalTileCount, sizeof(VmaAllocation) + sizeof(VmaAllocationInfo) + sizeof(VkSparseImageMemoryBind) + sizeof(CGPUTileMapping_Vulkan*));
+    void* ArgMemory = cgpu_calloc(allocator, TotalTileCount, sizeof(VmaAllocation) + sizeof(VmaAllocationInfo) + sizeof(VkSparseImageMemoryBind) + sizeof(CGPUTileMapping_Vulkan*));
     VmaAllocation* pAllocations = (VmaAllocation*)ArgMemory;
     VmaAllocationInfo* pAllocationInfos = (VmaAllocationInfo*)(pAllocations + TotalTileCount);
     VkSparseImageMemoryBind* pBinds = (VkSparseImageMemoryBind*)(pAllocationInfos + TotalTileCount);
@@ -1540,12 +1541,13 @@ void cgpu_free_sampler_vulkan(CGPUSamplerId sampler)
 CGPUShaderLibraryId cgpu_create_shader_library_vulkan(CGPUDeviceId device, const struct CGPUShaderLibraryDescriptor* desc)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
+    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     VkShaderModuleCreateInfo info = {
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         .codeSize = desc->code_size,
         .pCode = desc->code
     };
-    CGPUShaderLibrary_Vulkan* S = cgpu_calloc(1, sizeof(CGPUShaderLibrary_Vulkan));
+    CGPUShaderLibrary_Vulkan* S = cgpu_calloc(allocator, 1, sizeof(CGPUShaderLibrary_Vulkan));
     if (!desc->reflection_only)
     {
         D->mVkDeviceTable.vkCreateShaderModule(D->pVkDevice, &info, GLOBAL_VkAllocationCallbacks, &S->mShaderModule);

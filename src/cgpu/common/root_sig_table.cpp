@@ -166,7 +166,7 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
     });
     // Slice
     RS->table_count = (uint32_t)valid_sets.size();
-    RS->tables = (CGPUParameterTable*)cgpu_calloc(RS->table_count, sizeof(CGPUParameterTable));
+    RS->tables = (CGPUParameterTable*)cgpu_calloc(allocator, RS->table_count, sizeof(CGPUParameterTable));
     uint32_t table_index = 0;
     for (auto&set_index : valid_sets)
     {
@@ -178,7 +178,7 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
             if (RST_resource.set == set_index)
                 table.resources_count++;
         }
-        table.resources = (CGPUShaderResource*)cgpu_calloc(
+        table.resources = (CGPUShaderResource*)cgpu_calloc(allocator,
         table.resources_count, sizeof(CGPUShaderResource));
         uint32_t slot_index = 0;
         for (auto&& RST_resource : RST_resources)
@@ -193,7 +193,7 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
     }
     // push constants
     RS->push_constant_count = (uint32_t)all_push_constants.size();
-    RS->push_constants = (CGPUShaderResource*)cgpu_calloc(
+    RS->push_constants = (CGPUShaderResource*)cgpu_calloc(allocator,
     RS->push_constant_count, sizeof(CGPUShaderResource));
     for (uint32_t i = 0; i < all_push_constants.size(); i++)
     {
@@ -207,7 +207,7 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
             return lhs.binding < rhs.binding;
     });
     RS->static_sampler_count = (uint32_t)all_static_samplers.size();
-    RS->static_samplers = (CGPUShaderResource*)cgpu_calloc(
+    RS->static_samplers = (CGPUShaderResource*)cgpu_calloc(allocator,
     RS->static_sampler_count, sizeof(CGPUShaderResource));
     for (uint32_t i = 0; i < all_static_samplers.size(); i++)
     {

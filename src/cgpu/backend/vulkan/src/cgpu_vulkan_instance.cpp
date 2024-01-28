@@ -399,7 +399,8 @@ const float queuePriorities[] = {
 CGPUDeviceId cgpu_create_device_vulkan(CGPUAdapterId adapter, const CGPUDeviceDescriptor* desc)
 {
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)adapter->instance;
-    CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)cgpu_calloc(1, sizeof(CGPUDevice_Vulkan));
+    const CGPUAllocator* allocator = &adapter->instance->allocator;
+    CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)cgpu_calloc(allocator, 1, sizeof(CGPUDevice_Vulkan));
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)adapter;
 
     *const_cast<CGPUAdapterId*>(&D->super.adapter) = adapter;

@@ -1027,13 +1027,14 @@ CGPUShaderLibraryId cgpu_create_shader_library(CGPUDeviceId device, const struct
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
     cgpu_assert(device->proc_table_cache->create_shader_library && "create_shader_library Proc Missing!");
 
+    const CGPUAllocator* allocator = &device->adapter->instance->allocator;
     CGPUProcCreateShaderLibrary fn_create_shader_library = device->proc_table_cache->create_shader_library;
     CGPUShaderLibrary* shader = (CGPUShaderLibrary*)fn_create_shader_library(device, desc);
     shader->device = device;
     // handle name string
     const size_t str_len = strlen(desc->name);
     const size_t str_size = str_len + 1;
-    shader->name = cgpu_calloc(1, str_size * sizeof(char8_t));
+    shader->name = cgpu_calloc(allocator, 1, str_size * sizeof(char8_t));
     memcpy((void*)shader->name, desc->name, str_size);
 
     // SkrCZoneEnd(zz);

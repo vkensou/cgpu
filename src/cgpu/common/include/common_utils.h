@@ -146,7 +146,7 @@ CGPU_FORCEINLINE static void* _aligned_calloc(size_t nelem, size_t elsize, size_
     #define cgpu_malloc(allocator, size) (allocator)->malloc((allocator)->user_data, size, 0)
     #define cgpu_malloc_aligned(allocator, size, alignment) (allocator)->malloc_aligned((allocator)->user_data, size, alignment, 0)
     #define cgpu_malloc_alignedN(size, alignment, ...)  _aligned_malloc(size, alignment)
-    #define cgpu_calloc calloc
+    #define cgpu_calloc(allocator, count, size) (allocator)->calloc((allocator)->user_data, count, size, 0)
     #define cgpu_callocN(count, size, ...) calloc((count), (size))
     #define cgpu_calloc_aligned _aligned_calloc
     #define cgpu_free(allocator, ptr) (allocator)->free((allocator)->user_data, ptr, 0)
