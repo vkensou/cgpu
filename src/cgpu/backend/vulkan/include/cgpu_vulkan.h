@@ -3,14 +3,9 @@
 
 #include "volk.h"
 
-CGPU_EXTERN_C CGPU_API const VkAllocationCallbacks GCGPUVkAllocationCallbacks;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-// #define GLOBAL_VkAllocationCallbacks CGPU_NULLPTR
-#define GLOBAL_VkAllocationCallbacks (&GCGPUVkAllocationCallbacks)
 
 #define MAX_PLANE_COUNT 3
 
@@ -165,6 +160,7 @@ typedef struct CGPUInstance_Vulkan {
     VkDebugUtilsMessengerEXT pVkDebugUtilsMessenger;
     VkDebugReportCallbackEXT pVkDebugReport;
     struct CGPUAdapter_Vulkan* pVulkanAdapters;
+    VkAllocationCallbacks vkAllocator;
     uint32_t apiVersion;
     uint32_t mPhysicalDeviceCount;
 

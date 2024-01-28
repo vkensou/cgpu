@@ -74,6 +74,7 @@ struct CGPUVkExtensionsTable : public phmap::flat_hash_map<std::string, bool, st
 {
     static void ConstructForAllAdapters(struct CGPUInstance_Vulkan* I, const VkUtil_Blackboard& blackboard)
     {
+        const CGPUAllocator* allocator = &I->super.allocator;
         // enum physical devices & store informations.
         auto wanted_device_extensions = blackboard.device_extensions.data();
         const auto wanted_device_extensions_count = (uint32_t)blackboard.device_extensions.size();
@@ -81,7 +82,7 @@ struct CGPUVkExtensionsTable : public phmap::flat_hash_map<std::string, bool, st
         for (uint32_t i = 0; i < I->mPhysicalDeviceCount; i++)
         {
             auto& Adapter = I->pVulkanAdapters[i];
-            Adapter.pExtensionsTable = cgpu_new<CGPUVkExtensionsTable>();
+            Adapter.pExtensionsTable = cgpu_new<CGPUVkExtensionsTable>(allocator);
             auto& Table = *Adapter.pExtensionsTable;
             for (uint32_t j = 0; j < wanted_device_extensions_count; j++)
             {
@@ -120,11 +121,12 @@ struct CGPUVkExtensionsTable : public phmap::flat_hash_map<std::string, bool, st
     }
     static void ConstructForInstance(struct CGPUInstance_Vulkan* I, const VkUtil_Blackboard& blackboard)
     {
+        const CGPUAllocator* allocator = &I->super.allocator;
         // enum physical devices & store informations.
         auto wanted_instance_extensions = blackboard.instance_extensions.data();
         const auto wanted_instance_extensions_count = (uint32_t)blackboard.instance_extensions.size();
         // construct extensions table
-        I->pExtensionsTable = cgpu_new<CGPUVkExtensionsTable>();
+        I->pExtensionsTable = cgpu_new<CGPUVkExtensionsTable>(allocator);
         auto& Table = *I->pExtensionsTable;
         for (uint32_t j = 0; j < wanted_instance_extensions_count; j++)
         {
@@ -149,6 +151,7 @@ struct CGPUVkLayersTable : public phmap::flat_hash_map<std::string, bool, std::h
 {
     static void ConstructForAllAdapters(struct CGPUInstance_Vulkan* I, const VkUtil_Blackboard& blackboard)
     {
+        const CGPUAllocator* allocator = &I->super.allocator;
         // enum physical devices & store informations.
         auto wanted_device_layers = blackboard.device_layers.data();
         const auto wanted_device_layers_count = (uint32_t)blackboard.device_layers.size();
@@ -156,7 +159,7 @@ struct CGPUVkLayersTable : public phmap::flat_hash_map<std::string, bool, std::h
         for (uint32_t i = 0; i < I->mPhysicalDeviceCount; i++)
         {
             auto& Adapter = I->pVulkanAdapters[i];
-            Adapter.pLayersTable = cgpu_new<CGPUVkLayersTable>();
+            Adapter.pLayersTable = cgpu_new<CGPUVkLayersTable>(allocator);
             auto& Table = *Adapter.pLayersTable;
             for (uint32_t j = 0; j < wanted_device_layers_count; j++)
             {
@@ -170,11 +173,12 @@ struct CGPUVkLayersTable : public phmap::flat_hash_map<std::string, bool, std::h
     }
     static void ConstructForInstance(struct CGPUInstance_Vulkan* I, const VkUtil_Blackboard& blackboard)
     {
+        const CGPUAllocator* allocator = &I->super.allocator;
         // enum physical devices & store informations.
         auto wanted_instance_layers = blackboard.instance_layers.data();
         const auto wanted_instance_layers_count = (uint32_t)blackboard.instance_layers.size();
         // construct layers table
-        I->pLayersTable = cgpu_new<CGPUVkLayersTable>();
+        I->pLayersTable = cgpu_new<CGPUVkLayersTable>(allocator);
         auto& Table = *I->pLayersTable;
         for (uint32_t j = 0; j < wanted_instance_layers_count; j++)
         {
@@ -192,12 +196,69 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
     // Merge All Parameters into one blackboard
     const VkUtil_Blackboard blackboard(desc);
 
+    cgpu_malloc_fn malloc_fn;
+    cgpu_realloc_fn realloc_fn;
+    cgpu_calloc_fn calloc_fn;
+    cgpu_free_fn free_fn;
+    cgpu_malloc_aligned_fn malloc_aligned_fn;
+    cgpu_realloc_aligned_fn realloc_aligned_fn;
+    cgpu_calloc_aligned_fn calloc_aligned_fn;
+    cgpu_free_aligned_fn free_aligned_fn;
+    if (desc->allocator.malloc_fn && desc->allocator.calloc_fn && desc->allocator.free_fn)
+    {
+        malloc_fn = desc->allocator.malloc_fn;
+        realloc_fn = desc->allocator.realloc_fn;
+        calloc_fn = desc->allocator.calloc_fn;
+        free_fn = desc->allocator.free_fn;
+    }
+    else
+    {
+        malloc_fn = cgpu_malloc_default;
+        realloc_fn = cgpu_realloc_default;
+        calloc_fn = cgpu_calloc_default;
+        free_fn = cgpu_free_default;
+    }
+    if (desc->allocator.malloc_aligned_fn && desc->allocator.realloc_aligned_fn && desc->allocator.calloc_aligned_fn && desc->allocator.free_aligned_fn)
+    {
+        malloc_aligned_fn = desc->allocator.malloc_aligned_fn;
+        realloc_aligned_fn = desc->allocator.realloc_aligned_fn;
+        calloc_aligned_fn = desc->allocator.calloc_aligned_fn;
+        free_aligned_fn = desc->allocator.free_aligned_fn;
+    }
+    else
+    {
+        malloc_aligned_fn = cgpu_malloc_aligned_default;
+        realloc_aligned_fn = cgpu_realloc_aligned_default;
+        calloc_aligned_fn = cgpu_calloc_aligned_default;
+        free_aligned_fn = cgpu_free_aligned_default;
+    }
+
     // Memory Alloc
-    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)cgpu_calloc(1, sizeof(CGPUInstance_Vulkan));
+    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)calloc_fn(desc->allocator.user_data, 1, sizeof(CGPUInstance_Vulkan), 0);
     ::memset(I, 0, sizeof(CGPUInstance_Vulkan));
 
-    I->super.log_callback = desc->log_callback;
-    I->super.log_callback_user_data = desc->log_callback_user_data;
+    if (desc->logger.log_callback)
+        I->super.logger.log_callback = desc->logger.log_callback;
+    else
+        I->super.logger.log_callback = logger_default;
+    I->super.logger.log_callback_user_data = desc->logger.log_callback_user_data;
+
+    I->super.allocator.malloc_fn = malloc_fn;
+    I->super.allocator.realloc_fn = realloc_fn;
+    I->super.allocator.calloc_fn = calloc_fn;
+    I->super.allocator.free_fn = free_fn;
+    I->super.allocator.malloc_aligned_fn = malloc_aligned_fn;
+    I->super.allocator.realloc_aligned_fn = realloc_aligned_fn;
+    I->super.allocator.calloc_aligned_fn = calloc_aligned_fn;
+    I->super.allocator.free_aligned_fn = free_aligned_fn;
+    I->super.allocator.user_data = desc->allocator.user_data;
+
+    I->vkAllocator.pUserData = I;
+    I->vkAllocator.pfnAllocation = cgpu_vulkan_alloc;
+    I->vkAllocator.pfnReallocation = cgpu_vulkan_realloc;
+    I->vkAllocator.pfnFree = cgpu_vulkan_free;
+    I->vkAllocator.pfnInternalAllocation = cgpu_vulkan_internal_alloc_notify;
+    I->vkAllocator.pfnInternalFree = cgpu_vulkan_internal_free_notify;
 
     // Initialize Environment
     VkUtil_InitializeEnvironment(&I->super);
@@ -248,7 +309,7 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
     {
         if (!desc->enable_debug_layer)
         {
-            cgpu_warn(&(I->super), "Vulkan GpuBasedValidation enabled while ValidationLayer is closed, there'll be no effect.\n");
+            cgpu_warn(&(I->super.logger), "Vulkan GpuBasedValidation enabled while ValidationLayer is closed, there'll be no effect.\n");
         }
 #if VK_HEADER_VERSION >= 108
         validationFeaturesExt.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
@@ -256,14 +317,14 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
         validationFeaturesExt.pEnabledValidationFeatures = enabledValidationFeatures;
         createInfo.pNext = &validationFeaturesExt;
 #else
-        cgpu_warn("Vulkan GpuBasedValidation enabled but VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT is not supported!\n");
+        cgpu_warn(&(I->super.logger), "Vulkan GpuBasedValidation enabled but VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT is not supported!\n");
 #endif
     }
 
-    auto instRes = (int32_t)vkCreateInstance(&createInfo, GLOBAL_VkAllocationCallbacks, &I->pVkInstance);
+    auto instRes = (int32_t)vkCreateInstance(&createInfo, &I->vkAllocator, &I->pVkInstance);
     if (instRes != VK_SUCCESS)
     {
-        cgpu_fatal(&(I->super), "Vulkan: failed to create instance with code %d\n", instRes);
+        cgpu_fatal(&(I->super.logger), "Vulkan: failed to create instance with code %d\n", instRes);
         cgpu_assert(0 && "Vulkan: failed to create instance!");
     }
     CGPUVkLayersTable::ConstructForInstance(I, blackboard);
@@ -308,39 +369,40 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
 void cgpu_free_instance_vulkan(CGPUInstanceId instance)
 {
     CGPUInstance_Vulkan* to_destroy = (CGPUInstance_Vulkan*)instance;
+    const CGPUAllocator* allocator = &instance->allocator;
     VkUtil_DeInitializeEnvironment(&to_destroy->super);
     if (to_destroy->pVkDebugUtilsMessenger)
     {
         cgpu_assert(vkDestroyDebugUtilsMessengerEXT && "Load vkDestroyDebugUtilsMessengerEXT failed!");
-        vkDestroyDebugUtilsMessengerEXT(to_destroy->pVkInstance, to_destroy->pVkDebugUtilsMessenger, GLOBAL_VkAllocationCallbacks);
+        vkDestroyDebugUtilsMessengerEXT(to_destroy->pVkInstance, to_destroy->pVkDebugUtilsMessenger, &to_destroy->vkAllocator);
     }
 
-    vkDestroyInstance(to_destroy->pVkInstance, GLOBAL_VkAllocationCallbacks);
+    vkDestroyInstance(to_destroy->pVkInstance, &to_destroy->vkAllocator);
     for (uint32_t i = 0; i < to_destroy->mPhysicalDeviceCount; i++)
     {
         auto& Adapter = to_destroy->pVulkanAdapters[i];
-        cgpu_free(Adapter.pQueueFamilyProperties);
+        cgpu_free(allocator, Adapter.pQueueFamilyProperties);
         // free extensions cache
-        cgpu_delete(Adapter.pExtensionsTable);
-        cgpu_free(Adapter.pExtensionNames);
-        cgpu_free(Adapter.pExtensionProperties);
+        cgpu_delete(allocator, Adapter.pExtensionsTable);
+        cgpu_free(allocator, Adapter.pExtensionNames);
+        cgpu_free(allocator, Adapter.pExtensionProperties);
 
         // free layers cache
-        cgpu_delete(Adapter.pLayersTable);
-        cgpu_free(Adapter.pLayerNames);
-        cgpu_free(Adapter.pLayerProperties);
+        cgpu_delete(allocator, Adapter.pLayersTable);
+        cgpu_free(allocator, Adapter.pLayerNames);
+        cgpu_free(allocator, Adapter.pLayerProperties);
     }
     // free extensions cache
-    cgpu_delete(to_destroy->pExtensionsTable);
-    cgpu_free(to_destroy->pExtensionNames);
-    cgpu_free(to_destroy->pExtensionProperties);
+    cgpu_delete(allocator, to_destroy->pExtensionsTable);
+    cgpu_free(allocator, to_destroy->pExtensionNames);
+    cgpu_free(allocator, to_destroy->pExtensionProperties);
     // free layers cache
-    cgpu_delete(to_destroy->pLayersTable);
-    cgpu_free(to_destroy->pLayerNames);
-    cgpu_free(to_destroy->pLayerProperties);
+    cgpu_delete(allocator, to_destroy->pLayersTable);
+    cgpu_free(allocator, to_destroy->pLayerNames);
+    cgpu_free(allocator, to_destroy->pLayerProperties);
 
-    cgpu_free(to_destroy->pVulkanAdapters);
-    cgpu_free(to_destroy);
+    cgpu_free(allocator, to_destroy->pVulkanAdapters);
+    cgpu_free(allocator, to_destroy);
 }
 
 const float queuePriorities[] = {
@@ -352,7 +414,8 @@ const float queuePriorities[] = {
 CGPUDeviceId cgpu_create_device_vulkan(CGPUAdapterId adapter, const CGPUDeviceDescriptor* desc)
 {
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)adapter->instance;
-    CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)cgpu_calloc(1, sizeof(CGPUDevice_Vulkan));
+    const CGPUAllocator* allocator = &adapter->instance->allocator;
+    CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)cgpu_calloc(allocator, 1, sizeof(CGPUDevice_Vulkan));
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)adapter;
 
     *const_cast<CGPUAdapterId*>(&D->super.adapter) = adapter;
@@ -385,7 +448,7 @@ CGPUDeviceId cgpu_create_device_vulkan(CGPUAdapterId adapter, const CGPUDeviceDe
     createInfo.enabledLayerCount = A->mLayersCount;
     createInfo.ppEnabledLayerNames = A->pLayerNames;
 
-    VkResult result = vkCreateDevice(A->pPhysicalDevice, &createInfo, GLOBAL_VkAllocationCallbacks, &D->pVkDevice);
+    VkResult result = vkCreateDevice(A->pPhysicalDevice, &createInfo, &I->vkAllocator, &D->pVkDevice);
     if (result != VK_SUCCESS)
     {
         cgpu_assert(0 && "failed to create logical device!");
@@ -414,6 +477,7 @@ void cgpu_free_device_vulkan(CGPUDeviceId device)
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)device->adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)device->adapter->instance;
+    CGPUAllocator* allocator = &I->super.allocator;
 
     for (uint32_t i = 0; i < VK_MAX_MEMORY_TYPES; i++)
     {
@@ -423,12 +487,12 @@ void cgpu_free_device_vulkan(CGPUDeviceId device)
         }
         if (D->pExternalMemoryVmaPoolNexts[i])
         {
-            cgpu_free(D->pExternalMemoryVmaPoolNexts[i]);
+            cgpu_free(allocator, D->pExternalMemoryVmaPoolNexts[i]);
         }
     }
     VkUtil_FreeVMAAllocator(I, A, D);
     VkUtil_FreeDescriptorPool(D->pDescriptorPool);
     VkUtil_FreePipelineCache(I, A, D);
-    vkDestroyDevice(D->pVkDevice, GLOBAL_VkAllocationCallbacks);
-    cgpu_free(D);
+    vkDestroyDevice(D->pVkDevice, &I->vkAllocator);
+    cgpu_free(allocator, D);
 }

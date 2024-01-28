@@ -5,12 +5,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 CGPU_EXTERN_C_BEGIN
 
-struct CGPURuntimeTable* cgpu_create_runtime_table();
+struct CGPURuntimeTable* cgpu_create_runtime_table(const CGPUAllocator* allocator);
 void cgpu_early_free_runtime_table(struct CGPURuntimeTable* table);
-void cgpu_free_runtime_table(struct CGPURuntimeTable* table);
+void cgpu_free_runtime_table(const CGPUAllocator* allocator, struct CGPURuntimeTable* table);
 void cgpu_runtime_table_add_queue(CGPUQueueId queue, ECGPUQueueType type, uint32_t index);
 CGPUQueueId cgpu_runtime_table_try_get_queue(CGPUDeviceId device, ECGPUQueueType type, uint32_t index);
 
@@ -20,17 +22,17 @@ void cgpu_runtime_table_add_early_sweep_callback(struct CGPURuntimeTable* table,
 void* cgpu_runtime_table_try_get_custom_data(struct CGPURuntimeTable* table, const char* key);
 bool cgpu_runtime_table_remove_custom_data(struct CGPURuntimeTable* table, const char* key);
 
-void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSignatureDescriptor* desc);
+void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSignatureDescriptor* desc, const CGPUAllocator* allocator);
 void CGPUUtil_FreeRSParamTables(CGPURootSignature* RS);
 
 // check for slot-overlapping and try get a signature from pool
-CGPURootSignaturePoolId CGPUUtil_CreateRootSignaturePool(const CGPURootSignaturePoolDescriptor* desc);
+CGPURootSignaturePoolId CGPUUtil_CreateRootSignaturePool(const CGPUAllocator* allocator, const CGPURootSignaturePoolDescriptor* desc);
 CGPURootSignatureId CGPUUtil_TryAllocateSignature(CGPURootSignaturePoolId pool, CGPURootSignature* RSTables, const struct CGPURootSignatureDescriptor* desc);
 CGPURootSignatureId CGPUUtil_AddSignature(CGPURootSignaturePoolId pool, CGPURootSignature* sig, const CGPURootSignatureDescriptor* desc);
 // TODO: signature pool statics
 //void CGPUUtil_AllSignatures(CGPURootSignaturePoolId pool, CGPURootSignatureId* signatures, uint32_t* count);
 bool CGPUUtil_PoolFreeSignature(CGPURootSignaturePoolId pool, CGPURootSignatureId sig);
-void CGPUUtil_FreeRootSignaturePool(CGPURootSignaturePoolId pool);
+void CGPUUtil_FreeRootSignaturePool(const CGPUAllocator* allocator, CGPURootSignaturePoolId pool);
 
 #define cgpu_round_up(value, multiple) ((((value) + (multiple)-1) / (multiple)) * (multiple))
 #define cgpu_round_down(value, multiple) ((value) - (value) % (multiple))
@@ -86,32 +88,75 @@ CGPU_EXTERN_C size_t cgpu_hash(const void* buffer, size_t size, size_t seed);
         memset((void*)(var), 0, sizeof(type) * (num));
 #endif
 
-#define cgpu_trace(instance, fmt, ...) {if((instance)->log_callback!=CGPU_NULLPTR)((instance)->log_callback((instance)->log_callback_user_data, CGPU_LOG_TRACE, fmt, __VA_ARGS__));}
-#define cgpu_debug(instance, fmt, ...) {if((instance)->log_callback!=CGPU_NULLPTR)((instance)->log_callback((instance)->log_callback_user_data, CGPU_LOG_DEBUG, fmt, __VA_ARGS__));}
-#define cgpu_info(instance, fmt, ...) {if((instance)->log_callback!=CGPU_NULLPTR)((instance)->log_callback((instance)->log_callback_user_data, CGPU_LOG_INFO, fmt, __VA_ARGS__));}
-#define cgpu_warn(instance, fmt, ...) {if((instance)->log_callback!=CGPU_NULLPTR)((instance)->log_callback((instance)->log_callback_user_data, CGPU_LOG_WARNING, fmt, __VA_ARGS__));}
-#define cgpu_error(instance, fmt, ...) {if((instance)->log_callback!=CGPU_NULLPTR)((instance)->log_callback((instance)->log_callback_user_data, CGPU_LOG_ERROR, fmt, __VA_ARGS__));}
-#define cgpu_fatal(instance, fmt, ...) {if((instance)->log_callback!=CGPU_NULLPTR)((instance)->log_callback((instance)->log_callback_user_data, CGPU_LOG_FATAL, fmt, __VA_ARGS__));}
+CGPU_FORCEINLINE static void logger_default(void* user_data, ECGPULogSeverity severity, const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vprintf(fmt, args);
+    va_end(args);
+}
+
+#define cgpu_trace(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_TRACE, fmt, __VA_ARGS__);}
+#define cgpu_debug(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_DEBUG, fmt, __VA_ARGS__);}
+#define cgpu_info(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_INFO, fmt, __VA_ARGS__);}
+#define cgpu_warn(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_WARNING, fmt, __VA_ARGS__);}
+#define cgpu_error(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_ERROR, fmt, __VA_ARGS__);}
+#define cgpu_fatal(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_FATAL, fmt, __VA_ARGS__);}
 
 #define CGPU_UNIMPLEMENTED_FUNCTION()
 
-CGPU_FORCEINLINE static void* _aligned_calloc(size_t nelem, size_t elsize, size_t alignment)
+CGPU_FORCEINLINE static void* cgpu_malloc_default(void* user_data, size_t size, const void* pool)
 {
-    void* memory = _aligned_malloc(nelem * elsize, alignment);
-    if (memory != NULL) memset(memory, 0, nelem * elsize);
+    return malloc(size);
+}
+
+CGPU_FORCEINLINE static void* cgpu_realloc_default(void* user_data, void* ptr, size_t size, const void* pool)
+{
+    return realloc(ptr, size);
+}
+
+CGPU_FORCEINLINE static void* cgpu_calloc_default(void* user_data, size_t count, size_t size, const void* pool)
+{
+    return calloc(count, size);
+}
+
+CGPU_FORCEINLINE static void cgpu_free_default(void* user_data, void* ptr, const void* pool)
+{
+    free(ptr);
+}
+
+CGPU_FORCEINLINE static void* cgpu_malloc_aligned_default(void* user_data, size_t size, size_t alignment, const void* pool)
+{
+    return _aligned_malloc(size, alignment);
+}
+
+CGPU_FORCEINLINE static void* cgpu_realloc_aligned_default(void* user_data, void* ptr, size_t size, size_t alignment, const void* pool)
+{
+    return _aligned_realloc(ptr, size, alignment);
+}
+
+CGPU_FORCEINLINE static void* cgpu_calloc_aligned_default(void* user_data, size_t count, size_t size, size_t alignment, const void* pool)
+{
+    void* memory = _aligned_malloc(count * size, alignment);
+    if (memory != NULL) memset(memory, 0, count * size);
     return memory;
 }
-    #define cgpu_malloc malloc
-    #define cgpu_malloc_aligned _aligned_malloc
-    #define cgpu_malloc_alignedN(size, alignment, ...)  _aligned_malloc(size, alignment)
-    #define cgpu_calloc calloc
-    #define cgpu_callocN(count, size, ...) calloc((count), (size))
-    #define cgpu_calloc_aligned _aligned_calloc
-    #define cgpu_memalign _aligned_malloc
-    #define cgpu_free free
-    #define cgpu_freeN(ptr, ...) free(ptr)
-    #define cgpu_free_aligned(ptr, alignment) _aligned_free(ptr)
-    #define cgpu_free_alignedN(ptr, alignment, ...) _aligned_free((ptr), (alignment))
+
+CGPU_FORCEINLINE static void cgpu_free_aligned_default(void* user_data, void* ptr, size_t alignment, const void* pool)
+{
+    _aligned_free(ptr);
+}
+
+#define cgpu_malloc(allocator, size) (allocator)->malloc_fn((allocator)->user_data, size, 0)
+#define cgpu_malloc_aligned(allocator, size, alignment) (allocator)->malloc_aligned_fn((allocator)->user_data, size, alignment, 0)
+#define cgpu_malloc_alignedN(allocator, size, alignment, pool) (allocator)->malloc_aligned_fn((allocator)->user_data, size, alignment, pool)
+#define cgpu_calloc(allocator, count, size) (allocator)->calloc_fn((allocator)->user_data, count, size, 0)
+#define cgpu_callocN(allocator, count, size, pool) (allocator)->calloc_fn((allocator)->user_data, count, size, pool)
+#define cgpu_calloc_aligned(allocator, count, size, alignment) (allocator)->calloc_aligned_fn((allocator)->user_data, count, size, alignment, 0)
+#define cgpu_free(allocator, ptr) (allocator)->free_fn((allocator)->user_data, ptr, 0)
+#define cgpu_freeN(allocator, ptr, pool) (allocator)->free_fn((allocator)->user_data, ptr, pool)
+#define cgpu_free_aligned(allocator, ptr, alignment) (allocator)->free_aligned_fn((allocator)->user_data, ptr, alignment, 0)
+#define cgpu_free_alignedN(allocator, ptr, alignment, pool) (allocator)->free_aligned_fn((allocator)->user_data, ptr, alignment, pool)
 
 #ifdef __cplusplus
 #include <utility>
@@ -122,26 +167,26 @@ T* cgpu_new_placed(void* memory, Args&&... args)
 }
 
 template <typename T, typename... Args>
-T* cgpu_new(Args&&... args)
+T* cgpu_new(const CGPUAllocator* allocator, Args&&... args)
 {
-    void* pMemory = cgpu_malloc_aligned(sizeof(T), alignof(T));
+    void* pMemory = cgpu_malloc_aligned(allocator, sizeof(T), alignof(T));
     memset(pMemory, 0, sizeof(T));
     cgpu_assert(pMemory != nullptr);
     return new (pMemory) T{ std::forward<Args>(args)... };
 }
 
 template <typename T, typename... Args>
-T* cgpu_new_aligned(Args&&... args)
+T* cgpu_new_aligned(const CGPUAllocator* allocator, Args&&... args)
 {
-    void* pMemory = cgpu_malloc_aligned(sizeof(T), alignof(T));
+    void* pMemory = cgpu_malloc_aligned(allocator, sizeof(T), alignof(T));
     cgpu_assert(pMemory != nullptr);
     return new (pMemory) T{ std::forward<Args>(args)... };
 }
 
 template <typename T, typename... Args>
-T* cgpu_new_sized(uint64_t size, Args&&... args)
+T* cgpu_new_sized(const CGPUAllocator* allocator, uint64_t size, Args&&... args)
 {
-    void* ptr = cgpu_calloc_aligned(1, size, alignof(T));
+    void* ptr = cgpu_calloc_aligned(allocator, 1, size, alignof(T));
     return cgpu_new_placed<T>(ptr, std::forward<Args>(args)...);
 }
 
@@ -152,9 +197,9 @@ void cgpu_delete_placed(T* object)
 }
 
 template <typename T>
-void cgpu_delete(T* object)
+void cgpu_delete(const CGPUAllocator* allocator, T* object)
 {
     cgpu_delete_placed(object);
-    cgpu_free_aligned(object, alignof(T));
+    cgpu_free_aligned(allocator, object, alignof(T));
 }
 #endif

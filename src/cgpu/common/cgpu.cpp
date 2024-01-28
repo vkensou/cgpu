@@ -83,9 +83,9 @@ struct CGPURuntimeTable {
     phmap::flat_hash_map<std::string, std::function<void()>, std::hash<std::string>> custom_early_sweep_callbacks;
 };
 
-struct CGPURuntimeTable* cgpu_create_runtime_table()
+struct CGPURuntimeTable* cgpu_create_runtime_table(const CGPUAllocator* allocator)
 {
-    return cgpu_new_aligned<CGPURuntimeTable>();
+    return cgpu_new_aligned<CGPURuntimeTable>(allocator);
 }
 
 void cgpu_early_free_runtime_table(struct CGPURuntimeTable* table)
@@ -93,9 +93,9 @@ void cgpu_early_free_runtime_table(struct CGPURuntimeTable* table)
     table->early_sweep();
 }
 
-void cgpu_free_runtime_table(struct CGPURuntimeTable* table)
+void cgpu_free_runtime_table(const CGPUAllocator* allocator, struct CGPURuntimeTable* table)
 {
-    cgpu_delete(table);
+    cgpu_delete(allocator, table);
 }
 
 void cgpu_runtime_table_add_queue(CGPUQueueId queue, ECGPUQueueType type, uint32_t index)

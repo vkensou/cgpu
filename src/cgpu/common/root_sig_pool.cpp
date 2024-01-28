@@ -185,9 +185,9 @@ protected:
     phmap::flat_hash_map<CGPURootSignatureId, uint32_t> counterMap;
 };
 
-CGPURootSignaturePoolId CGPUUtil_CreateRootSignaturePool(const CGPURootSignaturePoolDescriptor* desc)
+CGPURootSignaturePoolId CGPUUtil_CreateRootSignaturePool(const CGPUAllocator* allocator, const CGPURootSignaturePoolDescriptor* desc)
 {
-    return cgpu_new_aligned<CGPURootSignaturePoolImpl>(desc->name);
+    return cgpu_new_aligned<CGPURootSignaturePoolImpl>(allocator, desc->name);
 }
 
 CGPURootSignatureId CGPUUtil_TryAllocateSignature(CGPURootSignaturePoolId pool, CGPURootSignature* RSTables, const struct CGPURootSignatureDescriptor* desc)
@@ -213,8 +213,8 @@ bool CGPUUtil_PoolFreeSignature(CGPURootSignaturePoolId pool, CGPURootSignatureI
     return P->deallocate(sig);
 }
 
-void CGPUUtil_FreeRootSignaturePool(CGPURootSignaturePoolId pool)
+void CGPUUtil_FreeRootSignaturePool(const CGPUAllocator* allocator, CGPURootSignaturePoolId pool)
 {
     auto P = (CGPURootSignaturePoolImpl*)pool;
-    cgpu_delete(P);
+    cgpu_delete(allocator, P);
 }

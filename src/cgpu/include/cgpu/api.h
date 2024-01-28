@@ -792,7 +792,36 @@ typedef struct CGPUAdapterDetail {
     CGPUVendorPreset vendor_preset;
 } CGPUAdapterDetail;
 
+// Log Callback
 typedef void (*cgpu_log_callback_fn)(void* user_data, ECGPULogSeverity severity, const char* fmt, ...);
+
+typedef struct CGPULogger
+{
+    cgpu_log_callback_fn log_callback;
+    void* log_callback_user_data;
+} CGPULogger;
+
+// Memory Delegates
+typedef void* (*cgpu_malloc_fn)(void* user_data, size_t size, const void* pool);
+typedef void* (*cgpu_realloc_fn)(void* user_data, void* ptr, size_t size, const void* pool);
+typedef void* (*cgpu_calloc_fn)(void* user_data, size_t count, size_t size, const void* pool);
+typedef void (*cgpu_free_fn)(void* user_data, void* ptr, const void* pool);
+typedef void* (*cgpu_malloc_aligned_fn)(void* user_data, size_t size, size_t alignment, const void* pool);
+typedef void* (*cgpu_realloc_aligned_fn)(void* user_data, void* ptr, size_t size, size_t alignment, const void* pool);
+typedef void* (*cgpu_calloc_aligned_fn)(void* user_data, size_t count, size_t size, size_t alignment, const void* pool);
+typedef void (*cgpu_free_aligned_fn)(void* user_data, void* ptr, size_t alignment, const void* pool);
+
+typedef struct CGPUAllocator {
+    cgpu_malloc_fn malloc_fn;
+    cgpu_realloc_fn realloc_fn;
+    cgpu_calloc_fn calloc_fn;
+    cgpu_free_fn free_fn;
+    cgpu_malloc_aligned_fn malloc_aligned_fn;
+    cgpu_realloc_aligned_fn realloc_aligned_fn;
+    cgpu_calloc_aligned_fn calloc_aligned_fn;
+    cgpu_free_aligned_fn free_aligned_fn;
+    void* user_data;
+} CGPUAllocator;
 
 // Objects (Heap Safety)
 typedef struct CGPUInstance {
@@ -804,8 +833,8 @@ typedef struct CGPUInstance {
     ECGPUNvAPI_Status nvapi_status;
     ECGPUAGSReturnCode ags_status;
     bool enable_set_name;
-    cgpu_log_callback_fn log_callback;
-    void* log_callback_user_data;
+    CGPULogger logger;
+    CGPUAllocator allocator;
 } CGPUInstance;
 
 typedef struct CGPUAdapter {
@@ -992,8 +1021,8 @@ typedef struct CGPUInstanceDescriptor {
     bool enable_debug_layer;
     bool enable_gpu_based_validation;
     bool enable_set_name;
-    cgpu_log_callback_fn log_callback;
-    void* log_callback_user_data;
+    CGPULogger logger;
+    CGPUAllocator allocator;
 } CGPUInstanceDescriptor;
 
 typedef struct CGPUQueueGroupDescriptor {

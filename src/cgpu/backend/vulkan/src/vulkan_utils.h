@@ -62,7 +62,7 @@ void VkUtil_FreeShaderReflection(CGPUShaderLibrary_Vulkan* library);
 
 // Feature Select Helpers
 void VkUitl_QueryDynamicPipelineStates(CGPUAdapter_Vulkan* VkAdapter, uint32_t* pCount, VkDynamicState* pStates);
-void VkUtil_SelectQueueIndices(CGPUAdapter_Vulkan* VkAdapter);
+void VkUtil_SelectQueueIndices(CGPUAdapter_Vulkan* VkAdapter, const CGPUAllocator* allocator);
 void VkUtil_RecordAdapterDetail(CGPUAdapter_Vulkan* VkAdapter);
 void VkUtil_EnumFormatSupports(CGPUAdapter_Vulkan* VkAdapter);
 void VkUtil_SelectInstanceLayers(struct CGPUInstance_Vulkan* VkInstance,
@@ -70,9 +70,9 @@ const char* const* instance_layers, uint32_t instance_layers_count);
 void VkUtil_SelectInstanceExtensions(struct CGPUInstance_Vulkan* VkInstance,
 const char* const* instance_extensions, uint32_t instance_extension_count);
 void VkUtil_SelectPhysicalDeviceLayers(struct CGPUAdapter_Vulkan* VkAdapter,
-const char* const* device_layers, uint32_t device_layers_count);
+const char* const* device_layers, uint32_t device_layers_count, const CGPUAllocator* allocator);
 void VkUtil_SelectPhysicalDeviceExtensions(struct CGPUAdapter_Vulkan* VkAdapter,
-const char* const* device_extensions, uint32_t device_extension_count);
+const char* const* device_extensions, uint32_t device_extension_count, const CGPUAllocator* allocator);
 
 // Table Helpers
 struct VkUtil_RenderPassDesc;
@@ -94,6 +94,34 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VkUtil_DebugReportCallback(
     const char* pLayerPrefix, const char* pMessage, void* pUserData);
 void VkUtil_OptionalSetObjectName(struct CGPUDevice_Vulkan* device, uint64_t handle, VkObjectType type, const char* name);
 
+VKAPI_ATTR void VKAPI_CALL cgpu_vulkan_internal_alloc_notify(
+    void* pUserData,
+    size_t                                      size,
+    VkInternalAllocationType                    allocationType,
+    VkSystemAllocationScope                     allocationScope);
+
+VKAPI_ATTR void VKAPI_CALL cgpu_vulkan_internal_free_notify(
+    void* pUserData,
+    size_t                                      size,
+    VkInternalAllocationType                    allocationType,
+    VkSystemAllocationScope                     allocationScope);
+
+VKAPI_ATTR void* VKAPI_CALL cgpu_vulkan_alloc(
+    void* pUserData,
+    size_t                                      size,
+    size_t                                      alignment,
+    VkSystemAllocationScope                     allocationScope);
+
+VKAPI_ATTR void VKAPI_CALL cgpu_vulkan_free(
+    void* pUserData,
+    void* pMemory);
+
+VKAPI_ATTR void* VKAPI_CALL cgpu_vulkan_realloc(
+    void* pUserData,
+    void* pOriginal,
+    size_t                                      size,
+    size_t                                      alignment,
+    VkSystemAllocationScope                     allocationScope);
 #define CGPU_VK_DESCRIPTOR_TYPE_RANGE_SIZE (VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT + 1)
 CGPU_UNUSED static const VkDescriptorPoolSize gDescriptorPoolSizes[CGPU_VK_DESCRIPTOR_TYPE_RANGE_SIZE] = {
     { VK_DESCRIPTOR_TYPE_SAMPLER, 1024 },
@@ -141,12 +169,12 @@ typedef struct VkUtil_FramebufferDesc {
     uint32_t mLayers;
 } VkUtil_FramebufferDesc;
 
-#define CHECK_VKRESULT(instance, exp)                                                             \
+#define CHECK_VKRESULT(logger, exp)                                                             \
     {                                                                                   \
         VkResult vkres = (exp);                                                         \
         if (VK_SUCCESS != vkres)                                                        \
         {                                                                               \
-            cgpu_error(instance, (const char8_t*)"VKRESULT %s: FAILED with VkResult: %d\n", #exp, (uint32_t)vkres); \
+            cgpu_error(logger, (const char8_t*)"VKRESULT %s: FAILED with VkResult: %d\n", #exp, (uint32_t)vkres); \
             cgpu_assert(0);                                                             \
         }                                                                               \
     }

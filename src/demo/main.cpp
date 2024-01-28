@@ -390,12 +390,66 @@ std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGP
 	return { root_sig, pipeline };
 }
 
-void log(void* user_data, ECGPULogSeverity severity, const char* fmt, ...)
+void demo_log(void* user_data, ECGPULogSeverity severity, const char* fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
 	vprintf(fmt, args);
 	va_end(args);
+}
+
+size_t malloced = 0;
+void* demo_malloc(void* user_data, size_t size, const void* pool)
+{
+	malloced += size;
+	return malloc(size);
+}
+
+void* demo_realloc(void* user_data, void* ptr, size_t size, const void* pool)
+{
+	malloced -= ptr ? _msize(ptr) : 0;
+	malloced += size;
+	return realloc(ptr, size);
+}
+
+void* demo_calloc(void* user_data, size_t count, size_t size, const void* pool)
+{
+	malloced += count * size;
+	return calloc(count, size);
+}
+
+void demo_free(void* user_data, void* ptr, const void* pool)
+{
+	malloced -= ptr ? _msize(ptr) : 0;
+	free(ptr);
+}
+
+size_t aligned_malloced = 0;
+void* demo_malloc_aligned(void* user_data, size_t size, size_t alignment, const void* pool)
+{
+	aligned_malloced += size;
+	return _aligned_malloc(size, alignment);
+}
+
+void* demo_realloc_aligned(void* user_data, void* ptr, size_t size, size_t alignment, const void* pool)
+{
+	aligned_malloced -= ptr ? _aligned_msize(ptr, alignment, 0) : 0;
+	aligned_malloced += size;
+	return _aligned_realloc(ptr, size, alignment);
+}
+
+void* demo_calloc_aligned(void* user_data, size_t count, size_t size, size_t alignment, const void* pool)
+{
+	aligned_malloced += count * size;
+	void* memory = _aligned_malloc(count * size, alignment);
+	if (memory != NULL) memset(memory, 0, count * size);
+	return memory;
+}
+
+void demo_free_aligned(void* user_data, void* ptr, size_t alignment, const void* pool)
+{
+	aligned_malloced -= ptr ? _aligned_msize(ptr, alignment, 0) : 0;
+	_aligned_free(ptr);
 }
 
 int main(int argc, char** argv)
@@ -405,7 +459,19 @@ int main(int argc, char** argv)
 		.enable_debug_layer = true,
 		.enable_gpu_based_validation = true,
 		.enable_set_name = true,
-		.log_callback = log,
+		.logger = {
+			.log_callback = demo_log
+		},
+		.allocator = {
+			.malloc_fn = demo_malloc,
+			.realloc_fn = demo_realloc,
+			.calloc_fn = demo_calloc,
+			.free_fn = demo_free,
+			.malloc_aligned_fn = demo_malloc_aligned,
+			.realloc_aligned_fn = demo_realloc_aligned,
+			.calloc_aligned_fn = demo_calloc_aligned,
+			.free_aligned_fn = demo_free_aligned,
+		},
 	};
 	instance = cgpu_create_instance(&instance_desc);
 
@@ -691,6 +757,9 @@ int main(int argc, char** argv)
 	cgpu_free_queue(gfx_queue);
 	cgpu_free_device(device);
 	cgpu_free_instance(instance);
+
+	printf("%lld\n", malloced);
+	printf("%lld\n", aligned_malloced);
 
 	return 0;
 }

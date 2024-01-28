@@ -68,7 +68,7 @@ CGPU_API CGPUInstanceId cgpu_create_instance(const CGPUInstanceDescriptor* desc)
     instance->proc_table = tbl;
     instance->surfaces_table = s_tbl;
     if(!instance->runtime_table) 
-        instance->runtime_table = cgpu_create_runtime_table();
+        instance->runtime_table = cgpu_create_runtime_table(&instance->allocator);
     
     // SkrCZoneEnd(zz);
 
@@ -95,10 +95,12 @@ CGPU_API void cgpu_free_instance(CGPUInstanceId instance)
     cgpu_assert(instance != CGPU_NULLPTR && "fatal: can't destroy NULL instance!");
     cgpu_assert(instance->proc_table->free_instance && "free_instance Proc Missing!");
 
+    const CGPUAllocator* allocator = &instance->allocator;
+
     struct CGPURuntimeTable* runtime_table = instance->runtime_table;
     cgpu_early_free_runtime_table(runtime_table);
+    cgpu_free_runtime_table(allocator, runtime_table);
     instance->proc_table->free_instance(instance);
-    cgpu_free_runtime_table(runtime_table);
 
     // SkrCZoneEnd(zz);
 }
@@ -461,7 +463,7 @@ CGPUQueueId cgpu_get_queue(CGPUDeviceId device, ECGPUQueueType type, uint32_t in
     CGPUQueueId created = cgpu_runtime_table_try_get_queue(device, type, index);
     if (created != NULL)
     {
-        cgpu_warn(device->adapter->instance, "You should not call cgpu_get_queue "
+        cgpu_warn(&device->adapter->instance->logger, "You should not call cgpu_get_queue "
                   "with a specific index & type for multiple times!\n"
                   "       Please get for only once and reuse the handle!\n");
         return created;
@@ -1027,13 +1029,14 @@ CGPUShaderLibraryId cgpu_create_shader_library(CGPUDeviceId device, const struct
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
     cgpu_assert(device->proc_table_cache->create_shader_library && "create_shader_library Proc Missing!");
 
+    const CGPUAllocator* allocator = &device->adapter->instance->allocator;
     CGPUProcCreateShaderLibrary fn_create_shader_library = device->proc_table_cache->create_shader_library;
     CGPUShaderLibrary* shader = (CGPUShaderLibrary*)fn_create_shader_library(device, desc);
     shader->device = device;
     // handle name string
     const size_t str_len = strlen(desc->name);
     const size_t str_size = str_len + 1;
-    shader->name = cgpu_calloc(1, str_size * sizeof(char8_t));
+    shader->name = cgpu_calloc(allocator, 1, str_size * sizeof(char8_t));
     memcpy((void*)shader->name, desc->name, str_size);
 
     // SkrCZoneEnd(zz);
@@ -1049,7 +1052,7 @@ void cgpu_free_shader_library(CGPUShaderLibraryId library)
     const CGPUDeviceId device = library->device;
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
     // handle name string
-    cgpu_free((void*)library->name);
+    cgpu_free(&device->adapter->instance->allocator, (void*)library->name);
 
     CGPUProcFreeShaderLibrary fn_free_shader_library = device->proc_table_cache->free_shader_library;
     cgpu_assert(fn_free_shader_library && "free_shader_library Proc Missing!");
@@ -1275,7 +1278,7 @@ CGPUSwapChainId cgpu_create_swapchain(CGPUDeviceId device, const CGPUSwapChainDe
     CGPUTextureInfo* pInfo = (CGPUTextureInfo*)swapchain->back_buffers[0]->info;
     cgpu_assert(swapchain && "fatal cgpu_create_swapchain: NULL swapchain id returned from backend.");
     swapchain->device = device;
-    cgpu_trace(device->adapter->instance, "cgpu_create_swapchain: swapchain(%dx%d) %p created, buffers: [%p, %p], surface: %p\n",
+    cgpu_trace(&device->adapter->instance->logger, "cgpu_create_swapchain: swapchain(%dx%d) %p created, buffers: [%p, %p], surface: %p\n",
         pInfo->width, pInfo->height, swapchain,
         swapchain->back_buffers[0], swapchain->back_buffers[1], desc->surface);
 
@@ -1312,7 +1315,7 @@ void cgpu_free_swapchain(CGPUSwapChainId swapchain)
     cgpu_assert(swapchain->device->proc_table_cache->create_swapchain && "create_swapchain Proc Missing!");
 
     CGPUTextureInfo* pInfo = (CGPUTextureInfo*)swapchain->back_buffers[0]->info;
-    cgpu_trace(swapchain->device->adapter->instance, "cgpu_free_swapchain: swapchain(%dx%d) %p freed, buffers:  [%p, %p]\n",
+    cgpu_trace(&swapchain->device->adapter->instance->logger, "cgpu_free_swapchain: swapchain(%dx%d) %p freed, buffers:  [%p, %p]\n",
         pInfo->width, pInfo->height, swapchain,
         swapchain->back_buffers[0], swapchain->back_buffers[1]);
 
