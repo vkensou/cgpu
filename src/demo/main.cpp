@@ -398,6 +398,46 @@ void log(void* user_data, ECGPULogSeverity severity, const char* fmt, ...)
 	va_end(args);
 }
 
+size_t malloced = 0;
+void* demo_malloc(void* user_data, size_t size, const void* pool)
+{
+	malloced += size;
+	return malloc(size);
+}
+
+void* demo_calloc(void* user_data, size_t count, size_t size, const void* pool)
+{
+	malloced += count * size;
+	return calloc(count, size);
+}
+
+void demo_free(void* user_data, void* ptr, const void* pool)
+{
+	malloced -= ptr ? _msize(ptr) : 0;
+	free(ptr);
+}
+
+size_t aligned_malloced = 0;
+void* demo_malloc_aligned(void* user_data, size_t size, size_t alignment, const void* pool)
+{
+	aligned_malloced += size;
+	return _aligned_malloc(size, alignment);
+}
+
+void* demo_calloc_aligned(void* user_data, size_t count, size_t size, size_t alignment, const void* pool)
+{
+	aligned_malloced += count * size;
+	void* memory = _aligned_malloc(count * size, alignment);
+	if (memory != NULL) memset(memory, 0, count * size);
+	return memory;
+}
+
+void demo_free_aligned(void* user_data, void* ptr, size_t alignment, const void* pool)
+{
+	aligned_malloced -= ptr ? _aligned_msize(ptr, alignment, 0) : 0;
+	_aligned_free(ptr);
+}
+
 int main(int argc, char** argv)
 {
 	CGPUInstanceDescriptor instance_desc = {
@@ -407,6 +447,14 @@ int main(int argc, char** argv)
 		.enable_set_name = true,
 		.logger = {
 			.log_callback = log
+		},
+		.allocator = {
+			.malloc = demo_malloc,
+			.calloc = demo_calloc,
+			.free = demo_free,
+			.malloc_aligned = demo_malloc_aligned,
+			.calloc_aligned = demo_calloc_aligned,
+			.free_aligned = demo_free_aligned,
 		},
 	};
 	instance = cgpu_create_instance(&instance_desc);
@@ -693,6 +741,9 @@ int main(int argc, char** argv)
 	cgpu_free_queue(gfx_queue);
 	cgpu_free_device(device);
 	cgpu_free_instance(instance);
+
+	printf("%lld\n", malloced);
+	printf("%lld\n", aligned_malloced);
 
 	return 0;
 }
