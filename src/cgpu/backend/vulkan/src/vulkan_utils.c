@@ -881,6 +881,7 @@ FORCEINLINE void VkUtil_CheckFormatSupport(CGPUAdapter_Vulkan* VkAdapter, CGPUAd
 void VkUtil_EnumFormatSupports(CGPUAdapter_Vulkan* VkAdapter)
 {
     bool supportPVRTC = VkUtil_IsExtensionEnabled(VkAdapter, VK_IMG_FORMAT_PVRTC_EXTENSION_NAME);
+    bool supportYCbCr = VkUtil_IsExtensionEnabled(VkAdapter, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
 
     CGPUAdapterDetail* adapter_detail = (CGPUAdapterDetail*)&VkAdapter->adapter_detail;
 
@@ -904,7 +905,20 @@ void VkUtil_EnumFormatSupports(CGPUAdapter_Vulkan* VkAdapter)
         }
     }
 
-    for (uint32_t i = CGPU_FORMAT_ETC2_R8G8B8_UNORM; i < CGPU_FORMAT_COUNT; ++i)
+    for (uint32_t i = CGPU_FORMAT_ETC2_R8G8B8_UNORM; i < CGPU_FORMAT_G16B16G16R16_422_UNORM; ++i)
+    {
+        VkUtil_CheckFormatSupport(VkAdapter, adapter_detail, i);
+    }
+
+    if (supportYCbCr)
+    {
+        for (uint32_t i = CGPU_FORMAT_G16B16G16R16_422_UNORM; i < CGPU_FORMAT_G16_B16R16_2PLANE_422_UNORM + 1; ++i)
+        {
+            VkUtil_CheckFormatSupport(VkAdapter, adapter_detail, i);
+        }
+    }
+
+    for (uint32_t i = CGPU_FORMAT_G16_B16R16_2PLANE_422_UNORM + 1; i < CGPU_FORMAT_COUNT; ++i)
     {
         VkUtil_CheckFormatSupport(VkAdapter, adapter_detail, i);
     }
