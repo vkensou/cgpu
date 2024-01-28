@@ -795,6 +795,12 @@ typedef struct CGPUAdapterDetail {
 // Log Callback
 typedef void (*cgpu_log_callback_fn)(void* user_data, ECGPULogSeverity severity, const char* fmt, ...);
 
+typedef struct CGPULogger
+{
+    cgpu_log_callback_fn log_callback;
+    void* log_callback_user_data;
+} CGPULogger;
+
 // Memory Delegates
 typedef void* (*cgpu_malloc_fn)(void* user_data, size_t size);
 typedef void* (*cgpu_calloc_fn)(void* user_data, size_t count, size_t size);
@@ -835,8 +841,7 @@ typedef struct CGPUInstance {
     ECGPUNvAPI_Status nvapi_status;
     ECGPUAGSReturnCode ags_status;
     bool enable_set_name;
-    cgpu_log_callback_fn log_callback;
-    void* log_callback_user_data;
+    CGPULogger logger;
     CGPUAllocator allocator;
 } CGPUInstance;
 
@@ -1024,8 +1029,7 @@ typedef struct CGPUInstanceDescriptor {
     bool enable_debug_layer;
     bool enable_gpu_based_validation;
     bool enable_set_name;
-    cgpu_log_callback_fn log_callback;
-    void* log_callback_user_data;
+    CGPULogger logger;
     CGPUAllocator allocator;
 } CGPUInstanceDescriptor;
 

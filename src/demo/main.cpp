@@ -405,7 +405,9 @@ int main(int argc, char** argv)
 		.enable_debug_layer = true,
 		.enable_gpu_based_validation = true,
 		.enable_set_name = true,
-		.log_callback = log,
+		.logger = {
+			.log_callback = log
+		},
 	};
 	instance = cgpu_create_instance(&instance_desc);
 

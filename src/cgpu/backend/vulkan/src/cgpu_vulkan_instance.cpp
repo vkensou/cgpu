@@ -196,8 +196,8 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)cgpu_calloc(1, sizeof(CGPUInstance_Vulkan));
     ::memset(I, 0, sizeof(CGPUInstance_Vulkan));
 
-    I->super.log_callback = desc->log_callback;
-    I->super.log_callback_user_data = desc->log_callback_user_data;
+    I->super.logger.log_callback = desc->logger.log_callback;
+    I->super.logger.log_callback_user_data = desc->logger.log_callback_user_data;
 
     // Initialize Environment
     VkUtil_InitializeEnvironment(&I->super);

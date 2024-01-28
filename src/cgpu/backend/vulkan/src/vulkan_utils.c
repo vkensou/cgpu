@@ -1117,22 +1117,22 @@ VkUtil_DebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity
         return VK_FALSE;
 
     CGPUInstance_Vulkan* I = pUserData;
-    if (I->super.log_callback == NULL)
+    if (I->super.logger.log_callback == NULL)
         return VK_FALSE;
 
     switch (messageSeverity)
     {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-            I->super.log_callback(I->super.log_callback_user_data, CGPU_LOG_TRACE, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_TRACE, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-            I->super.log_callback(I->super.log_callback_user_data, CGPU_LOG_INFO, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_INFO, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-            I->super.log_callback(I->super.log_callback_user_data, CGPU_LOG_WARNING, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_WARNING, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-            I->super.log_callback(I->super.log_callback_user_data, CGPU_LOG_ERROR, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_ERROR, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
             break;
     }
     return VK_FALSE;
@@ -1148,25 +1148,25 @@ VkUtil_DebugReportCallback(
         return VK_FALSE;
 
     CGPUInstance_Vulkan* I = pUserData;
-    if (I->super.log_callback == NULL)
+    if (I->super.logger.log_callback == NULL)
         return VK_FALSE;
 
     switch (flags)
     {
         case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
-            I->super.log_callback(I->super.log_callback_user_data, CGPU_LOG_INFO, "Vulkan validation layer: %s\n", pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_INFO, "Vulkan validation layer: %s\n", pMessage);
             break;
         case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
-            I->super.log_callback(I->super.log_callback_user_data, CGPU_LOG_WARNING, "Vulkan validation layer: %s\n", pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_WARNING, "Vulkan validation layer: %s\n", pMessage);
             break;
         case VK_DEBUG_REPORT_WARNING_BIT_EXT:
-            I->super.log_callback(I->super.log_callback_user_data, CGPU_LOG_WARNING, "Vulkan validation layer: %s\n", pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_WARNING, "Vulkan validation layer: %s\n", pMessage);
             break;
         case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
-            I->super.log_callback(I->super.log_callback_user_data, CGPU_LOG_DEBUG, "Vulkan validation layer: %s\n", pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_DEBUG, "Vulkan validation layer: %s\n", pMessage);
             break;
         case VK_DEBUG_REPORT_ERROR_BIT_EXT:
-            I->super.log_callback(I->super.log_callback_user_data, CGPU_LOG_ERROR, "Vulkan validation layer: %s\n", pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_ERROR, "Vulkan validation layer: %s\n", pMessage);
             break;
     }
     return VK_FALSE;
