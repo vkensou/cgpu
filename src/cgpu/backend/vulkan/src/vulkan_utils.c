@@ -117,7 +117,7 @@ void VkUtil_EnableValidationLayer(
 
         cgpu_assert(vkCreateDebugUtilsMessengerEXT && "Load vkCreateDebugUtilsMessengerEXT failed!");
         VkResult res = vkCreateDebugUtilsMessengerEXT(I->pVkInstance,
-            messengerInfoPtr, GLOBAL_VkAllocationCallbacks,
+            messengerInfoPtr, &I->vkAllocator,
             &(I->pVkDebugUtilsMessenger));
         if (VK_SUCCESS != res)
         {
@@ -140,7 +140,7 @@ void VkUtil_EnableValidationLayer(
         const VkDebugReportCallbackCreateInfoEXT* reportInfoPtr =
         (report_info_ptr != CGPU_NULLPTR) ? report_info_ptr : &reportInfo;
         VkResult res = vkCreateDebugReportCallbackEXT(I->pVkInstance,
-        reportInfoPtr, GLOBAL_VkAllocationCallbacks,
+        reportInfoPtr, &I->vkAllocator,
         &(I->pVkDebugReport));
         cgpu_assert(vkCreateDebugUtilsMessengerEXT && "Load vkCreateDebugReportCallbackEXT failed!");
         if (VK_SUCCESS != res)
@@ -296,6 +296,8 @@ const char* const* device_extensions, uint32_t device_extension_count)
 void VkUtil_CreatePipelineCache(CGPUDevice_Vulkan* D)
 {
     cgpu_assert((D->pPipelineCache == VK_NULL_HANDLE) && "VkUtil_CreatePipelineCache should be called only once!");
+    CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
+    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
 
     // TODO: serde
     VkPipelineCacheCreateInfo info = {
@@ -305,7 +307,7 @@ void VkUtil_CreatePipelineCache(CGPUDevice_Vulkan* D)
         .pInitialData = NULL
     };
     D->mVkDeviceTable.vkCreatePipelineCache(D->pVkDevice,
-    &info, GLOBAL_VkAllocationCallbacks, &D->pPipelineCache);
+    &info, &I->vkAllocator, &D->pPipelineCache);
 }
 
 // Shader Reflection
@@ -506,7 +508,7 @@ void VkUtil_CreateVMAAllocator(CGPUInstance_Vulkan* I, CGPUAdapter_Vulkan* A, CG
     VmaAllocatorCreateInfo vmaInfo = {
         .physicalDevice = A->pPhysicalDevice,
         .device = D->pVkDevice,
-        .pAllocationCallbacks = GLOBAL_VkAllocationCallbacks,
+        .pAllocationCallbacks = &I->vkAllocator,
         .pVulkanFunctions = &vulkanFunctions,
         .instance = I->pVkInstance,
     };
@@ -532,14 +534,16 @@ void VkUtil_FreePipelineCache(CGPUInstance_Vulkan* I, CGPUAdapter_Vulkan* A, CGP
     if (D->pPipelineCache != VK_NULL_HANDLE)
     {
         D->mVkDeviceTable.vkDestroyPipelineCache(
-        D->pVkDevice, D->pPipelineCache, GLOBAL_VkAllocationCallbacks);
+        D->pVkDevice, D->pPipelineCache, &I->vkAllocator);
     }
 }
 
 // API Objects Helpers
 struct VkUtil_DescriptorPool* VkUtil_CreateDescriptorPool(CGPUDevice_Vulkan* D)
 {
-    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
+    CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
+    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
+    const CGPUAllocator* allocator = &I->super.allocator;
     VkUtil_DescriptorPool* Pool = cgpu_calloc(allocator, 1, sizeof(VkUtil_DescriptorPool));
 #ifdef CGPU_THREAD_SAFETY
     Pool->pMutex = cgpu_calloc(1, sizeof(SMutex));
@@ -559,7 +563,7 @@ struct VkUtil_DescriptorPool* VkUtil_CreateDescriptorPool(CGPUDevice_Vulkan* D)
         .pPoolSizes = gDescriptorPoolSizes,
     };
     CHECK_VKRESULT(&D->super.adapter->instance->logger, D->mVkDeviceTable.vkCreateDescriptorPool(
-        D->pVkDevice, &poolCreateInfo, GLOBAL_VkAllocationCallbacks, &Pool->pVkDescPool));
+        D->pVkDevice, &poolCreateInfo, &I->vkAllocator, &Pool->pVkDescPool));
     return Pool;
 }
 
@@ -609,8 +613,10 @@ void VkUtil_ReturnDescriptorSets(struct VkUtil_DescriptorPool* pPool, VkDescript
 void VkUtil_FreeDescriptorPool(struct VkUtil_DescriptorPool* DescPool)
 {
     CGPUDevice_Vulkan* D = DescPool->Device;
-    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
-    D->mVkDeviceTable.vkDestroyDescriptorPool(D->pVkDevice, DescPool->pVkDescPool, GLOBAL_VkAllocationCallbacks);
+    CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
+    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
+    const CGPUAllocator* allocator = &I->super.allocator;
+    D->mVkDeviceTable.vkDestroyDescriptorPool(D->pVkDevice, DescPool->pVkDescPool, &I->vkAllocator);
 #ifdef CGPU_THREAD_SAFETY
     if (DescPool->pMutex)
     {
@@ -624,6 +630,9 @@ void VkUtil_FreeDescriptorPool(struct VkUtil_DescriptorPool* DescPool)
 VkDescriptorSetLayout VkUtil_CreateDescriptorSetLayout(CGPUDevice_Vulkan* D,
 const VkDescriptorSetLayoutBinding* bindings, uint32_t bindings_count)
 {
+    CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
+    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
+    const CGPUAllocator* allocator = &I->super.allocator;
     VkDescriptorSetLayout out_layout = VK_NULL_HANDLE;
     VkDescriptorSetLayoutCreateInfo layout_info = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
@@ -632,14 +641,16 @@ const VkDescriptorSetLayoutBinding* bindings, uint32_t bindings_count)
         .bindingCount = bindings_count,
         .pBindings = bindings,
     };
-    CHECK_VKRESULT(&D->super.adapter->instance->logger, D->mVkDeviceTable.vkCreateDescriptorSetLayout(
-    D->pVkDevice, &layout_info, GLOBAL_VkAllocationCallbacks, &out_layout));
+    CHECK_VKRESULT(&I->super.logger, D->mVkDeviceTable.vkCreateDescriptorSetLayout(
+    D->pVkDevice, &layout_info, &I->vkAllocator, &out_layout));
     return out_layout;
 }
 
 void VkUtil_FreeDescriptorSetLayout(CGPUDevice_Vulkan* D, VkDescriptorSetLayout layout)
 {
-    D->mVkDeviceTable.vkDestroyDescriptorSetLayout(D->pVkDevice, layout, GLOBAL_VkAllocationCallbacks);
+    CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
+    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
+    D->mVkDeviceTable.vkDestroyDescriptorSetLayout(D->pVkDevice, layout, &I->vkAllocator);
 }
 
 // Select Helpers
@@ -1174,4 +1185,61 @@ VkUtil_DebugReportCallback(
             break;
     }
     return VK_FALSE;
+}
+
+VKAPI_ATTR void VKAPI_CALL cgpu_vulkan_internal_alloc_notify(
+    void* pUserData,
+    size_t                                      size,
+    VkInternalAllocationType                    allocationType,
+    VkSystemAllocationScope                     allocationScope)
+{
+
+}
+
+VKAPI_ATTR void VKAPI_CALL cgpu_vulkan_internal_free_notify(
+    void* pUserData,
+    size_t                                      size,
+    VkInternalAllocationType                    allocationType,
+    VkSystemAllocationScope                     allocationScope)
+{
+
+}
+
+VKAPI_ATTR void* VKAPI_CALL cgpu_vulkan_alloc(
+    void* pUserData,
+    size_t                                      size,
+    size_t                                      alignment,
+    VkSystemAllocationScope                     allocationScope)
+{
+    CGPUInstance_Vulkan* I = pUserData;
+
+    return cgpu_malloc_aligned(&I->super.allocator, size, alignment);
+}
+
+VKAPI_ATTR void VKAPI_CALL cgpu_vulkan_free(
+    void* pUserData,
+    void* pMemory)
+{
+    CGPUInstance_Vulkan* I = pUserData;
+
+    cgpu_free_aligned(&I->super.allocator, pMemory, 1);
+}
+
+VKAPI_ATTR void* VKAPI_CALL cgpu_vulkan_realloc(
+    void* pUserData,
+    void* pOriginal,
+    size_t                                      size,
+    size_t                                      alignment,
+    VkSystemAllocationScope                     allocationScope)
+{
+    if (pOriginal == NULL) {
+        return cgpu_vulkan_alloc(pUserData, size, alignment, allocationScope);
+    }
+    if (size == (size_t)0) {
+        cgpu_vulkan_free(pUserData, pOriginal);
+        return NULL;
+    }
+
+    CGPUInstance_Vulkan* I = pUserData;
+    return I->super.allocator.realloc_aligned_fn(I->super.allocator.user_data, pOriginal, size, alignment, 0);
 }

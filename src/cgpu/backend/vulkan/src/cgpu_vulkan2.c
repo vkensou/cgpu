@@ -10,6 +10,8 @@ void cgpu_create_shader_objs_vulkan_impl(CGPURootSignatureId signature,
     const struct CGPUCompiledShaderDescriptor* descs, uint32_t count, VkShaderEXT* outShaders)
 {
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)signature->device;
+    CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)signature->device->adapter;
+    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)signature->device->adapter->instance;
     CGPURootSignature_Vulkan* RS = (CGPURootSignature_Vulkan*)signature;
     if (D->mVkDeviceTable.vkCreateShadersEXT)
     {
@@ -36,7 +38,7 @@ void cgpu_create_shader_objs_vulkan_impl(CGPURootSignatureId signature,
             isaInfos[i].pCode = descs[i].shader_code;
             isaInfos[i].codeSize = descs[i].code_size;
         }
-        CHECK_VKRESULT(&D->super.adapter->instance->logger, D->mVkDeviceTable.vkCreateShadersEXT(D->pVkDevice, count, isaInfos, GLOBAL_VkAllocationCallbacks, outShaders));
+        CHECK_VKRESULT(&D->super.adapter->instance->logger, D->mVkDeviceTable.vkCreateShadersEXT(D->pVkDevice, count, isaInfos, &I->vkAllocator, outShaders));
 #ifdef CGPU_PROFILE_ENABLE
         if (D->mVkDeviceTable.vkGetShaderBinaryDataEXT)
         {
@@ -110,7 +112,9 @@ void cgpu_free_compiled_shader_vulkan(CGPUCompiledShaderId shader)
 {
     const CGPUCompiledShader_Vulkan* S = (CGPUCompiledShader_Vulkan*)shader;
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)shader->device;
-    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
+    CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
+    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
+    const CGPUAllocator* allocator = &I->super.allocator;
     if (S)
     {
 #ifdef CGPU_PROFILE_ENABLE
@@ -123,7 +127,7 @@ void cgpu_free_compiled_shader_vulkan(CGPUCompiledShaderId shader)
 #endif
         if (D->mVkDeviceTable.vkDestroyShaderEXT)
         {
-            D->mVkDeviceTable.vkDestroyShaderEXT(D->pVkDevice, S->pVkShader, GLOBAL_VkAllocationCallbacks);
+            D->mVkDeviceTable.vkDestroyShaderEXT(D->pVkDevice, S->pVkShader, &I->vkAllocator);
         }
         cgpu_free(allocator, (void*)S);
     }
@@ -133,7 +137,9 @@ void cgpu_free_linked_shader_vulkan(CGPULinkedShaderId shader)
 {
     const CGPULinkedShader_Vulkan* S = (CGPULinkedShader_Vulkan*)shader;
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)shader->device;
-    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
+    CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
+    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
+    const CGPUAllocator* allocator = &I->super.allocator;
     if (S)
     {
         for (uint32_t i = 0; i < CGPU_SHADER_STAGE_COUNT; i++)
@@ -148,7 +154,7 @@ void cgpu_free_linked_shader_vulkan(CGPULinkedShaderId shader)
 #endif
             if (D->mVkDeviceTable.vkDestroyShaderEXT)
             {
-                D->mVkDeviceTable.vkDestroyShaderEXT(D->pVkDevice, S->pVkShaders[i], GLOBAL_VkAllocationCallbacks);
+                D->mVkDeviceTable.vkDestroyShaderEXT(D->pVkDevice, S->pVkShaders[i], &I->vkAllocator);
             }
         }
         

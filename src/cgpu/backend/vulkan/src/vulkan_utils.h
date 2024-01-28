@@ -94,6 +94,34 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VkUtil_DebugReportCallback(
     const char* pLayerPrefix, const char* pMessage, void* pUserData);
 void VkUtil_OptionalSetObjectName(struct CGPUDevice_Vulkan* device, uint64_t handle, VkObjectType type, const char* name);
 
+VKAPI_ATTR void VKAPI_CALL cgpu_vulkan_internal_alloc_notify(
+    void* pUserData,
+    size_t                                      size,
+    VkInternalAllocationType                    allocationType,
+    VkSystemAllocationScope                     allocationScope);
+
+VKAPI_ATTR void VKAPI_CALL cgpu_vulkan_internal_free_notify(
+    void* pUserData,
+    size_t                                      size,
+    VkInternalAllocationType                    allocationType,
+    VkSystemAllocationScope                     allocationScope);
+
+VKAPI_ATTR void* VKAPI_CALL cgpu_vulkan_alloc(
+    void* pUserData,
+    size_t                                      size,
+    size_t                                      alignment,
+    VkSystemAllocationScope                     allocationScope);
+
+VKAPI_ATTR void VKAPI_CALL cgpu_vulkan_free(
+    void* pUserData,
+    void* pMemory);
+
+VKAPI_ATTR void* VKAPI_CALL cgpu_vulkan_realloc(
+    void* pUserData,
+    void* pOriginal,
+    size_t                                      size,
+    size_t                                      alignment,
+    VkSystemAllocationScope                     allocationScope);
 #define CGPU_VK_DESCRIPTOR_TYPE_RANGE_SIZE (VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT + 1)
 CGPU_UNUSED static const VkDescriptorPoolSize gDescriptorPoolSizes[CGPU_VK_DESCRIPTOR_TYPE_RANGE_SIZE] = {
     { VK_DESCRIPTOR_TYPE_SAMPLER, 1024 },

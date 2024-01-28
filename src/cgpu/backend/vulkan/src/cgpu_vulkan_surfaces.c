@@ -25,7 +25,7 @@ void cgpu_free_surface_vulkan(CGPUDeviceId device, CGPUSurfaceId surface)
 
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)device->adapter->instance;
     VkSurfaceKHR vkSurface = (VkSurfaceKHR)surface;
-    vkDestroySurfaceKHR(I->pVkInstance, vkSurface, GLOBAL_VkAllocationCallbacks);
+    vkDestroySurfaceKHR(I->pVkInstance, vkSurface, &I->vkAllocator);
 }
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -43,7 +43,7 @@ CGPUSurfaceId cgpu_surface_from_hwnd_vulkan(CGPUDeviceId device, HWND window)
         .hinstance = GetModuleHandle(NULL),
         .hwnd = window
     };
-    if (vkCreateWin32SurfaceKHR(I->pVkInstance, &create_info, GLOBAL_VkAllocationCallbacks,
+    if (vkCreateWin32SurfaceKHR(I->pVkInstance, &create_info, &I->vkAllocator,
         (VkSurfaceKHR*)&surface) != VK_SUCCESS)
     {
         cgpu_assert(0 && "Create VKWin32 Surface Failed!");
@@ -66,7 +66,7 @@ CGPUSurfaceId cgpu_surface_from_ns_view_vulkan(CGPUDeviceId device, CGPUNSView* 
         .flags = 0,
         .pView = window
     };
-    if (vkCreateMacOSSurfaceMVK(I->pVkInstance, &create_info, GLOBAL_VkAllocationCallbacks,
+    if (vkCreateMacOSSurfaceMVK(I->pVkInstance, &create_info, &I->vkAllocator,
         (VkSurfaceKHR*)&surface) != VK_SUCCESS)
     {
         cgpu_assert(0 && "Create VK NSView Surface Failed!");

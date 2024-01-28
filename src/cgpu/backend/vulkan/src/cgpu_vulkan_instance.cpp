@@ -197,32 +197,38 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
     const VkUtil_Blackboard blackboard(desc);
 
     cgpu_malloc_fn malloc_fn;
+    cgpu_realloc_fn realloc_fn;
     cgpu_calloc_fn calloc_fn;
     cgpu_free_fn free_fn;
     cgpu_malloc_aligned_fn malloc_aligned_fn;
+    cgpu_realloc_aligned_fn realloc_aligned_fn;
     cgpu_calloc_aligned_fn calloc_aligned_fn;
     cgpu_free_aligned_fn free_aligned_fn;
     if (desc->allocator.malloc_fn && desc->allocator.calloc_fn && desc->allocator.free_fn)
     {
         malloc_fn = desc->allocator.malloc_fn;
+        realloc_fn = desc->allocator.realloc_fn;
         calloc_fn = desc->allocator.calloc_fn;
         free_fn = desc->allocator.free_fn;
     }
     else
     {
         malloc_fn = cgpu_malloc_default;
+        realloc_fn = cgpu_realloc_default;
         calloc_fn = cgpu_calloc_default;
         free_fn = cgpu_free_default;
     }
-    if (desc->allocator.malloc_aligned_fn && desc->allocator.calloc_aligned_fn && desc->allocator.free_aligned_fn)
+    if (desc->allocator.malloc_aligned_fn && desc->allocator.realloc_aligned_fn && desc->allocator.calloc_aligned_fn && desc->allocator.free_aligned_fn)
     {
         malloc_aligned_fn = desc->allocator.malloc_aligned_fn;
+        realloc_aligned_fn = desc->allocator.realloc_aligned_fn;
         calloc_aligned_fn = desc->allocator.calloc_aligned_fn;
         free_aligned_fn = desc->allocator.free_aligned_fn;
     }
     else
     {
         malloc_aligned_fn = cgpu_malloc_aligned_default;
+        realloc_aligned_fn = cgpu_realloc_aligned_default;
         calloc_aligned_fn = cgpu_calloc_aligned_default;
         free_aligned_fn = cgpu_free_aligned_default;
     }
@@ -238,12 +244,21 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
     I->super.logger.log_callback_user_data = desc->logger.log_callback_user_data;
 
     I->super.allocator.malloc_fn = malloc_fn;
+    I->super.allocator.realloc_fn = realloc_fn;
     I->super.allocator.calloc_fn = calloc_fn;
     I->super.allocator.free_fn = free_fn;
     I->super.allocator.malloc_aligned_fn = malloc_aligned_fn;
+    I->super.allocator.realloc_aligned_fn = realloc_aligned_fn;
     I->super.allocator.calloc_aligned_fn = calloc_aligned_fn;
     I->super.allocator.free_aligned_fn = free_aligned_fn;
     I->super.allocator.user_data = desc->allocator.user_data;
+
+    I->vkAllocator.pUserData = I;
+    I->vkAllocator.pfnAllocation = cgpu_vulkan_alloc;
+    I->vkAllocator.pfnReallocation = cgpu_vulkan_realloc;
+    I->vkAllocator.pfnFree = cgpu_vulkan_free;
+    I->vkAllocator.pfnInternalAllocation = cgpu_vulkan_internal_alloc_notify;
+    I->vkAllocator.pfnInternalFree = cgpu_vulkan_internal_free_notify;
 
     // Initialize Environment
     VkUtil_InitializeEnvironment(&I->super);
@@ -306,7 +321,7 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
 #endif
     }
 
-    auto instRes = (int32_t)vkCreateInstance(&createInfo, GLOBAL_VkAllocationCallbacks, &I->pVkInstance);
+    auto instRes = (int32_t)vkCreateInstance(&createInfo, &I->vkAllocator, &I->pVkInstance);
     if (instRes != VK_SUCCESS)
     {
         cgpu_fatal(&(I->super.logger), "Vulkan: failed to create instance with code %d\n", instRes);
@@ -359,10 +374,10 @@ void cgpu_free_instance_vulkan(CGPUInstanceId instance)
     if (to_destroy->pVkDebugUtilsMessenger)
     {
         cgpu_assert(vkDestroyDebugUtilsMessengerEXT && "Load vkDestroyDebugUtilsMessengerEXT failed!");
-        vkDestroyDebugUtilsMessengerEXT(to_destroy->pVkInstance, to_destroy->pVkDebugUtilsMessenger, GLOBAL_VkAllocationCallbacks);
+        vkDestroyDebugUtilsMessengerEXT(to_destroy->pVkInstance, to_destroy->pVkDebugUtilsMessenger, &to_destroy->vkAllocator);
     }
 
-    vkDestroyInstance(to_destroy->pVkInstance, GLOBAL_VkAllocationCallbacks);
+    vkDestroyInstance(to_destroy->pVkInstance, &to_destroy->vkAllocator);
     for (uint32_t i = 0; i < to_destroy->mPhysicalDeviceCount; i++)
     {
         auto& Adapter = to_destroy->pVulkanAdapters[i];
@@ -433,7 +448,7 @@ CGPUDeviceId cgpu_create_device_vulkan(CGPUAdapterId adapter, const CGPUDeviceDe
     createInfo.enabledLayerCount = A->mLayersCount;
     createInfo.ppEnabledLayerNames = A->pLayerNames;
 
-    VkResult result = vkCreateDevice(A->pPhysicalDevice, &createInfo, GLOBAL_VkAllocationCallbacks, &D->pVkDevice);
+    VkResult result = vkCreateDevice(A->pPhysicalDevice, &createInfo, &I->vkAllocator, &D->pVkDevice);
     if (result != VK_SUCCESS)
     {
         cgpu_assert(0 && "failed to create logical device!");
@@ -478,6 +493,6 @@ void cgpu_free_device_vulkan(CGPUDeviceId device)
     VkUtil_FreeVMAAllocator(I, A, D);
     VkUtil_FreeDescriptorPool(D->pDescriptorPool);
     VkUtil_FreePipelineCache(I, A, D);
-    vkDestroyDevice(D->pVkDevice, GLOBAL_VkAllocationCallbacks);
+    vkDestroyDevice(D->pVkDevice, &I->vkAllocator);
     cgpu_free(allocator, D);
 }
