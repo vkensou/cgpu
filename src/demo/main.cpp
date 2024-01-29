@@ -9,6 +9,8 @@
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_cgpu.h"
 #include <stdarg.h>
+#include "renderdoc.h"
+#include "renderdoc_helper.h"
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -452,8 +454,37 @@ void demo_free_aligned(void* user_data, void* ptr, size_t alignment, const void*
 	_aligned_free(ptr);
 }
 
+RENDERDOC_API_1_0_0* GetRenderDocApi()
+{
+	RENDERDOC_API_1_0_0* rdoc = nullptr;
+	HMODULE module = GetModuleHandleA("renderdoc.dll");
+
+	if (module == NULL)
+	{
+		return nullptr;
+	}
+
+	pRENDERDOC_GetAPI getApi = nullptr;
+	getApi = (pRENDERDOC_GetAPI)GetProcAddress(module, "RENDERDOC_GetAPI");
+
+	if (getApi == nullptr)
+	{
+		return nullptr;
+	}
+
+	if (getApi(eRENDERDOC_API_Version_1_0_0, (void**)&rdoc) != 1)
+	{
+		return nullptr;
+	}
+
+	return rdoc;
+}
+
 int main(int argc, char** argv)
 {
+	auto renderdocpath = locate_renderdoc();
+	auto rdc = GetRenderDocApi();
+
 	CGPUInstanceDescriptor instance_desc = {
 		.backend = CGPU_BACKEND_VULKAN,
 		.enable_debug_layer = true,

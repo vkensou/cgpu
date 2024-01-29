@@ -68,4 +68,5 @@ target("demo")
     add_packages("libsdl")
     add_packages("imgui")
 
+    add_headerfiles("src/demo/*.h")
     add_files("src/demo/*.cpp")
