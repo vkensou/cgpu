@@ -9,6 +9,7 @@
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_cgpu.h"
 #include <stdarg.h>
+#include "renderdoc_helper.h"
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -454,6 +455,15 @@ void demo_free_aligned(void* user_data, void* ptr, size_t alignment, const void*
 
 int main(int argc, char** argv)
 {
+	RENDERDOC_API_1_0_0* rdc = nullptr;
+	bool rdc_capture = false;
+	if (false)
+	{
+		auto renderdoc_path = locate_renderdoc();
+		if (load_renderdoc(renderdoc_path))
+			rdc = GetRenderDocApi();
+	}
+
 	CGPUInstanceDescriptor instance_desc = {
 		.backend = CGPU_BACKEND_VULKAN,
 		.enable_debug_layer = true,
@@ -668,6 +678,12 @@ int main(int argc, char** argv)
 				if (show_demo_window)
 					ImGui::ShowDemoWindow(&show_demo_window);
 
+				if (ImGui::Button("Capture"))
+					rdc_capture = true;
+
+				if (rdc && rdc_capture)
+					rdc->StartFrameCapture(nullptr, nullptr);
+
 				current_frame_index = (current_frame_index + 1) % 3;
 				auto& cur_frame_data = frameDatas[current_frame_index];
 				cgpu_wait_fences(&cur_frame_data.inflightFence, 1);
@@ -720,11 +736,23 @@ int main(int argc, char** argv)
 					window->Present(render_finished_semaphore);
 				}
 
+				if (rdc && rdc_capture)
+				{
+					rdc->EndFrameCapture(nullptr, nullptr);
+
+					if (!rdc->IsRemoteAccessConnected())
+					{
+						rdc->LaunchReplayUI(1, "");
+					}
+				}
+
 				// Update and Render additional Platform Windows
 				if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 				{
 					ImGui::UpdatePlatformWindows();
 				}
+
+				rdc_capture = false;
 			}
 
 			cgpu_wait_queue_idle(gfx_queue);
