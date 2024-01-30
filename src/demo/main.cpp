@@ -457,9 +457,12 @@ int main(int argc, char** argv)
 {
 	RENDERDOC_API_1_0_0* rdc = nullptr;
 	bool rdc_capture = false;
-	auto renderdoc_path = locate_renderdoc();
-	if (load_renderdoc(renderdoc_path))
-		rdc = GetRenderDocApi();
+	if (false)
+	{
+		auto renderdoc_path = locate_renderdoc();
+		if (load_renderdoc(renderdoc_path))
+			rdc = GetRenderDocApi();
+	}
 
 	CGPUInstanceDescriptor instance_desc = {
 		.backend = CGPU_BACKEND_VULKAN,
