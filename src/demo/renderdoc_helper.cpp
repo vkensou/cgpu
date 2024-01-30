@@ -23,3 +23,39 @@ std::string locate_renderdoc()
 
     return "";
 }
+
+bool load_renderdoc(const std::string& path)
+{
+#ifdef _WIN32
+	HINSTANCE hinstLib;
+	hinstLib = LoadLibrary(path.c_str());
+	return hinstLib != NULL;
+#endif
+	return false;
+}
+
+RENDERDOC_API_1_0_0* GetRenderDocApi()
+{
+	RENDERDOC_API_1_0_0* rdoc = nullptr;
+	HMODULE module = GetModuleHandleA("renderdoc.dll");
+
+	if (module == NULL)
+	{
+		return nullptr;
+	}
+
+	pRENDERDOC_GetAPI getApi = nullptr;
+	getApi = (pRENDERDOC_GetAPI)GetProcAddress(module, "RENDERDOC_GetAPI");
+
+	if (getApi == nullptr)
+	{
+		return nullptr;
+	}
+
+	if (getApi(eRENDERDOC_API_Version_1_0_0, (void**)&rdoc) != 1)
+	{
+		return nullptr;
+	}
+
+	return rdoc;
+}
