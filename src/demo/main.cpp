@@ -10,6 +10,7 @@
 #include "imgui_impl_cgpu.h"
 #include <stdarg.h>
 #include "renderdoc_helper.h"
+#include "GpuTimeStamps.h"
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -18,6 +19,8 @@ CGPUInstanceId instance;
 CGPUDeviceId device;
 CGPUQueueId gfx_queue;
 CGPURenderPassId render_pass;
+GpuTimeStamps* gpu_timer;
+std::vector<TimeStamp> stamps;
 
 struct RenderWindow;
 std::vector<RenderWindow*> windows;
@@ -269,8 +272,6 @@ struct RenderWindow
 		auto back_buffer_view = swapchain_views[current_swapchain_index];
 		auto prepared_semaphore = swapchain_prepared_semaphores[current_frame_index];
 
-		cgpu_cmd_begin(cmd);
-
 		CGPUTextureBarrier draw_barrier = {
 			.texture = back_buffer,
 			.src_state = CGPU_RESOURCE_STATE_UNDEFINED,
@@ -315,8 +316,6 @@ struct RenderWindow
 		};
 		CGPUResourceBarrierDescriptor barrier_desc1 = { .texture_barriers = &present_barrier, .texture_barriers_count = 1 };
 		cgpu_cmd_resource_barrier(cmd, &barrier_desc1);
-
-		cgpu_cmd_end(cmd);
 	}
 };
 
@@ -523,7 +522,11 @@ int main(int argc, char** argv)
 		frameDatas[i].pool = cgpu_create_command_pool(gfx_queue, CGPU_NULLPTR);
 	}
 	auto render_finished_semaphore = cgpu_create_semaphore(device);
-	int current_frame_index = 0;
+	int current_frame_index = -1;
+
+	gpu_timer = new GpuTimeStamps(device, 3);
+
+	double gpuTicksPerSecond = cgpu_queue_get_timestamp_period_ns(gfx_queue);
 
 	// 初始化 SDL
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -681,6 +684,18 @@ int main(int argc, char** argv)
 				if (ImGui::Button("Capture"))
 					rdc_capture = true;
 
+				if (stamps.size() > 0)
+				{
+					for (uint32_t i = 0; i < stamps.size(); ++i)
+					{
+						//float value = m_UIState.bShowMilliseconds ? timeStamps[i].m_microseconds / 1000.0f : timeStamps[i].m_microseconds;
+						//const char* pStrUnit = m_UIState.bShowMilliseconds ? "ms" : "us";
+						//ImGui::Text("%-18s: %7.2f %s", timeStamps[i].m_label.c_str(), value, pStrUnit);
+						float stamp = stamps[i].duration;
+						ImGui::Text("%s %7.2f us", stamps[i].label.c_str(), stamp * 1000);
+					}
+				}
+
 				if (rdc && rdc_capture)
 					rdc->StartFrameCapture(nullptr, nullptr);
 
@@ -707,11 +722,24 @@ int main(int argc, char** argv)
 
 				cur_frame_data.newFrame();
 
+				auto cmd = cur_frame_data.request();
+				cgpu_cmd_begin(cmd);
+
+				gpu_timer->OnBeginFrame(cmd, gpuTicksPerSecond, stamps);
+
+				gpu_timer->GetTimeStamp(cmd, "Begin Frame");
+
 				for (auto window : prepared_windows)
 				{
-					auto cmd = cur_frame_data.request();
 					window->Render(cmd);
+					gpu_timer->GetTimeStamp(cmd, "Render Window");
 				}
+
+				gpu_timer->CollectTimings(cmd);
+
+				cgpu_cmd_end(cmd);
+
+				gpu_timer->OnEndFrame();
 
 				wait_semaphores.clear();
 				for (auto window : prepared_windows)
@@ -781,6 +809,7 @@ int main(int argc, char** argv)
 	{
 		frameDatas[i].free();
 	}
+	delete gpu_timer;
 	cgpu_free_render_pass(render_pass);
 	cgpu_free_queue(gfx_queue);
 	cgpu_free_device(device);
