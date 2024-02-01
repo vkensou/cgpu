@@ -18,6 +18,9 @@ CGPUInstanceId instance;
 CGPUDeviceId device;
 CGPUQueueId gfx_queue;
 CGPURenderPassId render_pass;
+CGPUQueryPoolId query_pool;
+CGPUBufferId query_buffer;
+std::vector<std::string> m_labels[5];
 
 struct RenderWindow;
 std::vector<RenderWindow*> windows;
@@ -269,8 +272,6 @@ struct RenderWindow
 		auto back_buffer_view = swapchain_views[current_swapchain_index];
 		auto prepared_semaphore = swapchain_prepared_semaphores[current_frame_index];
 
-		cgpu_cmd_begin(cmd);
-
 		CGPUTextureBarrier draw_barrier = {
 			.texture = back_buffer,
 			.src_state = CGPU_RESOURCE_STATE_UNDEFINED,
@@ -315,8 +316,6 @@ struct RenderWindow
 		};
 		CGPUResourceBarrierDescriptor barrier_desc1 = { .texture_barriers = &present_barrier, .texture_barriers_count = 1 };
 		cgpu_cmd_resource_barrier(cmd, &barrier_desc1);
-
-		cgpu_cmd_end(cmd);
 	}
 };
 
@@ -453,6 +452,20 @@ void demo_free_aligned(void* user_data, void* ptr, size_t alignment, const void*
 	_aligned_free(ptr);
 }
 
+void get_time_stamp(CGPUCommandBufferId cmd, const char* label, ECGPUShaderStage stage, uint32_t current_frame_index)
+{
+	uint32_t measurements = (uint32_t)m_labels[current_frame_index].size();
+	uint32_t offset = current_frame_index * 128 + measurements;
+
+	CGPUQueryDescriptor query_desc = {
+		.index = offset,
+		.stage = stage,
+	};
+	cgpu_cmd_begin_query(cmd, query_pool, &query_desc);
+
+	m_labels[current_frame_index].push_back(label);
+}
+
 int main(int argc, char** argv)
 {
 	RENDERDOC_API_1_0_0* rdc = nullptr;
@@ -523,7 +536,25 @@ int main(int argc, char** argv)
 		frameDatas[i].pool = cgpu_create_command_pool(gfx_queue, CGPU_NULLPTR);
 	}
 	auto render_finished_semaphore = cgpu_create_semaphore(device);
-	int current_frame_index = 0;
+	int current_frame_index = -1;
+
+	CGPUQueryPoolDescriptor query_pool_desc = {
+		.type = CGPU_QUERY_TYPE_TIMESTAMP,
+		.query_count = 3 * 128,
+	};
+	query_pool = cgpu_create_query_pool(device, &query_pool_desc);
+
+	CGPUBufferDescriptor query_buffer_desc = {
+		.size = sizeof(uint64_t) * 3 * 128,
+		.name = u8"QueryBuffer",
+		.descriptors = CGPU_RESOURCE_TYPE_NONE,
+		.memory_usage = CGPU_MEM_USAGE_GPU_TO_CPU,
+		.flags = CGPU_BCF_PERSISTENT_MAP_BIT,
+		.start_state = CGPU_RESOURCE_STATE_UNDEFINED,
+	};
+	query_buffer = cgpu_create_buffer(device, &query_buffer_desc);
+
+	auto query_buffer_ptr = query_buffer->info->cpu_mapped_address;
 
 	// 初始化 SDL
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -688,6 +719,8 @@ int main(int argc, char** argv)
 				auto& cur_frame_data = frameDatas[current_frame_index];
 				cgpu_wait_fences(&cur_frame_data.inflightFence, 1);
 
+				m_labels[current_frame_index].clear();
+
 				prepared_windows.clear();
 				for (auto window : windows)
 				{
@@ -707,11 +740,22 @@ int main(int argc, char** argv)
 
 				cur_frame_data.newFrame();
 
+				auto cmd = cur_frame_data.request();
+				cgpu_cmd_begin(cmd);
+
+				cgpu_cmd_reset_query_pool(cmd, query_pool, current_frame_index * 128, 128);
+
+				get_time_stamp(cmd, "Begin Frame", CGPU_SHADER_STAGE_ALL_GRAPHICS, current_frame_index);
+
 				for (auto window : prepared_windows)
 				{
-					auto cmd = cur_frame_data.request();
 					window->Render(cmd);
+					get_time_stamp(cmd, "End Window", CGPU_SHADER_STAGE_ALL_GRAPHICS, current_frame_index);
 				}
+
+				cgpu_cmd_resolve_query(cmd, query_pool, query_buffer, current_frame_index * 128, m_labels[current_frame_index].size());
+
+				cgpu_cmd_end(cmd);
 
 				wait_semaphores.clear();
 				for (auto window : prepared_windows)
@@ -781,6 +825,8 @@ int main(int argc, char** argv)
 	{
 		frameDatas[i].free();
 	}
+	cgpu_free_buffer(query_buffer);
+	cgpu_free_query_pool(query_pool);
 	cgpu_free_render_pass(render_pass);
 	cgpu_free_queue(gfx_queue);
 	cgpu_free_device(device);
