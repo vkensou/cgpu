@@ -21,6 +21,12 @@ CGPURenderPassId render_pass;
 CGPUQueryPoolId query_pool;
 CGPUBufferId query_buffer;
 std::vector<std::string> m_labels[5];
+struct TimeStamp
+{
+	std::string label;
+	float duration;
+};
+std::vector<TimeStamp> stamps;
 
 struct RenderWindow;
 std::vector<RenderWindow*> windows;
@@ -554,7 +560,9 @@ int main(int argc, char** argv)
 	};
 	query_buffer = cgpu_create_buffer(device, &query_buffer_desc);
 
-	auto query_buffer_ptr = query_buffer->info->cpu_mapped_address;
+	auto query_buffer_ptr = (uint64_t*)query_buffer->info->cpu_mapped_address;
+
+	double gpuTicksPerSecond = cgpu_queue_get_timestamp_period_ns(gfx_queue);
 
 	// 初始化 SDL
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -712,6 +720,18 @@ int main(int argc, char** argv)
 				if (ImGui::Button("Capture"))
 					rdc_capture = true;
 
+				if (stamps.size() > 0)
+				{
+					for (uint32_t i = 0; i < stamps.size(); ++i)
+					{
+						//float value = m_UIState.bShowMilliseconds ? timeStamps[i].m_microseconds / 1000.0f : timeStamps[i].m_microseconds;
+						//const char* pStrUnit = m_UIState.bShowMilliseconds ? "ms" : "us";
+						//ImGui::Text("%-18s: %7.2f %s", timeStamps[i].m_label.c_str(), value, pStrUnit);
+						float stamp = stamps[i].duration;
+						ImGui::Text("%s %f", stamps[i].label.c_str(), stamp);
+					}
+				}
+
 				if (rdc && rdc_capture)
 					rdc->StartFrameCapture(nullptr, nullptr);
 
@@ -719,7 +739,35 @@ int main(int argc, char** argv)
 				auto& cur_frame_data = frameDatas[current_frame_index];
 				cgpu_wait_fences(&cur_frame_data.inflightFence, 1);
 
-				m_labels[current_frame_index].clear();
+				{
+					std::vector<std::string>& gpuLabels = m_labels[current_frame_index];
+
+					stamps.clear();
+
+					uint32_t numMeasurements = (uint32_t)gpuLabels.size();
+					if (numMeasurements > 0)
+					{
+						//double microsecondsPerTick = 1000000.0 / (double)gpuTicksPerSecond;
+
+						uint32_t ini = 128 * current_frame_index;
+						uint32_t fin = 128 * (current_frame_index + 1);
+
+						for (uint32_t i = 1; i < numMeasurements; ++i)
+						{
+							auto last_stamp = query_buffer_ptr[ini + i - 1];
+							auto stamp = query_buffer_ptr[ini + i];
+							stamps.push_back({ gpuLabels[i], (float)((stamp - last_stamp) * gpuTicksPerSecond * 1e-6) });
+						}
+
+						{
+							auto first_stamp = query_buffer_ptr[ini];
+							auto last_stamp = query_buffer_ptr[ini + numMeasurements - 1];
+							stamps.push_back({ "Total GPU Time", (float)((last_stamp - first_stamp) * gpuTicksPerSecond * 1e-6) });
+						}
+					}
+
+					gpuLabels.clear();
+				}
 
 				prepared_windows.clear();
 				for (auto window : windows)
