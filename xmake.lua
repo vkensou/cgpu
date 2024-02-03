@@ -13,7 +13,7 @@ end
 add_requires("volk", {configs = {vs_runtime = "MD", header_only = true}})
 add_requires("xxhash")
 add_requires("parallel-hashmap")
-add_requires("libsdl")
+add_requires("libsdl", {configs = {sdlmain = false}})
 add_requires("spirv-reflect")
 add_requires("imgui v1.89.8-docking", {configs = {debug = true}})
 
