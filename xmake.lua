@@ -70,3 +70,13 @@ target("demo")
 
     add_headerfiles("src/demo/*.h")
     add_files("src/demo/*.cpp")
+
+target("oval")
+    set_kind("binary")
+    set_rundir("$(projectdir)")
+
+    add_deps("cgpu")
+    add_packages("libsdl")
+
+    add_headerfiles("src/oval/*.h")
+    add_files("src/oval/*.cpp")
