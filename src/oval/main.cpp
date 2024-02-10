@@ -7,11 +7,20 @@ const int SCREEN_HEIGHT = 480;
 static void on_draw(oval_device_t* device) {
 	auto clearcolor = oval_color_t {
 		.r = 255,
-		.g = 0,
+		.g = 128,
 		.b = 0,
 		.a = 255,
 	};
 	oval_draw_clear(device, clearcolor);
+
+	oval_point_t triangle[4] =
+	{
+		{ -100, 100},
+		{ 0, -100},
+		{ 100, 100},
+		{ -100, 100},
+	};
+	oval_draw_lines(device, triangle, 4);
 }
 
 int main(int argc, char** argv)

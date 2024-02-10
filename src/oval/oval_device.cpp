@@ -14,6 +14,7 @@ struct FrameData
 	CGPUCommandPoolId pool;
 	std::vector<CGPUCommandBufferId> cmds;
 	std::vector<CGPUCommandBufferId> allocated_cmds;
+	std::vector<CGPUBufferId> vertex_buffers;
 
 	void newFrame()
 	{
@@ -22,6 +23,10 @@ struct FrameData
 		for (auto cmd : allocated_cmds)
 			cmds.push_back(cmd);
 		allocated_cmds.clear();
+
+		for (auto buffer : vertex_buffers)
+			cgpu_free_buffer(buffer);
+		vertex_buffers.clear();
 	}
 
 	CGPUCommandBufferId request()
@@ -57,6 +62,26 @@ struct FrameData
 
 		cgpu_free_command_pool(pool);
 		pool = CGPU_NULLPTR;
+
+		for (auto buffer : vertex_buffers)
+			cgpu_free_buffer(buffer);
+		vertex_buffers.clear();
+	}
+};
+
+struct FrameInfo
+{
+	CGPUCommandBufferId cmd;
+	CGPURenderPassEncoderId rp_encoder;
+	uint16_t current_swapchain_index;
+	bool prepared;
+
+	void reset()
+	{
+		prepared = false;
+		cmd = CGPU_NULLPTR;
+		rp_encoder = CGPU_NULLPTR;
+		current_swapchain_index = -1;
 	}
 };
 
@@ -76,6 +101,7 @@ typedef struct oval_cgpu_device_t {
 	FrameData frameDatas[3];
 	CGPUSemaphoreId render_finished_semaphore;
 	uint32_t current_frame_index;
+	FrameInfo info;
 } oval_cgpu_device_t;
 
 void oval_log(void* user_data, ECGPULogSeverity severity, const char* fmt, ...)
@@ -145,7 +171,7 @@ oval_device_t* oval_create_device(uint16_t width, uint16_t height, oval_on_draw 
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 		return nullptr;
 
-	SDL_Window* window = SDL_CreateWindow("HelloSDL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN);
+	SDL_Window* window = SDL_CreateWindow("oval", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN);
 	if (window == nullptr)
 	{
 		SDL_Quit();
@@ -285,15 +311,16 @@ void oval_runloop(oval_device_t* device)
 			auto& cur_frame_data = D->frameDatas[D->current_frame_index];
 			cgpu_wait_fences(&cur_frame_data.inflightFence, 1);
 			cur_frame_data.newFrame();
+			D->info.reset();
 
 			CGPUAcquireNextDescriptor acquire_desc = {
 				.signal_semaphore = D->swapchain_prepared_semaphores[D->current_frame_index],
 			};
 
-			auto current_swapchain_index = cgpu_acquire_next_image(D->swapchain, &acquire_desc);
+			D->info.current_swapchain_index = cgpu_acquire_next_image(D->swapchain, &acquire_desc);
 
-			auto back_buffer = D->swapchain->back_buffers[current_swapchain_index];
-			auto back_buffer_view = D->swapchain_views[current_swapchain_index];
+			auto back_buffer = D->swapchain->back_buffers[D->info.current_swapchain_index];
+			auto back_buffer_view = D->swapchain_views[D->info.current_swapchain_index];
 			auto prepared_semaphore = D->swapchain_prepared_semaphores[D->current_frame_index];
 
 			auto cmd = cur_frame_data.request();
@@ -307,7 +334,14 @@ void oval_runloop(oval_device_t* device)
 			CGPUResourceBarrierDescriptor barrier_desc0 = { .texture_barriers = &draw_barrier, .texture_barriers_count = 1 };
 			cgpu_cmd_resource_barrier(cmd, &barrier_desc0);
 
+			D->info.cmd = cmd;
+
 			D->super.on_draw(device);
+
+			if (D->info.prepared)
+			{
+				cgpu_cmd_end_render_pass(cmd, D->info.rp_encoder);
+			}
 
 			CGPUTextureBarrier present_barrier = {
 				.texture = back_buffer,
@@ -334,7 +368,7 @@ void oval_runloop(oval_device_t* device)
 				.swapchain = D->swapchain,
 				.wait_semaphores = &D->render_finished_semaphore,
 				.wait_semaphore_count = 1,
-				.index = (uint8_t)current_swapchain_index,
+				.index = (uint8_t)D->info.current_swapchain_index,
 			};
 			cgpu_queue_present(D->present_queue, &present_desc);
 
@@ -393,12 +427,62 @@ void oval_free_device(oval_device_t* device)
 
 void oval_draw_clear(oval_device_t* device, oval_color_t color)
 {
+	auto D = (oval_cgpu_device_t*)device;
+	if (D->info.prepared)
+	{
+		return;
+	}
+
+	const CGPUClearValue clearColor = {
+	.color = { color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, 1 },
+	.is_color = true,
+	};
+
+	CGPUBeginRenderPassInfo begin_info = {
+		.render_pass = D->render_pass,
+		.framebuffer = D->swapchain_framebuffer[D->info.current_swapchain_index],
+		.clear_value_count = 1,
+		.clear_values = &clearColor,
+	};
+
+	D->info.rp_encoder = cgpu_cmd_begin_render_pass(D->info.cmd, &begin_info);
+
+	D->info.prepared = true;
 }
 
 void oval_draw_lines(oval_device_t* device, oval_point_t* points, uint32_t count)
 {
+	auto D = (oval_cgpu_device_t*)device;
+	if (!D->info.prepared)
+	{
+		return;
+	}
+
+	uint64_t size = sizeof(oval_point_t) * count;
+	CGPUBufferDescriptor buffer_desc = {
+		.size = size,
+		.name = u8"oval_vertex_buffer",
+		.descriptors = CGPU_RESOURCE_TYPE_VERTEX_BUFFER,
+		.memory_usage = CGPU_MEM_USAGE_GPU_ONLY,
+		.flags = CGPU_BCF_HOST_VISIBLE,
+		.start_state = CGPU_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
+	};
+	auto vertex_buffer = cgpu_create_buffer(D->device, &buffer_desc);
+	auto& cur_frame_data = D->frameDatas[D->current_frame_index];
+	cur_frame_data.vertex_buffers.push_back(vertex_buffer);
+
+	CGPUBufferRange range = { .offset = 0, .size = size };
+	cgpu_map_buffer(vertex_buffer, &range);
+	auto vtx_dst = (oval_point_t*)vertex_buffer->info->cpu_mapped_address;
+	memcpy(vtx_dst, points, size);
+	cgpu_unmap_buffer(vertex_buffer);
+
+	uint32_t vert_strid = sizeof(oval_point_t);
+	cgpu_render_encoder_bind_vertex_buffers(D->info.rp_encoder, 1, &vertex_buffer, &vert_strid, 0);
+	//cgpu_render_encoder_draw(D->info.rp_encoder, count, 0);
 }
 
 void oval_draw_commit(oval_device_t* device)
 {
+	auto D = (oval_cgpu_device_t*)device;
 }
