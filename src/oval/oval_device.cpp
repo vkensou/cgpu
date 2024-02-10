@@ -278,6 +278,8 @@ oval_device_t* oval_create_device(uint16_t width, uint16_t height, oval_on_draw 
 
 	auto device_cgpu = new oval_cgpu_device_t();
 	device_cgpu->super.on_draw = on_draw;
+	device_cgpu->super.width = width;
+	device_cgpu->super.height = height;
 	device_cgpu->window = window;
 
 	CGPUInstanceDescriptor instance_desc = {
@@ -553,6 +555,12 @@ void oval_draw_clear(oval_device_t* device, oval_color_t color)
 	D->info.rp_encoder = cgpu_cmd_begin_render_pass(D->info.cmd, &begin_info);
 
 	D->info.prepared = true;
+
+	cgpu_render_encoder_set_viewport(D->info.rp_encoder,
+		0.0f, 0.0f,
+		(float)device->width, (float)device->height,
+		0.f, 1.f);
+	cgpu_render_encoder_set_scissor(D->info.rp_encoder, 0, 0, device->width, device->height);
 }
 
 void oval_draw_lines(oval_device_t* device, oval_point_t* points, uint32_t count)
@@ -584,7 +592,8 @@ void oval_draw_lines(oval_device_t* device, oval_point_t* points, uint32_t count
 
 	uint32_t vert_strid = sizeof(oval_point_t);
 	cgpu_render_encoder_bind_vertex_buffers(D->info.rp_encoder, 1, &vertex_buffer, &vert_strid, 0);
-	//cgpu_render_encoder_draw(D->info.rp_encoder, count, 0);
+	cgpu_render_encoder_bind_pipeline(D->info.rp_encoder, D->pipeline);
+	cgpu_render_encoder_draw(D->info.rp_encoder, count, 0);
 }
 
 void oval_draw_commit(oval_device_t* device)
