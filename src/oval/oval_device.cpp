@@ -104,7 +104,8 @@ typedef struct oval_cgpu_device_t {
 	uint32_t current_frame_index;
 	FrameInfo info;
 	CGPURootSignatureId root_sig;
-	CGPURenderPipelineId pipeline;
+	CGPURenderPipelineId pipeline_polygon;
+	CGPURenderPipelineId pipeline_lines;
 } oval_cgpu_device_t;
 
 void oval_log(void* user_data, ECGPULogSeverity severity, const char* fmt, ...)
@@ -188,7 +189,7 @@ std::vector<char> readFile(const std::string& filename)
 	return buffer;
 }
 
-std::tuple<CGPURootSignatureId, CGPURenderPipelineId> oval_create_render_pipeline(CGPUDeviceId device, ECGPUFormat format, const std::string& vertPath, const std::string& fragPath, CGPURenderPassId render_pass, uint32_t subpass)
+std::tuple<CGPURootSignatureId, CGPURenderPipelineId, CGPURenderPipelineId> oval_create_render_pipeline(CGPUDeviceId device, ECGPUFormat format, const std::string& vertPath, const std::string& fragPath, CGPURenderPassId render_pass, uint32_t subpass)
 {
 	CGPUVertexLayout vertex_layout = { 
 		.attribute_count = 1,
@@ -258,10 +259,12 @@ std::tuple<CGPURootSignatureId, CGPURenderPipelineId> oval_create_render_pipelin
 		.render_target_count = 1,
 		.prim_topology = CGPU_PRIM_TOPO_TRI_STRIP,
 	};
-	auto pipeline = cgpu_create_render_pipeline(device, &rp_desc);
+	auto pipeline_polygon = cgpu_create_render_pipeline(device, &rp_desc);
+	rp_desc.prim_topology = CGPU_PRIM_TOPO_LINE_STRIP;
+	auto pipeline_lines = cgpu_create_render_pipeline(device, &rp_desc);
 	cgpu_free_shader_library(vertex_shader);
 	cgpu_free_shader_library(fragment_shader);
-	return { root_sig, pipeline };
+	return { root_sig, pipeline_polygon, pipeline_lines };
 }
 
 oval_device_t* oval_create_device(uint16_t width, uint16_t height, oval_on_draw on_draw)
@@ -388,9 +391,10 @@ oval_device_t* oval_create_device(uint16_t width, uint16_t height, oval_on_draw 
 
 	device_cgpu->render_finished_semaphore = cgpu_create_semaphore(device_cgpu->device);
 
-	auto [root_sig, pipeline] = oval_create_render_pipeline(device_cgpu->device, swapchainFormat, "shaders/oval.vert.spv", "shaders/oval.frag.spv", device_cgpu->render_pass, 0);
+	auto [root_sig, pipeline_polygon, pipeline_lines] = oval_create_render_pipeline(device_cgpu->device, swapchainFormat, "shaders/oval.vert.spv", "shaders/oval.frag.spv", device_cgpu->render_pass, 0);
 	device_cgpu->root_sig = root_sig;
-	device_cgpu->pipeline = pipeline;
+	device_cgpu->pipeline_polygon = pipeline_polygon;
+	device_cgpu->pipeline_lines = pipeline_lines;
 
 	return (oval_device_t*)device_cgpu;
 }
@@ -488,7 +492,8 @@ void oval_free_device(oval_device_t* device)
 	cgpu_wait_queue_idle(D->gfx_queue);
 
 	cgpu_free_root_signature(D->root_sig);
-	cgpu_free_render_pipeline(D->pipeline);
+	cgpu_free_render_pipeline(D->pipeline_polygon);
+	cgpu_free_render_pipeline(D->pipeline_lines);
 
 	for (uint32_t i = 0; i < D->swapchain->buffer_count; i++)
 	{
@@ -563,11 +568,7 @@ void oval_draw_clear(oval_device_t* device, oval_color_t color)
 	cgpu_render_encoder_set_scissor(D->info.rp_encoder, 0, 0, device->width, device->height);
 }
 
-void oval_draw_lines(oval_device_t* device, oval_point_t* points, uint32_t count)
-{
-}
-
-void oval_draw_polygon(oval_device_t* device, oval_point_t* points, uint32_t count)
+void oval_draw_impl(oval_device_t* device, oval_point_t* points, uint32_t count, CGPURenderPipelineId pipeline)
 {
 	auto D = (oval_cgpu_device_t*)device;
 	if (!D->info.prepared)
@@ -596,8 +597,20 @@ void oval_draw_polygon(oval_device_t* device, oval_point_t* points, uint32_t cou
 
 	uint32_t vert_strid = sizeof(oval_point_t);
 	cgpu_render_encoder_bind_vertex_buffers(D->info.rp_encoder, 1, &vertex_buffer, &vert_strid, 0);
-	cgpu_render_encoder_bind_pipeline(D->info.rp_encoder, D->pipeline);
+	cgpu_render_encoder_bind_pipeline(D->info.rp_encoder, pipeline);
 	cgpu_render_encoder_draw(D->info.rp_encoder, count, 0);
+}
+
+void oval_draw_lines(oval_device_t* device, oval_point_t* points, uint32_t count)
+{
+	auto D = (oval_cgpu_device_t*)device;
+	oval_draw_impl(device, points, count, D->pipeline_lines);
+}
+
+void oval_draw_polygon(oval_device_t* device, oval_point_t* points, uint32_t count)
+{
+	auto D = (oval_cgpu_device_t*)device;
+	oval_draw_impl(device, points, count, D->pipeline_polygon);
 }
 
 void oval_draw_commit(oval_device_t* device)
