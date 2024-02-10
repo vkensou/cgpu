@@ -6,8 +6,8 @@ const int SCREEN_HEIGHT = 480;
 
 static void on_draw(oval_device_t* device) {
 	auto clearcolor = oval_color_t {
-		.r = 255,
-		.g = 128,
+		.r = 0,
+		.g = 0,
 		.b = 0,
 		.a = 255,
 	};

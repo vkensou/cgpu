@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <vector>
+#include <fstream>
 
 struct FrameData
 {
@@ -102,6 +103,8 @@ typedef struct oval_cgpu_device_t {
 	CGPUSemaphoreId render_finished_semaphore;
 	uint32_t current_frame_index;
 	FrameInfo info;
+	CGPURootSignatureId root_sig;
+	CGPURenderPipelineId pipeline;
 } oval_cgpu_device_t;
 
 void oval_log(void* user_data, ECGPULogSeverity severity, const char* fmt, ...)
@@ -164,6 +167,101 @@ void oval_free_aligned(void* user_data, void* ptr, size_t alignment, const void*
 {
 	aligned_malloced -= ptr ? _aligned_msize(ptr, alignment, 0) : 0;
 	_aligned_free(ptr);
+}
+
+std::vector<char> readFile(const std::string& filename)
+{
+	std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+	if (!file.is_open())
+	{
+		throw std::runtime_error("failed to open file!");
+	}
+
+	size_t fileSize = (size_t)file.tellg();
+	std::vector<char> buffer(fileSize);
+
+	file.seekg(0);
+	file.read(buffer.data(), fileSize);
+
+	file.close();
+	return buffer;
+}
+
+std::tuple<CGPURootSignatureId, CGPURenderPipelineId> oval_create_render_pipeline(CGPUDeviceId device, ECGPUFormat format, const std::string& vertPath, const std::string& fragPath, CGPURenderPassId render_pass, uint32_t subpass)
+{
+	CGPUVertexLayout vertex_layout = { 
+		.attribute_count = 1,
+		.attributes = {
+			{ u8"POSITION", 1, CGPU_FORMAT_R32G32_SFLOAT, 0, 0, sizeof(oval_point_t), CGPU_INPUT_RATE_VERTEX },
+		},
+	};
+	CGPUBlendStateDescriptor blend_state = {
+		.src_factors = { CGPU_BLEND_CONST_ONE },
+		.dst_factors = { CGPU_BLEND_CONST_ZERO },
+		.src_alpha_factors = { CGPU_BLEND_CONST_ONE },
+		.dst_alpha_factors = { CGPU_BLEND_CONST_ZERO },
+		.blend_modes = { CGPU_BLEND_MODE_ADD },
+		.blend_alpha_modes = { CGPU_BLEND_MODE_ADD },
+		.masks = { CGPU_COLOR_MASK_ALL },
+		.alpha_to_coverage = false,
+		.independent_blend = false,
+	};
+	CGPUDepthStateDesc depth_state = {
+		.depth_test = false,
+		.depth_write = false,
+		.stencil_test = false,
+	};
+	CGPURasterizerStateDescriptor rasterizer_state = {
+	.cull_mode = CGPU_CULL_MODE_NONE,
+	};
+
+	auto vertShaderCode = readFile(vertPath);
+	auto fragShaderCode = readFile(fragPath);
+	CGPUShaderLibraryDescriptor vs_desc = {
+		.name = u8"VertexShaderLibrary",
+		.code = reinterpret_cast<const uint32_t*>(vertShaderCode.data()),
+		.code_size = (uint32_t)vertShaderCode.size(),
+		.stage = CGPU_SHADER_STAGE_VERT,
+	};
+	CGPUShaderLibraryDescriptor ps_desc = {
+		.name = u8"FragmentShaderLibrary",
+		.code = reinterpret_cast<const uint32_t*>(fragShaderCode.data()),
+		.code_size = (uint32_t)fragShaderCode.size(),
+		.stage = CGPU_SHADER_STAGE_FRAG,
+	};
+	CGPUShaderLibraryId vertex_shader = cgpu_create_shader_library(device, &vs_desc);
+	CGPUShaderLibraryId fragment_shader = cgpu_create_shader_library(device, &ps_desc);
+	CGPUShaderEntryDescriptor ppl_shaders[2];
+	ppl_shaders[0].stage = CGPU_SHADER_STAGE_VERT;
+	ppl_shaders[0].entry = u8"main";
+	ppl_shaders[0].library = vertex_shader;
+	ppl_shaders[1].stage = CGPU_SHADER_STAGE_FRAG;
+	ppl_shaders[1].entry = u8"main";
+	ppl_shaders[1].library = fragment_shader;
+	CGPURootSignatureDescriptor rs_desc = {
+		.shaders = ppl_shaders,
+		.shader_count = 2
+	};
+	auto root_sig = cgpu_create_root_signature(device, &rs_desc);
+	ECGPUFormat formats[1] = { format };
+	CGPURenderPipelineDescriptor rp_desc = {
+		.root_signature = root_sig,
+		.vertex_shader = &ppl_shaders[0],
+		.fragment_shader = &ppl_shaders[1],
+		.vertex_layout = &vertex_layout,
+		.blend_state = &blend_state,
+		.depth_state = &depth_state,
+		.rasterizer_state = &rasterizer_state,
+		.render_pass = render_pass,
+		.subpass = subpass,
+		.render_target_count = 1,
+		.prim_topology = CGPU_PRIM_TOPO_TRI_LIST,
+	};
+	auto pipeline = cgpu_create_render_pipeline(device, &rp_desc);
+	cgpu_free_shader_library(vertex_shader);
+	cgpu_free_shader_library(fragment_shader);
+	return { root_sig, pipeline };
 }
 
 oval_device_t* oval_create_device(uint16_t width, uint16_t height, oval_on_draw on_draw)
@@ -288,6 +386,10 @@ oval_device_t* oval_create_device(uint16_t width, uint16_t height, oval_on_draw 
 
 	device_cgpu->render_finished_semaphore = cgpu_create_semaphore(device_cgpu->device);
 
+	auto [root_sig, pipeline] = oval_create_render_pipeline(device_cgpu->device, swapchainFormat, "shaders/oval.vert.spv", "shaders/oval.frag.spv", device_cgpu->render_pass, 0);
+	device_cgpu->root_sig = root_sig;
+	device_cgpu->pipeline = pipeline;
+
 	return (oval_device_t*)device_cgpu;
 }
 
@@ -382,6 +484,9 @@ void oval_free_device(oval_device_t* device)
 	auto D = (oval_cgpu_device_t*)device;
 
 	cgpu_wait_queue_idle(D->gfx_queue);
+
+	cgpu_free_root_signature(D->root_sig);
+	cgpu_free_render_pipeline(D->pipeline);
 
 	for (uint32_t i = 0; i < D->swapchain->buffer_count; i++)
 	{
