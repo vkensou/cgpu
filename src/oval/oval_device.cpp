@@ -256,7 +256,7 @@ std::tuple<CGPURootSignatureId, CGPURenderPipelineId> oval_create_render_pipelin
 		.render_pass = render_pass,
 		.subpass = subpass,
 		.render_target_count = 1,
-		.prim_topology = CGPU_PRIM_TOPO_TRI_LIST,
+		.prim_topology = CGPU_PRIM_TOPO_TRI_STRIP,
 	};
 	auto pipeline = cgpu_create_render_pipeline(device, &rp_desc);
 	cgpu_free_shader_library(vertex_shader);
@@ -564,6 +564,10 @@ void oval_draw_clear(oval_device_t* device, oval_color_t color)
 }
 
 void oval_draw_lines(oval_device_t* device, oval_point_t* points, uint32_t count)
+{
+}
+
+void oval_draw_polygon(oval_device_t* device, oval_point_t* points, uint32_t count)
 {
 	auto D = (oval_cgpu_device_t*)device;
 	if (!D->info.prepared)

@@ -28,4 +28,5 @@ void oval_free_device(oval_device_t* device);
 
 void oval_draw_clear(oval_device_t* device, oval_color_t color);
 void oval_draw_lines(oval_device_t* device, oval_point_t* points, uint32_t count);
+void oval_draw_polygon(oval_device_t* device, oval_point_t* points, uint32_t count);
 void oval_draw_commit(oval_device_t* device);

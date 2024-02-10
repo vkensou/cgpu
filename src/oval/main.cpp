@@ -13,13 +13,14 @@ static void on_draw(oval_device_t* device) {
 	};
 	oval_draw_clear(device, clearcolor);
 
-	oval_point_t triangle[3] =
+	oval_point_t triangle[4] =
 	{
-		{ 0, 0.5},
+		{ -0.5, 0.5},
+		{ 0.5, 0.5},
 		{ -0.5, -0.5},
 		{ 0.5, -0.5},
 	};
-	oval_draw_lines(device, triangle, 3);
+	oval_draw_polygon(device, triangle, 4);
 }
 
 int main(int argc, char** argv)
