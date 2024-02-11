@@ -3,18 +3,13 @@ add_cxflags("/EHsc")
 set_languages("cxx20")
 if (is_os("windows")) then 
     add_defines("NOMINMAX")
-    if (is_mode("release")) then
-        -- set_runtimes("MD")
-    else
-        -- set_runtimes("MDd")
-    end
 end
 
-add_requires("volk", {configs = {vs_runtime = "MD", header_only = true}})
-add_requires("xxhash")
-add_requires("parallel-hashmap")
-add_requires("libsdl", {configs = {sdlmain = false}})
-add_requires("spirv-reflect")
+add_requires("volk 1.3.268+0", {configs = {vs_runtime = "MD", header_only = true}})
+add_requires("xxhash v0.8.2")
+add_requires("parallel-hashmap 1.35")
+add_requires("libsdl 2.28.5", {configs = {sdlmain = false}})
+add_requires("spirv-reflect 1.3.268+0")
 add_requires("imgui v1.89.8-docking", {configs = {debug = true}})
 
 if is_os("windows") or is_os("linux") or is_os("android")  then
