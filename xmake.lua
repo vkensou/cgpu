@@ -4,9 +4,9 @@ set_languages("cxx20")
 if (is_os("windows")) then 
     add_defines("NOMINMAX")
     if (is_mode("release")) then
-        set_runtimes("MD")
+        -- set_runtimes("MD")
     else
-        set_runtimes("MDd")
+        -- set_runtimes("MDd")
     end
 end
 
