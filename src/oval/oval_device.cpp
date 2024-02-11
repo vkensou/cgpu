@@ -119,6 +119,8 @@ void oval_log(void* user_data, ECGPULogSeverity severity, const char* fmt, ...)
 size_t malloced = 0;
 void* oval_malloc(void* user_data, size_t size, const void* pool)
 {
+	if (size == 0)
+		return nullptr;
 	malloced += size;
 	return malloc(size);
 }
@@ -132,6 +134,8 @@ void* oval_realloc(void* user_data, void* ptr, size_t size, const void* pool)
 
 void* oval_calloc(void* user_data, size_t count, size_t size, const void* pool)
 {
+	if (count * size == 0)
+		return nullptr;
 	malloced += count * size;
 	return calloc(count, size);
 }
