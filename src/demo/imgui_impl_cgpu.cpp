@@ -554,7 +554,7 @@ static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQue
         CGPUFramebufferDescriptor framebuffer_desc = {
             .renderpass = render_pass,
             .attachment_count = 1,
-            .attachments = &wd->Backbuffers[i],
+            .attachments = {wd->Backbuffers[i], CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR} ,
             .width = width,
             .height = height,
             .layers = 1,

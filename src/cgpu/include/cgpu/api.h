@@ -1235,12 +1235,10 @@ typedef struct CGPUDepthStencilAttachment {
 } CGPUDepthStencilAttachment;
 
 typedef struct CGPURenderPassDescriptor {
-    const char8_t* name;
     // TODO: support multi-target & remove this
     ECGPUSampleCount sample_count;
-    const CGPUColorAttachment* color_attachments;
-    const CGPUDepthStencilAttachment* depth_stencil;
-    uint32_t render_target_count;
+    CGPUColorAttachment color_attachments[CGPU_MAX_MRT_COUNT];
+    CGPUDepthStencilAttachment depth_stencil;
 } CGPURenderPassDescriptor;
 
 typedef struct CGPURenderPass {
@@ -1248,10 +1246,9 @@ typedef struct CGPURenderPass {
 } CGPURenderPass;
 
 typedef struct CGPUFramebufferDescriptor {
-    const char8_t* name;
     CGPURenderPassId renderpass;
     uint32_t attachment_count;
-    const CGPUTextureViewId* attachments;
+    CGPUTextureViewId attachments[CGPU_MAX_MRT_COUNT+1];
     uint32_t width;
     uint32_t height;
     uint32_t layers;
