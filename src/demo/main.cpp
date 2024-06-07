@@ -204,7 +204,7 @@ struct RenderWindow
 			CGPUFramebufferDescriptor framebuffer_desc = {
 				.renderpass = render_pass,
 				.attachment_count = 1,
-				.attachments = &swapchain_views[i],
+				.attachments = {swapchain_views[i], CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR },
 				.width = (uint32_t)w,
 				.height = (uint32_t)h,
 				.layers = 1,
@@ -512,11 +512,9 @@ int main(int argc, char** argv)
 		.store_action = CGPU_STORE_ACTION_STORE,
 	};
 	CGPURenderPassDescriptor render_pass_descriptor = {
-		.name = u8"Demo_Render_Pass",
 		.sample_count = CGPU_SAMPLE_COUNT_1,
-		.color_attachments = &color_attachments,
-		.depth_stencil = nullptr,
-		.render_target_count = 1,
+		.color_attachments = {color_attachments, {}, {}, {}, {}, {}, {}, {}},
+		.depth_stencil = {},
 	};
 	render_pass = cgpu_create_render_pass(device, &render_pass_descriptor);
 	FrameData frameDatas[3];

@@ -1385,9 +1385,9 @@ CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struc
     const CGPUAllocator* allocator = &I->super.allocator;
     CGPURenderPass_Vulkan* R = cgpu_calloc(allocator, 1, sizeof(CGPURenderPass_Vulkan));
     cgpu_assert(VK_NULL_HANDLE != D->pVkDevice);
-    uint32_t colorAttachmentCount = desc->render_target_count;
+    uint32_t colorAttachmentCount = 0;
     uint32_t colorResolveAttachmentCount = 0;
-    uint32_t depthAttachmentCount = (desc->depth_stencil != NULL && desc->depth_stencil->format != CGPU_FORMAT_UNDEFINED) ? 1 : 0;
+    uint32_t depthAttachmentCount = (desc->depth_stencil.format != CGPU_FORMAT_UNDEFINED) ? 1 : 0;
     VkAttachmentDescription attachments[CGPU_MAX_MRT_COUNT + 1] = { 0 };
     VkAttachmentReference color_attachment_refs[CGPU_MAX_MRT_COUNT] = { 0 };
     VkAttachmentReference color_resolve_attachment_refs[CGPU_MAX_MRT_COUNT] = { 0 };
@@ -1396,8 +1396,12 @@ CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struc
     // Fill out attachment descriptions and references
     uint32_t ssidx = 0;
     // Color
-    for (uint32_t i = 0; i < colorAttachmentCount; i++)
+    for (uint32_t i = 0; i < CGPU_MAX_MRT_COUNT; i++)
     {
+        if (desc->color_attachments[i].format == CGPU_FORMAT_UNDEFINED)
+            break;
+
+        colorAttachmentCount++;
         // descriptions
         attachments[ssidx].flags = 0;
         attachments[ssidx].format = (VkFormat)VkUtil_FormatTranslateToVk(desc->color_attachments[i].format);
@@ -1438,12 +1442,12 @@ CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struc
     if (depthAttachmentCount > 0)
     {
         attachments[ssidx].flags = 0;
-        attachments[ssidx].format = (VkFormat)VkUtil_FormatTranslateToVk(desc->depth_stencil->format);
+        attachments[ssidx].format = (VkFormat)VkUtil_FormatTranslateToVk(desc->depth_stencil.format);
         attachments[ssidx].samples = sample_count;
-        attachments[ssidx].loadOp = gVkAttachmentLoadOpTranslator[desc->depth_stencil->depth_load_action];
-        attachments[ssidx].storeOp = gVkAttachmentStoreOpTranslator[desc->depth_stencil->depth_store_action];
-        attachments[ssidx].stencilLoadOp = gVkAttachmentLoadOpTranslator[desc->depth_stencil->stencil_load_action];
-        attachments[ssidx].stencilStoreOp = gVkAttachmentStoreOpTranslator[desc->depth_stencil->stencil_store_action];
+        attachments[ssidx].loadOp = gVkAttachmentLoadOpTranslator[desc->depth_stencil.depth_load_action];
+        attachments[ssidx].storeOp = gVkAttachmentStoreOpTranslator[desc->depth_stencil.depth_store_action];
+        attachments[ssidx].stencilLoadOp = gVkAttachmentLoadOpTranslator[desc->depth_stencil.stencil_load_action];
+        attachments[ssidx].stencilStoreOp = gVkAttachmentStoreOpTranslator[desc->depth_stencil.stencil_store_action];
         attachments[ssidx].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         attachments[ssidx].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         depth_stencil_attachment_ref[0].attachment = ssidx;
