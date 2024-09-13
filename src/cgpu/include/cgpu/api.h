@@ -989,6 +989,9 @@ typedef struct CGPUDescriptorData {
         // CGPUAccelerationStructureId* acceleration_structures;
     };
     uint32_t count;
+#if CGPU_PTR_SIZE == 8
+    uint32_t padding;
+#endif
 } CGPUDescriptorData;
 
 typedef struct CGPUClearValue
@@ -1288,6 +1291,9 @@ typedef struct CGPUCompiledShaderDescriptor {
 typedef struct CGPUDescriptorSetDescriptor {
     CGPURootSignatureId root_signature;
     uint32_t set_index;
+#if CGPU_PTR_SIZE == 8
+    uint32_t padding;
+#endif
 } CGPUDescriptorSetDescriptor;
 
 typedef struct CGPUComputePipelineDescriptor {
@@ -1366,6 +1372,7 @@ typedef struct CGPUVertexLayout {
 } CGPUVertexLayout;
 
 typedef struct CGPURenderPipelineDescriptor {
+    uint64_t dynamic_state;
     CGPURootSignatureId root_signature;
     const CGPUShaderEntryDescriptor* vertex_shader;
     const CGPUShaderEntryDescriptor* tesc_shader;

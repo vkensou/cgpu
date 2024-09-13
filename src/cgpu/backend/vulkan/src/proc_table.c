@@ -159,6 +159,7 @@ const CGPUProcTable tbl_vk = {
     .raster_state_encoder_set_primitive_topology = &cgpu_raster_state_encoder_set_primitive_topology_vulkan,
     .raster_state_encoder_set_depth_test_enabled = &cgpu_raster_state_encoder_set_depth_test_enabled_vulkan,
     .raster_state_encoder_set_depth_write_enabled = &cgpu_raster_state_encoder_set_depth_write_enabled_vulkan,
+    .raster_state_encoder_set_depth_compare_op = &cgpu_raster_state_encoder_set_depth_compare_op_vulkan,
     .raster_state_encoder_set_stencil_compare_op = &cgpu_raster_state_encoder_set_stencil_compare_op_vulkan,
     .raster_state_encoder_set_fill_mode = &cgpu_raster_state_encoder_set_fill_mode_vulkan,
     .raster_state_encoder_set_sample_count = &cgpu_raster_state_encoder_set_sample_count_vulkan,

@@ -6,8 +6,8 @@ typedef volatile CGPU_ALIGNAS(4) uint32_t SAtomicU32;
 typedef volatile CGPU_ALIGNAS(8) uint64_t SAtomicU64;
 typedef volatile CGPU_ALIGNAS(4) int32_t SAtomic32;
 typedef volatile CGPU_ALIGNAS(8) int64_t SAtomic64;
-typedef volatile CGPU_ALIGNAS(PTR_SIZE) uintptr_t SAtomicUPtr;
-typedef volatile CGPU_ALIGNAS(PTR_SIZE) intptr_t SAtomicPtr;
+typedef volatile CGPU_ALIGNAS(CGPU_PTR_SIZE) uintptr_t SAtomicUPtr;
+typedef volatile CGPU_ALIGNAS(CGPU_PTR_SIZE) intptr_t SAtomicPtr;
 
 #if defined(__clang__) && defined(_MSC_VER)
 #pragma clang diagnostic push
@@ -23,24 +23,24 @@ CGPU_FORCEINLINE static void skr_memorybarrier_acquire() { _ReadWriteBarrier(); 
 CGPU_FORCEINLINE static void skr_memorybarrier_release() { _ReadWriteBarrier(); }
 
 CGPU_FORCEINLINE static uint32_t skr_atomicu32_load_relaxed(const SAtomicU32* pVar) { return *(pVar); }
-CGPU_FORCEINLINE static uint32_t skr_atomicu32_store_relaxed(SAtomicU32* dst, uint32_t val) { return _InterlockedExchange( (volatile long*)(dst), val ); }
-CGPU_FORCEINLINE static uint32_t skr_atomicu32_add_relaxed(SAtomicU32* dst, uint32_t val) { return _InterlockedExchangeAdd( (volatile long*)(dst), val ); }
-CGPU_FORCEINLINE static uint32_t skr_atomicu32_cas_relaxed(SAtomicU32* dst, uint32_t cmp_val, uint32_t new_val) { return _InterlockedCompareExchange( (volatile long*)(dst), (new_val), (cmp_val) ); }
+CGPU_FORCEINLINE static uint32_t skr_atomicu32_store_relaxed(SAtomicU32* dst, uint32_t val) { return InterlockedExchange( (volatile long*)(dst), val ); }
+CGPU_FORCEINLINE static uint32_t skr_atomicu32_add_relaxed(SAtomicU32* dst, uint32_t val) { return InterlockedExchangeAdd( (volatile long*)(dst), val ); }
+CGPU_FORCEINLINE static uint32_t skr_atomicu32_cas_relaxed(SAtomicU32* dst, uint32_t cmp_val, uint32_t new_val) { return InterlockedCompareExchange( (volatile long*)(dst), (new_val), (cmp_val) ); }
 
 CGPU_FORCEINLINE static uint64_t skr_atomicu64_load_relaxed(const SAtomicU64* pVar) { return *(pVar); }
-CGPU_FORCEINLINE static uint64_t skr_atomicu64_store_relaxed(SAtomicU64* dst, uint64_t val) { return _InterlockedExchange64( (volatile LONG64*)(dst), val ); }
-CGPU_FORCEINLINE static uint64_t skr_atomicu64_add_relaxed(SAtomicU64* dst, uint64_t val) { return _InterlockedExchangeAdd64( (volatile LONG64*)(dst), val ); }
-CGPU_FORCEINLINE static uint64_t skr_atomicu64_cas_relaxed(SAtomicU64* dst, uint64_t cmp_val, uint64_t new_val) { return _InterlockedCompareExchange64( (volatile LONG64*)(dst), (new_val), (cmp_val) ); }
+CGPU_FORCEINLINE static uint64_t skr_atomicu64_store_relaxed(SAtomicU64* dst, uint64_t val) { return InterlockedExchange64( (volatile LONG64*)(dst), val ); }
+CGPU_FORCEINLINE static uint64_t skr_atomicu64_add_relaxed(SAtomicU64* dst, uint64_t val) { return InterlockedExchangeAdd64( (volatile LONG64*)(dst), val ); }
+CGPU_FORCEINLINE static uint64_t skr_atomicu64_cas_relaxed(SAtomicU64* dst, uint64_t cmp_val, uint64_t new_val) { return InterlockedCompareExchange64( (volatile LONG64*)(dst), (new_val), (cmp_val) ); }
 
 CGPU_FORCEINLINE static int32_t skr_atomic32_load_relaxed(const SAtomic32* pVar) { return *(pVar); }
-CGPU_FORCEINLINE static int32_t skr_atomic32_store_relaxed(SAtomic32* dst, int32_t val) { return _InterlockedExchange( (volatile long*)(dst), val ); }
-CGPU_FORCEINLINE static int32_t skr_atomic32_add_relaxed(SAtomic32* dst, int32_t val) { return _InterlockedExchangeAdd( (volatile long*)(dst), val ); }
-CGPU_FORCEINLINE static int32_t skr_atomic32_cas_relaxed(SAtomic32* dst, int32_t cmp_val, int32_t new_val) { return _InterlockedCompareExchange( (volatile long*)(dst), (new_val), (cmp_val) ); }
+CGPU_FORCEINLINE static int32_t skr_atomic32_store_relaxed(SAtomic32* dst, int32_t val) { return InterlockedExchange( (volatile long*)(dst), val ); }
+CGPU_FORCEINLINE static int32_t skr_atomic32_add_relaxed(SAtomic32* dst, int32_t val) { return InterlockedExchangeAdd( (volatile long*)(dst), val ); }
+CGPU_FORCEINLINE static int32_t skr_atomic32_cas_relaxed(SAtomic32* dst, int32_t cmp_val, int32_t new_val) { return InterlockedCompareExchange( (volatile long*)(dst), (new_val), (cmp_val) ); }
 
 CGPU_FORCEINLINE static int64_t skr_atomic64_load_relaxed(const SAtomic64* pVar) { return *(pVar); }
-CGPU_FORCEINLINE static int64_t skr_atomic64_store_relaxed(SAtomic64* dst, int64_t val) { return _InterlockedExchange64( (volatile LONG64*)(dst), val ); }
-CGPU_FORCEINLINE static int64_t skr_atomic64_add_relaxed(SAtomic64* dst, int64_t val) { return _InterlockedExchangeAdd64( (volatile LONG64*)(dst), val ); }
-CGPU_FORCEINLINE static int64_t skr_atomic64_cas_relaxed(SAtomic64* dst, int64_t cmp_val, int64_t new_val) { return _InterlockedCompareExchange64( (volatile LONG64*)(dst), (new_val), (cmp_val) ); }
+CGPU_FORCEINLINE static int64_t skr_atomic64_store_relaxed(SAtomic64* dst, int64_t val) { return InterlockedExchange64( (volatile LONG64*)(dst), val ); }
+CGPU_FORCEINLINE static int64_t skr_atomic64_add_relaxed(SAtomic64* dst, int64_t val) { return InterlockedExchangeAdd64( (volatile LONG64*)(dst), val ); }
+CGPU_FORCEINLINE static int64_t skr_atomic64_cas_relaxed(SAtomic64* dst, int64_t cmp_val, int64_t new_val) { return InterlockedCompareExchange64( (volatile LONG64*)(dst), (new_val), (cmp_val) ); }
 
 #else
 
@@ -153,7 +153,7 @@ CGPU_FORCEINLINE static int64_t skr_atomic64_max_relaxed(SAtomic64* dst, int64_t
     return prev_val;
 }
 
-#if PTR_SIZE == 4
+#if CGPU_PTR_SIZE == 4
 
 CGPU_FORCEINLINE static uintptr_t skr_atomicuptr_load_relaxed(SAtomicUPtr* pval) { return (uintptr_t)skr_atomicu32_load_relaxed((SAtomicU32*)pval); }
 CGPU_FORCEINLINE static uintptr_t skr_atomicuptr_load_acquire(SAtomicUPtr* pval) { return (uintptr_t)skr_atomicu32_load_acquire((SAtomicU32*)pval); }
@@ -171,7 +171,7 @@ CGPU_FORCEINLINE static intptr_t skr_atomicptr_add_relaxed(SAtomicPtr* pVar, int
 CGPU_FORCEINLINE static intptr_t skr_atomicptr_cas_relaxed(SAtomicPtr* pVar, intptr_t oldval, intptr_t newval) { return (intptr_t)skr_atomic32_cas_relaxed((SAtomic32*)pVar, (int32_t)oldval, (int32_t)newval); }
 CGPU_FORCEINLINE static intptr_t skr_atomicptr_max_relaxed(SAtomicPtr* pVar, intptr_t val) { return (intptr_t)skr_atomic32_max_relaxed((SAtomic32*)pVar, (int32_t)val); }
 
-#elif PTR_SIZE == 8
+#elif CGPU_PTR_SIZE == 8
 
 CGPU_FORCEINLINE static uintptr_t skr_atomicuptr_load_relaxed(SAtomicUPtr* pval) { return (uintptr_t)skr_atomicu64_load_relaxed((SAtomicU64*)pval); }
 CGPU_FORCEINLINE static uintptr_t skr_atomicuptr_load_acquire(SAtomicUPtr* pval) { return (uintptr_t)skr_atomicu64_load_acquire((SAtomicU64*)pval); }

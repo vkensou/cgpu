@@ -958,7 +958,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
     // Set Texture Name
     VkUtil_OptionalSetObjectName(D, (uint64_t)T->pVkImage, VK_OBJECT_TYPE_IMAGE, desc->name);
     // Start state
-    if (Q && T->pVkImage != VK_NULL_HANDLE)
+    if (Q && T->pVkImage != VK_NULL_HANDLE && desc->start_state != CGPU_RESOURCE_STATE_UNDEFINED)
     {
 #ifdef CGPU_THREAD_SAFETY
         if (Q->pMutex) skr_mutex_acquire(Q->pMutex);
@@ -1380,7 +1380,7 @@ CGPUTextureViewId cgpu_create_texture_view_vulkan(CGPUDeviceId device, const str
     const CGPUTextureInfo* pInfo = T->super.info;
     CGPUTextureView_Vulkan* TV = cgpu_calloc_aligned(allocator, 1, sizeof(CGPUTextureView_Vulkan), _Alignof(CGPUTextureView_Vulkan));
     VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
-    VkImageType mImageType = pInfo->is_cube ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
+    VkImageType mImageType = pInfo->depth > 1 ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
     switch (mImageType)
     {
         case VK_IMAGE_TYPE_1D:

@@ -131,9 +131,9 @@
 
 // PTR SIZE
 #if INTPTR_MAX == 0x7FFFFFFFFFFFFFFFLL
-    #define PTR_SIZE 8
+    #define CGPU_PTR_SIZE 8
 #elif INTPTR_MAX == 0x7FFFFFFF
-    #define PTR_SIZE 4
+    #define CGPU_PTR_SIZE 4
 #else
     #error unsupported platform
 #endif

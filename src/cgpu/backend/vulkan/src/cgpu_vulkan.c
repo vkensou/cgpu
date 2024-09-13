@@ -950,9 +950,12 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
             .pScissors = NULL
     };
     uint32_t dyn_state_count = 0;
-    VkUitl_QueryDynamicPipelineStates(A, &dyn_state_count, CGPU_NULLPTR);
+    if ((desc->dynamic_state & ~A->adapter_detail.dynamic_state_features) != 0)
+        cgpu_assert(false && "Don't support some dynamic state!");
+    uint64_t dynamic_state = desc->dynamic_state & A->adapter_detail.dynamic_state_features;
+    VkUitl_QueryDynamicPipelineStates(A, dynamic_state, &dyn_state_count, CGPU_NULLPTR);
     VkDynamicState* dyn_states = cgpu_callocN(allocator, dyn_state_count, sizeof(VkDynamicState), kVkPSOMemoryPoolName);
-    VkUitl_QueryDynamicPipelineStates(A, &dyn_state_count, dyn_states);
+    VkUitl_QueryDynamicPipelineStates(A, dynamic_state, &dyn_state_count, dyn_states);
     VkPipelineDynamicStateCreateInfo dys = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
 		.pNext = NULL,

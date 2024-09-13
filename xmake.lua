@@ -1,22 +1,22 @@
-add_rules("mode.debug", "mode.release", "mode.releasedbg")
 add_cxflags("/EHsc")
-set_languages("cxx20")
+set_languages("cxx20", "c11")
 if (is_os("windows")) then 
     add_defines("NOMINMAX")
 end
 
-add_requires("volk 1.3.268+0", {configs = {vs_runtime = "MD", header_only = true}})
+add_requires("volk 1.3.268+0", {configs = {header_only = true}})
 add_requires("xxhash v0.8.2")
 add_requires("parallel-hashmap 1.35")
-add_requires("libsdl 2.28.5", {configs = {sdlmain = false}})
 add_requires("spirv-reflect 1.3.268+0")
-add_requires("imgui v1.89.8-docking", {configs = {debug = true}})
 
 if is_os("windows") or is_os("linux") or is_os("android")  then
     option("use_vulkan")
-        set_showmenu(true )
+        set_showmenu(true)
         set_default(true)
 end
+
+option("use_demo")
+    set_default(false)
 
 target("cgpu")
     set_kind("static")
@@ -54,24 +54,21 @@ target("cgpu")
             add_files("src/cgpu/backend/vulkan/src/cgpu_vulkan_windows.c")
         end
     end
+target_end()
 
-target("demo")
-    set_kind("binary")
-    set_rundir("$(projectdir)")
+if has_config("use_demo") then 
+    add_rules("mode.debug", "mode.release", "mode.releasedbg")
+    add_requires("libsdl 2.28.5", {configs = {sdlmain = false}})
+    add_requires("imgui v1.89.8-docking", {configs = {debug = true}})
 
-    add_deps("cgpu")
-    add_packages("libsdl")
-    add_packages("imgui")
+    target("demo")
+        set_kind("binary")
+        set_rundir("$(projectdir)")
 
-    add_headerfiles("src/demo/*.h")
-    add_files("src/demo/*.cpp")
+        add_deps("cgpu")
+        add_packages("libsdl")
+        add_packages("imgui")
 
-target("oval")
-    set_kind("binary")
-    set_rundir("$(projectdir)")
-
-    add_deps("cgpu")
-    add_packages("libsdl")
-
-    add_headerfiles("src/oval/*.h")
-    add_files("src/oval/*.cpp")
+        add_headerfiles("src/demo/*.h")
+        add_files("src/demo/*.cpp")
+end

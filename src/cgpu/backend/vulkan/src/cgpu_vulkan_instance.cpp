@@ -459,7 +459,7 @@ CGPUDeviceId cgpu_create_device_vulkan(CGPUAdapterId adapter, const CGPUDeviceDe
     cgpu_assert(D->mVkDeviceTable.vkCreateSwapchainKHR && "failed to load swapchain proc!");
 
     // Create Pipeline Cache
-    D->pPipelineCache = CGPU_NULLPTR;
+    D->pPipelineCache = VK_NULL_HANDLE;
     if (!desc->disable_pipeline_cache)
     {
         VkUtil_CreatePipelineCache(D);

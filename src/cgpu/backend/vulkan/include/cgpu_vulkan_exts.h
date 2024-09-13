@@ -4,8 +4,8 @@
 // forward declaration for vulkan_core.h
 struct VkDebugUtilsMessengerCreateInfoEXT;
 struct VkDebugReportCallbackCreateInfoEXT;
-typedef struct VkCommandBuffer_T* VkCommandBuffer;
-typedef struct VkBuffer_T* VkBuffer;
+//typedef struct VkCommandBuffer_T* VkCommandBuffer;
+//typedef struct VkBuffer_T* VkBuffer;
 // end forward declaration for vulkan_core.h
 
 typedef struct CGPUVulkanInstanceDescriptor {

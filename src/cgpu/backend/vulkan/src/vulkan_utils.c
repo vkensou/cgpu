@@ -222,7 +222,7 @@ const char* const* device_extensions, uint32_t device_extension_count)
             {
                 void** ppNext = &VkAdapter->mPhysicalDeviceFeatures.pNext;
 #if VK_KHR_buffer_device_address
-                VkAdapter->mPhysicalDeviceBufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT;
+                VkAdapter->mPhysicalDeviceBufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
                 *ppNext = &VkAdapter->mPhysicalDeviceBufferDeviceAddressFeatures;
                 ppNext = &VkAdapter->mPhysicalDeviceBufferDeviceAddressFeatures.pNext;
 #endif
@@ -724,7 +724,7 @@ static inline uint32_t VkUtil_CombineVersion(uint32_t a, uint32_t b)
    return a*times + b;
 } 
 
-void VkUitl_QueryDynamicPipelineStates(CGPUAdapter_Vulkan* VkAdapter, uint32_t* pCount, VkDynamicState* pStates)
+void VkUitl_QueryDynamicPipelineStates(CGPUAdapter_Vulkan* VkAdapter, uint64_t dynamic_state, uint32_t* pCount, VkDynamicState* pStates)
 {
     VkDynamicState base_states[] =
     {
@@ -739,6 +739,23 @@ void VkUitl_QueryDynamicPipelineStates(CGPUAdapter_Vulkan* VkAdapter, uint32_t* 
     if (pStates)
     {
         memcpy(pStates, base_states, sizeof(base_states));
+    }
+    if (dynamic_state & CGPU_DYNAMIC_STATE_Tier1)
+    {
+        VkDynamicState dynamic_states_1[] =
+        {
+            VK_DYNAMIC_STATE_CULL_MODE_EXT,
+            VK_DYNAMIC_STATE_FRONT_FACE_EXT,
+            VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT,
+            VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT,
+            VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT,
+            VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT,
+        };
+        uint32_t dynamic_states_1_count = sizeof(dynamic_states_1) / sizeof(VkDynamicState);
+
+        if (pStates)
+            memcpy(pStates + total_states_count, dynamic_states_1, sizeof(dynamic_states_1));
+        total_states_count += dynamic_states_1_count;
     }
     if (VkAdapter->adapter_detail.support_shading_rate)
     {
