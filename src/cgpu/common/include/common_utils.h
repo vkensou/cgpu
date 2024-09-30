@@ -128,7 +128,7 @@ CGPU_FORCEINLINE static void cgpu_free_default(void* user_data, void* ptr, const
 void* cgpu_malloc_aligned_default(void* user_data, size_t size, size_t alignment, const void* pool);
 void* cgpu_realloc_aligned_default(void* user_data, void* ptr, size_t size, size_t alignment, const void* pool);
 void* cgpu_calloc_aligned_default(void* user_data, size_t count, size_t size, size_t alignment, const void* pool);
-void cgpu_free_aligned_default(void* user_data, void* ptr, size_t alignment, const void* pool);
+void cgpu_free_aligned_default(void* user_data, void* ptr, const void* pool);
 
 #define cgpu_malloc(allocator, size) (allocator)->malloc_fn((allocator)->user_data, size, 0)
 #define cgpu_malloc_aligned(allocator, size, alignment) (allocator)->malloc_aligned_fn((allocator)->user_data, size, alignment, 0)
@@ -138,8 +138,8 @@ void cgpu_free_aligned_default(void* user_data, void* ptr, size_t alignment, con
 #define cgpu_calloc_aligned(allocator, count, size, alignment) (allocator)->calloc_aligned_fn((allocator)->user_data, count, size, alignment, 0)
 #define cgpu_free(allocator, ptr) (allocator)->free_fn((allocator)->user_data, ptr, 0)
 #define cgpu_freeN(allocator, ptr, pool) (allocator)->free_fn((allocator)->user_data, ptr, pool)
-#define cgpu_free_aligned(allocator, ptr, alignment) (allocator)->free_aligned_fn((allocator)->user_data, ptr, alignment, 0)
-#define cgpu_free_alignedN(allocator, ptr, alignment, pool) (allocator)->free_aligned_fn((allocator)->user_data, ptr, alignment, pool)
+#define cgpu_free_aligned(allocator, ptr) (allocator)->free_aligned_fn((allocator)->user_data, ptr, 0)
+#define cgpu_free_alignedN(allocator, ptr, pool) (allocator)->free_aligned_fn((allocator)->user_data, ptr, pool)
 
 #ifdef __cplusplus
 #include <utility>
@@ -183,6 +183,6 @@ template <typename T>
 void cgpu_delete(const CGPUAllocator* allocator, T* object)
 {
     cgpu_delete_placed(object);
-    cgpu_free_aligned(allocator, object, alignof(T));
+    cgpu_free_aligned(allocator, object);
 }
 #endif

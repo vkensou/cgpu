@@ -1239,7 +1239,7 @@ VKAPI_ATTR void VKAPI_CALL cgpu_vulkan_free(
 {
     CGPUInstance_Vulkan* I = pUserData;
 
-    cgpu_free_aligned(&I->super.allocator, pMemory, 1);
+    cgpu_free_aligned(&I->super.allocator, pMemory);
 }
 
 VKAPI_ATTR void* VKAPI_CALL cgpu_vulkan_realloc(

@@ -12,7 +12,7 @@ void* cgpu_realloc_aligned_default(void* user_data, void* ptr, size_t size, size
     return _aligned_realloc(ptr, size, alignment);
 }
 
-void cgpu_free_aligned_default(void* user_data, void* ptr, size_t alignment, const void* pool)
+void cgpu_free_aligned_default(void* user_data, void* ptr, const void* pool)
 {
     _aligned_free(ptr);
 }
@@ -55,7 +55,7 @@ void* cgpu_malloc_aligned_default(void* user_data, size_t size, size_t alignment
     return ptr;
 }
 
-void cgpu_free_aligned_default(void* user_data, void* ptr, size_t alignment, const void* pool)
+void cgpu_free_aligned_default(void* user_data, void* ptr, const void* pool)
 {
     if (!ptr)
         return;
@@ -71,7 +71,7 @@ void* cgpu_realloc_aligned_default(void* user_data, void* ptr, size_t size, size
     if (!ptr)
         return cgpu_malloc_aligned_default(user_data, size, alignment, pool);
     if (!size) {
-        cgpu_free_aligned_default(user_data, ptr, 1, pool);
+        cgpu_free_aligned_default(user_data, ptr, pool);
         return NULL;
     }
     if (!_is_power_of_2(alignment))
@@ -93,7 +93,7 @@ void* cgpu_realloc_aligned_default(void* user_data, void* ptr, size_t size, size
         return NULL;
 
     memcpy(ptr2, ptr, ctrl->size);
-    cgpu_free_aligned_default(user_data, ptr, alignment, pool);
+    cgpu_free_aligned_default(user_data, ptr, pool);
     return ptr2;
 }
 
