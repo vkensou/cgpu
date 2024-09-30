@@ -125,10 +125,10 @@ CGPU_FORCEINLINE static void cgpu_free_default(void* user_data, void* ptr, const
     free(ptr);
 }
 
-void* cgpu_malloc_aligned_default(void* user_data, size_t size, size_t alignment, const void* pool);
-void* cgpu_realloc_aligned_default(void* user_data, void* ptr, size_t size, size_t alignment, const void* pool);
-void* cgpu_calloc_aligned_default(void* user_data, size_t count, size_t size, size_t alignment, const void* pool);
-void cgpu_free_aligned_default(void* user_data, void* ptr, const void* pool);
+CGPU_EXTERN_C void* cgpu_malloc_aligned_default(void* user_data, size_t size, size_t alignment, const void* pool);
+CGPU_EXTERN_C void* cgpu_realloc_aligned_default(void* user_data, void* ptr, size_t size, size_t alignment, const void* pool);
+CGPU_EXTERN_C void* cgpu_calloc_aligned_default(void* user_data, size_t count, size_t size, size_t alignment, const void* pool);
+CGPU_EXTERN_C void cgpu_free_aligned_default(void* user_data, void* ptr, const void* pool);
 
 #define cgpu_malloc(allocator, size) (allocator)->malloc_fn((allocator)->user_data, size, 0)
 #define cgpu_malloc_aligned(allocator, size, alignment) (allocator)->malloc_aligned_fn((allocator)->user_data, size, alignment, 0)
