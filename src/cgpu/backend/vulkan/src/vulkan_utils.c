@@ -54,7 +54,7 @@ bool VkUtil_IsExtensionEnabled(CGPUAdapter_Vulkan* VkAdapter, const char* extens
     return false;
 }
 
-FORCEINLINE bool VkUtil_TryIgnoreMessage(const char* MessageId, bool Scan)
+CGPU_FORCEINLINE bool VkUtil_TryIgnoreMessage(const char* MessageId, bool Scan)
 {
     if (!MessageId)
         return false;
@@ -81,7 +81,7 @@ FORCEINLINE bool VkUtil_TryIgnoreMessage(const char* MessageId, bool Scan)
     return false;
 }
 
-FORCEINLINE void VkUtil_InitializeMessagesToSkip()
+CGPU_FORCEINLINE void VkUtil_InitializeMessagesToSkip()
 {
     for (uint32_t i = 0; i < sizeof(kSkippedMessages) / sizeof(VkUtil_MessageToSkip); ++i)
     {
@@ -906,7 +906,7 @@ void VkUtil_SelectQueueIndices(CGPUAdapter_Vulkan* VkAdapter, const CGPUAllocato
     }
 }
 
-FORCEINLINE void VkUtil_CheckFormatSupport(CGPUAdapter_Vulkan* VkAdapter, CGPUAdapterDetail* adapter_detail, uint32_t i)
+CGPU_FORCEINLINE void VkUtil_CheckFormatSupport(CGPUAdapter_Vulkan* VkAdapter, CGPUAdapterDetail* adapter_detail, uint32_t i)
 {
 	VkFormat fmt = (VkFormat)VkUtil_FormatTranslateToVk((ECGPUFormat)i);
 	if (fmt == VK_FORMAT_UNDEFINED) return;
@@ -1102,7 +1102,7 @@ const char* const* device_extensions, uint32_t device_extension_count, const CGP
 }
 
 // Debug Callback
-FORCEINLINE static void VkUtil_DebugUtilsSetObjectName(VkDevice pDevice, uint64_t handle,
+CGPU_FORCEINLINE static void VkUtil_DebugUtilsSetObjectName(VkDevice pDevice, uint64_t handle,
 VkObjectType type, const char* pName)
 {
     VkDebugUtilsObjectNameInfoEXT nameInfo = {
@@ -1114,7 +1114,7 @@ VkObjectType type, const char* pName)
     vkSetDebugUtilsObjectNameEXT(pDevice, &nameInfo);
 }
 
-FORCEINLINE static void VkUtil_DebugReportSetObjectName(VkDevice pDevice, uint64_t handle,
+CGPU_FORCEINLINE static void VkUtil_DebugReportSetObjectName(VkDevice pDevice, uint64_t handle,
     VkDebugReportObjectTypeEXT type, const char* pName)
 {
     VkDebugMarkerObjectNameInfoEXT nameInfo = {
