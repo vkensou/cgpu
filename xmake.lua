@@ -1,9 +1,9 @@
 add_repositories("cgpu-xrepo xrepo", {rootdir = os.scriptdir()})
 
-add_cxflags("/EHsc")
 set_languages("cxx20", "c11")
 if (is_os("windows")) then 
     add_defines("NOMINMAX")
+add_cxflags("/EHsc")
 end
 
 add_requires("volk 1.3.268+0", {configs = {header_only = true}})
