@@ -1249,14 +1249,6 @@ VKAPI_ATTR void* VKAPI_CALL cgpu_vulkan_realloc(
     size_t                                      alignment,
     VkSystemAllocationScope                     allocationScope)
 {
-    if (pOriginal == NULL) {
-        return cgpu_vulkan_alloc(pUserData, size, alignment, allocationScope);
-    }
-    if (size == (size_t)0) {
-        cgpu_vulkan_free(pUserData, pOriginal);
-        return NULL;
-    }
-
     CGPUInstance_Vulkan* I = pUserData;
     return I->super.allocator.realloc_aligned_fn(I->super.allocator.user_data, pOriginal, size, alignment, 0);
 }
