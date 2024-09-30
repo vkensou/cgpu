@@ -1,3 +1,5 @@
+add_repositories("cgpu-xrepo xrepo", {rootdir = os.scriptdir()})
+
 add_cxflags("/EHsc")
 set_languages("cxx20", "c11")
 if (is_os("windows")) then 
