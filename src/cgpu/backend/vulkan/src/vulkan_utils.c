@@ -142,7 +142,7 @@ void VkUtil_EnableValidationLayer(
         VkResult res = vkCreateDebugReportCallbackEXT(I->pVkInstance,
         reportInfoPtr, &I->vkAllocator,
         &(I->pVkDebugReport));
-        cgpu_assert(vkCreateDebugUtilsMessengerEXT && "Load vkCreateDebugReportCallbackEXT failed!");
+        cgpu_assert(vkCreateDebugReportCallbackEXT && "Load vkCreateDebugReportCallbackEXT failed!");
         if (VK_SUCCESS != res)
         {
             cgpu_assert(0 && "vkCreateDebugReportCallbackEXT failed - disabling Vulkan debug callbacks");
