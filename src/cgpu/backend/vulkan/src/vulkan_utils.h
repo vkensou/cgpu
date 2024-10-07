@@ -49,6 +49,7 @@ void VkUtil_CreatePipelineCache(CGPUDevice_Vulkan* D);
 void VkUtil_CreateVMAAllocator(CGPUInstance_Vulkan* I, CGPUAdapter_Vulkan* A, CGPUDevice_Vulkan* D);
 void VkUtil_FreeVMAAllocator(CGPUInstance_Vulkan* I, CGPUAdapter_Vulkan* A, CGPUDevice_Vulkan* D);
 void VkUtil_FreePipelineCache(CGPUInstance_Vulkan* I, CGPUAdapter_Vulkan* A, CGPUDevice_Vulkan* D);
+void VkUtil_EnsureFeatures(CGPUAdapter_Vulkan* A, CGPUDevice_Vulkan* D);
 
 // API Objects Helpers
 struct VkUtil_DescriptorPool* VkUtil_CreateDescriptorPool(CGPUDevice_Vulkan* D);

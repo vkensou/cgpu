@@ -538,6 +538,19 @@ void VkUtil_FreePipelineCache(CGPUInstance_Vulkan* I, CGPUAdapter_Vulkan* A, CGP
     }
 }
 
+void VkUtil_EnsureFeatures(CGPUAdapter_Vulkan* A, CGPUDevice_Vulkan* D)
+{
+#if VK_EXT_extended_dynamic_state
+    if (D->mVkDeviceTable.vkCmdSetCullModeEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetDepthCompareOpEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetDepthTestEnableEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetDepthWriteEnableEXT == VK_NULL_HANDLE ||
+        D->mVkDeviceTable.vkCmdSetFrontFaceEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetPrimitiveTopologyEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetStencilTestEnableEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetStencilOp == VK_NULL_HANDLE)
+        A->adapter_detail.dynamic_state_features &= ~CGPU_DYNAMIC_STATE_Tier1;
+#endif
+#if VK_EXT_extended_dynamic_state3
+    if (D->mVkDeviceTable.vkCmdSetPolygonModeEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetRasterizationSamplesEXT == VK_NULL_HANDLE)
+        A->adapter_detail.dynamic_state_features &= ~CGPU_DYNAMIC_STATE_Tier3;
+#endif
+}
+
 // API Objects Helpers
 struct VkUtil_DescriptorPool* VkUtil_CreateDescriptorPool(CGPUDevice_Vulkan* D)
 {

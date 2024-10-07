@@ -469,6 +469,9 @@ CGPUDeviceId cgpu_create_device_vulkan(CGPUAdapterId adapter, const CGPUDeviceDe
     VkUtil_CreateVMAAllocator(I, A, D);
     // Create Descriptor Heap
     D->pDescriptorPool = VkUtil_CreateDescriptorPool(D);
+
+    VkUtil_EnsureFeatures(A, D);
+
     return &D->super;
 }
 
