@@ -1,5 +1,7 @@
 #ifdef _WIN32
 #include "winheaders.h"
+#elif defined(__ANDROID__)
+typedef struct ANativeWindow ANativeWindow;
 #endif
 #include "cgpu_vulkan_surfaces.h"
 #include "cgpu_vulkan.h"
@@ -11,7 +13,9 @@ const CGPUSurfacesProcTable s_tbl_vk = {
 #if defined(_WIN32) || defined(_WIN64)
     .from_hwnd = cgpu_surface_from_hwnd_vulkan,
 #elif defined(_MACOS)
-    .from_ns_view = cgpu_surface_from_ns_view_vulkan
+    .from_ns_view = cgpu_surface_from_ns_view_vulkan,
+#elif defined(__ANDROID__)
+    .from_native_window = cgpu_surface_from_native_window_vulkan,
 #endif
     .free_surface = cgpu_free_surface_vulkan,
     //
@@ -70,6 +74,29 @@ CGPUSurfaceId cgpu_surface_from_ns_view_vulkan(CGPUDeviceId device, CGPUNSView* 
         (VkSurfaceKHR*)&surface) != VK_SUCCESS)
     {
         cgpu_assert(0 && "Create VK NSView Surface Failed!");
+        return CGPU_NULLPTR;
+    }
+    return surface;
+}
+
+#elif defined(__ANDROID__)
+
+CGPUSurfaceId cgpu_surface_from_native_window_vulkan(CGPUDeviceId device, struct ANativeWindow* window)
+{
+    cgpu_assert(window && "CGPU VULKAN ERROR: NULL HWND!");
+
+    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)device->adapter->instance;
+    CGPUSurfaceId surface;
+    VkAndroidSurfaceCreateInfoKHR create_info = {
+        .sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR,
+        .pNext = NULL,
+        .flags = 0,
+        .window = window,
+    };
+    if (vkCreateAndroidSurfaceKHR(I->pVkInstance, &create_info, &I->vkAllocator,
+        (VkSurfaceKHR*)&surface) != VK_SUCCESS)
+    {
+        cgpu_assert(0 && "Create Android Surface Failed!");
         return CGPU_NULLPTR;
     }
     return surface;

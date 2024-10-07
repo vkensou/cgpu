@@ -51,9 +51,11 @@ target("cgpu")
         add_files("src/cgpu/backend/vulkan/src/vulkan_utils.c")
         add_files("src/cgpu/backend/vulkan/src/vma.cpp")
         add_files("src/cgpu/backend/vulkan/src/volk.c")
-        if is_os("windows") then
+        if is_plat("windows") then
             add_defines("VK_USE_PLATFORM_WIN32_KHR")
             add_files("src/cgpu/backend/vulkan/src/cgpu_vulkan_windows.c")
+        elseif is_plat("android") then
+            add_defines("VK_USE_PLATFORM_ANDROID_KHR")
         end
     end
 target_end()
