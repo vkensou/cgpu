@@ -53,7 +53,11 @@ CGPU_EXTERN_C_END
 #else
     #define cgpu_assert(expr) (void)(expr);
 #endif
+#if defined(__cplusplus)
 #define cgpu_static_assert static_assert
+#else
+#define cgpu_static_assert _Static_assert
+#endif
 
 #if UINTPTR_MAX == UINT32_MAX
     #define CGPU_NAME_HASH_SEED 1610612741
