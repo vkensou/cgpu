@@ -54,7 +54,7 @@ bool VkUtil_IsExtensionEnabled(CGPUAdapter_Vulkan* VkAdapter, const char* extens
     return false;
 }
 
-FORCEINLINE bool VkUtil_TryIgnoreMessage(const char* MessageId, bool Scan)
+CGPU_FORCEINLINE bool VkUtil_TryIgnoreMessage(const char* MessageId, bool Scan)
 {
     if (!MessageId)
         return false;
@@ -81,7 +81,7 @@ FORCEINLINE bool VkUtil_TryIgnoreMessage(const char* MessageId, bool Scan)
     return false;
 }
 
-FORCEINLINE void VkUtil_InitializeMessagesToSkip()
+CGPU_FORCEINLINE void VkUtil_InitializeMessagesToSkip()
 {
     for (uint32_t i = 0; i < sizeof(kSkippedMessages) / sizeof(VkUtil_MessageToSkip); ++i)
     {
@@ -142,7 +142,7 @@ void VkUtil_EnableValidationLayer(
         VkResult res = vkCreateDebugReportCallbackEXT(I->pVkInstance,
         reportInfoPtr, &I->vkAllocator,
         &(I->pVkDebugReport));
-        cgpu_assert(vkCreateDebugUtilsMessengerEXT && "Load vkCreateDebugReportCallbackEXT failed!");
+        cgpu_assert(vkCreateDebugReportCallbackEXT && "Load vkCreateDebugReportCallbackEXT failed!");
         if (VK_SUCCESS != res)
         {
             cgpu_assert(0 && "vkCreateDebugReportCallbackEXT failed - disabling Vulkan debug callbacks");
@@ -538,6 +538,19 @@ void VkUtil_FreePipelineCache(CGPUInstance_Vulkan* I, CGPUAdapter_Vulkan* A, CGP
     }
 }
 
+void VkUtil_EnsureFeatures(CGPUAdapter_Vulkan* A, CGPUDevice_Vulkan* D)
+{
+#if VK_EXT_extended_dynamic_state
+    if (D->mVkDeviceTable.vkCmdSetCullModeEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetDepthCompareOpEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetDepthTestEnableEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetDepthWriteEnableEXT == VK_NULL_HANDLE ||
+        D->mVkDeviceTable.vkCmdSetFrontFaceEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetPrimitiveTopologyEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetStencilTestEnableEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetStencilOp == VK_NULL_HANDLE)
+        A->adapter_detail.dynamic_state_features &= ~CGPU_DYNAMIC_STATE_Tier1;
+#endif
+#if VK_EXT_extended_dynamic_state3
+    if (D->mVkDeviceTable.vkCmdSetPolygonModeEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetRasterizationSamplesEXT == VK_NULL_HANDLE)
+        A->adapter_detail.dynamic_state_features &= ~CGPU_DYNAMIC_STATE_Tier3;
+#endif
+}
+
 // API Objects Helpers
 struct VkUtil_DescriptorPool* VkUtil_CreateDescriptorPool(CGPUDevice_Vulkan* D)
 {
@@ -906,7 +919,7 @@ void VkUtil_SelectQueueIndices(CGPUAdapter_Vulkan* VkAdapter, const CGPUAllocato
     }
 }
 
-FORCEINLINE void VkUtil_CheckFormatSupport(CGPUAdapter_Vulkan* VkAdapter, CGPUAdapterDetail* adapter_detail, uint32_t i)
+CGPU_FORCEINLINE void VkUtil_CheckFormatSupport(CGPUAdapter_Vulkan* VkAdapter, CGPUAdapterDetail* adapter_detail, uint32_t i)
 {
 	VkFormat fmt = (VkFormat)VkUtil_FormatTranslateToVk((ECGPUFormat)i);
 	if (fmt == VK_FORMAT_UNDEFINED) return;
@@ -1102,7 +1115,7 @@ const char* const* device_extensions, uint32_t device_extension_count, const CGP
 }
 
 // Debug Callback
-FORCEINLINE static void VkUtil_DebugUtilsSetObjectName(VkDevice pDevice, uint64_t handle,
+CGPU_FORCEINLINE static void VkUtil_DebugUtilsSetObjectName(VkDevice pDevice, uint64_t handle,
 VkObjectType type, const char* pName)
 {
     VkDebugUtilsObjectNameInfoEXT nameInfo = {
@@ -1114,7 +1127,7 @@ VkObjectType type, const char* pName)
     vkSetDebugUtilsObjectNameEXT(pDevice, &nameInfo);
 }
 
-FORCEINLINE static void VkUtil_DebugReportSetObjectName(VkDevice pDevice, uint64_t handle,
+CGPU_FORCEINLINE static void VkUtil_DebugReportSetObjectName(VkDevice pDevice, uint64_t handle,
     VkDebugReportObjectTypeEXT type, const char* pName)
 {
     VkDebugMarkerObjectNameInfoEXT nameInfo = {
@@ -1239,7 +1252,7 @@ VKAPI_ATTR void VKAPI_CALL cgpu_vulkan_free(
 {
     CGPUInstance_Vulkan* I = pUserData;
 
-    cgpu_free_aligned(&I->super.allocator, pMemory, 1);
+    cgpu_free_aligned(&I->super.allocator, pMemory);
 }
 
 VKAPI_ATTR void* VKAPI_CALL cgpu_vulkan_realloc(
@@ -1249,14 +1262,6 @@ VKAPI_ATTR void* VKAPI_CALL cgpu_vulkan_realloc(
     size_t                                      alignment,
     VkSystemAllocationScope                     allocationScope)
 {
-    if (pOriginal == NULL) {
-        return cgpu_vulkan_alloc(pUserData, size, alignment, allocationScope);
-    }
-    if (size == (size_t)0) {
-        cgpu_vulkan_free(pUserData, pOriginal);
-        return NULL;
-    }
-
     CGPUInstance_Vulkan* I = pUserData;
     return I->super.allocator.realloc_aligned_fn(I->super.allocator.user_data, pOriginal, size, alignment, 0);
 }

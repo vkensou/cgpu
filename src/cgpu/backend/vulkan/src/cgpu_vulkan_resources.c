@@ -12,7 +12,7 @@
 #endif
 #include <string.h>
 
-FORCEINLINE static VkBufferCreateInfo VkUtil_CreateBufferCreateInfo(CGPUAdapter_Vulkan* A, const struct CGPUBufferDescriptor* desc)
+CGPU_FORCEINLINE static VkBufferCreateInfo VkUtil_CreateBufferCreateInfo(CGPUAdapter_Vulkan* A, const struct CGPUBufferDescriptor* desc)
 {
     uint64_t allocationSize = desc->size;
     // Align the buffer size to multiples of the dynamic uniform buffer minimum size
@@ -38,7 +38,7 @@ FORCEINLINE static VkBufferCreateInfo VkUtil_CreateBufferCreateInfo(CGPUAdapter_
     return add_info;
 }
 
-FORCEINLINE static VkFormatFeatureFlags VkUtil_ImageUsageToFormatFeatures(VkImageUsageFlags usage)
+CGPU_FORCEINLINE static VkFormatFeatureFlags VkUtil_ImageUsageToFormatFeatures(VkImageUsageFlags usage)
 {
     VkFormatFeatureFlags result = (VkFormatFeatureFlags)0;
     if (VK_IMAGE_USAGE_SAMPLED_BIT == (usage & VK_IMAGE_USAGE_SAMPLED_BIT))
@@ -449,7 +449,7 @@ void cgpu_free_buffer_vulkan(CGPUBufferId buffer)
         B->pVkStorageTexelView = VK_NULL_HANDLE;
     }
     vmaDestroyBuffer(D->pVmaAllocator, B->pVkBuffer, B->pVkAllocation);
-    cgpu_free_aligned(allocator, B, _Alignof(CGPUBuffer_Vulkan));
+    cgpu_free_aligned(allocator, B);
 }
 
 // Texture/TextureView APIs
@@ -863,7 +863,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
 #else
             if ((desc->flags & CGPU_TCF_EXPORT_BIT) || (desc->flags & CGPU_INNER_TCF_IMPORT_SHARED_HANDLE))
             {
-                cgpu_error(device->adapter->instance, "Unsupportted platform detected!");
+                cgpu_error(&device->adapter->instance->logger, "Unsupportted platform detected!");
                 return CGPU_NULLPTR;
             }
 #endif
@@ -1356,18 +1356,18 @@ void cgpu_free_texture_vulkan(CGPUTextureId texture)
                     for (uint32_t y = 0; y < subres->Y; y++)
                         for (uint32_t z = 0; z < subres->Z; z++)
                             VkUtil_UnmapTileMappingAt(T, subres, x, y, z);
-                cgpu_free_aligned(allocator, subres->mappings, _Alignof(CGPUTileMapping_Vulkan));
+                cgpu_free_aligned(allocator, subres->mappings);
             }
         }
-        cgpu_free_aligned(allocator, T->pVkTileMappings, _Alignof(CGPUTileTextureSubresourceMapping_Vulkan));
+        cgpu_free_aligned(allocator, T->pVkTileMappings);
 
         for (uint32_t n = 0; n < T->mPackedMappingsCount; n++)
             VkUtil_UnmapPackedMappingAt(T, n);
-        cgpu_free_aligned(allocator, T->pVkPackedMappings, _Alignof(CGPUTileTexturePackedMipMapping_Vulkan));
+        cgpu_free_aligned(allocator, T->pVkPackedMappings);
     }
     if (T->super.tiled_resource)
-        cgpu_free_aligned(allocator, (void*)T->super.tiled_resource, _Alignof(CGPUTiledTextureInfo));
-    cgpu_free_aligned(allocator, T, _Alignof(CGPUTexture_Vulkan));
+        cgpu_free_aligned(allocator, (void*)T->super.tiled_resource);
+    cgpu_free_aligned(allocator, T);
 }
 
 CGPUTextureViewId cgpu_create_texture_view_vulkan(CGPUDeviceId device, const struct CGPUTextureViewDescriptor* desc)
@@ -1474,7 +1474,7 @@ void cgpu_free_texture_view_vulkan(CGPUTextureViewId render_target)
         D->mVkDeviceTable.vkDestroyImageView(D->pVkDevice, TV->pVkRTVDSVDescriptor, &I->vkAllocator);
     if (VK_NULL_HANDLE != TV->pVkUAVDescriptor)
         D->mVkDeviceTable.vkDestroyImageView(D->pVkDevice, TV->pVkUAVDescriptor, &I->vkAllocator);
-    cgpu_free_aligned(allocator, TV, _Alignof(CGPUTextureView_Vulkan));
+    cgpu_free_aligned(allocator, TV);
 }
 
 bool cgpu_try_bind_aliasing_texture_vulkan(CGPUDeviceId device, const struct CGPUTextureAliasingBindDescriptor* desc)
@@ -1559,7 +1559,7 @@ void cgpu_free_sampler_vulkan(CGPUSamplerId sampler)
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
     const CGPUAllocator* allocator = &I->super.allocator;
     D->mVkDeviceTable.vkDestroySampler(D->pVkDevice, S->pVkSampler, &I->vkAllocator);
-    cgpu_free_aligned(allocator, S, _Alignof(CGPUSampler_Vulkan));
+    cgpu_free_aligned(allocator, S);
 }
 
 // Shader APIs

@@ -1,5 +1,5 @@
 #include "common_utils.h"
-#if __has_include("emmintrin.h") && !defined(TARGET_CPU_ARM) && !defined(__EMSCRIPTEN__) && !defined(__wasi__)
+#if __has_include("emmintrin.h") && (defined(CGPU_PLATFORM_X86) || defined(CGPU_PLATFORM_X86_64))
     #include <emmintrin.h>
 #endif
 #define XXH_INLINE_ALL

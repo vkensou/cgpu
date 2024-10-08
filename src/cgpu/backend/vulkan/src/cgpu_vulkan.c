@@ -6,7 +6,7 @@
 #include <string.h>
 
 // TODO: recycle cached render passes
-FORCEINLINE static void VkUtil_FreeFramebuffer(CGPUDevice_Vulkan* D, VkFramebuffer pFramebuffer)
+CGPU_FORCEINLINE static void VkUtil_FreeFramebuffer(CGPUDevice_Vulkan* D, VkFramebuffer pFramebuffer)
 {
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
@@ -15,7 +15,7 @@ FORCEINLINE static void VkUtil_FreeFramebuffer(CGPUDevice_Vulkan* D, VkFramebuff
 
 // Render Pass Utils
 // TODO: recycle cached render passes
-FORCEINLINE static void VkUtil_FreeRenderPass(CGPUDevice_Vulkan* D, VkRenderPass pRenderPass)
+CGPU_FORCEINLINE static void VkUtil_FreeRenderPass(CGPUDevice_Vulkan* D, VkRenderPass pRenderPass)
 {
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
@@ -756,7 +756,7 @@ void cgpu_free_descriptor_set_vulkan(CGPUDescriptorSetId set)
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)set->root_signature->device;
     const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     VkUtil_ReturnDescriptorSets(D->pDescriptorPool, &Set->pVkDescriptorSet, 1);
-    cgpu_free_aligned(allocator, Set, _Alignof(CGPUDescriptorSet_Vulkan));
+    cgpu_free_aligned(allocator, Set);
 }
 
 CGPUComputePipelineId cgpu_create_compute_pipeline_vulkan(CGPUDeviceId device, const struct CGPUComputePipelineDescriptor* desc)
@@ -1547,7 +1547,7 @@ void cgpu_free_framebuffer_vulkan(CGPUFramebufferId framebuffer)
     CGPUFramebuffer_Vulkan* F = (CGPUFramebuffer_Vulkan*)framebuffer;
     cgpu_assert(F->pVkFramebuffer);
     D->mVkDeviceTable.vkDestroyFramebuffer(D->pVkDevice, F->pVkFramebuffer, &I->vkAllocator);
-    cgpu_free_aligned(allocator, F, _Alignof(CGPUFramebuffer_Vulkan));
+    cgpu_free_aligned(allocator, F);
 }
 
 VkCommandPool allocate_transient_command_pool(CGPUDevice_Vulkan* D, CGPUQueueId queue)
@@ -1628,7 +1628,7 @@ void cgpu_free_command_buffer_vulkan(CGPUCommandBufferId cmd)
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)Q->super.device;
     const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     D->mVkDeviceTable.vkFreeCommandBuffers(D->pVkDevice, P->pVkCmdPool, 1, &(Cmd->pVkCmdBuf));
-    cgpu_free_aligned(allocator, Cmd, _Alignof(CGPUCommandBuffer_Vulkan));
+    cgpu_free_aligned(allocator, Cmd);
 }
 
 void cgpu_free_command_pool_vulkan(CGPUCommandPoolId pool)
@@ -2570,7 +2570,7 @@ void cgpu_free_swapchain_vulkan(CGPUSwapChainId swapchain)
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)swapchain->device;
     const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
     cgpu_free_swapchain_vulkan_impl(swapchain);
-    cgpu_free_aligned(allocator, (void*)swapchain, _Alignof(CGPUSwapChain_Vulkan));
+    cgpu_free_aligned(allocator, (void*)swapchain);
 }
 
 // exts

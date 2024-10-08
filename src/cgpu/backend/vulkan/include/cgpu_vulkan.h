@@ -2,6 +2,7 @@
 #include "cgpu/api.h"
 
 #include "volk.h"
+#include "vulkan/vulkan.h"
 
 #ifdef __cplusplus
 extern "C" {

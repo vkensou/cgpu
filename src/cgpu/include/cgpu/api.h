@@ -693,6 +693,11 @@ typedef struct CGPUNSView CGPUNSView;
 CGPU_API CGPUSurfaceId cgpu_surface_from_ns_view(CGPUDeviceId device, CGPUNSView* window);
 typedef CGPUSurfaceId (*CGPUSurfaceProc_CreateFromNSView)(CGPUDeviceId device, CGPUNSView* window);
 #endif
+#ifdef __ANDROID__
+typedef struct ANativeWindow ANativeWindow;
+CGPU_API CGPUSurfaceId cgpu_surface_from_native_window(CGPUDeviceId device, ANativeWindow* window);
+typedef CGPUSurfaceId(*CGPUSurfaceProc_CreateFromNativeWindow)(CGPUDeviceId device, ANativeWindow* window);
+#endif
 CGPU_API void cgpu_free_surface(CGPUDeviceId device, CGPUSurfaceId surface);
 typedef void (*CGPUSurfaceProc_Free)(CGPUDeviceId device, CGPUSurfaceId surface);
 typedef struct CGPUSurfacesProcTable {
@@ -702,6 +707,9 @@ typedef struct CGPUSurfacesProcTable {
 #ifdef __APPLE__
     // const CGPUSurfaceProc_CreateFromUIView from_ui_view;
     const CGPUSurfaceProc_CreateFromNSView from_ns_view;
+#endif
+#ifdef __ANDROID__
+    const CGPUSurfaceProc_CreateFromNativeWindow from_native_window;
 #endif
     const CGPUSurfaceProc_Free free_surface;
 } CGPUSurfacesProcTable;
@@ -809,7 +817,7 @@ typedef void (*cgpu_free_fn)(void* user_data, void* ptr, const void* pool);
 typedef void* (*cgpu_malloc_aligned_fn)(void* user_data, size_t size, size_t alignment, const void* pool);
 typedef void* (*cgpu_realloc_aligned_fn)(void* user_data, void* ptr, size_t size, size_t alignment, const void* pool);
 typedef void* (*cgpu_calloc_aligned_fn)(void* user_data, size_t count, size_t size, size_t alignment, const void* pool);
-typedef void (*cgpu_free_aligned_fn)(void* user_data, void* ptr, size_t alignment, const void* pool);
+typedef void (*cgpu_free_aligned_fn)(void* user_data, void* ptr, const void* pool);
 
 typedef struct CGPUAllocator {
     cgpu_malloc_fn malloc_fn;
