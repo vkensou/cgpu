@@ -1,5 +1,3 @@
-add_repositories("cgpu-xrepo xrepo", {rootdir = os.scriptdir()})
-
 set_languages("cxx20", "c11")
 if (is_os("windows")) then 
     add_defines("NOMINMAX")
