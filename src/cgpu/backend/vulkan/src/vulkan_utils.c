@@ -540,6 +540,10 @@ void VkUtil_FreePipelineCache(CGPUInstance_Vulkan* I, CGPUAdapter_Vulkan* A, CGP
 
 void VkUtil_EnsureFeatures(CGPUAdapter_Vulkan* A, CGPUDevice_Vulkan* D)
 {
+#if VK_KHR_fragment_shading_rate
+    if (A->adapter_detail.support_shading_rate && D->mVkDeviceTable.vkCmdSetFragmentShadingRateKHR == VK_NULL_HANDLE)
+        A->adapter_detail.support_shading_rate = false;
+#endif
 #if VK_EXT_extended_dynamic_state
     if (D->mVkDeviceTable.vkCmdSetCullModeEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetDepthCompareOpEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetDepthTestEnableEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetDepthWriteEnableEXT == VK_NULL_HANDLE ||
         D->mVkDeviceTable.vkCmdSetFrontFaceEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetPrimitiveTopologyEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetStencilTestEnableEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetStencilOp == VK_NULL_HANDLE)
