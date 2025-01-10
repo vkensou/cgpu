@@ -726,7 +726,7 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
                     writeInfo->dstSet = Set->pVkDescriptorSet;
                     writeInfo->dstBinding = pParam->binding;
                     writeInfo->dstArrayElement = 0;
-                    writeInfo->descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    writeInfo->descriptorType = resourceType == CGPU_RESOURCE_TYPE_UNIFORM_BUFFER ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
                     writeInfo->descriptorCount = 1;
                     writeInfo->pImageInfo = VK_NULL_HANDLE;
                     writeInfo->pBufferInfo = bufferInfo;
