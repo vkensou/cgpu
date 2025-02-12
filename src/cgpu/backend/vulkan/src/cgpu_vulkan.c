@@ -1856,11 +1856,7 @@ void cgpu_cmd_resolve_query_vulkan(CGPUCommandBufferId cmd, CGPUQueryPoolId pool
     CGPUQueryPool_Vulkan* P = (CGPUQueryPool_Vulkan*)pool;
     CGPUBuffer_Vulkan* B = (CGPUBuffer_Vulkan*)readback;
     VkQueryResultFlags flags = VK_QUERY_RESULT_64_BIT;
-#ifdef ANDROID
-    flags |= VK_QUERY_RESULT_WITH_AVAILABILITY_BIT;
-#else
     flags |= VK_QUERY_RESULT_WAIT_BIT;
-#endif
     D->mVkDeviceTable.vkCmdCopyQueryPoolResults(
     Cmd->pVkCmdBuf, P->pVkQueryPool,
     start_query, query_count, B->pVkBuffer, 0,
