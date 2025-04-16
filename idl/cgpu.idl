@@ -1,0 +1,22 @@
+-- vim: syntax=lua
+-- cgpu interface
+
+version(129)
+
+typedef "bool"
+typedef "char"
+typedef "float"
+typedef "int8_t"
+typedef "int32_t"
+typedef "int64_t"
+typedef "uint8_t"
+typedef "uint16_t"
+typedef "uint32_t"
+typedef "uint64_t"
+typedef "uintptr_t"
+typedef "va_list"
+typedef "void"
+
+enum.Backend { comment = "Backend:" }
+	.Vulkan		--- Vulkan
+	()
