@@ -9,14 +9,176 @@ typedef "float"
 typedef "int8_t"
 typedef "int32_t"
 typedef "int64_t"
-typedef "uint8_t"
-typedef "uint16_t"
-typedef "uint32_t"
-typedef "uint64_t"
-typedef "uintptr_t"
+typedef "UInt8_t"
+typedef "UInt16_t"
+typedef "UInt32_t"
+typedef "UInt64_t"
+typedef "UIntptr_t"
 typedef "va_list"
 typedef "void"
 
 enum.Backend { comment = "Backend:" }
 	.Vulkan		--- Vulkan
+	()
+
+enum.BlendFactor { underscore, comment = "" }
+	.Zero
+	.One
+	.SrcColor
+	.OneMinusSrcColor
+	.DstColor
+	.OneMinusDstColor
+	.SrcAlpha
+	.OneMinusSrcAlpha
+	.DstAlpha
+	.OneMinusDstAlpha
+	.SrcAlphaSaturate
+	()
+
+enum.BlendOp { underscore }
+	.Add
+	.Subtract
+	.ReverseSubtract
+	.Min
+	.Max
+	()
+
+flag.ColorMask { bits = 32, base = 1 }
+	.R
+	.G
+	.B
+	.A
+	()
+
+enum.LogSeverity { comment = "Log Severity:" }
+	.Trace
+	.Debug
+	.Info
+	.Warning
+	.Error
+	.Fatal
+	()
+
+enum.TextureFormat { comment = "Texture Formats:" }
+	.Undefined
+    .R4G4B4A4_UNorm_Pack16
+    .B4G4R4A4_UNorm_Pack16
+    .R5G6B5_UNorm_Pack16
+    .B5G6R5_UNorm_Pack16
+    .R5G5B5A1_UNorm_Pack16
+    .B5G5R5A1_UNorm_Pack16
+    .A1R5G5B5_UNorm_Pack16
+    .R8_UNorm
+    .R8_SNorm
+    .R8_UInt
+    .R8_SInt
+    .R8_SRGB
+    .R8G8_UNorm
+    .R8G8_SNorm
+    .R8G8_UInt
+    .R8G8_SInt
+    .R8G8_SRGB
+    .R8G8B8_UNorm
+    .R8G8B8_SNorm
+    .R8G8B8_UInt
+    .R8G8B8_SInt
+    .R8G8B8_SRGB
+    .B8G8R8_UNorm
+    .B8G8R8_SNorm
+    .B8G8R8_UInt
+    .B8G8R8_SInt
+    .B8G8R8_SRGB
+    .R8G8B8A8_UNorm
+    .R8G8B8A8_SNorm
+    .R8G8B8A8_UInt
+    .R8G8B8A8_SInt
+    .R8G8B8A8_SRGB
+    .B8G8R8A8_UNorm
+    .B8G8R8A8_SNorm
+    .B8G8R8A8_UInt
+    .B8G8R8A8_SInt
+    .B8G8R8A8_SRGB
+    .A8B8G8R8_UNorm_Pack32
+    .A8B8G8R8_SNorm_Pack32
+    .A8B8G8R8_UInt_Pack32
+    .A8B8G8R8_SInt_Pack32
+    .A8B8G8R8_SRGB_Pack32
+    .A2R10G10B10_UNorm_Pack32
+    .A2R10G10B10_SNorm_Pack32
+    .A2R10G10B10_UInt_Pack32
+    .A2R10G10B10_SInt_Pack32
+    .A2B10G10R10_UNorm_Pack32
+    .A2B10G10R10_SNorm_Pack32
+    .A2B10G10R10_UInt_Pack32
+    .A2B10G10R10_SInt_Pack32
+    .R16_UNorm
+    .R16_SNorm
+    .R16_UInt
+    .R16_SInt
+    .R16_SFloat
+    .R16G16_UNorm
+    .R16G16_SNorm
+    .R16G16_UInt
+    .R16G16_SInt
+    .R16G16_SFloat
+    .R16G16B16_UNorm
+    .R16G16B16_SNorm
+    .R16G16B16_UInt
+    .R16G16B16_SInt
+    .R16G16B16_SFloat
+    .R16G16B16A16_UNorm
+    .R16G16B16A16_SNorm
+    .R16G16B16A16_UInt
+    .R16G16B16A16_SInt
+    .R16G16B16A16_SFloat
+    .R32_UInt
+    .R32_SInt
+    .R32_SFloat
+    .R32G32_UInt
+    .R32G32_SInt
+    .R32G32_SFloat
+    .R32G32B32_UInt
+    .R32G32B32_SInt
+    .R32G32B32_SFloat
+    .R32G32B32A32_UInt
+    .R32G32B32A32_SInt
+    .R32G32B32A32_SFloat
+    .R64_UInt
+    .R64_SInt
+    .R64_SFloat
+    .R64G64_UInt
+    .R64G64_SInt
+    .R64G64_SFloat
+    .R64G64B64_UInt
+    .R64G64B64_SInt
+    .R64G64B64_SFloat
+    .R64G64B64A64_UInt
+    .R64G64B64A64_SInt
+    .R64G64B64A64_SFloat
+    .B10G11R11_UFloat_Pack32
+    .E5B9G9R9_UFloat_Pack32
+    .D16_UNorm
+    .X8_D24_UNorm_Pack32
+    .D32_SFloat
+    .S8_UInt
+    .D16_UNorm_S8_UInt
+    .D24_UNorm_S8_UInt
+    .D32_SFloat_S8_UInt
+	()
+
+enum.FilterType { comment = "Filter Type:" }
+	.Nearest
+	.Linear
+	()
+
+enum.AddressMode { comment = "Address Mode:" }
+	.Mirror
+	.Repeat
+	.ClampToEdge
+	.ClampToBorder
+	()
+
+enum.MipMapMode { comment = "Mip Map Mode:" }
+	.Nearest
+	.Linear
 	()

@@ -285,7 +285,7 @@ local function calc_flag_values(flag)
 	end
 end
 
-function codegen.nameconversion(all_types, all_funcs)
+function codegen.nameconversion(all_types, all_funcs, type_prefix)
 	for _,v in ipairs(all_types) do
 		local name = v.name
 		local cname = v.cname
@@ -300,7 +300,7 @@ function codegen.nameconversion(all_types, all_funcs)
 			if v.namespace then
 				cname = camelcase_to_underscorecase(v.namespace) .. "_" .. cname
 			end
-			v.cname = "cgpu_".. cname .. "_t"
+			v.cname = type_prefix .. cname .. "_t"
 		end
 		if v.enum then
 			v.typename = v.name
@@ -747,7 +747,7 @@ end
 function codegen.gen_flag_cdefine(flag)
 	assert(type(flag.flag) == "table", "Not a flag")
 	flag_format(flag)
-	local cname = "BGFX_" .. (flag.cname or to_underscorecase(flag.name):upper())
+	local cname = "CGPU_" .. (flag.cname or to_underscorecase(flag.name):upper())
 	local s = {}
 	local shift = flag.shift
 	for index, item in ipairs(flag.flag) do
@@ -981,14 +981,14 @@ function codegen.load(filename)
 	idlfile[filename] = true
 end
 
-function codegen.idl(filename)
+function codegen.idl(filename, type_prefix)
 	if conversion == nil then
 		if filename and not idlfile[filename] then
 			codegen.load(filename)
 		end
 		assert(next(idlfile), "call codegen.load() first")
 		conversion = true
-		codegen.nameconversion(idl.types, idl.funcs)
+		codegen.nameconversion(idl.types, idl.funcs, type_prefix)
 	end
 	return idl
 end
