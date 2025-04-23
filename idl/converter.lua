@@ -1,0 +1,147 @@
+local codegen = require "codegen"
+
+local func_actions = {
+
+	c99              = "\n",
+	c99decl          = "\n",
+	cppdecl          = "\n",
+	interface_struct = "\n\t",
+	interface_import = ",\n\t\t\t",
+	c99_interface    = "\n",
+	cpp_interface    = "\n",
+	c99_functionid   = "\n\t",
+	cpp_functionid   = "\n\t\t",
+}
+
+local type_actions = {
+	flags     = "\n",
+	enums     = "\n",
+	structs   = "\n",
+	handles   = "\n",
+	funcptrs  = "\n",
+}
+
+local typegen = {}
+
+function typegen.enum(name_converter, enum)
+    local temp = {}
+    temp.name = name_converter.enum_name(enum)
+    temp.comment = enum.comment
+    temp.enum = {}
+	for index , item in ipairs(enum.enum) do
+        temp.enum[index] = {
+            name = name_converter.enum_item_name(enum, temp.name, item),
+            comment = item.comment,
+        }
+    end
+    return temp
+end
+
+local function flag_format(flag)
+	if not flag.format then
+		return "%0" .. (flag.bits // 4) .. "x"
+    else
+        return flag.format
+	end
+end
+
+local function find_old_flag_name(flag, old_name, new_flag)
+    for i = 1, #flag.flag do
+        if flag.flag[i].name == old_name then 
+            return new_flag.flag[i].name
+        end
+    end
+    assert(false)
+end
+
+function typegen.flag(name_converter, flag)
+    local temp = {}
+    temp.name = name_converter.flag_name(flag)
+    temp.base = flag.base
+    temp.bits = flag.bits
+    temp.format = flag_format(flag)
+    temp.shift = flag.shift
+    temp.desc = flag.desc
+    temp.flag = {}
+	for index, item in ipairs(flag.flag) do
+        local new_item = {}
+        for k, v in pairs(item) do
+            new_item[k] = v
+        end
+        new_item.name = name_converter.flag_item_name(flag, temp.name, item)
+        temp.flag[index] = new_item
+	end
+
+    for index, item in ipairs(flag.flag) do
+        for k, v in ipairs(item) do
+            temp.flag[index][k] = find_old_flag_name(flag, v, temp)
+        end
+    end
+
+    return temp
+end
+
+local converter = {}
+
+function converter.codes(name_converter, idl)
+    local temp = {}
+
+    temp.types = {}
+
+    for i, typedef in ipairs(idl.types) do
+        if typedef.enum and type(typedef.enum) == "table" then
+            temp.types[i] = typegen.enum(name_converter, typedef)
+        elseif typedef.flag and type(typedef.flag) == "table" then
+            temp.types[i] = typegen.flag(name_converter, typedef)
+        end
+	end
+
+    temp.funcs = {}
+
+    return temp
+end
+
+function converter.print_code(code_printer, idl)
+	local temp = {}
+	for k in pairs(func_actions) do
+		temp[k] = {}
+	end
+
+	for k in pairs(type_actions) do
+		temp[k] = {}
+	end
+
+	-- call actions with func
+	for _, f in pairs(idl.funcs) do
+		for k in pairs(func_actions) do
+			local funcgen = funcgen[k]
+			if funcgen then
+				table.insert(temp[k], (funcgen(f)))
+			end
+		end
+	end
+
+	-- call actions with type
+
+	for _, typedef in pairs(idl.types) do
+		for k in pairs(type_actions) do
+			local printer = code_printer[k]
+			if printer then
+				table.insert(temp[k], (printer(typedef)))
+			end
+		end
+	end
+
+	for k, indent in pairs(func_actions) do
+		temp[k] = table.concat(temp[k], indent)
+	end
+	for k, indent in pairs(type_actions) do
+		temp[k] = table.concat(temp[k], indent)
+	end
+
+	temp.version = string.format("#define BGFX_API_VERSION UINT32_C(%d)", idl._version or 0)
+
+	return temp
+end
+
+return converter

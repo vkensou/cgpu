@@ -6,8 +6,8 @@
 #include <stdint.h>  // uint32_t
 #include <stdlib.h>  // size_t
 
-$cenums
+$enums
 
-$cflags
+$flags
 
 #endif // CGPU_C99_H_HEADER_GUARD
