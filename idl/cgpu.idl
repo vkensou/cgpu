@@ -1,7 +1,7 @@
 -- vim: syntax=lua
 -- cgpu interface
 
-version(129)
+version(1)
 
 typedef "bool"
 typedef "char"
@@ -50,7 +50,6 @@ flag.ColorMask { bits = 32, base = 1 }
 	.A                      -- A Channel
     .RGB { "R", "G", "B"}   -- RGB Channel
     .RGBA { "RGB", "A" }    -- RGBA Channel
-
 	()
 
 enum.LogSeverity { comment = "Log Severity:" }
