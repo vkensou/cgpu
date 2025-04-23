@@ -89,8 +89,7 @@ local function gen_enum_cdefine(enum, enum_temp)
             comment = table.concat(item.comment, " ")
         end
         local name = item.name
-        items[#items + 1] = string.format("%s, // (%2d) %s%s", name, index - 1, comment,
-            namealign(comment, 30))
+        items[#items + 1] = string.format("%s, // (%2d) %s%s", name, index - 1, comment, namealign(comment, 30))
     end
 
     local temp = {
@@ -113,6 +112,37 @@ local function gen_flag_cdefine(flag, flag_temp)
     local cname = flag.name
     local s = {}
     local shift = flag.shift
+    local used = 0
+    for index, item in ipairs(flag.flag) do
+        local name = item.name
+        local value = item.value
+
+        -- combine flags
+        if #item == 0 then
+            local comment = ""
+            if item.comment then
+                if #item.comment > 1 then
+                    s[#s + 1] = ""
+                    for _, c in ipairs(item.comment) do
+                        s[#s + 1] = "/// " .. c
+                    end
+                else
+                    comment = " //!< " .. item.comment[1]
+                end
+            end
+            value = string.format(flag.format, value)
+            local code = string.format("%s: bool = false, // (%2d) %s%s", name, index - 1, comment,
+                namealign(comment, 30))
+
+            used = used + 1
+            s[#s + 1] = code
+        end
+    end
+
+    if used < 32 then
+        s[#s + 1] = string.format("padding: u%d = 0,", 32 - used)
+    end
+
     for index, item in ipairs(flag.flag) do
         local name = item.name
         local value = item.value
@@ -129,23 +159,6 @@ local function gen_flag_cdefine(flag, flag_temp)
                 sets[#sets + 1] = "." .. v .. " = true"
             end
             s[#s + 1] = string.format("const %s: %s = .{ %s };", name, cname, table.concat(sets, ", "))
-        else
-            local comment = ""
-            if item.comment then
-                if #item.comment > 1 then
-                    s[#s + 1] = ""
-                    for _, c in ipairs(item.comment) do
-                        s[#s + 1] = "/// " .. c
-                    end
-                else
-                    comment = " //!< " .. item.comment[1]
-                end
-            end
-            value = string.format(flag.format, value)
-            local code = string.format("%s: bool = false, // (%2d) %s%s", name, index - 1,
-                comment, namealign(comment, 30))
-
-            s[#s + 1] = code
         end
     end
 
