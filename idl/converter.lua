@@ -1,5 +1,3 @@
-local codegen = require "codegen"
-
 local func_actions = {
 
     c99 = "\n",

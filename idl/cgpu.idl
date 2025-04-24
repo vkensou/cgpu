@@ -184,3 +184,281 @@ enum.MipMapMode { comment = "Mip Map Mode:" }
 	.Nearest
 	.Linear
 	()
+
+enum.LoadAction { comment = "Load Action:" }
+    .DontCare
+    .Load
+    .Clear
+    ()
+
+enum.StoreAction { comment = "Store Action:" }
+    .Store
+    .Discard
+    ()
+
+enum.PrimitiveTopology { comment = "Primitive Topology:" }
+    .PointList
+    .LineList
+    .LineStrip
+    .TriangleList
+    .TriangleStrip
+    .PatchList
+    ()
+
+enum.CompareOp { comment = "Compare Op:" }
+    .Never
+    .Less
+    .Equal
+    .LessEqual
+    .Greater
+    .NotEqual
+    .GreaterEqual
+    .Always
+    ()
+
+flag.CullMode { bits = 32, base = 1 }
+    .Back
+    .Front
+    .Both { "Back", "Front" }
+    ()
+
+enum.FillMode { comment = "Fill Mode:" }
+    .Solid
+    .WireFrame
+    ()
+
+enum.FrontFace { comment = "Front Face:" }
+    .CounterClockWise
+    .ClockWise
+    ()
+
+enum.VertexInputRate { comment = "Vertex Input Rate:" }
+    .Vertex
+    .Instance
+    ()
+
+flag.StencilFace { bits = 32, base = 1 }
+    .Front
+    .Back
+    .Both { "Front", "Back" }
+    ()
+
+enum.StencilOp { comment = "Stencil Op:" }
+    .Keep
+    .Zero
+    .Replace
+    .IncrementAndClamp
+    .DecrementAndClamp
+    .Invert
+    .IncrementAndWrap
+    .DecrementAndWrap
+    ()
+
+enum.TextureDimension { comment = "Texture Dimension:" }
+    ["1D"]
+    ["2D"]
+    ["2DMS"]
+    ["3D"]
+    .Cube
+    ["1DArray"]
+    ["2DArray"]
+    ["2DMSArray"]
+    .CubeArray
+    ()
+
+enum.ShaderBytecodeType { comment = "Shader Bytecode Type:" }
+    .Spirv
+    .Dxil
+    .Mtl
+    ()
+
+flag.ShaderStage { bits = 32, base = 1, comment = "Shader Stage:" }
+    .Vertex
+    .TessellationControl
+    .TessellationEvaluation
+    .Geometry
+    .Fragment
+    .Compute
+    .RayTracing
+    .AllGraphics { "Vertex", "TessellationControl", "TessellationEvaluation", "Geometry", "Fragment" }
+    ()
+
+flag.PipelineStage { bits = 32, base = 1, comment = "Pipeline Stage:" }
+    .Index
+    .Vertex
+    .Fragment
+    .Depth
+    .RenderTarget
+    .Compute
+    .RayTracing
+    .Copy
+    .Resolve
+    .ExecuteIndirect
+    ()
+
+enum.FenceStatus { comment = "Fence Status:" }
+    .Complete
+    .Incomplete
+    .NotSubmitted
+    ()
+
+enum.QueryType { comment = "Query Type:" }
+    .Timestamp
+    .PipelineStatistics
+    .Occlusion
+    ()
+
+flag.ResourceState { bits = 32, base = 1 }
+    .VertexAndConstantBuffer
+    .IndexBuffer
+    .RenderTarget
+    .UnorderedAccess
+    .DepthWrite
+    .DepthRead
+    .NonPixelShaderResource
+    .PixelShaderResource
+    .StreamOut
+    .IndirectArgument
+    .CopyDest
+    .CopySource
+    .Present
+    .Common
+    .AccelerationStructure
+    .ShadingRateSource
+    .ResolveDest
+    .ShaderResource { "NonPixelShaderResource", "PixelShaderResource" }
+    .GenericRead { "VertexAndConstantBuffer", "IndexBuffer", "NonPixelShaderResource", "PixelShaderResource", "IndirectArgument", "CopySource" }
+    ()
+
+enum.MemoryUsage { comment = "Memory Usage:" }
+    .Unknown
+    .GpuOnly
+    .CpuOnly
+    .CpuToGpu
+    .GpuToCpu
+    ()
+
+enum.MemoryPoolType { comment = "Memory Pool Type:" }
+    .Automatic
+    .Linear
+    .Tiled
+    ()
+
+flag.BufferCreationUsage { bits = 32, base = 1 }
+    .Dedicated
+    .PersistentMap
+    .HostVisible
+    ()
+
+flag.TextureCreationUsage { bits = 32, base = 1 }
+    .Dedicated
+    .Force2D
+    .Force3D
+    .AliasingResource
+    ()
+
+flag.SampleCount { bits = 32, const }
+    ._1 (1)
+    ._2 (2)
+    ._4 (4)
+    ._8 (8)
+    ()
+
+enum.PipelineType { comment = "Pipeline Type:" }
+    .None
+    .Compute
+    .Graphics
+    .RayTracing
+    ()
+
+flag.ResourceType { bits = 32, base = 1 }
+    .Sampler
+    .Texture
+    .RenderTarget
+    .DepthStencil
+    .RwTexture
+    .RwBuffer
+    .UniformBuffer
+    .PushConstant
+    .IndexBuffer
+    .VertexBuffer
+    .IndirectBuffer
+    .RayTracing
+    ()
+
+flag.TextureViewUsage { bits = 32, base = 1 }
+    .SRV
+    .RTV_DSV
+    .UAV
+    ()
+
+flag.TextureViewAspect { bits = 32, base = 1 }
+    .Color
+    .Depth
+    .Stencil
+    ()
+
+enum.ShadingRate { comment = "Shading Rate:" }
+    .Full
+    .Half
+    .Quater
+    ["1X2"]
+    ["2X1"]
+    ["2X4"]
+    ["4X2"]
+    ()
+
+enum.ShadingRateCombiner { comment = "Shading Rate Combiner:" }
+    .PassThrough
+    .Override
+    .Min
+    .Max
+    .Sum
+    ()
+
+enum.QueueType { comment = "Queue Type:" }
+    .Graphics
+    .Compute
+    .Transfer
+    ()
+
+flag.TextureFormmatSupport { bits = 32, base = 1 }
+    .Sample
+    .Render
+    .LoadStore
+    .Blend
+    .Msaa2x
+    .Msaa4x
+    .Msaa8x
+    .Msaa16x
+    ()
+
+enum.VertexFormat { comment = "Vertex Format:" }
+    .Undefined
+    .Float32x1
+    .Float32x2
+    .Float32x3
+    .Float32x4
+    .Sint32x1
+    .Sint32x2
+    .Sint32x3
+    .Sint32x4
+    .Uint32x1
+    .Uint32x2
+    .Uint32x3
+    .Uint32x4
+    .Float16x2
+    .Float16x4
+    .Sint16x2
+    .Sint16x4
+    .Uint16x2
+    .Uint16x4
+    .Snorm16x2
+    .Snorm16x4
+    .Unorm16x2
+    .Unorm16x4
+    .Sint8x4
+    .Uint8x4
+    .Snorm8x4
+    .Unorm8x4
+    ()
