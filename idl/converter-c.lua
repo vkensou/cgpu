@@ -10,7 +10,7 @@ end
 
 local function camelcase_to_underscorecase(name)
 	local tmp = {}
-	for v in name:gmatch "[%u%d]+%l*" do
+	for v in name:gmatch "[%u%d]+[%l%d]*" do
 		tmp[#tmp+1] = v:lower()
 	end
 	return table.concat(tmp, "_")
