@@ -13,7 +13,7 @@ struct RSCharacteristic
     // static samplers tie with root signature
     uint32_t static_sampler_count;
     size_t static_samplers_hash;
-    ECGPUPipelineType pipeline_type;
+    cgpu_pipeline_type_enum pipeline_type;
     operator size_t() const
     {
         return cgpu_hash(this, sizeof(RSCharacteristic), (size_t)pipeline_type);
@@ -21,13 +21,13 @@ struct RSCharacteristic
     struct hasher { inline size_t operator()(const RSCharacteristic& val) const { return (size_t)val; } };
     struct RSTResource
     {
-        ECGPUResourceType type;
-        ECGPUTextureDimension dim;
+        cgpu_resource_type_flag type;
+        cgpu_texture_dimension_enum dim;
         uint32_t set;
         uint32_t binding;
         uint32_t size;
         uint32_t offset;
-        CGPUShaderStages stages;
+        cgpu_shader_stage_flag stages;
     };
     struct StaticSampler
     {
@@ -41,7 +41,7 @@ struct RSCharacteristic
         uint32_t binding;
         uint32_t size;
         uint32_t offset;
-        CGPUShaderStages stages;
+        cgpu_shader_stage_flag stages;
     };
 };
 

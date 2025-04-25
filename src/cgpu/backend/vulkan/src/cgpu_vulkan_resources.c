@@ -31,9 +31,9 @@ CGPU_FORCEINLINE static VkBufferCreateInfo VkUtil_CreateBufferCreateInfo(CGPUAda
         .queueFamilyIndexCount = 0,
         .pQueueFamilyIndices = NULL
     };
-    add_info.usage = VkUtil_DescriptorTypesToBufferUsage(desc->descriptors, desc->format != CGPU_FORMAT_UNDEFINED);
+    add_info.usage = VkUtil_DescriptorTypesToBufferUsage(desc->descriptors, desc->format != CGPU_TEXTURE_FORMAT_UNDEFINED);
     // Buffer can be used as dest in a transfer command (Uploading data to a storage buffer, Readback query data)
-    if (desc->memory_usage == CGPU_MEM_USAGE_GPU_ONLY || desc->memory_usage == CGPU_MEM_USAGE_GPU_TO_CPU)
+    if (desc->memory_usage == CGPU_MEMORY_USAGE_GPU_ONLY || desc->memory_usage == CGPU_MEMORY_USAGE_GPU_TO_CPU)
         add_info.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     return add_info;
 }
@@ -113,15 +113,15 @@ CGPUBufferId cgpu_create_buffer_vulkan(CGPUDeviceId device, const struct CGPUBuf
     VmaAllocationCreateInfo vma_mem_reqs = {
         .usage = (VmaMemoryUsage)desc->memory_usage
     };
-    if (desc->flags & CGPU_BCF_DEDICATED_BIT)
+    if (desc->flags & CGPU_BUFFER_CREATION_USAGE_DEDICATED)
         vma_mem_reqs.flags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
-    if (desc->flags & CGPU_BCF_PERSISTENT_MAP_BIT)
+    if (desc->flags & CGPU_BUFFER_CREATION_USAGE_PERSISTENT_MAP)
         vma_mem_reqs.flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
-    if ((desc->flags & CGPU_BCF_HOST_VISIBLE && desc->memory_usage & CGPU_MEM_USAGE_GPU_ONLY) ||
-        (desc->flags & CGPU_BCF_PERSISTENT_MAP_BIT && desc->memory_usage & CGPU_MEM_USAGE_GPU_ONLY))
+    if ((desc->flags & CGPU_BUFFER_CREATION_USAGE_HOST_VISIBLE && desc->memory_usage & CGPU_MEMORY_USAGE_GPU_ONLY) ||
+        (desc->flags & CGPU_BUFFER_CREATION_USAGE_PERSISTENT_MAP && desc->memory_usage & CGPU_MEMORY_USAGE_GPU_ONLY))
         vma_mem_reqs.preferredFlags |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     // VMA recommanded upload & readback usage
-    if (desc->memory_usage == CGPU_MEM_USAGE_CPU_TO_GPU)
+    if (desc->memory_usage == CGPU_MEMORY_USAGE_CPU_TO_GPU)
     {
         vma_mem_reqs.usage =
         desc->prefer_on_device ? VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE :
@@ -129,7 +129,7 @@ CGPUBufferId cgpu_create_buffer_vulkan(CGPUDeviceId device, const struct CGPUBuf
                                  VMA_MEMORY_USAGE_AUTO;
         vma_mem_reqs.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
     }
-    if (desc->memory_usage == CGPU_MEM_USAGE_GPU_TO_CPU)
+    if (desc->memory_usage == CGPU_MEMORY_USAGE_GPU_TO_CPU)
     {
         vma_mem_reqs.usage =
         desc->prefer_on_device ? VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE :
@@ -258,7 +258,7 @@ void cgpu_map_buffer_vulkan(CGPUBufferId buffer, const struct CGPUBufferRange* r
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)B->super.device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)buffer->device->adapter;
     if (!A->adapter_detail.support_host_visible_vram)
-        cgpu_assert(buffer->info->memory_usage != CGPU_MEM_USAGE_GPU_ONLY && "Trying to map non-cpu accessible resource");
+        cgpu_assert(buffer->info->memory_usage != CGPU_MEMORY_USAGE_GPU_ONLY && "Trying to map non-cpu accessible resource");
 
     CGPUBufferInfo* pInfo = (CGPUBufferInfo*)buffer->info;
     VkResult vk_res = vmaMapMemory(D->pVmaAllocator, B->pVkAllocation, &pInfo->cpu_mapped_address);
@@ -276,7 +276,7 @@ void cgpu_unmap_buffer_vulkan(CGPUBufferId buffer)
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)B->super.device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)buffer->device->adapter;
     if (!A->adapter_detail.support_host_visible_vram)
-        cgpu_assert(buffer->info->memory_usage != CGPU_MEM_USAGE_GPU_ONLY && "Trying to unmap non-cpu accessible resource");
+        cgpu_assert(buffer->info->memory_usage != CGPU_MEMORY_USAGE_GPU_ONLY && "Trying to unmap non-cpu accessible resource");
 
     CGPUBufferInfo* pInfo = (CGPUBufferInfo*)buffer->info;
     vmaUnmapMemory(D->pVmaAllocator, B->pVkAllocation);
@@ -305,7 +305,7 @@ void cgpu_cmd_transfer_buffer_to_texture_vulkan(CGPUCommandBufferId cmd, const s
     CGPUBuffer_Vulkan* Src = (CGPUBuffer_Vulkan*)desc->src;
     const bool isSinglePlane = true;
     const CGPUTextureInfo* texInfo = desc->dst->info;
-    const ECGPUFormat fmt = texInfo->format;
+    const cgpu_texture_format_enum fmt = texInfo->format;
     if (isSinglePlane)
     {
         const uint64_t width = cgpu_max(1, texInfo->width >> desc->dst_subresource.mip_level);
@@ -458,12 +458,12 @@ cgpu_static_assert(sizeof(CGPUTexture_Vulkan) <= 8 * sizeof(uint64_t), "Acquire 
 VkImageType VkUtil_TranslateImageType(const struct CGPUTextureDescriptor* desc)
 {
     VkImageType mImageType = VK_IMAGE_TYPE_MAX_ENUM;
-    if (desc->flags & CGPU_TCF_FORCE_2D)
+    if (desc->flags & CGPU_TEXTURE_CREATION_USAGE_FORCE2D)
     {
         cgpu_assert(desc->depth == 1);
         mImageType = VK_IMAGE_TYPE_2D;
     }
-    else if (desc->flags & CGPU_TCF_FORCE_3D)
+    else if (desc->flags & CGPU_TEXTURE_CREATION_USAGE_FORCE3D)
         mImageType = VK_IMAGE_TYPE_3D;
     else
     {
@@ -736,7 +736,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
         owns_image = false;
         pVkImage = (VkImage)desc->native_handle;
     }
-    else if (!(desc->flags & CGPU_TCF_ALIASING_RESOURCE))
+    else if (!(desc->flags & CGPU_TEXTURE_CREATION_USAGE_ALIASING_RESOURCE))
     {
         owns_image = true;
     }
@@ -744,7 +744,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
     uint32_t arraySize = desc->array_size;
     // Image type
     VkImageType mImageType = VkUtil_TranslateImageType(desc);
-    CGPUResourceTypes descriptors = desc->descriptors;
+    cgpu_resource_type_flag descriptors = desc->descriptors;
     bool cubemapRequired = (CGPU_RESOURCE_TYPE_TEXTURE_CUBE == (descriptors & CGPU_RESOURCE_TYPE_TEXTURE_CUBE));
     bool arrayRequired = mImageType == VK_IMAGE_TYPE_3D;
     // TODO: Support stencil format
@@ -806,7 +806,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
             imageCreateInfo.usage |= (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
         }
         cgpu_assert(format_support->shader_read && "GPU shader can't' read from this format");
-        if (desc->flags & CGPU_TCF_TILED_RESOURCE)
+        if (desc->flags & CGPU_TEXTURE_CREATION_USAGE_TILED_RESOURCE)
         {
             imageCreateInfo.flags |= VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
             imageCreateInfo.flags |= VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
@@ -817,7 +817,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
         VkFormatFeatureFlags flags = format_props.optimalTilingFeatures & format_features;
         cgpu_assert((flags != 0) && "Format is not supported for GPU local images (i.e. not host visible images)");
         CGPU_DECLARE_ZERO(VmaAllocationCreateInfo, mem_reqs)
-        if ((desc->flags & CGPU_TCF_ALIASING_RESOURCE) || (desc->flags & CGPU_TCF_TILED_RESOURCE))
+        if ((desc->flags & CGPU_TEXTURE_CREATION_USAGE_ALIASING_RESOURCE) || (desc->flags & CGPU_TEXTURE_CREATION_USAGE_TILED_RESOURCE))
         {
             VkResult res = D->mVkDeviceTable.vkCreateImage(D->pVkDevice, &imageCreateInfo, &I->vkAllocator, &pVkImage);
             CHECK_VKRESULT(&device->adapter->instance->logger, res);
@@ -825,7 +825,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
         else
         {
             // Allocate texture memory
-            if (desc->flags & CGPU_TCF_DEDICATED_BIT)
+            if (desc->flags & CGPU_TEXTURE_CREATION_USAGE_DEDICATED)
                 mem_reqs.flags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
             mem_reqs.usage = (VmaMemoryUsage)VMA_MEMORY_USAGE_GPU_ONLY;
             
@@ -848,7 +848,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
                 VkUtil_ImportSharedTexture(Q, &mem_reqs, &imageCreateInfo, desc, win32Name, 
                     &externalInfo, &win32ImportInfo, &pVkImage, &pVkDeviceMemory);
             }
-            else if (A->external_memory && desc->flags & CGPU_TCF_EXPORT_BIT)
+            else if (A->external_memory && desc->flags & CGPU_TEXTURE_CREATION_USAGE_EXPORT)
             {
                 // format name wstring
                 uint64_t pid = (uint64_t)GetCurrentProcessId();
@@ -861,7 +861,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
                     &externalInfo, &exportMemoryInfo, &win32ExportMemoryInfo);
             }
 #else
-            if ((desc->flags & CGPU_TCF_EXPORT_BIT) || (desc->flags & CGPU_INNER_TCF_IMPORT_SHARED_HANDLE))
+            if ((desc->flags & CGPU_TEXTURE_CREATION_USAGE_EXPORT) || (desc->flags & CGPU_INNER_TCF_IMPORT_SHARED_HANDLE))
             {
                 cgpu_error(&device->adapter->instance->logger, "Unsupportted platform detected!");
                 return CGPU_NULLPTR;
@@ -870,7 +870,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
             VmaAllocationInfo alloc_info = { 0 };
             if (!is_imported && isSinglePlane)
             {
-                if (!desc->is_restrict_dedicated && !is_imported && !(desc->flags & CGPU_TCF_EXPORT_BIT))
+                if (!desc->is_restrict_dedicated && !is_imported && !(desc->flags & CGPU_TEXTURE_CREATION_USAGE_EXPORT))
                 {
                     mem_reqs.flags |= VMA_ALLOCATION_CREATE_CAN_ALIAS_BIT;
                 }
@@ -901,7 +901,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
     CGPUTileTextureSubresourceMapping_Vulkan* pVkTileMappings = CGPU_NULLPTR;
     CGPUTileTexturePackedMipMapping_Vulkan* pVkPackedMappings = CGPU_NULLPTR;
     uint32_t memTypBits = 0;
-    if (desc->flags & CGPU_TCF_TILED_RESOURCE)
+    if (desc->flags & CGPU_TEXTURE_CREATION_USAGE_TILED_RESOURCE)
     {
         VkSparseImageMemoryRequirements sparseReq = VkUtil_FillTiledTextureInfo(D, T, desc, &memTypBits);
         const CGPUTiledTextureInfo* pTiledInfo = T->super.tiled_resource;
@@ -940,7 +940,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
     info->aspect_mask = aspect_mask;
     info->is_allocation_dedicated = is_allocation_dedicated;
     info->is_restrict_dedicated = desc->is_restrict_dedicated;
-    info->is_aliasing = (desc->flags & CGPU_TCF_ALIASING_RESOURCE);
+    info->is_aliasing = (desc->flags & CGPU_TEXTURE_CREATION_USAGE_ALIASING_RESOURCE);
     info->can_alias = can_alias_alloc || info->is_aliasing;
     if (pVkDeviceMemory) T->pVkDeviceMemory = pVkDeviceMemory;
     if (vmaAllocation) T->pVkAllocation = vmaAllocation;
@@ -953,7 +953,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
     info->array_size_minus_one = arraySize - 1;
     info->format = desc->format;
     info->is_imported = is_imported;
-    info->is_tiled = (desc->flags & CGPU_TCF_TILED_RESOURCE) ? 1 : 0;
+    info->is_tiled = (desc->flags & CGPU_TEXTURE_CREATION_USAGE_TILED_RESOURCE) ? 1 : 0;
     info->unique_id = (unique_id == UINT64_MAX) ? D->super.next_texture_id++ : unique_id;
     // Set Texture Name
     VkUtil_OptionalSetObjectName(D, (uint64_t)T->pVkImage, VK_OBJECT_TYPE_IMAGE, desc->name);
@@ -1316,7 +1316,7 @@ void cgpu_free_texture_vulkan(CGPUTextureId texture)
         }
         else if (pInfo->owns_image)
         {
-            const ECGPUFormat fmt = pInfo->format;
+            const cgpu_texture_format_enum fmt = pInfo->format;
             (void)fmt;
             // TODO: Support planar formats
             const bool isSinglePlane = true;
@@ -1388,9 +1388,9 @@ CGPUTextureViewId cgpu_create_texture_view_vulkan(CGPUDeviceId device, const str
             break;
         case VK_IMAGE_TYPE_2D:
             if (pInfo->is_cube)
-                view_type = (desc->dims == CGPU_TEX_DIMENSION_CUBE_ARRAY) ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
+                view_type = (desc->dims == CGPU_TEXTURE_DIMENSION_CUBE_ARRAY) ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
             else
-                view_type = ((desc->dims == CGPU_TEX_DIMENSION_2D_ARRAY) || (desc->dims == CGPU_TEX_DIMENSION_2DMS_ARRAY)) ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
+                view_type = ((desc->dims == CGPU_TEXTURE_DIMENSION_2DARRAY) || (desc->dims == CGPU_TEXTURE_DIMENSION_2DMSARRAY)) ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
             break;
         case VK_IMAGE_TYPE_3D:
             if (desc->array_layer_count > 1)
@@ -1408,11 +1408,11 @@ CGPUTextureViewId cgpu_create_texture_view_vulkan(CGPUDeviceId device, const str
 
     // Determin aspect mask
     VkImageAspectFlags aspectMask = 0;
-    if (desc->aspects & CGPU_TVA_STENCIL)
+    if (desc->aspects & CGPU_TEXTURE_VIEW_ASPECT_STENCIL)
         aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-    if (desc->aspects & CGPU_TVA_COLOR)
+    if (desc->aspects & CGPU_TEXTURE_VIEW_ASPECT_COLOR)
         aspectMask |= VK_IMAGE_ASPECT_COLOR_BIT;
-    if (desc->aspects & CGPU_TVA_DEPTH)
+    if (desc->aspects & CGPU_TEXTURE_VIEW_ASPECT_DEPTH)
         aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
 
     // SRV
@@ -1437,12 +1437,12 @@ CGPUTextureViewId cgpu_create_texture_view_vulkan(CGPUDeviceId device, const str
             .layerCount = desc->array_layer_count
         },
     };
-    if (desc->usages & CGPU_TVU_SRV)
+    if (desc->usages & CGPU_TEXTURE_VIEW_USAGE_SRV)
     {
         CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkCreateImageView(D->pVkDevice, &srvDesc, &I->vkAllocator, &TV->pVkSRVDescriptor));
     }
     // UAV
-    if (desc->usages & CGPU_TVU_UAV)
+    if (desc->usages & CGPU_TEXTURE_VIEW_USAGE_UAV)
     {
         VkImageViewCreateInfo uavDesc = srvDesc;
         // #NOTE : We dont support imageCube, imageCubeArray for consistency with other APIs
@@ -1453,7 +1453,7 @@ CGPUTextureViewId cgpu_create_texture_view_vulkan(CGPUDeviceId device, const str
         CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkCreateImageView(D->pVkDevice, &uavDesc, &I->vkAllocator, &TV->pVkUAVDescriptor));
     }
     // RTV & DSV
-    if (desc->usages & CGPU_TVU_RTV_DSV)
+    if (desc->usages & CGPU_TEXTURE_VIEW_USAGE_RTV_DSV)
     {
         CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkCreateImageView(D->pVkDevice, &srvDesc, &I->vkAllocator, &TV->pVkRTVDSVDescriptor));
     }
@@ -1543,7 +1543,7 @@ CGPUSamplerId cgpu_create_sampler_vulkan(CGPUDeviceId device, const struct CGPUS
         .compareEnable = (gVkComparisonFuncTranslator[desc->compare_func] != VK_COMPARE_OP_NEVER) ? VK_TRUE : VK_FALSE,
         .compareOp = gVkComparisonFuncTranslator[desc->compare_func],
         .minLod = 0.0f,
-        .maxLod = ((desc->mipmap_mode == CGPU_MIPMAP_MODE_LINEAR) ? FLT_MAX : 0.0f),
+        .maxLod = ((desc->mipmap_mode == CGPU_MIP_MAP_MODE_LINEAR) ? FLT_MAX : 0.0f),
         .borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK,
         .unnormalizedCoordinates = VK_FALSE
     };

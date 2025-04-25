@@ -99,7 +99,7 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
                         root_const.binding == resource.binding &&
                         root_const.size == resource.size)
                     {
-                        root_const.stages |= resource.stages;
+                        root_const.stages = cgpu_shader_stage_flag(root_const.stages | resource.stages);
                         coincided = true;
                     }
                 }
@@ -115,7 +115,7 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
                         static_sampler.set == resource.set &&
                         static_sampler.binding == resource.binding)
                     {
-                        static_sampler.stages |= resource.stages;
+                        static_sampler.stages = cgpu_shader_stage_flag(static_sampler.stages | resource.stages);
                         coincided = true;
                     }
                 }
@@ -130,8 +130,8 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
         // Pipeline Type
         if (reflection->stage & CGPU_SHADER_STAGE_COMPUTE)
             RS->pipeline_type = CGPU_PIPELINE_TYPE_COMPUTE;
-        else if (reflection->stage & CGPU_SHADER_STAGE_RAYTRACING)
-            RS->pipeline_type = CGPU_PIPELINE_TYPE_RAYTRACING;
+        else if (reflection->stage & CGPU_SHADER_STAGE_RAY_TRACING)
+            RS->pipeline_type = CGPU_PIPELINE_TYPE_RAY_TRACING;
         else
             RS->pipeline_type = CGPU_PIPELINE_TYPE_GRAPHICS;
     }
@@ -148,7 +148,7 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
                 RST_resource.binding == shader_resource.binding &&
                 RST_resource.type == shader_resource.type)
             {
-                RST_resource.stages |= shader_resource.stages;
+                RST_resource.stages = cgpu_shader_stage_flag(RST_resource.stages | shader_resource.stages);
                 coincided = true;
             }
         }

@@ -20,7 +20,7 @@ local function writefile(path, content)
 end
 
 local converts = {
-	{ bindings = require "bindings-c", tempfile = "temp.cgpu.h", outputfile = "./cgpu.h", indent = "    " },
+	{ bindings = require "bindings-c", tempfile = "temp.cgpu.h", outputfile = "./enums.h", indent = "    " },
 	{ bindings = require "bindings-zig", tempfile = "temp.cgpu.zig", outputfile = "./cgpu.zig", indent = "    " },
 }
 

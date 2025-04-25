@@ -19,6 +19,8 @@ typedef "void"
 
 enum.Backend { comment = "Backend:" }
 	.Vulkan		--- Vulkan
+    .D3d12      --- D3D12
+    .Metal      --- Metal
 	()
 
 enum.BlendFactor { underscore, comment = "" }
@@ -216,7 +218,8 @@ enum.CompareOp { comment = "Compare Op:" }
     .Always
     ()
 
-flag.CullMode { bits = 32, base = 1 }
+flag.CullMode { bits = 32, base = 0 }
+    .None
     .Back
     .Front
     .Both { "Back", "Front" }
@@ -255,6 +258,7 @@ enum.StencilOp { comment = "Stencil Op:" }
     ()
 
 enum.TextureDimension { comment = "Texture Dimension:" }
+    .Undefined
     ["1D"]
     ["2D"]
     ["2DMS"]
@@ -272,7 +276,8 @@ enum.ShaderBytecodeType { comment = "Shader Bytecode Type:" }
     .Mtl
     ()
 
-flag.ShaderStage { bits = 32, base = 1, comment = "Shader Stage:" }
+flag.ShaderStage { bits = 32, base = 0, comment = "Shader Stage:" }
+    .None
     .Vertex
     .TessellationControl
     .TessellationEvaluation
@@ -308,7 +313,8 @@ enum.QueryType { comment = "Query Type:" }
     .Occlusion
     ()
 
-flag.ResourceState { bits = 32, base = 1 }
+flag.ResourceState { bits = 32, base = 0 }
+    .Undefined
     .VertexAndConstantBuffer
     .IndexBuffer
     .RenderTarget
@@ -344,17 +350,21 @@ enum.MemoryPoolType { comment = "Memory Pool Type:" }
     .Tiled
     ()
 
-flag.BufferCreationUsage { bits = 32, base = 1 }
+flag.BufferCreationUsage { bits = 32, base = 0 }
+    .None
     .Dedicated
     .PersistentMap
     .HostVisible
     ()
 
-flag.TextureCreationUsage { bits = 32, base = 1 }
+flag.TextureCreationUsage { bits = 32, base = 0 }
+    .None
     .Dedicated
-    .Force2D
-    .Force3D
+    .Export
+    .Force2d
+    .Force3d
     .AliasingResource
+    .TiledResource
     ()
 
 flag.SampleCount { bits = 32, const }
@@ -362,6 +372,7 @@ flag.SampleCount { bits = 32, const }
     ._2 (2)
     ._4 (4)
     ._8 (8)
+    ._16 (16)
     ()
 
 enum.PipelineType { comment = "Pipeline Type:" }
@@ -371,19 +382,26 @@ enum.PipelineType { comment = "Pipeline Type:" }
     .RayTracing
     ()
 
-flag.ResourceType { bits = 32, base = 1 }
+flag.ResourceType { bits = 32, base = 0 }
+    .None
     .Sampler
     .Texture
     .RenderTarget
     .DepthStencil
     .RwTexture
+    .Buffer
     .RwBuffer
     .UniformBuffer
     .PushConstant
     .IndexBuffer
     .VertexBuffer
     .IndirectBuffer
+    .TextureCube
     .RayTracing
+    .InputAttachment
+    .TexelBuffer
+    .RwTexelBuffer
+    .CombinedImageSampler
     ()
 
 flag.TextureViewUsage { bits = 32, base = 1 }
@@ -401,7 +419,7 @@ flag.TextureViewAspect { bits = 32, base = 1 }
 enum.ShadingRate { comment = "Shading Rate:" }
     .Full
     .Half
-    .Quater
+    .Quarter
     ["1X2"]
     ["2X1"]
     ["2X4"]
@@ -420,6 +438,7 @@ enum.QueueType { comment = "Queue Type:" }
     .Graphics
     .Compute
     .Transfer
+    .TileMapping
     ()
 
 flag.TextureFormmatSupport { bits = 32, base = 1 }

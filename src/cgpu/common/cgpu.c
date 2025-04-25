@@ -75,7 +75,7 @@ CGPU_API CGPUInstanceId cgpu_create_instance(const CGPUInstanceDescriptor* desc)
     return instance;
 }
 
-CGPU_API ECGPUBackend cgpu_instance_get_backend(CGPUInstanceId instance)
+CGPU_API cgpu_backend_enum cgpu_instance_get_backend(CGPUInstanceId instance)
 {
     return instance->backend;
 }
@@ -137,7 +137,7 @@ const struct CGPUAdapterDetail* cgpu_query_adapter_detail(const CGPUAdapterId ad
     return detail;
 }
 
-uint32_t cgpu_query_queue_count(const CGPUAdapterId adapter, const ECGPUQueueType type)
+uint32_t cgpu_query_queue_count(const CGPUAdapterId adapter, const cgpu_queue_type_enum type)
 {
     cgpu_assert(adapter != CGPU_NULLPTR && "fatal: call on NULL adapter!");
     cgpu_assert(adapter->proc_table_cache->query_queue_count && "query_queue_count Proc Missing!");
@@ -205,7 +205,7 @@ void cgpu_wait_fences(const CGPUFenceId* fences, uint32_t fence_count)
     fn_wait_fences(fences, fence_count);
 }
 
-ECGPUFenceStatus cgpu_query_fence_status(CGPUFenceId fence)
+cgpu_fence_status_enum cgpu_query_fence_status(CGPUFenceId fence)
 {
     cgpu_assert(fence != CGPU_NULLPTR && "fatal: call on NULL fence!");
     cgpu_assert(fence->device != CGPU_NULLPTR && "fatal: call on NULL device!");
@@ -365,11 +365,11 @@ void cgpu_free_compute_pipeline(CGPUComputePipelineId pipeline)
 }
 
 static const CGPUBlendStateDescriptor defaultBlendStateDesc = {
-    .src_factors = { CGPU_BLEND_CONST_ONE },
-    .dst_factors = { CGPU_BLEND_CONST_ZERO },
-    .src_alpha_factors = { CGPU_BLEND_CONST_ONE },
-    .dst_alpha_factors = { CGPU_BLEND_CONST_ZERO },
-    .blend_modes = { CGPU_BLEND_MODE_ADD },
+    .src_factors = { CGPU_BLEND_FACTOR_ONE },
+    .dst_factors = { CGPU_BLEND_FACTOR_ZERO },
+    .src_alpha_factors = { CGPU_BLEND_FACTOR_ONE },
+    .dst_alpha_factors = { CGPU_BLEND_FACTOR_ZERO },
+    .blend_modes = { CGPU_BLEND_OP_ADD },
     .masks = { CGPU_COLOR_MASK_ALL },
     .independent_blend = false
 };
@@ -378,7 +378,7 @@ static const CGPURasterizerStateDescriptor defaultRasterStateDesc = {
     .depth_bias = 0,
     .slope_scaled_depth_bias = 0.f,
     .fill_mode = CGPU_FILL_MODE_SOLID,
-    .front_face = CGPU_FRONT_FACE_CCW,
+    .front_face = CGPU_FRONT_FACE_COUNTER_CLOCK_WISE,
     .enable_multi_sample = false,
     .enable_scissor = false,
     .enable_depth_clamp = false,
@@ -455,7 +455,7 @@ void cgpu_free_device(CGPUDeviceId device)
     return;
 }
 
-CGPUQueueId cgpu_get_queue(CGPUDeviceId device, ECGPUQueueType type, uint32_t index)
+CGPUQueueId cgpu_get_queue(CGPUDeviceId device, cgpu_queue_type_enum type, uint32_t index)
 {
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
     cgpu_assert(device->proc_table_cache->free_device && "free_device Proc Missing!");
@@ -868,7 +868,7 @@ CGPURenderPassEncoderId cgpu_cmd_begin_render_pass(CGPUCommandBufferId cmd, cons
     return ecd;
 }
 
-void cgpu_render_encoder_set_shading_rate(CGPURenderPassEncoderId encoder, ECGPUShadingRate shading_rate, ECGPUShadingRateCombiner post_rasterizer_rate, ECGPUShadingRateCombiner final_rate)
+void cgpu_render_encoder_set_shading_rate(CGPURenderPassEncoderId encoder, cgpu_shading_rate_enum shading_rate, cgpu_shading_rate_combiner_enum post_rasterizer_rate, cgpu_shading_rate_combiner_enum final_rate)
 {
     cgpu_assert(encoder != CGPU_NULLPTR && "fatal: call on NULL compute encoder!");
     CGPUDeviceId device = encoder->device;
@@ -1072,7 +1072,7 @@ CGPUBufferId cgpu_create_buffer(CGPUDeviceId device, const struct CGPUBufferDesc
     memcpy(&new_desc, desc, sizeof(CGPUBufferDescriptor));
     if (desc->flags == 0)
     {
-        new_desc.flags |= CGPU_BCF_NONE;
+        new_desc.flags |= CGPU_BUFFER_CREATION_USAGE_NONE;
     }
     CGPUProcCreateBuffer fn_create_buffer = device->proc_table_cache->create_buffer;
     CGPUBuffer* buffer = (CGPUBuffer*)fn_create_buffer(device, &new_desc);
@@ -1333,12 +1333,12 @@ uint64_t size, const char8_t* name, bool device_local_preferred)
     buf_desc.size = size;
     buf_desc.name = name;
     const CGPUAdapterDetail* detail = cgpu_query_adapter_detail(device->adapter);
-    buf_desc.memory_usage = CGPU_MEM_USAGE_CPU_TO_GPU;
-    buf_desc.flags = CGPU_BCF_PERSISTENT_MAP_BIT | CGPU_BCF_HOST_VISIBLE;
+    buf_desc.memory_usage = CGPU_MEMORY_USAGE_CPU_TO_GPU;
+    buf_desc.flags = CGPU_BUFFER_CREATION_USAGE_PERSISTENT_MAP | CGPU_BUFFER_CREATION_USAGE_HOST_VISIBLE;
     buf_desc.start_state = CGPU_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
     if (device_local_preferred && detail->support_host_visible_vram)
     {
-        buf_desc.memory_usage = CGPU_MEM_USAGE_GPU_ONLY;
+        buf_desc.memory_usage = CGPU_MEMORY_USAGE_GPU_ONLY;
     }
     return cgpu_create_buffer(device, &buf_desc);
 }
@@ -1350,8 +1350,8 @@ uint64_t size, const char8_t* name)
     buf_desc.descriptors = CGPU_RESOURCE_TYPE_NONE;
     buf_desc.size = size;
     buf_desc.name = name;
-    buf_desc.memory_usage = CGPU_MEM_USAGE_CPU_ONLY;
-    buf_desc.flags = CGPU_BCF_PERSISTENT_MAP_BIT;
+    buf_desc.memory_usage = CGPU_MEMORY_USAGE_CPU_ONLY;
+    buf_desc.flags = CGPU_BUFFER_CREATION_USAGE_PERSISTENT_MAP;
     buf_desc.start_state = CGPU_RESOURCE_STATE_COPY_DEST;
     return cgpu_create_buffer(device, &buf_desc);
 }
@@ -1532,7 +1532,7 @@ void cgpu_raster_state_encoder_set_scissor(CGPURasterStateEncoderId encoder, uin
     encoder->device->proc_table_cache->raster_state_encoder_set_scissor(encoder, x, y, width, height);
 }
 
-void cgpu_raster_state_encoder_set_cull_mode(CGPURasterStateEncoderId encoder, ECGPUCullMode cull_mode)
+void cgpu_raster_state_encoder_set_cull_mode(CGPURasterStateEncoderId encoder, cgpu_cull_mode_flag cull_mode)
 {
     cgpu_assert(encoder != CGPU_NULLPTR && "fatal: call on NULL encoder!");
     cgpu_assert(encoder->device != CGPU_NULLPTR && "fatal: call on NULL device!");
@@ -1540,7 +1540,7 @@ void cgpu_raster_state_encoder_set_cull_mode(CGPURasterStateEncoderId encoder, E
     encoder->device->proc_table_cache->raster_state_encoder_set_cull_mode(encoder, cull_mode);
 }
 
-void cgpu_raster_state_encoder_set_front_face(CGPURasterStateEncoderId encoder, ECGPUFrontFace front_face)
+void cgpu_raster_state_encoder_set_front_face(CGPURasterStateEncoderId encoder, cgpu_front_face_enum front_face)
 {
     cgpu_assert(encoder != CGPU_NULLPTR && "fatal: call on NULL encoder!");
     cgpu_assert(encoder->device != CGPU_NULLPTR && "fatal: call on NULL device!");
@@ -1548,7 +1548,7 @@ void cgpu_raster_state_encoder_set_front_face(CGPURasterStateEncoderId encoder, 
     encoder->device->proc_table_cache->raster_state_encoder_set_front_face(encoder, front_face);
 }
 
-void cgpu_raster_state_encoder_set_primitive_topology(CGPURasterStateEncoderId encoder, ECGPUPrimitiveTopology topology)
+void cgpu_raster_state_encoder_set_primitive_topology(CGPURasterStateEncoderId encoder, cgpu_primitive_topology_enum topology)
 {
     cgpu_assert(encoder != CGPU_NULLPTR && "fatal: call on NULL encoder!");
     cgpu_assert(encoder->device != CGPU_NULLPTR && "fatal: call on NULL device!");
@@ -1572,7 +1572,7 @@ void cgpu_raster_state_encoder_set_depth_write_enabled(CGPURasterStateEncoderId 
     encoder->device->proc_table_cache->raster_state_encoder_set_depth_write_enabled(encoder, enabled);
 }
 
-void cgpu_raster_state_encoder_set_depth_compare_op(CGPURasterStateEncoderId encoder, ECGPUCompareMode function)
+void cgpu_raster_state_encoder_set_depth_compare_op(CGPURasterStateEncoderId encoder, cgpu_compare_op_enum function)
 {
     cgpu_assert(encoder != CGPU_NULLPTR && "fatal: call on NULL encoder!");
     cgpu_assert(encoder->device != CGPU_NULLPTR && "fatal: call on NULL device!");
@@ -1588,7 +1588,7 @@ void cgpu_raster_state_encoder_set_stencil_test_enabled(CGPURasterStateEncoderId
     encoder->device->proc_table_cache->raster_state_encoder_set_stencil_test_enabled(encoder, enabled);
 }
 
-void cgpu_raster_state_encoder_set_stencil_compare_op(CGPURasterStateEncoderId encoder, CGPUStencilFaces faces, ECGPUStencilOp failOp, ECGPUStencilOp passOp, ECGPUStencilOp depthFailOp, ECGPUCompareMode compareOp)
+void cgpu_raster_state_encoder_set_stencil_compare_op(CGPURasterStateEncoderId encoder, cgpu_stencil_face_flag faces, cgpu_stencil_op_enum failOp, cgpu_stencil_op_enum passOp, cgpu_stencil_op_enum depthFailOp, cgpu_compare_op_enum compareOp)
 {
     cgpu_assert(encoder != CGPU_NULLPTR && "fatal: call on NULL encoder!");
     cgpu_assert(encoder->device != CGPU_NULLPTR && "fatal: call on NULL device!");
@@ -1596,7 +1596,7 @@ void cgpu_raster_state_encoder_set_stencil_compare_op(CGPURasterStateEncoderId e
     encoder->device->proc_table_cache->raster_state_encoder_set_stencil_compare_op(encoder, faces, failOp, passOp, depthFailOp, compareOp);
 }
 
-void cgpu_raster_state_encoder_set_fill_mode(CGPURasterStateEncoderId encoder, ECGPUFillMode fill_mode)
+void cgpu_raster_state_encoder_set_fill_mode(CGPURasterStateEncoderId encoder, cgpu_fill_mode_enum fill_mode)
 {
     cgpu_assert(encoder != CGPU_NULLPTR && "fatal: call on NULL encoder!");
     cgpu_assert(encoder->device != CGPU_NULLPTR && "fatal: call on NULL device!");
@@ -1604,7 +1604,7 @@ void cgpu_raster_state_encoder_set_fill_mode(CGPURasterStateEncoderId encoder, E
     encoder->device->proc_table_cache->raster_state_encoder_set_fill_mode(encoder, fill_mode);
 }
 
-void cgpu_raster_state_encoder_set_sample_count(CGPURasterStateEncoderId encoder, ECGPUSampleCount sample_count)
+void cgpu_raster_state_encoder_set_sample_count(CGPURasterStateEncoderId encoder, cgpu_sample_count_flag sample_count)
 {
     cgpu_assert(encoder != CGPU_NULLPTR && "fatal: call on NULL encoder!");
     cgpu_assert(encoder->device != CGPU_NULLPTR && "fatal: call on NULL device!");
@@ -1636,7 +1636,7 @@ CGPUShaderStateEncoderId cgpu_open_shader_state_encoder_c(CGPUStateBufferId stre
     return stream->device->proc_table_cache->open_shader_state_encoder_c(stream, encoder);
 }
 
-void cgpu_shader_state_encoder_bind_shaders(CGPUShaderStateEncoderId encoder, uint32_t stage_count, const ECGPUShaderStage* stages, const CGPUCompiledShaderId* shaders)
+void cgpu_shader_state_encoder_bind_shaders(CGPUShaderStateEncoderId encoder, uint32_t stage_count, const cgpu_shader_stage_flag* stages, const CGPUCompiledShaderId* shaders)
 {
     cgpu_assert(encoder != CGPU_NULLPTR && "fatal: call on NULL encoder!");
     cgpu_assert(encoder->device != CGPU_NULLPTR && "fatal: call on NULL device!");

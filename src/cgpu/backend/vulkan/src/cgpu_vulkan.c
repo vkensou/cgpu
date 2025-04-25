@@ -46,7 +46,7 @@ const CGPUAdapterDetail* cgpu_query_adapter_detail_vulkan(const CGPUAdapterId ad
     return &A->adapter_detail;
 }
 
-uint32_t cgpu_query_queue_count_vulkan(const CGPUAdapterId adapter, const ECGPUQueueType type)
+uint32_t cgpu_query_queue_count_vulkan(const CGPUAdapterId adapter, const cgpu_queue_type_enum type)
 {
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)adapter;
     uint32_t count = 0;
@@ -164,9 +164,9 @@ void cgpu_wait_fences_vulkan(const CGPUFenceId* fences, uint32_t fence_count)
     }
 }
 
-ECGPUFenceStatus cgpu_query_fence_status_vulkan(CGPUFenceId fence)
+cgpu_fence_status_enum cgpu_query_fence_status_vulkan(CGPUFenceId fence)
 {
-    ECGPUFenceStatus status = CGPU_FENCE_STATUS_COMPLETE;
+    cgpu_fence_status_enum status = CGPU_FENCE_STATUS_COMPLETE;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)fence->device;
     CGPUFence_Vulkan* F = (CGPUFence_Vulkan*)fence;
     if (F->mSubmitted)
@@ -183,7 +183,7 @@ ECGPUFenceStatus cgpu_query_fence_status_vulkan(CGPUFenceId fence)
     }
     else
     {
-        status = CGPU_FENCE_STATUS_NOTSUBMITTED;
+        status = CGPU_FENCE_STATUS_NOT_SUBMITTED;
     }
     return status;
 }
@@ -545,7 +545,7 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
             }
             // Update Info
             const uint32_t arrayCount = cgpu_max(1U, pParam->count);
-            const ECGPUResourceType resourceType = (ECGPUResourceType)ResData->type;
+            const cgpu_resource_type_flag resourceType = (cgpu_resource_type_flag)ResData->type;
             switch (resourceType)
             {
             case CGPU_RESOURCE_TYPE_RW_TEXTURE:
@@ -584,9 +584,7 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
             }
             case CGPU_RESOURCE_TYPE_UNIFORM_BUFFER:
             case CGPU_RESOURCE_TYPE_BUFFER:
-            case CGPU_RESOURCE_TYPE_BUFFER_RAW:
-            case CGPU_RESOURCE_TYPE_RW_BUFFER:
-            case CGPU_RESOURCE_TYPE_RW_BUFFER_RAW: {
+            case CGPU_RESOURCE_TYPE_RW_BUFFER: {
                 cgpu_assert(pParam->buffers && "cgpu_assert: Binding NULL Buffer(s)!");
                 CGPUBuffer_Vulkan** Buffers = (CGPUBuffer_Vulkan**)pParam->buffers;
                 for (uint32_t arr = 0; arr < arrayCount; ++arr)
@@ -631,7 +629,7 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
         {
             const CGPUDescriptorData* pParam = datas + i;
             const uint32_t arrayCount = cgpu_max(1U, pParam->count);
-            const ECGPUResourceType resourceType = (ECGPUResourceType)pParam->binding_type;
+            const cgpu_resource_type_flag resourceType = (cgpu_resource_type_flag)pParam->binding_type;
             switch (resourceType)
             {
             case CGPU_RESOURCE_TYPE_RW_TEXTURE:
@@ -701,9 +699,7 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
             }
             case CGPU_RESOURCE_TYPE_UNIFORM_BUFFER:
             case CGPU_RESOURCE_TYPE_BUFFER:
-            case CGPU_RESOURCE_TYPE_BUFFER_RAW:
-            case CGPU_RESOURCE_TYPE_RW_BUFFER:
-            case CGPU_RESOURCE_TYPE_RW_BUFFER_RAW: {
+            case CGPU_RESOURCE_TYPE_RW_BUFFER: {
                 cgpu_assert(pParam->buffers && "cgpu_assert: Binding NULL Buffer(s)!");
                 CGPUBuffer_Vulkan** Buffers = (CGPUBuffer_Vulkan**)pParam->buffers;
                 for (uint32_t arr = 0; arr < arrayCount; ++arr)
@@ -839,7 +835,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
 
             VkVertexInputBindingDescription* current_binding = &input_bindings[attrib->binding];
             current_binding->binding = attrib->binding;
-            if (attrib->rate == CGPU_INPUT_RATE_INSTANCE)
+            if (attrib->rate == CGPU_VERTEX_INPUT_RATE_INSTANCE)
                 current_binding->inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
             else
                 current_binding->inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -873,14 +869,14 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
     uint32_t stage_count = 0;
     for (uint32_t i = 0; i < 5; ++i)
     {
-        ECGPUShaderStage stage_mask = (ECGPUShaderStage)(1 << i);
+        cgpu_shader_stage_flag stage_mask = (cgpu_shader_stage_flag)(1 << i);
         shaderStages[stage_count].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         shaderStages[stage_count].pNext = NULL;
         shaderStages[stage_count].flags = 0;
         shaderStages[stage_count].pSpecializationInfo = specializationInfo;
         switch (stage_mask)
         {
-            case CGPU_SHADER_STAGE_VERT:
+            case CGPU_SHADER_STAGE_VERTEX:
             {
                 if(desc->vertex_shader)
                 {
@@ -891,7 +887,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
                 }
             }
             break;
-            case CGPU_SHADER_STAGE_TESC:
+            case CGPU_SHADER_STAGE_TESSELLATION_CONTROL:
             {
                 if(desc->tesc_shader)
                 {
@@ -902,7 +898,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
                 }
             }
             break;
-            case CGPU_SHADER_STAGE_TESE:
+            case CGPU_SHADER_STAGE_TESSELLATION_EVALUATION:
             {
                 if(desc->tese_shader)
                 {
@@ -913,7 +909,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
                 }
             }
             break;
-            case CGPU_SHADER_STAGE_GEOM:
+            case CGPU_SHADER_STAGE_GEOMETRY:
             {
                 if(desc->geom_shader)
                 {
@@ -924,7 +920,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
                 }
             }
             break;
-            case CGPU_SHADER_STAGE_FRAG:
+            case CGPU_SHADER_STAGE_FRAGMENT:
             {
                 if(desc->fragment_shader)
                 {
@@ -1118,7 +1114,7 @@ void cgpu_free_render_pipeline_vulkan(CGPURenderPipelineId pipeline)
     cgpu_freeN(allocator, RP, kVkPSOMemoryPoolName);
 }
 
-VkQueryType VkUtil_ToVkQueryType(ECGPUQueryType type)
+VkQueryType VkUtil_ToVkQueryType(cgpu_query_type_enum type)
 {
     switch (type)
     {
@@ -1187,7 +1183,7 @@ void cgpu_free_memory_pool_vulkan(CGPUMemoryPoolId pool)
 }
 
 // Queue APIs
-CGPUQueueId cgpu_get_queue_vulkan(CGPUDeviceId device, ECGPUQueueType type, uint32_t index)
+CGPUQueueId cgpu_get_queue_vulkan(CGPUDeviceId device, cgpu_queue_type_enum type, uint32_t index)
 {
     cgpu_assert(device && "CGPU VULKAN: NULL DEVICE!");
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
@@ -1390,7 +1386,7 @@ CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struc
     cgpu_assert(VK_NULL_HANDLE != D->pVkDevice);
     uint32_t colorAttachmentCount = 0;
     uint32_t colorResolveAttachmentCount = 0;
-    uint32_t depthAttachmentCount = (desc->depth_stencil.format != CGPU_FORMAT_UNDEFINED) ? 1 : 0;
+    uint32_t depthAttachmentCount = (desc->depth_stencil.format != CGPU_TEXTURE_FORMAT_UNDEFINED) ? 1 : 0;
     VkAttachmentDescription attachments[CGPU_MAX_MRT_COUNT + 1] = { 0 };
     VkAttachmentReference color_attachment_refs[CGPU_MAX_MRT_COUNT] = { 0 };
     VkAttachmentReference color_resolve_attachment_refs[CGPU_MAX_MRT_COUNT] = { 0 };
@@ -1401,7 +1397,7 @@ CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struc
     // Color
     for (uint32_t i = 0; i < CGPU_MAX_MRT_COUNT; i++)
     {
-        if (desc->color_attachments[i].format == CGPU_FORMAT_UNDEFINED)
+        if (desc->color_attachments[i].format == CGPU_TEXTURE_FORMAT_UNDEFINED)
             break;
 
         colorAttachmentCount++;
@@ -1783,9 +1779,9 @@ void cgpu_cmd_resource_barrier_vulkan(CGPUCommandBufferId cmd, const struct CGPU
 
     // Commit barriers
     VkPipelineStageFlags srcStageMask =
-    VkUtil_DeterminePipelineStageFlags(A, srcAccessFlags, (ECGPUQueueType)Cmd->mType);
+    VkUtil_DeterminePipelineStageFlags(A, srcAccessFlags, (cgpu_queue_type_enum)Cmd->mType);
     VkPipelineStageFlags dstStageMask =
-    VkUtil_DeterminePipelineStageFlags(A, dstAccessFlags, (ECGPUQueueType)Cmd->mType);
+    VkUtil_DeterminePipelineStageFlags(A, dstAccessFlags, (cgpu_queue_type_enum)Cmd->mType);
     if (srcStageMask == 0)
         srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
     if (dstStageMask == 0)
@@ -1800,17 +1796,17 @@ void cgpu_cmd_resource_barrier_vulkan(CGPUCommandBufferId cmd, const struct CGPU
     }
 }
 
-VkPipelineStageFlagBits VkUtil_ShaderStagesToPipelineStage(ECGPUShaderStage stage)
+VkPipelineStageFlagBits VkUtil_ShaderStagesToPipelineStage(cgpu_shader_stage_flag stage)
 {
     if (stage == CGPU_SHADER_STAGE_ALL_GRAPHICS) return VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
     if (stage == CGPU_SHADER_STAGE_NONE) return VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    if (stage == CGPU_SHADER_STAGE_VERT) return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-    if (stage == CGPU_SHADER_STAGE_TESC) return VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
-    if (stage == CGPU_SHADER_STAGE_TESE) return VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
-    if (stage == CGPU_SHADER_STAGE_GEOM) return VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
-    if (stage == CGPU_SHADER_STAGE_FRAG) return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    if (stage == CGPU_SHADER_STAGE_VERTEX) return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+    if (stage == CGPU_SHADER_STAGE_TESSELLATION_CONTROL) return VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
+    if (stage == CGPU_SHADER_STAGE_TESSELLATION_EVALUATION) return VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
+    if (stage == CGPU_SHADER_STAGE_GEOMETRY) return VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
+    if (stage == CGPU_SHADER_STAGE_FRAGMENT) return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     if (stage == CGPU_SHADER_STAGE_COMPUTE) return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-    if (stage == CGPU_SHADER_STAGE_RAYTRACING) return VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+    if (stage == CGPU_SHADER_STAGE_RAY_TRACING) return VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
     return VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 }
 
@@ -2104,7 +2100,7 @@ void cgpu_render_encoder_set_viewport_vulkan(CGPURenderPassEncoderId encoder, fl
     D->mVkDeviceTable.vkCmdSetViewport(Cmd->pVkCmdBuf, 0, 1, &viewport);
 }
 
-void cgpu_render_encoder_set_shading_rate_vulkan(CGPURenderPassEncoderId encoder, ECGPUShadingRate shading_rate, ECGPUShadingRateCombiner post_rasterizer_rate, ECGPUShadingRateCombiner final_rate)
+void cgpu_render_encoder_set_shading_rate_vulkan(CGPURenderPassEncoderId encoder, cgpu_shading_rate_enum shading_rate, cgpu_shading_rate_combiner_enum post_rasterizer_rate, cgpu_shading_rate_combiner_enum final_rate)
 {
 #if VK_KHR_fragment_shading_rate
     CGPUCommandBuffer_Vulkan* Cmd = (CGPUCommandBuffer_Vulkan*)encoder;

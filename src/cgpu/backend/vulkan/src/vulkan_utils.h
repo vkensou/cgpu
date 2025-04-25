@@ -21,7 +21,7 @@
 #include "vulkan/vulkan_macos.h"
 #endif
 
-#define CGPU_INNER_TCF_IMPORT_SHARED_HANDLE (CGPU_TCF_USABLE_MAX << 1)
+#define CGPU_INNER_TCF_IMPORT_SHARED_HANDLE (0x40000 << 1)
 #define USE_EXTERNAL_MEMORY_EXTENSIONS
 #define VK_SPARSE_PAGE_STANDARD_SIZE ( 65536 )
 
@@ -146,19 +146,19 @@ typedef struct VkUtil_DescriptorPool {
 } VkUtil_DescriptorPool;
 
 typedef struct VkUtil_RenderPassDesc {
-    ECGPUFormat pColorFormats[CGPU_MAX_MRT_COUNT];
-    ECGPULoadAction pLoadActionsColor[CGPU_MAX_MRT_COUNT];
-    ECGPUStoreAction pStoreActionsColor[CGPU_MAX_MRT_COUNT];
-    ECGPULoadAction pLoadActionsColorResolve[CGPU_MAX_MRT_COUNT];
-    ECGPUStoreAction pStoreActionsColorResolve[CGPU_MAX_MRT_COUNT];
+    cgpu_texture_format_enum pColorFormats[CGPU_MAX_MRT_COUNT];
+    cgpu_load_action_enum pLoadActionsColor[CGPU_MAX_MRT_COUNT];
+    cgpu_store_action_enum pStoreActionsColor[CGPU_MAX_MRT_COUNT];
+    cgpu_load_action_enum pLoadActionsColorResolve[CGPU_MAX_MRT_COUNT];
+    cgpu_store_action_enum pStoreActionsColorResolve[CGPU_MAX_MRT_COUNT];
     bool pResolveMasks[CGPU_MAX_MRT_COUNT];
     uint32_t mColorAttachmentCount;
-    ECGPUSampleCount mSampleCount;
-    ECGPUFormat mDepthStencilFormat;
-    ECGPULoadAction mLoadActionDepth;
-    ECGPUStoreAction mStoreActionDepth;
-    ECGPULoadAction mLoadActionStencil;
-    ECGPUStoreAction mStoreActionStencil;
+    cgpu_sample_count_flag mSampleCount;
+    cgpu_texture_format_enum mDepthStencilFormat;
+    cgpu_load_action_enum mLoadActionDepth;
+    cgpu_store_action_enum mStoreActionDepth;
+    cgpu_load_action_enum mLoadActionStencil;
+    cgpu_store_action_enum mStoreActionStencil;
 } VkUtil_RenderPassDesc;
 
 typedef struct VkUtil_FramebufferDesc {

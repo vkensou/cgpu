@@ -29,7 +29,7 @@ CGPU_API void cgpu_free_instance_vulkan(CGPUInstanceId instance);
 // Adapter APIs
 CGPU_API void cgpu_enum_adapters_vulkan(CGPUInstanceId instance, CGPUAdapterId* const adapters, uint32_t* adapters_num);
 CGPU_API const CGPUAdapterDetail* cgpu_query_adapter_detail_vulkan(const CGPUAdapterId adapter);
-CGPU_API uint32_t cgpu_query_queue_count_vulkan(const CGPUAdapterId adapter, const ECGPUQueueType type);
+CGPU_API uint32_t cgpu_query_queue_count_vulkan(const CGPUAdapterId adapter, const cgpu_queue_type_enum type);
 
 // Device APIs
 CGPU_API CGPUDeviceId cgpu_create_device_vulkan(CGPUAdapterId adapter, const CGPUDeviceDescriptor* desc);
@@ -40,7 +40,7 @@ CGPU_API void cgpu_free_device_vulkan(CGPUDeviceId device);
 // API Object APIs
 CGPU_API CGPUFenceId cgpu_create_fence_vulkan(CGPUDeviceId device);
 CGPU_API void cgpu_wait_fences_vulkan(const CGPUFenceId* fences, uint32_t fence_count);
-ECGPUFenceStatus cgpu_query_fence_status_vulkan(CGPUFenceId fence);
+cgpu_fence_status_enum cgpu_query_fence_status_vulkan(CGPUFenceId fence);
 CGPU_API void cgpu_free_fence_vulkan(CGPUFenceId fence);
 CGPU_API CGPUSemaphoreId cgpu_create_semaphore_vulkan(CGPUDeviceId device);
 CGPU_API void cgpu_free_semaphore_vulkan(CGPUSemaphoreId semaphore);
@@ -59,7 +59,7 @@ CGPU_API CGPUQueryPoolId cgpu_create_query_pool_vulkan(CGPUDeviceId device, cons
 CGPU_API void cgpu_free_query_pool_vulkan(CGPUQueryPoolId pool);
 
 // Queue APIs
-CGPU_API CGPUQueueId cgpu_get_queue_vulkan(CGPUDeviceId device, ECGPUQueueType type, uint32_t index);
+CGPU_API CGPUQueueId cgpu_get_queue_vulkan(CGPUDeviceId device, cgpu_queue_type_enum type, uint32_t index);
 CGPU_API void cgpu_submit_queue_vulkan(CGPUQueueId queue, const struct CGPUQueueSubmitDescriptor* desc);
 CGPU_API void cgpu_wait_queue_idle_vulkan(CGPUQueueId queue);
 CGPU_API void cgpu_queue_present_vulkan(CGPUQueueId queue, const struct CGPUQueuePresentDescriptor* desc);
@@ -140,7 +140,7 @@ CGPU_API void cgpu_cmd_end_compute_pass_vulkan(CGPUCommandBufferId cmd, CGPUComp
 
 // Render CMDs
 CGPU_API CGPURenderPassEncoderId cgpu_cmd_begin_render_pass_vulkan(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info);
-CGPU_API void cgpu_render_encoder_set_shading_rate_vulkan(CGPURenderPassEncoderId encoder, ECGPUShadingRate shading_rate, ECGPUShadingRateCombiner post_rasterizer_rate, ECGPUShadingRateCombiner final_rate);
+CGPU_API void cgpu_render_encoder_set_shading_rate_vulkan(CGPURenderPassEncoderId encoder, cgpu_shading_rate_enum shading_rate, cgpu_shading_rate_combiner_enum post_rasterizer_rate, cgpu_shading_rate_combiner_enum final_rate);
 CGPU_API void cgpu_render_encoder_bind_descriptor_set_vulkan(CGPURenderPassEncoderId encoder, CGPUDescriptorSetId set);
 CGPU_API void cgpu_render_encoder_set_viewport_vulkan(CGPURenderPassEncoderId encoder, float x, float y, float width, float height, float min_depth, float max_depth);
 CGPU_API void cgpu_render_encoder_set_scissor_vulkan(CGPURenderPassEncoderId encoder, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
@@ -425,7 +425,7 @@ typedef struct CGPUCompiledShader_Vulkan {
 typedef struct CGPULinkedShader_Vulkan {
     CGPULinkedShader super;
     VkShaderEXT pVkShaders[CGPU_SHADER_STAGE_COUNT];
-    ECGPUShaderStage pStages[CGPU_SHADER_STAGE_COUNT];
+    cgpu_shader_stage_flag pStages[CGPU_SHADER_STAGE_COUNT];
 } CGPULinkedShader_Vulkan;
 
 typedef union VkDescriptorUpdateData
@@ -470,7 +470,7 @@ static const VkAttachmentLoadOp gVkAttachmentLoadOpTranslator[CGPU_LOAD_ACTION_C
     VK_ATTACHMENT_LOAD_OP_CLEAR,
 };
 
-static const VkCompareOp gVkComparisonFuncTranslator[CGPU_CMP_COUNT] = {
+static const VkCompareOp gVkComparisonFuncTranslator[CGPU_COMPARE_OP_COUNT] = {
     VK_COMPARE_OP_NEVER,
     VK_COMPARE_OP_LESS,
     VK_COMPARE_OP_EQUAL,
@@ -500,7 +500,7 @@ static const VkStencilOp gVkStencilOpTranslator[CGPU_STENCIL_OP_COUNT] = {
 extern "C" {
 #endif
 
-CGPU_FORCEINLINE static VkFormat VkUtil_FormatTranslateToVk(const ECGPUFormat format);
+CGPU_FORCEINLINE static VkFormat VkUtil_FormatTranslateToVk(const cgpu_texture_format_enum format);
 
 #include "cgpu_vulkan.inl"
 #ifdef __cplusplus

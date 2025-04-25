@@ -23,7 +23,7 @@ struct CGPURuntimeTable {
             uint64_t type_index;
             struct
             {
-                ECGPUQueueType type;
+                cgpu_queue_type_enum type;
                 uint32_t index;
             };
         };
@@ -33,7 +33,7 @@ struct CGPURuntimeTable {
             return device == rhs.device && type_index == rhs.type_index;
         }
     };
-    CGPUQueueId TryFindQueue(CGPUDeviceId device, ECGPUQueueType type, uint32_t index)
+    CGPUQueueId TryFindQueue(CGPUDeviceId device, cgpu_queue_type_enum type, uint32_t index)
     {
         CreatedQueue to_find = {};
         to_find.device = device;
@@ -47,7 +47,7 @@ struct CGPURuntimeTable {
         }
         return nullptr;
     }
-    void AddNewQueue(CGPUQueueId queue, ECGPUQueueType type, uint32_t index)
+    void AddNewQueue(CGPUQueueId queue, cgpu_queue_type_enum type, uint32_t index)
     {
         CreatedQueue new_queue = {};
         new_queue.device = queue->device;
@@ -98,12 +98,12 @@ void cgpu_free_runtime_table(const CGPUAllocator* allocator, struct CGPURuntimeT
     cgpu_delete(allocator, table);
 }
 
-void cgpu_runtime_table_add_queue(CGPUQueueId queue, ECGPUQueueType type, uint32_t index)
+void cgpu_runtime_table_add_queue(CGPUQueueId queue, cgpu_queue_type_enum type, uint32_t index)
 {
     queue->device->adapter->instance->runtime_table->AddNewQueue(queue, type, index);
 }
 
-CGPUQueueId cgpu_runtime_table_try_get_queue(CGPUDeviceId device, ECGPUQueueType type, uint32_t index)
+CGPUQueueId cgpu_runtime_table_try_get_queue(CGPUDeviceId device, cgpu_queue_type_enum type, uint32_t index)
 {
     return device->adapter->instance->runtime_table->TryFindQueue(device, type, index);
 }
