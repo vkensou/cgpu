@@ -845,7 +845,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
             {
                 input_attributes[attr_slot].location = attr_slot;
                 input_attributes[attr_slot].binding = attrib->binding;
-                input_attributes[attr_slot].format = VkUtil_FormatTranslateToVk(attrib->format);
+                input_attributes[attr_slot].format = VkUtil_VertexFormatTranslateToVk(attrib->format);
                 input_attributes[attr_slot].offset = attrib->offset + (j * FormatUtil_BitSizeOfBlock(attrib->format) / 8);
                 ++attr_slot;
             }
