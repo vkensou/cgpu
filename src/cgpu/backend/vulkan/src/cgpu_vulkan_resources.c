@@ -731,7 +731,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
     VmaAllocation vmaAllocation = VK_NULL_HANDLE;
     const bool is_depth_stencil = FormatUtil_IsDepthStencilFormat(desc->format);
     const CGPUFormatSupport* format_support = &A->adapter_detail.format_supports[desc->format];
-    if (desc->native_handle && !(desc->flags & CGPU_INNER_TCF_IMPORT_SHARED_HANDLE))
+    if (desc->native_handle && !(desc->flags & CGPU_TEXTURE_CREATION_USAGE_IMPORT_SHARED))
     {
         owns_image = false;
         pVkImage = (VkImage)desc->native_handle;
@@ -836,7 +836,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
             const wchar_t* nameFormat = L"cgpu-shared-texture-%llu";
             VkExportMemoryWin32HandleInfoKHR win32ExportMemoryInfo = { VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_KHR, NULL };
             VkImportMemoryWin32HandleInfoKHR win32ImportInfo = { VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR, NULL };
-            if (A->external_memory && (desc->flags & CGPU_INNER_TCF_IMPORT_SHARED_HANDLE))
+            if (A->external_memory && (desc->flags & CGPU_TEXTURE_CREATION_USAGE_IMPORT_SHARED))
             {
                 is_imported = true;
                 // format name wstring
@@ -861,7 +861,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
                     &externalInfo, &exportMemoryInfo, &win32ExportMemoryInfo);
             }
 #else
-            if ((desc->flags & CGPU_TEXTURE_CREATION_USAGE_EXPORT) || (desc->flags & CGPU_INNER_TCF_IMPORT_SHARED_HANDLE))
+            if ((desc->flags & CGPU_TEXTURE_CREATION_USAGE_EXPORT) || (desc->flags & CGPU_TEXTURE_CREATION_USAGE_IMPORT_SHARED))
             {
                 cgpu_error(&device->adapter->instance->logger, "Unsupportted platform detected!");
                 return CGPU_NULLPTR;

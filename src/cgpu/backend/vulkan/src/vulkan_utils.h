@@ -21,7 +21,6 @@
 #include "vulkan/vulkan_macos.h"
 #endif
 
-#define CGPU_INNER_TCF_IMPORT_SHARED_HANDLE (0x40000 << 1)
 #define USE_EXTERNAL_MEMORY_EXTENSIONS
 #define VK_SPARSE_PAGE_STANDARD_SIZE ( 65536 )
 

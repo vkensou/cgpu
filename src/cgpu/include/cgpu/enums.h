@@ -62,7 +62,6 @@ typedef enum cgpu_log_severity
 typedef enum cgpu_texture_format
 {
     CGPU_TEXTURE_FORMAT_UNDEFINED,            /** ( 0)                                */
-
     CGPU_TEXTURE_FORMAT_R4G4_UNORM_PACK8,     /** ( 1)                                */
     CGPU_TEXTURE_FORMAT_R4G4B4A4_UNORM_PACK16, /** ( 2)                                */
     CGPU_TEXTURE_FORMAT_B4G4R4A4_UNORM_PACK16, /** ( 3)                                */
@@ -71,7 +70,6 @@ typedef enum cgpu_texture_format
     CGPU_TEXTURE_FORMAT_R5G5B5A1_UNORM_PACK16, /** ( 6)                                */
     CGPU_TEXTURE_FORMAT_B5G5R5A1_UNORM_PACK16, /** ( 7)                                */
     CGPU_TEXTURE_FORMAT_A1R5G5B5_UNORM_PACK16, /** ( 8)                                */
-
     CGPU_TEXTURE_FORMAT_R8_UNORM,             /** ( 9)                                */
     CGPU_TEXTURE_FORMAT_R8_SNORM,             /** (10)                                */
     CGPU_TEXTURE_FORMAT_R8_UINT,              /** (11)                                */
@@ -614,11 +612,12 @@ typedef enum cgpu_texture_creation_usage
 {
     CGPU_TEXTURE_CREATION_USAGE_NONE = 0x00000000,         /** ( 0)                                */
     CGPU_TEXTURE_CREATION_USAGE_DEDICATED = 0x00000001,    /** ( 1)                                */
-    CGPU_TEXTURE_CREATION_USAGE_EXPORT = 0x00000002,       /** ( 2)                                */
-    CGPU_TEXTURE_CREATION_USAGE_FORCE2D = 0x00000004,      /** ( 3)                                */
-    CGPU_TEXTURE_CREATION_USAGE_FORCE3D = 0x00000008,      /** ( 4)                                */
-    CGPU_TEXTURE_CREATION_USAGE_ALIASING_RESOURCE = 0x00000010, /** ( 5)                                */
-    CGPU_TEXTURE_CREATION_USAGE_TILED_RESOURCE = 0x00000020, /** ( 6)                                */
+    CGPU_TEXTURE_CREATION_USAGE_FORCE2D = 0x00000002,      /** ( 2)                                */
+    CGPU_TEXTURE_CREATION_USAGE_FORCE3D = 0x00000004,      /** ( 3)                                */
+    CGPU_TEXTURE_CREATION_USAGE_ALIASING_RESOURCE = 0x00000008, /** ( 4)                                */
+    CGPU_TEXTURE_CREATION_USAGE_TILED_RESOURCE = 0x00000010, /** ( 5)                                */
+    CGPU_TEXTURE_CREATION_USAGE_EXPORT = 0x00000020,       /** ( 6)                                */
+    CGPU_TEXTURE_CREATION_USAGE_IMPORT_SHARED = 0x00000040, /** ( 7)                                */
 
 } cgpu_texture_creation_usage_flag;
 

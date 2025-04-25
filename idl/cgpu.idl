@@ -437,11 +437,12 @@ flag.BufferCreationUsage { bits = 32, base = 0 }
 flag.TextureCreationUsage { bits = 32, base = 0 }
     .None
     .Dedicated
-    .Export
     .Force2d
     .Force3d
     .AliasingResource
     .TiledResource
+    .Export
+    .ImportShared
     ()
 
 flag.SampleCount { bits = 32, const }
