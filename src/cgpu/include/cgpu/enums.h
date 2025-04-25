@@ -640,18 +640,23 @@ typedef enum cgpu_resource_type
     CGPU_RESOURCE_TYPE_DEPTH_STENCIL = 0x00000008,         /** ( 4)                                */
     CGPU_RESOURCE_TYPE_RW_TEXTURE = 0x00000010,            /** ( 5)                                */
     CGPU_RESOURCE_TYPE_BUFFER = 0x00000020,                /** ( 6)                                */
-    CGPU_RESOURCE_TYPE_RW_BUFFER = 0x00000040,             /** ( 7)                                */
-    CGPU_RESOURCE_TYPE_UNIFORM_BUFFER = 0x00000080,        /** ( 8)                                */
-    CGPU_RESOURCE_TYPE_PUSH_CONSTANT = 0x00000100,         /** ( 9)                                */
-    CGPU_RESOURCE_TYPE_INDEX_BUFFER = 0x00000200,          /** (10)                                */
-    CGPU_RESOURCE_TYPE_VERTEX_BUFFER = 0x00000400,         /** (11)                                */
-    CGPU_RESOURCE_TYPE_INDIRECT_BUFFER = 0x00000800,       /** (12)                                */
-    CGPU_RESOURCE_TYPE_TEXTURE_CUBE = 0x00001000,          /** (13)                                */
-    CGPU_RESOURCE_TYPE_RAY_TRACING = 0x00002000,           /** (14)                                */
-    CGPU_RESOURCE_TYPE_INPUT_ATTACHMENT = 0x00004000,      /** (15)                                */
-    CGPU_RESOURCE_TYPE_TEXEL_BUFFER = 0x00008000,          /** (16)                                */
-    CGPU_RESOURCE_TYPE_RW_TEXEL_BUFFER = 0x00010000,       /** (17)                                */
-    CGPU_RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER = 0x00020000, /** (18)                                */
+    CGPU_RESOURCE_TYPE_BUFFER_RAW = 0x00000040,            /** ( 7)                                */
+    CGPU_RESOURCE_TYPE_RW_BUFFER = 0x00000080,             /** ( 8)                                */
+    CGPU_RESOURCE_TYPE_RW_BUFFER_RAW = 0x00000100,         /** ( 9)                                */
+    CGPU_RESOURCE_TYPE_UNIFORM_BUFFER = 0x00000200,        /** (10)                                */
+    CGPU_RESOURCE_TYPE_PUSH_CONSTANT = 0x00000400,         /** (11)                                */
+    CGPU_RESOURCE_TYPE_VERTEX_BUFFER = 0x00000800,         /** (12)                                */
+    CGPU_RESOURCE_TYPE_INDEX_BUFFER = 0x00001000,          /** (13)                                */
+    CGPU_RESOURCE_TYPE_INDIRECT_BUFFER = 0x00002000,       /** (14)                                */
+    CGPU_RESOURCE_TYPE_TEXTURE_CUBE = 0x00004000,          /** (15)                                */
+    CGPU_RESOURCE_TYPE_RENDER_TARGET_MIP_SLICES = 0x00008000, /** (16)                                */
+    CGPU_RESOURCE_TYPE_RENDER_TARGET_ARRAY_SLICES = 0x00010000, /** (17)                                */
+    CGPU_RESOURCE_TYPE_RENDER_TARGET_DEPTH_SLICES = 0x00020000, /** (18)                                */
+    CGPU_RESOURCE_TYPE_RAY_TRACING = 0x00040000,           /** (19)                                */
+    CGPU_RESOURCE_TYPE_INPUT_ATTACHMENT = 0x00080000,      /** (20)                                */
+    CGPU_RESOURCE_TYPE_TEXEL_BUFFER = 0x00100000,          /** (21)                                */
+    CGPU_RESOURCE_TYPE_RW_TEXEL_BUFFER = 0x00200000,       /** (22)                                */
+    CGPU_RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER = 0x00400000, /** (23)                                */
 
 } cgpu_resource_type_flag;
 

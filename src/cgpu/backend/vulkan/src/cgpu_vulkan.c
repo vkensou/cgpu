@@ -584,7 +584,9 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
             }
             case CGPU_RESOURCE_TYPE_UNIFORM_BUFFER:
             case CGPU_RESOURCE_TYPE_BUFFER:
-            case CGPU_RESOURCE_TYPE_RW_BUFFER: {
+            case CGPU_RESOURCE_TYPE_BUFFER_RAW:
+            case CGPU_RESOURCE_TYPE_RW_BUFFER:
+            case CGPU_RESOURCE_TYPE_RW_BUFFER_RAW: {
                 cgpu_assert(pParam->buffers && "cgpu_assert: Binding NULL Buffer(s)!");
                 CGPUBuffer_Vulkan** Buffers = (CGPUBuffer_Vulkan**)pParam->buffers;
                 for (uint32_t arr = 0; arr < arrayCount; ++arr)
@@ -699,7 +701,9 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
             }
             case CGPU_RESOURCE_TYPE_UNIFORM_BUFFER:
             case CGPU_RESOURCE_TYPE_BUFFER:
-            case CGPU_RESOURCE_TYPE_RW_BUFFER: {
+            case CGPU_RESOURCE_TYPE_BUFFER_RAW:
+            case CGPU_RESOURCE_TYPE_RW_BUFFER:
+            case CGPU_RESOURCE_TYPE_RW_BUFFER_RAW: {
                 cgpu_assert(pParam->buffers && "cgpu_assert: Binding NULL Buffer(s)!");
                 CGPUBuffer_Vulkan** Buffers = (CGPUBuffer_Vulkan**)pParam->buffers;
                 for (uint32_t arr = 0; arr < arrayCount; ++arr)

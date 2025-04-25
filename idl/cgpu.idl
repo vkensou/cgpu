@@ -468,13 +468,18 @@ flag.ResourceType { bits = 32, base = 0 }
     .DepthStencil
     .RwTexture
     .Buffer
+    .BufferRaw
     .RwBuffer
+    .RwBufferRaw
     .UniformBuffer
     .PushConstant
-    .IndexBuffer
     .VertexBuffer
+    .IndexBuffer
     .IndirectBuffer
     .TextureCube
+    .RenderTargetMipSlices
+    .RenderTargetArraySlices
+    .RenderTargetDepthSlices
     .RayTracing
     .InputAttachment
     .TexelBuffer
