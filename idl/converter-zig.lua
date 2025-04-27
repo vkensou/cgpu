@@ -16,12 +16,20 @@ local function namealign(name, align)
     return string.rep(" ", align - #name)
 end
 
-local function camelcase_to_underscorecase(name)
-    local tmp = {}
-    for v in name:gmatch "[%u%d]+[%l%d]*" do
-        tmp[#tmp + 1] = v:lower()
-    end
-    return table.concat(tmp, "_")
+local function upperCamelcase_to_underscorecase(name)
+	local tmp = {}
+	for v in name:gmatch "[%u%d]+[%l%d]*" do
+		tmp[#tmp+1] = v:lower()
+	end
+	return table.concat(tmp, "_")
+end
+
+local function lowerCamelcase_to_underscorecase(name)
+	local tmp = {}
+	for v in name:gmatch "[%u%l%d]+[%l%d]*" do
+		tmp[#tmp+1] = v:lower()
+	end
+	return table.concat(tmp, "_")
 end
 
 local function to_underscorecase(name)
@@ -43,7 +51,7 @@ local function underscorecase_to_camelcase(name)
     return table.concat(tmp)
 end
 
-local keywords = Set {"error", "opaque"}
+local keywords = Set {"error", "opaque", "export"}
 
 local function handle_embed_keyword(name)
     if keywords[name] or name:match("^%d") then
@@ -62,7 +70,7 @@ function name_converter.enum_name(enum)
 end
 
 function name_converter.enum_item_name(enum, enum_new_name, item)
-    return handle_embed_keyword(camelcase_to_underscorecase(item.name))
+    return handle_embed_keyword(upperCamelcase_to_underscorecase(item.name))
 end
 
 function name_converter.flag_name(flag)
@@ -70,7 +78,15 @@ function name_converter.flag_name(flag)
 end
 
 function name_converter.flag_item_name(flag, flag_new_name, item)
-    return handle_embed_keyword(camelcase_to_underscorecase(item.name))
+    return handle_embed_keyword(upperCamelcase_to_underscorecase(item.name))
+end
+
+function name_converter.struct_name(struct)
+	return struct.name
+end
+
+function name_converter.struct_item_name(struct, struct_new_name, item)
+	return lowerCamelcase_to_underscorecase(item.name)
 end
 
 local enum_temp = [[
@@ -203,6 +219,10 @@ local function gen_flag_cdefine(flag, flag_temp)
     return (flag_temp:gsub("$(%u+)", temp))
 end
 
+local function gen_struct_cdefine(struct)
+    return ""
+end
+
 local printer = {}
 
 local function add_doxygen(typedef, define, cstyle, cname)
@@ -222,19 +242,9 @@ function printer.flags(typedef)
 end
 
 function printer.structs(typedef)
-    if typedef.struct and not typedef.namespace then
-        local methods = typedef.methods
-        if methods then
-            local m = {}
-            for _, func in ipairs(methods) do
-                if not func.conly then
-                    m[#m + 1] = cppdecl(func)
-                end
-            end
-            methods = m
-        end
-        return add_doxygen(typedef, codegen.gen_struct_define(typedef, methods))
-    end
+	if typedef.struct then
+		return add_doxygen(typedef, gen_struct_cdefine(typedef), true)
+	end
 end
 
 function printer.handles(typedef)

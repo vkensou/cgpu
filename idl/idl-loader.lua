@@ -65,6 +65,56 @@ local function calc_flag_values(flag)
 	end
 end
 
+local function convert_arg(all_types, arg, namespace)
+	local fulltype, array = arg.fulltype:match "(.-)%s*(%[%s*[%d%a_:]*%s*%])"
+	if array then
+		arg.fulltype = fulltype
+		arg.array = array
+		local enum, value = array:match "%[%s*([%a%d]+)::([%a%d]+)%]"
+		if enum then
+			local typedef = all_types[ enum .. "::Enum" ]
+			if typedef == nil then
+				error ("Unknown Enum " .. enum)
+			end
+			arg.carray = "[BGFX_" .. camelcase_to_underscorecase(enum):upper() .. "_" .. value:upper() .. "]"
+		end
+	end
+	local t, postfix = arg.fulltype:match "(%a[%a%d_:]*)%s*([*&]+)%s*$"
+	if t then
+		arg.type = t
+		if postfix == "&" then
+			arg.ref = true
+		end
+	else
+		local prefix, t = arg.fulltype:match "^%s*(%a+)%s+(%S+)"
+		if prefix then
+			arg.type = t
+		else
+			arg.type = arg.fulltype
+		end
+	end
+	local ctype
+	local substruct = namespace.substruct
+	if substruct then
+		ctype = substruct[arg.type]
+	end
+	if not ctype then
+		ctype = all_types[arg.type]
+	end
+	if not ctype then
+		error ("Undefined type " .. arg.fulltype .. " in " .. namespace.name)
+	end
+	arg.ctype = arg.fulltype:gsub(arg.type, ctype.name):gsub("&", "*")
+	if ctype.name ~= arg.type then
+		arg.cpptype = arg.fulltype:gsub(arg.type, "bgfx::"..arg.type)
+	else
+		arg.cpptype = arg.fulltype
+	end
+	if arg.ref then
+		arg.ptype = arg.cpptype:gsub("&", "*")
+	end
+end
+
 local function nameconversion(all_types, all_funcs)
 	for _,v in ipairs(all_types) do
 		local name = v.name

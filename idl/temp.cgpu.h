@@ -10,4 +10,6 @@ $enums
 
 $flags
 
+$structs
+
 #endif // CGPU_C99_H_HEADER_GUARD

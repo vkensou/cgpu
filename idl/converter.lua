@@ -113,6 +113,22 @@ function typegen.flag(name_converter, flag)
     return temp
 end
 
+function typegen.struct(name_converter, struct)
+    local temp = {}
+    temp.name = name_converter.struct_name(struct)
+    temp.struct = {}
+    for index, item in pairs(struct.struct) do
+        local new_item = {}
+        new_item.name = name_converter.struct_item_name(struct, temp.name, item)
+        new_item.type = item.type
+        new_item.ctype = item.ctype
+        new_item.fulltype = item.fulltype
+        new_item.cpptype = item.cpptype
+        temp.struct[index] = new_item
+    end
+    return temp
+end
+
 local converter = {}
 
 function converter.codes(name_converter, idl)
@@ -125,6 +141,8 @@ function converter.codes(name_converter, idl)
             temp.types[i] = typegen.enum(name_converter, typedef)
         elseif typedef.flag and type(typedef.flag) == "table" then
             temp.types[i] = typegen.flag(name_converter, typedef)
+        elseif typedef.struct and type(typedef.struct) == "table" then
+            temp.types[i] = typegen.struct(name_converter, typedef)
         end
     end
 

@@ -564,3 +564,7 @@ enum.VertexFormat { comment = "Vertex Format:" }
     .Snorm8x4
     .Unorm8x4
     ()
+
+struct.BufferRange
+    .offset             "uint64_t"
+    .size               "uint64_t"

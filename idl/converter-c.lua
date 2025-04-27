@@ -8,9 +8,17 @@ local function namealign(name, align)
 	return string.rep(" ", align - #name)
 end
 
-local function camelcase_to_underscorecase(name)
+local function upperCamelcase_to_underscorecase(name)
 	local tmp = {}
 	for v in name:gmatch "[%u%d]+[%l%d]*" do
+		tmp[#tmp+1] = v:lower()
+	end
+	return table.concat(tmp, "_")
+end
+
+local function lowerCamelcase_to_underscorecase(name)
+	local tmp = {}
+	for v in name:gmatch "[%u%l%d]+[%l%d]*" do
 		tmp[#tmp+1] = v:lower()
 	end
 	return table.concat(tmp, "_")
@@ -38,19 +46,27 @@ end
 local name_converter = {}
 
 function name_converter.enum_name(enum)
-    return "cgpu_" .. camelcase_to_underscorecase(enum.name)
+    return "cgpu_" .. upperCamelcase_to_underscorecase(enum.name)
 end
 
 function name_converter.enum_item_name(enum, enum_new_name, item)
-    return "CGPU_" .. (to_underscorecase(enum.name) .. "_" .. camelcase_to_underscorecase(item.name)):upper()
+    return "CGPU_" .. (to_underscorecase(enum.name) .. "_" .. upperCamelcase_to_underscorecase(item.name)):upper()
 end
 
 function name_converter.flag_name(flag)
-    return "cgpu_" .. camelcase_to_underscorecase(flag.name)
+    return "cgpu_" .. upperCamelcase_to_underscorecase(flag.name)
 end
 
 function name_converter.flag_item_name(flag, flag_new_name, item)
-    return "CGPU_" .. (to_underscorecase(flag.name) .. "_" .. camelcase_to_underscorecase(item.name)):upper()
+    return "CGPU_" .. (to_underscorecase(flag.name) .. "_" .. upperCamelcase_to_underscorecase(item.name)):upper()
+end
+
+function name_converter.struct_name(struct)
+	return "cgpu_" .. upperCamelcase_to_underscorecase(struct.name)
+end
+
+function name_converter.struct_item_name(struct, struct_new_name, item)
+	return lowerCamelcase_to_underscorecase(item.name)
 end
 
 local enum_temp = [[
@@ -192,6 +208,75 @@ local function gen_flag_cdefine(flag, flag_temp)
 	return (flag_temp:gsub("$(%u+)", temp))
 end
 
+local function text_with_comments(items, item, cstyle, is_classmember)
+	local name = item.name
+	if item.array then
+		if cstyle then
+			name = name .. (item.carray or item.array)
+		else
+			name = name .. item.array
+		end
+	end
+	local typename
+	if cstyle then
+		typename = item.ctype
+	else
+		typename = item.fulltype
+	end
+	if is_classmember then
+		name = "m_" .. name
+	end
+	local text = string.format("%s%s %s;", typename, namealign(typename), name)
+	if item.comment then
+		if #item.comment > 1 then
+			table.insert(items, "")
+			if cstyle then
+				table.insert(items, "/**")
+				for _, c in ipairs(item.comment) do
+					table.insert(items, " * " .. c)
+				end
+				table.insert(items, " */")
+			else
+				for _, c in ipairs(item.comment) do
+					table.insert(items, "/// " .. c)
+				end
+			end
+		else
+			text = string.format(
+				cstyle and "%s %s/** %s%s */" or "%s %s//!< %s",
+				text, namealign(text, 40),  item.comment[1], namealign(item.comment[1], 40))
+		end
+	end
+	items[#items+1] = text
+end
+
+local cstruct_temp = [[
+typedef struct $NAME
+{
+	$ITEMS
+
+} $NAME_t;
+]]
+local cstruct_empty_temp = [[
+struct $NAME;
+typedef struct $NAME $NAME_t;
+]]
+
+local function gen_struct_cdefine(struct)
+	assert(type(struct.struct) == "table", "Not a struct")
+	local name = struct.name
+	local items = {}
+	for _, item in ipairs(struct.struct) do
+		text_with_comments(items, item, true)
+	end
+	local temp = {
+		NAME = name,
+		ITEMS = table.concat(items, "\n\t"),
+	}
+	local codetemp = #struct.struct == 0 and cstruct_empty_temp or cstruct_temp
+	return (codetemp:gsub("$(%u+)", temp))
+end
+
 local printer = {}
 
 local function add_doxygen(typedef, define, cstyle, cname)
@@ -211,18 +296,8 @@ function printer.flags(typedef)
 end
 
 function printer.structs(typedef)
-	if typedef.struct and not typedef.namespace then
-		local methods = typedef.methods
-		if methods then
-			local m = {}
-			for _, func in ipairs(methods) do
-				if not func.conly then
-					m[#m+1] = cppdecl(func)
-				end
-			end
-			methods = m
-		end
-		return add_doxygen(typedef, codegen.gen_struct_define(typedef, methods))
+	if typedef.struct then
+		return add_doxygen(typedef, gen_struct_cdefine(typedef), true)
 	end
 end
 
