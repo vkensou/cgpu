@@ -129,6 +129,15 @@ function typegen.struct(name_converter, struct)
     return temp
 end
 
+local function convert_arg(all_types, arg, namespace)
+    local type = all_types[arg.type]
+    if type ~= nil then
+        arg.fulltype = type.name
+    else
+        arg.fulltype = arg.type
+    end
+end
+
 local converter = {}
 
 function converter.codes(name_converter, idl)
@@ -137,16 +146,31 @@ function converter.codes(name_converter, idl)
     temp.types = {}
 
     for i, typedef in ipairs(idl.types) do
+        local new_item = nil
         if typedef.enum and type(typedef.enum) == "table" then
-            temp.types[i] = typegen.enum(name_converter, typedef)
+            new_item = typegen.enum(name_converter, typedef)
         elseif typedef.flag and type(typedef.flag) == "table" then
-            temp.types[i] = typegen.flag(name_converter, typedef)
+            new_item = typegen.flag(name_converter, typedef)
         elseif typedef.struct and type(typedef.struct) == "table" then
-            temp.types[i] = typegen.struct(name_converter, typedef)
+            new_item = typegen.struct(name_converter, typedef)
+        end
+        if new_item ~= nil then
+            temp.types[i] = new_item
+            temp.types[typedef.name] = new_item
         end
     end
 
     temp.funcs = {}
+
+    for i,v in pairs(temp.types) do
+        if type(i) == "number" then 
+            if v.struct then
+                for _, item in ipairs(v.struct) do
+                    convert_arg(temp.types, item, v)
+                end
+            end
+        end
+    end
 
     return temp
 end
@@ -173,11 +197,13 @@ function converter.print_code(code_printer, idl)
 
     -- call actions with type
 
-    for _, typedef in pairs(idl.types) do
-        for k in pairs(type_actions) do
-            local printer = code_printer[k]
-            if printer then
-                table.insert(temp[k], (printer(typedef)))
+    for i, typedef in pairs(idl.types) do
+        if type(i) == "number" then
+            for k in pairs(type_actions) do
+                local printer = code_printer[k]
+                if printer then
+                    table.insert(temp[k], (printer(typedef)))
+                end
             end
         end
     end
