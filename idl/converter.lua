@@ -16,6 +16,7 @@ local type_actions = {
     enums = "\n",
     structs = "\n",
     handles = "\n",
+    ids = "\n",
     funcptrs = "\n"
 }
 
@@ -129,6 +130,17 @@ function typegen.struct(name_converter, struct)
     return temp
 end
 
+function typegen.id(name_converter, types, id)
+    local temp = {}
+    local point_struct_name = id.name:match("(%a+)Id")
+    local point_struct = types[point_struct_name]
+    local struct_name = name_converter.struct_name(point_struct)
+    temp.name = name_converter.id_name(struct_name)
+    temp.point_struct_name = point_struct_name
+    temp.id = true
+    return temp
+end
+
 local function convert_arg(all_types, arg, namespace)
     local type = all_types[arg.type]
     if type ~= nil then
@@ -153,6 +165,8 @@ function converter.codes(name_converter, idl)
             new_item = typegen.flag(name_converter, typedef)
         elseif typedef.struct and type(typedef.struct) == "table" then
             new_item = typegen.struct(name_converter, typedef)
+        elseif typedef.id then
+            new_item = typegen.id(name_converter, idl.types, typedef)
         end
         if new_item ~= nil then
             temp.types[i] = new_item

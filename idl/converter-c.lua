@@ -69,6 +69,10 @@ function name_converter.struct_item_name(struct, struct_new_name, item)
     return lowerCamelcase_to_underscorecase(item.name)
 end
 
+function name_converter.id_name(struct_name)
+	return struct_name .. "_id"
+end
+
 local enum_temp = [[
 typedef enum $NAME
 {
@@ -246,6 +250,17 @@ local function gen_struct_cdefine(struct)
     return (codetemp:gsub("$(%u+)", temp))
 end
 
+local id_temp = [[
+DEFINE_CGPU_OBJECT($NAME);
+]]
+
+local function gen_id_cdefine(id)
+	local temp = {
+		NAME = id.point_struct_name
+	}
+	return (id_temp:gsub("$(%u+)", temp))
+end
+
 local printer = {}
 
 local function add_doxygen(typedef, define, cstyle, cname)
@@ -274,6 +289,12 @@ function printer.handles(typedef)
     if typedef.handle then
         return codegen.gen_handle(typedef)
     end
+end
+
+function printer.ids(typedef)
+	if typedef.id then
+		return add_doxygen(typedef, gen_id_cdefine(typedef), true)
+	end
 end
 
 function printer.funcptrs(typedef)

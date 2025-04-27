@@ -145,13 +145,25 @@ local function handledef(_, typename)
 	local t = new_type(typename)
 	t.handle = true
 
-	return function (attribs)
+	return function (obj, attribs)
 		copy_attribs(t, attribs)
 		return obj
 	end
 end
 
 idl.handle = setmetatable({} , { __index = handledef, __call = handledef })
+
+local function iddef(_, typename)
+	local t = new_type(typename)
+	t.id = true
+
+	return function (obj, attribs)
+		copy_attribs(t, attribs)
+		return obj
+	end
+end
+
+idl.id = setmetatable({} , { __index = iddef, __call = iddef })
 
 local all_funcs = {}
 

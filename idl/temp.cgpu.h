@@ -6,9 +6,15 @@
 #include <stdint.h>  // uint32_t
 #include <stdlib.h>  // size_t
 
+#define DEFINE_CGPU_OBJECT(name) struct name##Descriptor; typedef const struct name* name##Id;
+
 $enums
 
 $flags
+
+$handles
+
+$ids
 
 $structs
 
