@@ -2,7 +2,7 @@
 -- License (the same with bgfx) : https://github.com/bkaradzic/bgfx/blob/master/LICENSE
 
 local codegen = require "codegen"
-local idl = codegen.idl "cgpu.idl"
+local idl = codegen.idl "cgpu2.idl"
 
 local func_actions = {
 
@@ -26,6 +26,8 @@ local type_actions = {
 	cstructs  = "\n",
 	handles   = "\n",
 	chandles  = "\n",
+	ids       = "\n",
+	cids       = "\n",
 	funcptrs  = "\n",
 	cfuncptrs = "\n",
 }
@@ -133,7 +135,7 @@ funcgen.c99decl = cfunc(function(func)
 	if doc then
 		doc = codegen.doxygen_ctype(doc, func)
 	end
-	local funcdecl = codegen.apply_functemp(func, "BGFX_C_API $CRET bgfx_$CFUNCNAME($CARGS);")
+	local funcdecl = codegen.apply_functemp(func, "$CRET cgpu_$CFUNCNAME($CARGS);")
 	if doc then
 		return "\n" .. doc .. "\n" .. funcdecl
 	else
@@ -202,6 +204,18 @@ end
 function typegen.chandles(typedef)
 	if typedef.handle then
 		return codegen.gen_chandle(typedef)
+	end
+end
+
+function typegen.ids(typedef)
+	if typedef.id then
+		return codegen.gen_id(typedef)
+	end
+end
+
+function typegen.cids(typedef)
+	if typedef.id then
+		return codegen.gen_cid(typedef)
 	end
 end
 

@@ -1,0 +1,45 @@
+version(1)
+
+typedef "bool"
+typedef "char"
+typedef "float"
+typedef "int8_t"
+typedef "int32_t"
+typedef "int64_t"
+typedef "uint8_t"
+typedef "uint16_t"
+typedef "uint32_t"
+typedef "uint64_t"
+typedef "uintptr_t"
+typedef "va_list"
+typedef "void"
+
+enum.Backend { comment = "Backend:" }
+	.Vulkan		--- Vulkan
+    .D3d12      --- D3D12
+    .Metal      --- Metal
+	()
+
+flag.ColorMask { bits = 32, base = 1 }
+	.R                      -- R Channel
+	.G                      -- G Channel
+	.B                      -- B Channel
+	.A                      -- A Channel
+    .RGB { "R", "G", "B"}   -- RGB Channel
+    .RGBA { "RGB", "A" }    -- RGBA Channel
+	()
+
+id "InstanceId"
+
+struct.InstanceDescriptor
+    .backend            "Backend::Enum"
+    .enableDebugLayer   "bool"
+    .enableGpuBasedValidation   "bool"
+    .enableSetName      "bool"
+
+struct.Instance 
+    .backend            "Backend::Enum"
+
+func.createInstance { cfunc }
+    "InstanceId"
+    .desc "const InstanceDescriptor*"

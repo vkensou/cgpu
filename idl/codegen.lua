@@ -54,7 +54,7 @@ local function convert_arg(all_types, arg, namespace)
 			if typedef == nil then
 				error ("Unknown Enum " .. enum)
 			end
-			arg.carray = "[BGFX_" .. camelcase_to_underscorecase(enum):upper() .. "_" .. value:upper() .. "]"
+			arg.carray = "[CGPU_" .. camelcase_to_underscorecase(enum):upper() .. "_" .. value:upper() .. "]"
 		end
 	end
 	local t, postfix = arg.fulltype:match "(%a[%a%d_:]*)%s*([*&]+)%s*$"
@@ -300,7 +300,13 @@ function codegen.nameconversion(all_types, all_funcs)
 			if v.namespace then
 				cname = camelcase_to_underscorecase(v.namespace) .. "_" .. cname
 			end
-			v.cname = "bgfx_".. cname .. "_t"
+			if v.enum then
+				v.cname = "cgpu_".. cname .. "_enum"
+			elseif v.id then
+				v.cname = "cgpu_".. cname
+			else
+				v.cname = "cgpu_".. cname .. "_t"
+			end
 		end
 		if v.enum then
 			v.typename = v.name
@@ -699,11 +705,11 @@ typedef enum $NAME
 
 	$COUNT
 
-} $NAME_t;
+} $NAME;
 ]]
 function codegen.gen_enum_cdefine(enum)
 	assert(type(enum.enum) == "table", "Not an enum")
-	local cname = enum.cname:match "(.-)_t$"
+	local cname = enum.cname:match "(.-)_enum$"
 	local uname = cname:upper()
 	local items = {}
 	for index , item in ipairs(enum.enum) do
@@ -730,7 +736,7 @@ function codegen.gen_enum_cdefine(enum)
 	end
 
 	local temp = {
-		NAME = cname,
+		NAME = enum.cname,
 		COUNT = uname .. "_COUNT",
 		ITEMS = table.concat(items, "\n\t"),
 	}
@@ -744,10 +750,18 @@ local function flag_format(flag)
 	end
 end
 
+local flag_temp = [[
+typedef enum $NAME
+{
+    $ITEMS
+        
+} $NAME;
+]]
+
 function codegen.gen_flag_cdefine(flag)
 	assert(type(flag.flag) == "table", "Not a flag")
 	flag_format(flag)
-	local cname = "BGFX_" .. (flag.cname or to_underscorecase(flag.name):upper())
+	local cname = "CGPU_" .. (flag.cname or to_underscorecase(flag.name):upper())
 	local s = {}
 	local shift = flag.shift
 	for index, item in ipairs(flag.flag) do
@@ -755,7 +769,7 @@ function codegen.gen_flag_cdefine(flag)
 		if item.cname then
 			name = cname .. "_" .. item.cname
 		else
-			name = cname .. "_" .. to_underscorecase(item.name):upper()
+			name = cname .. "_" .. item.name:upper()
 		end
 		local value = item.value
 
@@ -766,11 +780,11 @@ function codegen.gen_flag_cdefine(flag)
 					s[#s+1] = "/// " .. c
 				end
 			end
-			local sets = { "" }
+			local sets = {}
 			for _, v in ipairs(item) do
-				sets[#sets+1] = cname .. "_" .. to_underscorecase(v):upper()
+				sets[#sets+1] = cname .. "_" .. v:upper()
 			end
-			s[#s+1] = string.format("#define %s (0%s \\\n\t)\n", name, table.concat(sets, " \\\n\t| "))
+            s[#s + 1] = string.format("%s = %s,", name, table.concat(sets, " | "))
 		else
 			local comment = ""
 			if item.comment then
@@ -784,8 +798,8 @@ function codegen.gen_flag_cdefine(flag)
 				end
 			end
 			value = string.format(flag.format, value)
-			local code = string.format("#define %s %sUINT%d_C(0x%s)%s",
-				name, namealign(name, DEFINE_NAME_ALIGN), flag.bits, value, comment)
+            local code = string.format("%s = 0x%s,%s /** (%2d) %s%s */", name, value, namealign(name, 40), index - 1,
+                comment, namealign(comment, 30))
 			s[#s+1] = code
 		end
 	end
@@ -827,9 +841,12 @@ function codegen.gen_flag_cdefine(flag)
 			(cname .. "_MASK"))
 	end
 
-	s[#s+1] = ""
+    local temp = {
+        NAME = cname,
+        ITEMS = table.concat(s, "\n\t")
+    }
 
-	return table.concat(s, "\n")
+    return (flag_temp:gsub("$(%u+)", temp))
 end
 
 local function text_with_comments(items, item, cstyle, is_classmember)
@@ -964,6 +981,19 @@ inline bool isValid($NAME _handle) { return bgfx::kInvalidHandle != _handle.idx;
 function codegen.gen_handle(handle)
 	assert(handle.handle, "Not a handle")
 	return (handle_temp:gsub("$(%u+)", { NAME = handle.name }))
+end
+
+local cid_temp = [[
+DEFINE_CGPU_OBJECT($NAME)
+]]
+function codegen.gen_cid(id)
+	assert(id.id, "Not a id")
+	return (cid_temp:gsub("$(%u+)", { NAME = id.cname }))
+end
+
+function codegen.gen_id(id)
+	assert(id.id, "Not a id")
+	return (cid_temp:gsub("$(%u+)", { NAME = id.cname:match "(.-)_t$" }))
 end
 
 local idl = require "idl"
