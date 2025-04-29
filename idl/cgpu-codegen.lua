@@ -2,7 +2,7 @@
 -- License (the same with bgfx) : https://github.com/bkaradzic/bgfx/blob/master/LICENSE
 
 local codegen = require "codegen"
-local idl = codegen.idl("cgpu.idl", "cgpu_")
+local idl = codegen.idl "cgpu.idl"
 
 local func_actions = {
 
