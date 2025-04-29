@@ -141,6 +141,32 @@ function typegen.id(name_converter, types, id)
     return temp
 end
 
+local function cfunc(f)
+	return function(func)
+		if (not func.cpponly) or func.conly then
+			return f(func)
+		end
+	end
+end
+
+local funcgen = {}
+
+funcgen.c99decl = cfunc(function(func)
+	local doc = func.comments
+	if not doc and func.comment then
+		doc = { func.comment }
+	end
+	if doc then
+		doc = codegen.doxygen_ctype(doc, func)
+	end
+	local funcdecl = codegen.apply_functemp(func, "BGFX_C_API $CRET bgfx_$CFUNCNAME($CARGS);")
+	if doc then
+		return "\n" .. doc .. "\n" .. funcdecl
+	else
+		return funcdecl
+	end
+end)
+
 local function convert_arg(all_types, arg, namespace)
     local type = all_types[arg.type]
     if type ~= nil then

@@ -567,9 +567,19 @@ enum.VertexFormat { comment = "Vertex Format:" }
 
 id "InstanceId"
 
+struct.InstanceDescriptor
+    .backend            "Backend"
+    .enableDebugLayer   "bool"
+    .enableGpuBasedValidation   "bool"
+    .enableSetName      "bool"
+
 struct.Instance 
     .backend            "Backend"
 
 struct.BufferRange
     .offset             "uint64_t"
     .size               "uint64_t"
+
+func.createInstance { cfunc }
+    "InstanceId"
+    .desc "const InstanceDescriptor*"

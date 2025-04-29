@@ -18,4 +18,6 @@ $ids
 
 $structs
 
+$c99decl
+
 #endif // CGPU_C99_H_HEADER_GUARD

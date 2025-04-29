@@ -115,6 +115,139 @@ local function convert_arg(all_types, arg, namespace)
 	end
 end
 
+local function convert_funcname(name)
+	return name
+end
+
+local function alternative_name(name)
+	if name:sub(1,1) == "_" then
+		return name:sub(2)
+	else
+		return name .. "_"
+	end
+end
+
+local function gen_arg_conversion(all_types, arg)
+	if arg.ctype == arg.fulltype then
+		-- do not need conversion
+		return
+	end
+	local ctype = all_types[arg.type]
+	if ctype.handle and arg.type == arg.fulltype then
+		local aname = alternative_name(arg.name)
+		arg.aname = aname .. ".cpp"
+		arg.aname_cpp2c = aname .. ".c"
+		arg.conversion = string.format(
+			"union { %s c; bgfx::%s cpp; } %s = { %s };" ,
+			ctype.cname, arg.type, aname, arg.name)
+		arg.conversion_back = string.format(
+			"union { bgfx::%s cpp; %s c; } %s = { %s };" ,
+			arg.type, ctype.cname, aname, arg.name)
+	elseif arg.ref then
+		if ctype.cname == arg.type then
+			arg.aname = "*" .. arg.name
+			arg.aname_cpp2c = "&" .. arg.name
+		elseif arg.out and ctype.enum then
+			local aname = alternative_name(arg.name)
+			local cpptype = arg.cpptype:match "(.-)%s*&"	-- remove &
+			local c99type = arg.ctype:match "(.-)%s*%*"	-- remove *
+			arg.aname = aname
+			arg.aname_cpp2c = "&" .. aname
+			arg.conversion = string.format("%s %s;", cpptype, aname)
+			arg.conversion_back = string.format("%s %s;", c99type, aname);
+			arg.out_conversion = string.format("*%s = (%s)%s;", arg.name, ctype.cname, aname)
+			arg.out_conversion_back = string.format("%s = (%s)%s;", arg.name, c99type, aname)
+		else
+			arg.aname = alternative_name(arg.name)
+			arg.aname_cpp2c = string.format("(%s)&%s" , arg.ctype , arg.name)
+			arg.conversion = string.format(
+				"%s %s = *(%s)%s;",
+				arg.cpptype, arg.aname, arg.ptype, arg.name)
+		end
+	else
+		local cpptype = arg.cpptype
+		local ctype = arg.ctype
+		if arg.array then
+			cpptype = cpptype .. "*"
+			ctype = ctype .. "*"
+		end
+		arg.aname = string.format(
+			"(%s)%s",
+			cpptype, arg.name)
+		arg.aname_cpp2c = string.format(
+			"(%s)%s",
+			ctype, arg.name)
+	end
+end
+
+local function gen_ret_conversion(all_types, func)
+	local postfix = { func.vararg and "va_end(argList);" }
+	local postfix_cpp2c = { postfix[1] }
+	func.ret_postfix = postfix
+	func.ret_postfix_cpp2c = postfix_cpp2c
+
+	for _, arg in ipairs(func.args) do
+		if arg.out_conversion then
+			postfix[#postfix+1] = arg.out_conversion
+			postfix_cpp2c[#postfix_cpp2c+1] = arg.out_conversion_back
+		end
+	end
+
+	local ctype = all_types[func.ret.type]
+	if ctype.handle then
+		func.ret_conversion = string.format(
+			"union { %s c; bgfx::%s cpp; } handle_ret;" ,
+			ctype.cname, ctype.name)
+		func.ret_conversion_cpp2c = string.format(
+			"union { bgfx::%s cpp; %s c; } handle_ret;" ,
+			ctype.name, ctype.cname)
+		func.ret_prefix = "handle_ret.cpp = "
+		func.ret_prefix_cpp2c = "handle_ret.c = "
+		postfix[#postfix+1] = "return handle_ret.c;"
+		postfix_cpp2c[#postfix_cpp2c+1] = "return handle_ret.cpp;"
+	elseif func.ret.fulltype ~= "void" then
+		local ctype_conversion = ""
+		local conversion_back = ""
+		if ctype.name ~= ctype.cname then
+			if func.ret.ref then
+				ctype_conversion =  "(" ..  func.ret.ctype .. ")&"
+				conversion_back = "*(" ..  func.ret.ptype .. ")"
+			else
+				ctype_conversion = "(" ..  func.ret.ctype .. ")"
+				conversion_back = "(" ..  func.ret.cpptype .. ")"
+			end
+		end
+		if #postfix > 0 then
+			func.ret_prefix = string.format("%s retValue = %s", func.ret.ctype , ctype_conversion)
+			func.ret_prefix_cpp2c = string.format("%s retValue = %s", func.ret.cpptype , conversion_back)
+			local ret = "return retValue;"
+			postfix[#postfix+1] = ret
+			postfix_cpp2c[#postfix_cpp2c+1] = ret
+		else
+			func.ret_prefix = string.format("return %s", ctype_conversion)
+			func.ret_prefix_cpp2c = string.format("return %s", conversion_back)
+		end
+	end
+end
+
+local function convert_vararg(v)
+	if v.vararg then
+		local args = v.args
+		local vararg = {
+			name = "",
+			fulltype = "...",
+			type = "...",
+			ctype = "...",
+			aname = "argList",
+			conversion = string.format(
+				"va_list argList;\n\tva_start(argList, %s);",
+				args[#args].name),
+		}
+		args[#args + 1] = vararg
+		v.alter_name = v.vararg
+	end
+end
+
 local function nameconversion(all_types, all_funcs)
 	for _,v in ipairs(all_types) do
 		local name = v.name
