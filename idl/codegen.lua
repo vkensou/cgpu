@@ -13,7 +13,7 @@ end
 
 local function camelcase_to_underscorecase(name)
 	local tmp = {}
-	for v in name:gmatch "[%u%d]+%l*" do
+	for v in name:gmatch "[%u%d]+[%l%d]*" do
 		tmp[#tmp+1] = v:lower()
 	end
 	return table.concat(tmp, "_")
@@ -296,14 +296,16 @@ function codegen.nameconversion(all_types, all_funcs)
 				v.cname = name
 			end
 		end
-		if cname and not v.flag then
+		if cname then
 			if v.namespace then
 				cname = camelcase_to_underscorecase(v.namespace) .. "_" .. cname
 			end
 			if v.enum then
 				v.cname = "cgpu_".. cname .. "_enum"
+			elseif v.flag then
+				v.cname = "cgpu_".. cname .. "_flag"
 			elseif v.id then
-				v.cname = "cgpu_".. cname
+				v.cname = "cgpu_".. name:match("(.-)Id$"):lower() .. "_id"
 			else
 				v.cname = "cgpu_".. cname .. "_t"
 			end
@@ -761,7 +763,7 @@ typedef enum $NAME
 function codegen.gen_flag_cdefine(flag)
 	assert(type(flag.flag) == "table", "Not a flag")
 	flag_format(flag)
-	local cname = "CGPU_" .. (flag.cname or to_underscorecase(flag.name):upper())
+	local cname = (flag.cname:match "(.-)_flag$"):upper()
 	local s = {}
 	local shift = flag.shift
 	for index, item in ipairs(flag.flag) do
@@ -769,7 +771,11 @@ function codegen.gen_flag_cdefine(flag)
 		if item.cname then
 			name = cname .. "_" .. item.cname
 		else
-			name = cname .. "_" .. item.name:upper()
+			if flag.underscore then
+				name = cname .. "_" .. camelcase_to_underscorecase(item.name):upper()
+			else
+				name = cname .. "_" .. item.name:upper()
+			end
 		end
 		local value = item.value
 
@@ -782,7 +788,13 @@ function codegen.gen_flag_cdefine(flag)
 			end
 			local sets = {}
 			for _, v in ipairs(item) do
-				sets[#sets+1] = cname .. "_" .. v:upper()
+				local vname
+				if flag.underscore then
+					vname = cname .. "_" .. camelcase_to_underscorecase(v):upper()
+				else
+					vname = cname .. "_" .. v:upper()
+				end
+				sets[#sets+1] = vname
 			end
             s[#s + 1] = string.format("%s = %s,", name, table.concat(sets, " | "))
 		else
@@ -842,7 +854,7 @@ function codegen.gen_flag_cdefine(flag)
 	end
 
     local temp = {
-        NAME = cname,
+        NAME = flag.cname,
         ITEMS = table.concat(s, "\n\t")
     }
 
@@ -941,7 +953,7 @@ function codegen.gen_struct_define(struct, methods)
 end
 
 local cstruct_temp = [[
-typedef struct $NAME_s
+typedef struct $NAME
 {
 	$ITEMS
 
@@ -988,7 +1000,8 @@ DEFINE_CGPU_OBJECT($NAME)
 ]]
 function codegen.gen_cid(id)
 	assert(id.id, "Not a id")
-	return (cid_temp:gsub("$(%u+)", { NAME = id.cname }))
+	local cname = id.cname:match("(.-)_id$")
+	return (cid_temp:gsub("$(%u+)", { NAME = cname }))
 end
 
 function codegen.gen_id(id)
