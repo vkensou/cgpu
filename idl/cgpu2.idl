@@ -580,3 +580,10 @@ struct.BufferRange
 func.createInstance { cfunc }
     "InstanceId"
     .desc "const InstanceDescriptor*"
+
+func.freeInstance
+    "void"
+    .instance "InstanceId"
+
+func.Instance.getBackend { const }
+    "Backend::Enum"

@@ -410,11 +410,19 @@ function codegen.nameconversion(all_types, all_funcs)
 				classname = "const " .. classname
 			end
 			local classtype = { fulltype = classname .. "*" }
-			convert_arg(all_types, classtype, v)
+			convert_arg(all_types, classtype, v)	
 			v.this = classtype.ctype
 			v.this_type = classtype
 			v.this_conversion = string.format( "%s This = (%s)_this;", classtype.cpptype, classtype.cpptype)
 			v.this_to_c = string.format("(%s)this", classtype.ctype)
+			local class_id = all_types[namespace .. "Id"]
+			if class_id ~= nil then
+				local id_name = class_id.cname
+				if v.const then
+					id_name = "const " .. id_name
+				end
+				v.this_id = id_name
+			end
 		end
 	end
 
@@ -457,7 +465,7 @@ local function codetemp(func)
 
 	if func.class then
 		-- It's a member function
-		cargs[1] = func.this .. " _this"
+		cargs[1] = (func.this_id or func.this) .. " _this"
 		conversion[1] = func.this_conversion
 		cppfunc = "This->" .. func.name
 		callargs[1] = "_this"
@@ -529,7 +537,7 @@ local function codetemp(func)
 		callfunc_c2c = func.cname
 	end
 
-	outCargs = table.concat(cargs, ", ")
+	local outCargs = table.concat(cargs, ", ")
 	if outCargs == "" then
 		outCargs = "void"
 	end
