@@ -570,12 +570,27 @@ struct.InstanceDescriptor
     .enableGpuBasedValidation   "bool"
     .enableSetName      "bool"
 
+struct.InstanceFeatures
+    .specializationConstant "bool"
+
 struct.Instance 
     .backend            "Backend::Enum"
 
 struct.BufferRange
     .offset             "uint64_t"
     .size               "uint64_t"
+
+funcptr.CreateInstance
+    "InstanceId"
+    .desc "const InstanceDescriptor*"
+
+funcptr.FreeInstance
+    "void"
+    .instance "InstanceId"
+
+funcptr.InstanceQueryFeatures
+    "void"
+    .features "const InstanceFeatures*"
 
 func.createInstance { cfunc }
     "InstanceId"
@@ -587,3 +602,7 @@ func.freeInstance
 
 func.Instance.getBackend { const }
     "Backend::Enum"
+
+func.Instance.queryFeatures { const }
+    "void"
+    .features "const InstanceFeatures*"

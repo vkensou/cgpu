@@ -299,13 +299,14 @@ function codegen.nameconversion(all_types, all_funcs)
 		if cname then
 			if v.namespace then
 				cname = camelcase_to_underscorecase(v.namespace) .. "_" .. cname
-			end
-			if v.enum then
+			elseif v.enum then
 				v.cname = "cgpu_".. cname .. "_enum"
 			elseif v.flag then
 				v.cname = "cgpu_".. cname .. "_flag"
 			elseif v.id then
 				v.cname = "cgpu_".. name:match("(.-)Id$"):lower() .. "_id"
+			elseif v.args then
+				v.cname = "cgpu" .. "_proc_".. cname
 			else
 				v.cname = "cgpu_".. cname .. "_t"
 			end
