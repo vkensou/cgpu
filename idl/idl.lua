@@ -203,7 +203,7 @@ local function func(sets)
 			args[args_name] = duplicate_arg_name
 			return function (fulltype)
 				local arg = {
-					name = "_" .. args_name,
+					name = args_name,
 					fulltype = fulltype,
 				}
 				f.args[#f.args+1] = arg

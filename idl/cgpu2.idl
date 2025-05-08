@@ -13,6 +13,7 @@ typedef "uint64_t"
 typedef "uintptr_t"
 typedef "va_list"
 typedef "void"
+typedef "size_t"
 
 enum.Backend { comment = "Backend:" }
 	.Vulkan		--- Vulkan
@@ -562,23 +563,66 @@ enum.VertexFormat { comment = "Vertex Format:" }
     .Unorm8x4
     ()
 
-id "InstanceId"
+funcptr.LogCallback {vararg}
+    "void"
+    .userData           "void*"
+    .severity           "LogSeverity::Enum"
+    .fmt                "const char*"
 
-struct.InstanceDescriptor
-    .backend            "Backend::Enum"
-    .enableDebugLayer   "bool"
-    .enableGpuBasedValidation   "bool"
-    .enableSetName      "bool"
+funcptr.Malloc
+    "void*"
+    .userData           "void*"
+    .size               "size_t"
+    .pool               "void*"
 
-struct.InstanceFeatures
-    .specializationConstant "bool"
+funcptr.Realloc
+    "void*"
+    .userData           "void*"
+    .ptr                "void*"
+    .size               "size_t"
+    .pool               "void*"
 
-struct.Instance 
-    .backend            "Backend::Enum"
+funcptr.Calloc
+    "void*"
+    .userData           "void*"
+    .count              "size_t"
+    .size               "size_t"
+    .pool               "void*"
 
-struct.BufferRange
-    .offset             "uint64_t"
-    .size               "uint64_t"
+funcptr.Free
+    "void"
+    .userData           "void*"
+    .ptr                "void*"
+    .pool               "void*"
+
+funcptr.MallocAligned
+    "void*"
+    .userData           "void*"
+    .size               "size_t"
+    .alignment          "size_t"
+    .pool               "void*"
+
+funcptr.ReallocAligned
+    "void*"
+    .userData           "void*"
+    .ptr                "void*"
+    .size               "size_t"
+    .alignment          "size_t"
+    .pool               "void*"
+
+funcptr.CallocAligned
+    "void*"
+    .userData           "void*"
+    .count              "size_t"
+    .size               "size_t"
+    .alignment          "size_t"
+    .pool               "void*"
+
+funcptr.FreeAligned
+    "void"
+    .userData           "void*"
+    .ptr                "void*"
+    .pool               "void*"
 
 funcptr.CreateInstance
     "InstanceId"
@@ -591,6 +635,41 @@ funcptr.FreeInstance
 funcptr.InstanceQueryFeatures
     "void"
     .features "const InstanceFeatures*"
+
+id "InstanceId"
+
+struct.Logger
+    .logCallback "LogCallback"
+    .userData "void*"
+
+struct.Allocator
+    .mallocFn "Malloc"
+    .reallocFn "Realloc"
+    .callocFn "Calloc"
+    .freeFn "Free"
+    .mallocAlignedFn "MallocAligned"
+    .reallocAlignedFn "ReallocAligned"
+    .callocAlignedFn "CallocAligned"
+    .freeAlignedFn "FreeAligned"
+
+struct.InstanceDescriptor
+    .backend            "Backend::Enum"
+    .enableDebugLayer   "bool"
+    .enableGpuBasedValidation   "bool"
+    .enableSetName      "bool"
+
+struct.InstanceFeatures
+    .specializationConstant "bool"
+
+struct.Instance 
+    .backend            "Backend::Enum"
+    .enableSetName      "bool"
+    .Logger             "Logger"
+    .allocator          "Allocator"
+
+struct.BufferRange
+    .offset             "uint64_t"
+    .size               "uint64_t"
 
 func.createInstance { cfunc }
     "InstanceId"

@@ -14,9 +14,9 @@ $cflags
 
 $cids
 
-$cstructs
-
 $cfuncptrs
+
+$cstructs
 
 $c99decl
 

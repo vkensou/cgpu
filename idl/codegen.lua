@@ -355,11 +355,13 @@ function codegen.nameconversion(all_types, all_funcs)
 	for _,v in ipairs(all_types) do
 		if v.struct then
 			for _, item in ipairs(v.struct) do
+				item.cname= convert_funcname(item.name)
 				convert_arg(all_types, item, v)
 			end
 		elseif v.args then
 			-- funcptr
 			for _, arg in ipairs(v.args) do
+				arg.cname = convert_funcname(arg.name)
 				convert_arg(all_types, arg, v)
 			end
 			convert_vararg(v)
@@ -395,6 +397,7 @@ function codegen.nameconversion(all_types, all_funcs)
 		end
 
 		for _, arg in ipairs(v.args) do
+			arg.cname = convert_funcname(arg.name)
 			convert_arg(all_types, arg, v)
 			gen_arg_conversion(all_types, arg)
 		end
@@ -479,7 +482,7 @@ local function codetemp(func)
 	for _, arg in ipairs(func.args) do
 		conversion[#conversion+1] = arg.conversion
 		conversion_c2cpp[#conversion_c2cpp+1] = arg.conversion_back
-		local cname = arg.ctype .. " " .. arg.name
+		local cname = arg.ctype .. " " .. (arg.cname or arg.name)
 		if arg.array then
 			cname = cname .. (arg.carray or arg.array)
 		end
@@ -871,7 +874,7 @@ function codegen.gen_flag_cdefine(flag)
 end
 
 local function text_with_comments(items, item, cstyle, is_classmember)
-	local name = item.name
+	local name = item.cname
 	if item.array then
 		if cstyle then
 			name = name .. (item.carray or item.array)
