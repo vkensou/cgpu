@@ -30,13 +30,13 @@
 
 // #include "SkrProfile/profile.h"
 
-CGPU_API CGPUInstanceId cgpu_create_instance(const CGPUInstanceDescriptor* desc)
+CGPU_API cgpu_instance_id cgpu_create_instance(const cgpu_instance_descriptor_t* desc)
 {
     // SkrCZoneN(zz, "CGPUCreateInstance", 1);
     
     cgpu_assert((desc->backend == CGPU_BACKEND_VULKAN || desc->backend == CGPU_BACKEND_D3D12 || desc->backend == CGPU_BACKEND_METAL) && "CGPU support only vulkan & d3d12 & metal currently!");
-    const CGPUProcTable* tbl = CGPU_NULLPTR;
-    const CGPUSurfacesProcTable* s_tbl = CGPU_NULLPTR;
+    const cgpu_proc_table_t* tbl = CGPU_NULLPTR;
+    const cgpu_surfaces_proc_table_t* s_tbl = CGPU_NULLPTR;
 
     if (desc->backend == CGPU_BACKEND_COUNT)
     {
@@ -62,7 +62,7 @@ CGPU_API CGPUInstanceId cgpu_create_instance(const CGPUInstanceDescriptor* desc)
         s_tbl = CGPU_D3D12SurfacesProcTable();
     }
 #endif
-    CGPUInstance* instance = (CGPUInstance*)tbl->create_instance(desc);
+    cgpu_instance_t* instance = (cgpu_instance_t*)tbl->create_instance(desc);
     *(bool*)&instance->enable_set_name = desc->enable_set_name;
     instance->backend = desc->backend;
     instance->proc_table = tbl;
@@ -75,12 +75,12 @@ CGPU_API CGPUInstanceId cgpu_create_instance(const CGPUInstanceDescriptor* desc)
     return instance;
 }
 
-CGPU_API cgpu_backend_enum cgpu_instance_get_backend(CGPUInstanceId instance)
+CGPU_API cgpu_backend_enum cgpu_instance_get_backend(cgpu_instance_id instance)
 {
     return instance->backend;
 }
 
-CGPU_API void cgpu_query_instance_features(CGPUInstanceId instance, struct CGPUInstanceFeatures* features)
+CGPU_API void cgpu_query_instance_features(cgpu_instance_id instance, cgpu_instance_features_t* features)
 {
     cgpu_assert(instance != CGPU_NULLPTR && "fatal: can't destroy NULL instance!");
     cgpu_assert(instance->proc_table->query_instance_features && "query_instance_features Proc Missing!");
@@ -88,16 +88,16 @@ CGPU_API void cgpu_query_instance_features(CGPUInstanceId instance, struct CGPUI
     instance->proc_table->query_instance_features(instance, features);
 }
 
-CGPU_API void cgpu_free_instance(CGPUInstanceId instance)
+CGPU_API void cgpu_free_instance(cgpu_instance_id instance)
 {
     // SkrCZoneN(zz, "CGPUFreeInstance", 1);
 
     cgpu_assert(instance != CGPU_NULLPTR && "fatal: can't destroy NULL instance!");
     cgpu_assert(instance->proc_table->free_instance && "free_instance Proc Missing!");
 
-    const CGPUAllocator* allocator = &instance->allocator;
+    const cgpu_allocator_t* allocator = &instance->allocator;
 
-    struct CGPURuntimeTable* runtime_table = instance->runtime_table;
+    cgpu_runtime_table_t* runtime_table = instance->runtime_table;
     cgpu_early_free_runtime_table(runtime_table);
     cgpu_free_runtime_table(allocator, runtime_table);
     instance->proc_table->free_instance(instance);
@@ -105,7 +105,7 @@ CGPU_API void cgpu_free_instance(CGPUInstanceId instance)
     // SkrCZoneEnd(zz);
 }
 
-void cgpu_enum_adapters(CGPUInstanceId instance, CGPUAdapterId* const adapters, uint32_t* adapters_num)
+void cgpu_enum_adapters(cgpu_instance_id instance, CGPUAdapterId* const adapters, uint32_t* adapters_num)
 {
     // SkrCZoneN(zz, "CGPUEnumAdapters", 1);
 
@@ -118,8 +118,8 @@ void cgpu_enum_adapters(CGPUInstanceId instance, CGPUAdapterId* const adapters, 
     {
         for (uint32_t i = 0; i < *adapters_num; i++)
         {
-            *(const CGPUProcTable**)&adapters[i]->proc_table_cache = instance->proc_table;
-            *(CGPUInstanceId*)&adapters[i]->instance = instance;
+            *(const cgpu_proc_table_t**)&adapters[i]->proc_table_cache = instance->proc_table;
+            *(cgpu_instance_id*)&adapters[i]->instance = instance;
         }
     }
     // -- proc_table_cache
@@ -157,7 +157,7 @@ CGPUDeviceId cgpu_create_device(CGPUAdapterId adapter, const CGPUDeviceDescripto
     // ++ proc_table_cache
     if (device != CGPU_NULLPTR)
     {
-        *(const CGPUProcTable**)&device->proc_table_cache = adapter->proc_table_cache;
+        *(const cgpu_proc_table_t**)&device->proc_table_cache = adapter->proc_table_cache;
     }
     // -- proc_table_cache
 
@@ -1029,7 +1029,7 @@ CGPUShaderLibraryId cgpu_create_shader_library(CGPUDeviceId device, const struct
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
     cgpu_assert(device->proc_table_cache->create_shader_library && "create_shader_library Proc Missing!");
 
-    const CGPUAllocator* allocator = &device->adapter->instance->allocator;
+    const cgpu_allocator_t* allocator = &device->adapter->instance->allocator;
     CGPUProcCreateShaderLibrary fn_create_shader_library = device->proc_table_cache->create_shader_library;
     CGPUShaderLibrary* shader = (CGPUShaderLibrary*)fn_create_shader_library(device, desc);
     shader->device = device;

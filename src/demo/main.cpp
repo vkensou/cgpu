@@ -15,7 +15,7 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
-CGPUInstanceId instance;
+cgpu_instance_id instance;
 CGPUDeviceId device;
 CGPUQueueId gfx_queue;
 CGPURenderPassId render_pass;
@@ -467,7 +467,7 @@ int main(int argc, char** argv)
 			rdc = GetRenderDocApi();
 	}
 
-	CGPUInstanceDescriptor instance_desc = {
+	cgpu_instance_descriptor_t instance_desc = {
 		.backend = CGPU_BACKEND_VULKAN,
 		.enable_debug_layer = true,
 		.enable_gpu_based_validation = true,

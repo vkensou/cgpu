@@ -6,13 +6,19 @@
 #include <stdint.h>  // uint32_t
 #include <stdlib.h>  // size_t
 
-#define DEFINE_CGPU_OBJECT(name) typedef const struct name* name##_id;
+#define DEFINE_CGPU_OBJECT2(name) typedef const struct name* name##_id;
 
 $cenums
 
 $cflags
 
 $cids
+
+typedef struct cgpu_instance_descriptor cgpu_instance_descriptor_t;
+typedef struct cgpu_instance_features cgpu_instance_features_t;
+typedef struct cgpu_proc_table cgpu_proc_table_t;
+typedef struct cgpu_surfaces_proc_table cgpu_surfaces_proc_table_t;
+typedef struct cgpu_runtime_table cgpu_runtime_table_t;
 
 $cfuncptrs
 

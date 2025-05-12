@@ -31,8 +31,8 @@ extern "C" {
 struct VkUtil_DescriptorPool;
 
 // Environment Setup
-bool VkUtil_InitializeEnvironment(struct CGPUInstance* Inst);
-void VkUtil_DeInitializeEnvironment(struct CGPUInstance* Inst);
+bool VkUtil_InitializeEnvironment(cgpu_instance_t* Inst);
+void VkUtil_DeInitializeEnvironment(cgpu_instance_t* Inst);
 
 // Instance Helpers
 void VkUtil_EnableValidationLayer(
@@ -62,7 +62,7 @@ void VkUtil_FreeShaderReflection(CGPUShaderLibrary_Vulkan* library);
 
 // Feature Select Helpers
 void VkUitl_QueryDynamicPipelineStates(CGPUAdapter_Vulkan* VkAdapter, uint64_t dynamic_state, uint32_t* pCount, VkDynamicState* pStates);
-void VkUtil_SelectQueueIndices(CGPUAdapter_Vulkan* VkAdapter, const CGPUAllocator* allocator);
+void VkUtil_SelectQueueIndices(CGPUAdapter_Vulkan* VkAdapter, const cgpu_allocator_t* allocator);
 void VkUtil_RecordAdapterDetail(CGPUAdapter_Vulkan* VkAdapter);
 void VkUtil_EnumFormatSupports(CGPUAdapter_Vulkan* VkAdapter);
 void VkUtil_SelectInstanceLayers(struct CGPUInstance_Vulkan* VkInstance,
@@ -70,9 +70,9 @@ const char* const* instance_layers, uint32_t instance_layers_count);
 void VkUtil_SelectInstanceExtensions(struct CGPUInstance_Vulkan* VkInstance,
 const char* const* instance_extensions, uint32_t instance_extension_count);
 void VkUtil_SelectPhysicalDeviceLayers(struct CGPUAdapter_Vulkan* VkAdapter,
-const char* const* device_layers, uint32_t device_layers_count, const CGPUAllocator* allocator);
+const char* const* device_layers, uint32_t device_layers_count, const cgpu_allocator_t* allocator);
 void VkUtil_SelectPhysicalDeviceExtensions(struct CGPUAdapter_Vulkan* VkAdapter,
-const char* const* device_extensions, uint32_t device_extension_count, const CGPUAllocator* allocator);
+const char* const* device_extensions, uint32_t device_extension_count, const cgpu_allocator_t* allocator);
 
 // Table Helpers
 struct VkUtil_RenderPassDesc;

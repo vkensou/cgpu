@@ -106,7 +106,7 @@ CGPUBufferId cgpu_create_buffer_vulkan(CGPUDeviceId device, const struct CGPUBuf
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
-    const CGPUAllocator* allocator = &I->super.allocator;
+    const cgpu_allocator_t* allocator = &I->super.allocator;
     // Create VkBufferCreateInfo
     VkBufferCreateInfo add_info = VkUtil_CreateBufferCreateInfo(A, desc);
     // VMA Alloc
@@ -436,7 +436,7 @@ void cgpu_free_buffer_vulkan(CGPUBufferId buffer)
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)B->super.device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
-    const CGPUAllocator* allocator = &I->super.allocator;
+    const cgpu_allocator_t* allocator = &I->super.allocator;
     cgpu_assert(B->pVkAllocation && "pVkAllocation must not be null!");
     if (B->pVkUniformTexelView)
     {
@@ -486,7 +486,7 @@ void VkUtil_ImportSharedTexture(CGPUQueue_Vulkan* Q, VmaAllocationCreateInfo* pM
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)Q->super.device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
-    const CGPUAllocator* allocator = &I->super.allocator;
+    const cgpu_allocator_t* allocator = &I->super.allocator;
     pImageCreateInfo->pNext = pExternalInfo;
     CGPUImportTextureDescriptor* pImportDesc = (CGPUImportTextureDescriptor*)desc->native_handle;
     pExternalInfo->handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
@@ -546,7 +546,7 @@ void VkUtil_AllocateSharedTexture(CGPUQueue_Vulkan* Q, VmaAllocationCreateInfo* 
     VkExportMemoryWin32HandleInfoKHR* pWin32ExportMemoryInfo)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)Q->super.device;
-    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
+    const cgpu_allocator_t* allocator = &D->super.adapter->instance->allocator;
     pImageCreateInfo->pNext = pExternalInfo;
     const VkExternalMemoryHandleTypeFlags exportFlags = 
         VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT | 
@@ -598,7 +598,7 @@ VkSparseImageMemoryRequirements VkUtil_FillTiledTextureInfo(CGPUDevice_Vulkan* D
 {
     VkImage pVkImage = T->pVkImage;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
-    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
+    const cgpu_allocator_t* allocator = &D->super.adapter->instance->allocator;
     // Get memory requirements
     VkMemoryRequirements sparseImageMemoryReqs;
     // Sparse image memory requirement counts
@@ -718,7 +718,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
-    const CGPUAllocator* allocator = &I->super.allocator;
+    const cgpu_allocator_t* allocator = &I->super.allocator;
 
     bool owns_image = false;
     bool is_allocation_dedicated = false;
@@ -1048,7 +1048,7 @@ void VkUtil_UnmapPackedMappingAt(CGPUTexture_Vulkan* T, uint32_t n)
 void cgpu_queue_map_packed_mips_vulkan(CGPUQueueId queue, const struct CGPUTiledTexturePackedMips* regions)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)queue->device;
-    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
+    const cgpu_allocator_t* allocator = &D->super.adapter->instance->allocator;
     CGPUQueue_Vulkan* Q = (CGPUQueue_Vulkan*)queue;
     uint32_t N = 0;
     for (uint32_t i = 0; i < regions->packed_mip_count; i++)
@@ -1142,7 +1142,7 @@ void cgpu_queue_map_tiled_texture_vulkan(CGPUQueueId queue, const struct CGPUTil
     const uint32_t kPageSize = VK_SPARSE_PAGE_STANDARD_SIZE;
     const uint32_t RegionCount = regions->region_count;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)queue->device;
-    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
+    const cgpu_allocator_t* allocator = &D->super.adapter->instance->allocator;
     CGPUQueue_Vulkan* Q = (CGPUQueue_Vulkan*)queue;
     CGPUTexture_Vulkan* T = (CGPUTexture_Vulkan*)regions->texture;
     const CGPUTiledTextureInfo* pTiledInfo = T->super.tiled_resource;
@@ -1304,7 +1304,7 @@ void cgpu_free_texture_vulkan(CGPUTextureId texture)
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)texture->device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
-    const CGPUAllocator* allocator = &I->super.allocator;
+    const cgpu_allocator_t* allocator = &I->super.allocator;
     CGPUTexture_Vulkan* T = (CGPUTexture_Vulkan*)texture;
     const CGPUTextureInfo* pInfo = T->super.info;
     if (T->pVkImage != VK_NULL_HANDLE)
@@ -1375,7 +1375,7 @@ CGPUTextureViewId cgpu_create_texture_view_vulkan(CGPUDeviceId device, const str
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)desc->texture->device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
-    const CGPUAllocator* allocator = &I->super.allocator;
+    const cgpu_allocator_t* allocator = &I->super.allocator;
     CGPUTexture_Vulkan* T = (CGPUTexture_Vulkan*)desc->texture;
     const CGPUTextureInfo* pInfo = T->super.info;
     CGPUTextureView_Vulkan* TV = cgpu_calloc_aligned(allocator, 1, sizeof(CGPUTextureView_Vulkan), _Alignof(CGPUTextureView_Vulkan));
@@ -1465,7 +1465,7 @@ void cgpu_free_texture_view_vulkan(CGPUTextureViewId render_target)
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)render_target->device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
-    const CGPUAllocator* allocator = &I->super.allocator;
+    const cgpu_allocator_t* allocator = &I->super.allocator;
     CGPUTextureView_Vulkan* TV = (CGPUTextureView_Vulkan*)render_target;
     // Free descriptors
     if (VK_NULL_HANDLE != TV->pVkSRVDescriptor)
@@ -1525,7 +1525,7 @@ CGPUSamplerId cgpu_create_sampler_vulkan(CGPUDeviceId device, const struct CGPUS
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
-    const CGPUAllocator* allocator = &I->super.allocator;
+    const cgpu_allocator_t* allocator = &I->super.allocator;
     CGPUSampler_Vulkan* S = cgpu_calloc_aligned(allocator, 1, sizeof(CGPUSampler_Vulkan), _Alignof(CGPUSampler_Vulkan));
     VkSamplerCreateInfo sampler_info = {
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -1557,7 +1557,7 @@ void cgpu_free_sampler_vulkan(CGPUSamplerId sampler)
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)sampler->device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
-    const CGPUAllocator* allocator = &I->super.allocator;
+    const cgpu_allocator_t* allocator = &I->super.allocator;
     D->mVkDeviceTable.vkDestroySampler(D->pVkDevice, S->pVkSampler, &I->vkAllocator);
     cgpu_free_aligned(allocator, S);
 }
@@ -1568,7 +1568,7 @@ CGPUShaderLibraryId cgpu_create_shader_library_vulkan(CGPUDeviceId device, const
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
-    const CGPUAllocator* allocator = &I->super.allocator;
+    const cgpu_allocator_t* allocator = &I->super.allocator;
     VkShaderModuleCreateInfo info = {
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         .codeSize = desc->code_size,
@@ -1588,7 +1588,7 @@ void cgpu_free_shader_library_vulkan(CGPUShaderLibraryId library)
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)library->device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
-    const CGPUAllocator* allocator = &I->super.allocator;
+    const cgpu_allocator_t* allocator = &I->super.allocator;
     CGPUShaderLibrary_Vulkan* S = (CGPUShaderLibrary_Vulkan*)library;
      VkUtil_FreeShaderReflection(S);
     if (S->mShaderModule != VK_NULL_HANDLE)

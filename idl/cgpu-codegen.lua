@@ -135,7 +135,7 @@ funcgen.c99decl = cfunc(function(func)
 	if doc then
 		doc = codegen.doxygen_ctype(doc, func)
 	end
-	local funcdecl = codegen.apply_functemp(func, "$CRET cgpu_$CFUNCNAME($CARGS);")
+	local funcdecl = codegen.apply_functemp(func, "CGPU_API $CRET cgpu_$CFUNCNAME($CARGS);")
 	if doc then
 		return "\n" .. doc .. "\n" .. funcdecl
 	else

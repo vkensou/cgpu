@@ -61,7 +61,7 @@ void cgpu_create_shader_objs_vulkan_impl(CGPURootSignatureId signature,
 CGPULinkedShaderId cgpu_compile_and_link_shaders_vulkan(CGPURootSignatureId signature, const struct CGPUCompiledShaderDescriptor* descs, uint32_t count)
 {
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)signature->device;
-    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
+    const cgpu_allocator_t* allocator = &D->super.adapter->instance->allocator;
     // CGPURootSignature_Vulkan* RS = (CGPURootSignature_Vulkan*)signature;
     if (D->mVkDeviceTable.vkCreateShadersEXT)
     {
@@ -87,7 +87,7 @@ CGPULinkedShaderId cgpu_compile_and_link_shaders_vulkan(CGPURootSignatureId sign
 void cgpu_compile_shaders_vulkan(CGPURootSignatureId signature, const struct CGPUCompiledShaderDescriptor* descs, uint32_t count, CGPUCompiledShaderId* out_isas)
 {
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)signature->device;
-    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
+    const cgpu_allocator_t* allocator = &D->super.adapter->instance->allocator;
     // CGPURootSignature_Vulkan* RS = (CGPURootSignature_Vulkan*)signature;
     if (D->mVkDeviceTable.vkCreateShadersEXT)
     {
@@ -114,7 +114,7 @@ void cgpu_free_compiled_shader_vulkan(CGPUCompiledShaderId shader)
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)shader->device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
-    const CGPUAllocator* allocator = &I->super.allocator;
+    const cgpu_allocator_t* allocator = &I->super.allocator;
     if (S)
     {
 #ifdef CGPU_PROFILE_ENABLE
@@ -139,7 +139,7 @@ void cgpu_free_linked_shader_vulkan(CGPULinkedShaderId shader)
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)shader->device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
-    const CGPUAllocator* allocator = &I->super.allocator;
+    const cgpu_allocator_t* allocator = &I->super.allocator;
     if (S)
     {
         for (uint32_t i = 0; i < CGPU_SHADER_STAGE_COUNT; i++)
@@ -166,7 +166,7 @@ void cgpu_free_linked_shader_vulkan(CGPULinkedShaderId shader)
 
 CGPUStateBufferId cgpu_create_state_buffer_vulkan(CGPUCommandBufferId cmd, const struct CGPUStateBufferDescriptor* desc)
 {
-    const CGPUAllocator* allocator = &cmd->device->adapter->instance->allocator;
+    const cgpu_allocator_t* allocator = &cmd->device->adapter->instance->allocator;
     CGPUCommandBuffer_Vulkan* CB = (CGPUCommandBuffer_Vulkan*)cmd;
     CGPUStateBuffer_Vulkan* sb = cgpu_calloc(allocator, 1, sizeof(CGPUStateBuffer_Vulkan));
     sb->super.device = CB->super.device;
@@ -189,7 +189,7 @@ void cgpu_compute_encoder_bind_state_buffer_vulkan(CGPUComputePassEncoderId enco
 void cgpu_free_state_buffer_vulkan(CGPUStateBufferId sb)
 {
     CGPUStateBuffer_Vulkan* S = (CGPUStateBuffer_Vulkan*)sb;
-    const CGPUAllocator* allocator = &sb->device->adapter->instance->allocator;
+    const cgpu_allocator_t* allocator = &sb->device->adapter->instance->allocator;
     cgpu_free(allocator, S);
 }
 
@@ -418,7 +418,7 @@ void cgpu_close_user_state_encoder_vulkan(CGPUUserStateEncoderId encoder)
 
 CGPUBinderId cgpu_create_binder_vulkan(CGPUCommandBufferId cmd)
 {    
-    const CGPUAllocator* allocator = &cmd->device->adapter->instance->allocator;
+    const cgpu_allocator_t* allocator = &cmd->device->adapter->instance->allocator;
     CGPUCommandBuffer_Vulkan* CB = (CGPUCommandBuffer_Vulkan*)cmd;
     CGPUBinder_Vulkan* bdr = cgpu_calloc(allocator, 1, sizeof(CGPUBinder_Vulkan));
     bdr->super.device = CB->super.device;
@@ -431,7 +431,7 @@ void cgpu_binder_bind_vertex_layout_vulkan(CGPUBinderId binder, const struct CGP
     CGPUBinder_Vulkan* bdr = (CGPUBinder_Vulkan*)binder;
     CGPUCommandBuffer_Vulkan* CB = (CGPUCommandBuffer_Vulkan*)bdr->super.cmd;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)CB->super.device;
-    const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
+    const cgpu_allocator_t* allocator = &D->super.adapter->instance->allocator;
 
     uint32_t input_binding_count = 0;
 	uint32_t input_attribute_count = 0;
@@ -503,6 +503,6 @@ void cgpu_binder_bind_vertex_buffer_vulkan(CGPUBinderId binder, uint32_t first_b
 void cgpu_free_binder_vulkan(CGPUBinderId binder)
 {
     CGPUBinder_Vulkan* Bdr = (CGPUBinder_Vulkan*)binder;
-    const CGPUAllocator* allocator = &binder->device->adapter->instance->allocator;
+    const cgpu_allocator_t* allocator = &binder->device->adapter->instance->allocator;
     cgpu_free(allocator, Bdr);
 }

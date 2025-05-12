@@ -10,29 +10,29 @@
 
 CGPU_EXTERN_C_BEGIN
 
-struct CGPURuntimeTable* cgpu_create_runtime_table(const CGPUAllocator* allocator);
-void cgpu_early_free_runtime_table(struct CGPURuntimeTable* table);
-void cgpu_free_runtime_table(const CGPUAllocator* allocator, struct CGPURuntimeTable* table);
+cgpu_runtime_table_t* cgpu_create_runtime_table(const cgpu_allocator_t* allocator);
+void cgpu_early_free_runtime_table(cgpu_runtime_table_t* table);
+void cgpu_free_runtime_table(const cgpu_allocator_t* allocator, cgpu_runtime_table_t* table);
 void cgpu_runtime_table_add_queue(CGPUQueueId queue, cgpu_queue_type_enum type, uint32_t index);
 CGPUQueueId cgpu_runtime_table_try_get_queue(CGPUDeviceId device, cgpu_queue_type_enum type, uint32_t index);
 
-void cgpu_runtime_table_add_custom_data(struct CGPURuntimeTable* table, const char* key, void* data);
-void cgpu_runtime_table_add_sweep_callback(struct CGPURuntimeTable* table, const char* key, void(pfn)(void*), void* usrdata);
-void cgpu_runtime_table_add_early_sweep_callback(struct CGPURuntimeTable* table, const char* key, void(pfn)(void*), void* usrdata);
-void* cgpu_runtime_table_try_get_custom_data(struct CGPURuntimeTable* table, const char* key);
-bool cgpu_runtime_table_remove_custom_data(struct CGPURuntimeTable* table, const char* key);
+void cgpu_runtime_table_add_custom_data(cgpu_runtime_table_t* table, const char* key, void* data);
+void cgpu_runtime_table_add_sweep_callback(cgpu_runtime_table_t* table, const char* key, void(pfn)(void*), void* usrdata);
+void cgpu_runtime_table_add_early_sweep_callback(cgpu_runtime_table_t* table, const char* key, void(pfn)(void*), void* usrdata);
+void* cgpu_runtime_table_try_get_custom_data(cgpu_runtime_table_t* table, const char* key);
+bool cgpu_runtime_table_remove_custom_data(cgpu_runtime_table_t* table, const char* key);
 
-void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSignatureDescriptor* desc, const CGPUAllocator* allocator);
+void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSignatureDescriptor* desc, const cgpu_allocator_t* allocator);
 void CGPUUtil_FreeRSParamTables(CGPURootSignature* RS);
 
 // check for slot-overlapping and try get a signature from pool
-CGPURootSignaturePoolId CGPUUtil_CreateRootSignaturePool(const CGPUAllocator* allocator, const CGPURootSignaturePoolDescriptor* desc);
+CGPURootSignaturePoolId CGPUUtil_CreateRootSignaturePool(const cgpu_allocator_t* allocator, const CGPURootSignaturePoolDescriptor* desc);
 CGPURootSignatureId CGPUUtil_TryAllocateSignature(CGPURootSignaturePoolId pool, CGPURootSignature* RSTables, const struct CGPURootSignatureDescriptor* desc);
 CGPURootSignatureId CGPUUtil_AddSignature(CGPURootSignaturePoolId pool, CGPURootSignature* sig, const CGPURootSignatureDescriptor* desc);
 // TODO: signature pool statics
 //void CGPUUtil_AllSignatures(CGPURootSignaturePoolId pool, CGPURootSignatureId* signatures, uint32_t* count);
 bool CGPUUtil_PoolFreeSignature(CGPURootSignaturePoolId pool, CGPURootSignatureId sig);
-void CGPUUtil_FreeRootSignaturePool(const CGPUAllocator* allocator, CGPURootSignaturePoolId pool);
+void CGPUUtil_FreeRootSignaturePool(const cgpu_allocator_t* allocator, CGPURootSignaturePoolId pool);
 
 #define cgpu_round_up(value, multiple) ((((value) + (multiple)-1) / (multiple)) * (multiple))
 #define cgpu_round_down(value, multiple) ((value) - (value) % (multiple))
@@ -100,12 +100,12 @@ CGPU_FORCEINLINE static void logger_default(void* user_data, cgpu_log_severity_e
     va_end(args);
 }
 
-#define cgpu_trace(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_SEVERITY_TRACE, fmt, ##__VA_ARGS__);}
-#define cgpu_debug(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_SEVERITY_DEBUG, fmt, ##__VA_ARGS__);}
-#define cgpu_info(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_SEVERITY_INFO, fmt, ##__VA_ARGS__);}
-#define cgpu_warn(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_SEVERITY_WARNING, fmt, ##__VA_ARGS__);}
-#define cgpu_error(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_SEVERITY_ERROR, fmt, ##__VA_ARGS__);}
-#define cgpu_fatal(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_SEVERITY_FATAL, fmt, ##__VA_ARGS__);}
+#define cgpu_trace(logger, fmt, ...) {(logger)->log_callback((logger)->user_data, CGPU_LOG_SEVERITY_TRACE, fmt, ##__VA_ARGS__);}
+#define cgpu_debug(logger, fmt, ...) {(logger)->log_callback((logger)->user_data, CGPU_LOG_SEVERITY_DEBUG, fmt, ##__VA_ARGS__);}
+#define cgpu_info(logger, fmt, ...) {(logger)->log_callback((logger)->user_data, CGPU_LOG_SEVERITY_INFO, fmt, ##__VA_ARGS__);}
+#define cgpu_warn(logger, fmt, ...) {(logger)->log_callback((logger)->user_data, CGPU_LOG_SEVERITY_WARNING, fmt, ##__VA_ARGS__);}
+#define cgpu_error(logger, fmt, ...) {(logger)->log_callback((logger)->user_data, CGPU_LOG_SEVERITY_ERROR, fmt, ##__VA_ARGS__);}
+#define cgpu_fatal(logger, fmt, ...) {(logger)->log_callback((logger)->user_data, CGPU_LOG_SEVERITY_FATAL, fmt, ##__VA_ARGS__);}
 
 #define CGPU_UNIMPLEMENTED_FUNCTION()
 
@@ -154,7 +154,7 @@ T* cgpu_new_placed(void* memory, Args&&... args)
 }
 
 template <typename T, typename... Args>
-T* cgpu_new(const CGPUAllocator* allocator, Args&&... args)
+T* cgpu_new(const cgpu_allocator_t* allocator, Args&&... args)
 {
     void* pMemory = cgpu_malloc_aligned(allocator, sizeof(T), alignof(T));
     memset(pMemory, 0, sizeof(T));
@@ -163,7 +163,7 @@ T* cgpu_new(const CGPUAllocator* allocator, Args&&... args)
 }
 
 template <typename T, typename... Args>
-T* cgpu_new_aligned(const CGPUAllocator* allocator, Args&&... args)
+T* cgpu_new_aligned(const cgpu_allocator_t* allocator, Args&&... args)
 {
     void* pMemory = cgpu_malloc_aligned(allocator, sizeof(T), alignof(T));
     cgpu_assert(pMemory != nullptr);
@@ -171,7 +171,7 @@ T* cgpu_new_aligned(const CGPUAllocator* allocator, Args&&... args)
 }
 
 template <typename T, typename... Args>
-T* cgpu_new_sized(const CGPUAllocator* allocator, uint64_t size, Args&&... args)
+T* cgpu_new_sized(const cgpu_allocator_t* allocator, uint64_t size, Args&&... args)
 {
     void* ptr = cgpu_calloc_aligned(allocator, 1, size, alignof(T));
     return cgpu_new_placed<T>(ptr, std::forward<Args>(args)...);
@@ -184,7 +184,7 @@ void cgpu_delete_placed(T* object)
 }
 
 template <typename T>
-void cgpu_delete(const CGPUAllocator* allocator, T* object)
+void cgpu_delete(const cgpu_allocator_t* allocator, T* object)
 {
     cgpu_delete_placed(object);
     cgpu_free_aligned(allocator, object);

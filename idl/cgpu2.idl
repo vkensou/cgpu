@@ -573,34 +573,34 @@ funcptr.Malloc
     "void*"
     .userData           "void*"
     .size               "size_t"
-    .pool               "void*"
+    .pool               "const void*"
 
 funcptr.Realloc
     "void*"
     .userData           "void*"
     .ptr                "void*"
     .size               "size_t"
-    .pool               "void*"
+    .pool               "const void*"
 
 funcptr.Calloc
     "void*"
     .userData           "void*"
     .count              "size_t"
     .size               "size_t"
-    .pool               "void*"
+    .pool               "const void*"
 
 funcptr.Free
     "void"
     .userData           "void*"
     .ptr                "void*"
-    .pool               "void*"
+    .pool               "const void*"
 
 funcptr.MallocAligned
     "void*"
     .userData           "void*"
     .size               "size_t"
     .alignment          "size_t"
-    .pool               "void*"
+    .pool               "const void*"
 
 funcptr.ReallocAligned
     "void*"
@@ -608,7 +608,7 @@ funcptr.ReallocAligned
     .ptr                "void*"
     .size               "size_t"
     .alignment          "size_t"
-    .pool               "void*"
+    .pool               "const void*"
 
 funcptr.CallocAligned
     "void*"
@@ -616,13 +616,13 @@ funcptr.CallocAligned
     .count              "size_t"
     .size               "size_t"
     .alignment          "size_t"
-    .pool               "void*"
+    .pool               "const void*"
 
 funcptr.FreeAligned
     "void"
     .userData           "void*"
     .ptr                "void*"
-    .pool               "void*"
+    .pool               "const void*"
 
 funcptr.CreateInstance
     "InstanceId"
@@ -634,7 +634,8 @@ funcptr.FreeInstance
 
 funcptr.InstanceQueryFeatures
     "void"
-    .features "const InstanceFeatures*"
+    .instance "InstanceId"
+    .features "InstanceFeatures*"
 
 id "InstanceId"
 
@@ -651,20 +652,30 @@ struct.Allocator
     .reallocAlignedFn "ReallocAligned"
     .callocAlignedFn "CallocAligned"
     .freeAlignedFn "FreeAligned"
+    .userData "void*"
 
 struct.InstanceDescriptor
     .backend            "Backend::Enum"
     .enableDebugLayer   "bool"
     .enableGpuBasedValidation   "bool"
     .enableSetName      "bool"
+    .logger             "Logger"
+    .allocator          "Allocator"
 
 struct.InstanceFeatures
     .specializationConstant "bool"
 
+typedef "ProcTable"
+typedef "SurfacesProcTable"
+typedef "RuntimeTable"
+
 struct.Instance 
+    .procTable          "const ProcTable*"
+    .surfacesTable      "const SurfacesProcTable*"
+    .runtimeTable       "RuntimeTable*"
     .backend            "Backend::Enum"
     .enableSetName      "bool"
-    .Logger             "Logger"
+    .logger             "Logger"
     .allocator          "Allocator"
 
 struct.BufferRange
@@ -684,4 +695,4 @@ func.Instance.getBackend { const }
 
 func.Instance.queryFeatures { const }
     "void"
-    .features "const InstanceFeatures*"
+    .features "InstanceFeatures*"

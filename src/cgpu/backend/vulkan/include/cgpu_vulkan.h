@@ -18,16 +18,16 @@ extern "C" {
 #define VK_CAN_USE_NSIGHT_AFTERMATH
 #endif
 
-CGPU_API const CGPUProcTable* CGPU_VulkanProcTable();
-CGPU_API const CGPUSurfacesProcTable* CGPU_VulkanSurfacesProcTable();
+CGPU_API const cgpu_proc_table_t* CGPU_VulkanProcTable();
+CGPU_API const cgpu_surfaces_proc_table_t* CGPU_VulkanSurfacesProcTable();
 
 // Instance APIs
-CGPU_API CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* descriptor);
-CGPU_API void cgpu_query_instance_features_vulkan(CGPUInstanceId instance, struct CGPUInstanceFeatures* features);
-CGPU_API void cgpu_free_instance_vulkan(CGPUInstanceId instance);
+CGPU_API cgpu_instance_id cgpu_create_instance_vulkan(cgpu_instance_descriptor_t const* descriptor);
+CGPU_API void cgpu_query_instance_features_vulkan(cgpu_instance_id instance, cgpu_instance_features_t* features);
+CGPU_API void cgpu_free_instance_vulkan(cgpu_instance_id instance);
 
 // Adapter APIs
-CGPU_API void cgpu_enum_adapters_vulkan(CGPUInstanceId instance, CGPUAdapterId* const adapters, uint32_t* adapters_num);
+CGPU_API void cgpu_enum_adapters_vulkan(cgpu_instance_id instance, CGPUAdapterId* const adapters, uint32_t* adapters_num);
 CGPU_API const CGPUAdapterDetail* cgpu_query_adapter_detail_vulkan(const CGPUAdapterId adapter);
 CGPU_API uint32_t cgpu_query_queue_count_vulkan(const CGPUAdapterId adapter, const cgpu_queue_type_enum type);
 
@@ -156,7 +156,7 @@ CGPU_API void cgpu_render_encoder_draw_indexed_instanced_vulkan(CGPURenderPassEn
 CGPU_API void cgpu_cmd_end_render_pass_vulkan(CGPUCommandBufferId cmd, CGPURenderPassEncoderId encoder);
 
 typedef struct CGPUInstance_Vulkan {
-    CGPUInstance super;
+    cgpu_instance_t super;
     VkInstance pVkInstance;
     VkDebugUtilsMessengerEXT pVkDebugUtilsMessenger;
     VkDebugReportCallbackEXT pVkDebugReport;

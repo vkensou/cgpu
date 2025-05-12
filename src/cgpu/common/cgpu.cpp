@@ -15,7 +15,7 @@
 #include <functional>
 
 // Runtime Table
-struct CGPURuntimeTable {
+struct cgpu_runtime_table {
     struct CreatedQueue {
         CGPUDeviceId device;
         union
@@ -66,7 +66,7 @@ struct CGPURuntimeTable {
             }
         }
     }
-    ~CGPURuntimeTable()
+    ~cgpu_runtime_table()
     {
         for (auto [name, callback] : custom_sweep_callbacks)
         {
@@ -83,17 +83,17 @@ struct CGPURuntimeTable {
     phmap::flat_hash_map<std::string, std::function<void()>, std::hash<std::string>> custom_early_sweep_callbacks;
 };
 
-struct CGPURuntimeTable* cgpu_create_runtime_table(const CGPUAllocator* allocator)
+cgpu_runtime_table_t* cgpu_create_runtime_table(const cgpu_allocator_t* allocator)
 {
-    return cgpu_new_aligned<CGPURuntimeTable>(allocator);
+    return cgpu_new_aligned<cgpu_runtime_table_t>(allocator);
 }
 
-void cgpu_early_free_runtime_table(struct CGPURuntimeTable* table)
+void cgpu_early_free_runtime_table(cgpu_runtime_table_t* table)
 {
     table->early_sweep();
 }
 
-void cgpu_free_runtime_table(const CGPUAllocator* allocator, struct CGPURuntimeTable* table)
+void cgpu_free_runtime_table(const cgpu_allocator_t* allocator, cgpu_runtime_table_t* table)
 {
     cgpu_delete(allocator, table);
 }
@@ -108,26 +108,26 @@ CGPUQueueId cgpu_runtime_table_try_get_queue(CGPUDeviceId device, cgpu_queue_typ
     return device->adapter->instance->runtime_table->TryFindQueue(device, type, index);
 }
 
-void cgpu_runtime_table_add_custom_data(struct CGPURuntimeTable* table, const char* key, void* data)
+void cgpu_runtime_table_add_custom_data(cgpu_runtime_table_t* table, const char* key, void* data)
 {
     table->custom_data_map[key] = data;
 }
 
-void cgpu_runtime_table_add_sweep_callback(struct CGPURuntimeTable* table, const char* key, void(pfn)(void*), void* usrdata)
+void cgpu_runtime_table_add_sweep_callback(cgpu_runtime_table_t* table, const char* key, void(pfn)(void*), void* usrdata)
 {
     table->custom_sweep_callbacks[key] = [=](){
         pfn(usrdata);
     };
 }
 
-void cgpu_runtime_table_add_early_sweep_callback(struct CGPURuntimeTable* table, const char* key, void(pfn)(void*), void* usrdata)
+void cgpu_runtime_table_add_early_sweep_callback(cgpu_runtime_table_t* table, const char* key, void(pfn)(void*), void* usrdata)
 {
     table->custom_early_sweep_callbacks[key] = [=](){
         pfn(usrdata);
     };
 }
 
-void* cgpu_runtime_table_try_get_custom_data(struct CGPURuntimeTable* table, const char* key)
+void* cgpu_runtime_table_try_get_custom_data(cgpu_runtime_table_t* table, const char* key)
 {
     if (table->custom_data_map.find(key) != table->custom_data_map.end())
     {
@@ -136,7 +136,7 @@ void* cgpu_runtime_table_try_get_custom_data(struct CGPURuntimeTable* table, con
     return nullptr;
 }
 
-bool cgpu_runtime_table_remove_custom_data(struct CGPURuntimeTable* table, const char* key)
+bool cgpu_runtime_table_remove_custom_data(cgpu_runtime_table_t* table, const char* key)
 {
     if (table->custom_data_map.find(key) != table->custom_data_map.end())
     {

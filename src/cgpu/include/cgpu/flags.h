@@ -1,6 +1,6 @@
 #pragma once
 #include "platform.h"
-#include "enums.h"
+#include "cgpu.h"
 
 #ifdef __cplusplus
 CGPU_EXTERN_C_BEGIN

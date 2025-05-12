@@ -8,7 +8,7 @@ typedef struct ANativeWindow ANativeWindow;
 //#include "cgpu/extensions/cgpu_vulkan_exts.h"
 #include "common_utils.h"
 
-const CGPUSurfacesProcTable s_tbl_vk = {
+const cgpu_surfaces_proc_table_t s_tbl_vk = {
     //
 #if defined(_WIN32) || defined(_WIN64)
     .from_hwnd = cgpu_surface_from_hwnd_vulkan,
@@ -21,7 +21,7 @@ const CGPUSurfacesProcTable s_tbl_vk = {
     //
 };
 
-const CGPUSurfacesProcTable* CGPU_VulkanSurfacesProcTable() { return &s_tbl_vk; }
+const cgpu_surfaces_proc_table_t* CGPU_VulkanSurfacesProcTable() { return &s_tbl_vk; }
 
 void cgpu_free_surface_vulkan(CGPUDeviceId device, CGPUSurfaceId surface)
 {

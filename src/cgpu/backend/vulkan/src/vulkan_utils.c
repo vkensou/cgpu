@@ -11,9 +11,9 @@
 #include <stdio.h>
 #include <string.h>
 
-bool VkUtil_InitializeEnvironment(struct CGPUInstance* Inst)
+bool VkUtil_InitializeEnvironment(cgpu_instance_t* Inst)
 {
-    const CGPUAllocator* allocator = &Inst->allocator;
+    const cgpu_allocator_t* allocator = &Inst->allocator;
     Inst->runtime_table = cgpu_create_runtime_table(allocator);
     // VOLK
 #if !defined(NX64)
@@ -27,7 +27,7 @@ bool VkUtil_InitializeEnvironment(struct CGPUInstance* Inst)
     return true;
 }
 
-void VkUtil_DeInitializeEnvironment(struct CGPUInstance* Inst)
+void VkUtil_DeInitializeEnvironment(cgpu_instance_t* Inst)
 {
 }
 
@@ -153,7 +153,7 @@ void VkUtil_QueryAllAdapters(CGPUInstance_Vulkan* I,
     const char* const* device_extensions, uint32_t device_extension_count)
 {
     cgpu_assert((I->mPhysicalDeviceCount == 0) && "VkUtil_QueryAllAdapters should only be called once!");
-    const CGPUAllocator* allocator = &I->super.allocator;
+    const cgpu_allocator_t* allocator = &I->super.allocator;
 
     vkEnumeratePhysicalDevices(I->pVkInstance, &I->mPhysicalDeviceCount, CGPU_NULLPTR);
     if (I->mPhysicalDeviceCount != 0)
@@ -344,7 +344,7 @@ static cgpu_texture_dimension_enum ArrDIMLut[SpvDimSubpassData + 1] = {
 const char8_t* push_constants_name = u8"push_constants";
 void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vulkan* S, const struct CGPUShaderLibraryDescriptor* desc)
 {
-    const CGPUAllocator* allocator = &device->adapter->instance->allocator;
+    const cgpu_allocator_t* allocator = &device->adapter->instance->allocator;
     S->pReflect = cgpu_calloc(allocator, 1, sizeof(SpvReflectShaderModule));
     SpvReflectResult spvRes = spvReflectCreateShaderModule(desc->code_size, desc->code, S->pReflect);
     (void)spvRes;
@@ -462,7 +462,7 @@ void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vu
 
 void VkUtil_FreeShaderReflection(CGPUShaderLibrary_Vulkan* S)
 {
-    const CGPUAllocator* allocator = &S->super.device->adapter->instance->allocator;
+    const cgpu_allocator_t* allocator = &S->super.device->adapter->instance->allocator;
     spvReflectDestroyShaderModule(S->pReflect);
     if (S->super.entry_reflections)
     {
@@ -558,7 +558,7 @@ struct VkUtil_DescriptorPool* VkUtil_CreateDescriptorPool(CGPUDevice_Vulkan* D)
 {
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
-    const CGPUAllocator* allocator = &I->super.allocator;
+    const cgpu_allocator_t* allocator = &I->super.allocator;
     VkUtil_DescriptorPool* Pool = cgpu_calloc(allocator, 1, sizeof(VkUtil_DescriptorPool));
 #ifdef CGPU_THREAD_SAFETY
     Pool->pMutex = cgpu_calloc(1, sizeof(SMutex));
@@ -630,7 +630,7 @@ void VkUtil_FreeDescriptorPool(struct VkUtil_DescriptorPool* DescPool)
     CGPUDevice_Vulkan* D = DescPool->Device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
-    const CGPUAllocator* allocator = &I->super.allocator;
+    const cgpu_allocator_t* allocator = &I->super.allocator;
     D->mVkDeviceTable.vkDestroyDescriptorPool(D->pVkDevice, DescPool->pVkDescPool, &I->vkAllocator);
 #ifdef CGPU_THREAD_SAFETY
     if (DescPool->pMutex)
@@ -647,7 +647,7 @@ VkDescriptorSetLayout VkUtil_CreateDescriptorSetLayout(CGPUDevice_Vulkan* D,
 {
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
-    const CGPUAllocator* allocator = &I->super.allocator;
+    const cgpu_allocator_t* allocator = &I->super.allocator;
     VkDescriptorSetLayout out_layout = VK_NULL_HANDLE;
     VkDescriptorSetLayoutCreateInfo layout_info = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
@@ -884,7 +884,7 @@ void VkUtil_RecordAdapterDetail(CGPUAdapter_Vulkan* VkAdapter)
     VkUtil_QueryHostVisbleVramInfo(VkAdapter);
 }
 
-void VkUtil_SelectQueueIndices(CGPUAdapter_Vulkan* VkAdapter, const CGPUAllocator* allocator)
+void VkUtil_SelectQueueIndices(CGPUAdapter_Vulkan* VkAdapter, const cgpu_allocator_t* allocator)
 {
     // Query Queue Information.
     vkGetPhysicalDeviceQueueFamilyProperties(
@@ -975,7 +975,7 @@ void VkUtil_EnumFormatSupports(CGPUAdapter_Vulkan* VkAdapter)
 void VkUtil_SelectInstanceLayers(struct CGPUInstance_Vulkan* vkInstance,
     const char* const* instance_layers, uint32_t instance_layers_count)
 {
-    const CGPUAllocator* allocator = &vkInstance->super.allocator;
+    const cgpu_allocator_t* allocator = &vkInstance->super.allocator;
     uint32_t count = 0;
     vkEnumerateInstanceLayerProperties(&count, NULL);
     if (count != 0)
@@ -1008,7 +1008,7 @@ void VkUtil_SelectInstanceLayers(struct CGPUInstance_Vulkan* vkInstance,
 void VkUtil_SelectInstanceExtensions(struct CGPUInstance_Vulkan* VkInstance,
     const char* const* instance_extensions, uint32_t instance_extension_count)
 {
-    const CGPUAllocator* allocator = &VkInstance->super.allocator;
+    const cgpu_allocator_t* allocator = &VkInstance->super.allocator;
     const char* layer_name = NULL; // Query Vulkan implementation or by implicitly enabled layers
     uint32_t count = 0;
     vkEnumerateInstanceExtensionProperties(layer_name, &count, NULL);
@@ -1040,7 +1040,7 @@ void VkUtil_SelectInstanceExtensions(struct CGPUInstance_Vulkan* VkInstance,
 }
 
 void VkUtil_SelectPhysicalDeviceLayers(struct CGPUAdapter_Vulkan* VkAdapter,
-    const char* const* device_layers, uint32_t device_layers_count, const CGPUAllocator* allocator)
+    const char* const* device_layers, uint32_t device_layers_count, const cgpu_allocator_t* allocator)
 {
     uint32_t count;
     vkEnumerateDeviceLayerProperties(VkAdapter->pPhysicalDevice, &count, NULL);
@@ -1071,7 +1071,7 @@ void VkUtil_SelectPhysicalDeviceLayers(struct CGPUAdapter_Vulkan* VkAdapter,
 }
 
 void VkUtil_SelectPhysicalDeviceExtensions(struct CGPUAdapter_Vulkan* VkAdapter,
-    const char* const* device_extensions, uint32_t device_extension_count, const CGPUAllocator* allocator)
+    const char* const* device_extensions, uint32_t device_extension_count, const cgpu_allocator_t* allocator)
 {
     const char* layer_name = NULL; // Query Vulkan implementation or by implicitly enabled layers
     uint32_t count = 0;
@@ -1159,16 +1159,16 @@ VkUtil_DebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity
     switch (messageSeverity)
     {
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-        I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_TRACE, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
+        I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_TRACE, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-        I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_INFO, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
+        I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_INFO, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-        I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_WARNING, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
+        I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_WARNING, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-        I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_ERROR, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
+        I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_ERROR, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
         break;
     }
     return VK_FALSE;
@@ -1188,19 +1188,19 @@ VkUtil_DebugReportCallback(
     switch (flags)
     {
     case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
-        I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_INFO, "Vulkan validation layer: %s\n", pMessage);
+        I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_INFO, "Vulkan validation layer: %s\n", pMessage);
         break;
     case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
-        I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_WARNING, "Vulkan validation layer: %s\n", pMessage);
+        I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_WARNING, "Vulkan validation layer: %s\n", pMessage);
         break;
     case VK_DEBUG_REPORT_WARNING_BIT_EXT:
-        I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_WARNING, "Vulkan validation layer: %s\n", pMessage);
+        I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_WARNING, "Vulkan validation layer: %s\n", pMessage);
         break;
     case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
-        I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_DEBUG, "Vulkan validation layer: %s\n", pMessage);
+        I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_DEBUG, "Vulkan validation layer: %s\n", pMessage);
         break;
     case VK_DEBUG_REPORT_ERROR_BIT_EXT:
-        I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_ERROR, "Vulkan validation layer: %s\n", pMessage);
+        I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_ERROR, "Vulkan validation layer: %s\n", pMessage);
         break;
     }
     return VK_FALSE;

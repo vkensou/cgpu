@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-const CGPUProcTable tbl_vk = {
+const cgpu_proc_table_t tbl_vk = {
     // Instance APIs
     .create_instance = &cgpu_create_instance_vulkan,
     .query_instance_features = &cgpu_query_instance_features_vulkan,
@@ -182,7 +182,7 @@ const CGPUProcTable tbl_vk = {
     .binder_bind_vertex_buffer = &cgpu_binder_bind_vertex_buffer_vulkan,
     .free_binder = &cgpu_free_binder_vulkan
 };
-const CGPUProcTable* CGPU_VulkanProcTable() { return &tbl_vk; }
+const cgpu_proc_table_t* CGPU_VulkanProcTable() { return &tbl_vk; }
 
 // GCGPUVkAllocationCallbacks
 // #include "tracy/TracyC.h"

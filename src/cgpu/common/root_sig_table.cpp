@@ -29,7 +29,7 @@ bool CGPUUtil_ShaderResourceIsRootConst(CGPUShaderResource* resource, const stru
     return false;
 }
 
-inline static char8_t* duplicate_string(const char8_t* src_string, const CGPUAllocator* allocator)
+inline static char8_t* duplicate_string(const char8_t* src_string, const cgpu_allocator_t* allocator)
 {
     if (src_string != CGPU_NULLPTR)
     {
@@ -53,7 +53,7 @@ inline static char8_t* duplicate_string(const char8_t* src_string, const CGPUAll
 //   拥有相同set、binding以及type的、出现在不同ShaderStage中的ShaderResource会被合并Stage
 // 3.切分行
 //   按照Set把合并好的Resource分割并放进roosting::tables中
-void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSignatureDescriptor* desc, const CGPUAllocator* allocator)
+void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSignatureDescriptor* desc, const cgpu_allocator_t* allocator)
 {
     CGPUShaderReflection* entry_reflections[32] = { 0 };
     // Pick shader reflection data
@@ -237,7 +237,7 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
 
 void CGPUUtil_FreeRSParamTables(CGPURootSignature* RS)
 {
-    const CGPUAllocator* allocator = &RS->device->adapter->instance->allocator;
+    const cgpu_allocator_t* allocator = &RS->device->adapter->instance->allocator;
     if (RS->tables != CGPU_NULLPTR)
     {
         for (uint32_t i_set = 0; i_set < RS->table_count; i_set++)

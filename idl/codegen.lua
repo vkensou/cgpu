@@ -1008,7 +1008,7 @@ function codegen.gen_handle(handle)
 end
 
 local cid_temp = [[
-DEFINE_CGPU_OBJECT($NAME)
+DEFINE_CGPU_OBJECT2($NAME)
 ]]
 function codegen.gen_cid(id)
 	assert(id.id, "Not a id")

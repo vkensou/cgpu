@@ -49,7 +49,7 @@
 // [Please zero-clear before use!]
 struct ImGui_ImplCGPU_InitInfo
 {
-    CGPUInstanceId                      Instance;
+    cgpu_instance_id                      Instance;
     CGPUDeviceId                        Device;
     CGPUQueueId                         GfxQueue;
     CGPUQueueId                         PresentQueue;
