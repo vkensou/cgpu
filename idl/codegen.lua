@@ -325,7 +325,7 @@ function codegen.nameconversion(all_types, all_funcs)
 		if not v.namespace then
 			if all_types[v.name] then
 				error ("Duplicate type " .. v.name)
-			elseif not v.flag then
+			else
 				all_types[v.name] = v
 			end
 		end

@@ -40,7 +40,7 @@ void cgpu_enum_adapters_vulkan(cgpu_instance_id instance, CGPUAdapterId* const a
     }
 }
 
-const CGPUAdapterDetail* cgpu_query_adapter_detail_vulkan(const CGPUAdapterId adapter)
+const cgpu_adapter_detail_t* cgpu_query_adapter_detail_vulkan(const CGPUAdapterId adapter)
 {
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)adapter;
     return &A->adapter_detail;

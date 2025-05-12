@@ -563,6 +563,65 @@ enum.VertexFormat { comment = "Vertex Format:" }
     .Unorm8x4
     ()
 
+flag.DynamicStateFeatures { underscore, bits = 64, base = 1 }
+    .CullMode
+    .FrontFace
+    .PrimitiveTopology
+    .DepthTest
+    .DepthWrite
+    .DepthCompare
+    .DepthBoundsTest
+    .StencilTest
+    .StencilOp
+
+
+    .RasterDiscard
+    .DepthBias
+    .PrimitiveRestart
+    .LogicOp
+    .PatchControlPoints
+
+    .TessellationDomainOrigin
+    .DepthClampEnable
+    .PolygonMode
+    .SampleCount
+    .SampleMask
+    .AlphaToCoverageEnable
+    .AlphaToOneEnable
+    .LogicOpEnable
+    .ColorBlendEnable
+    .ColorBlendEquation
+    .ColorWriteMask
+    .RasterStream
+    .ConservativeRasterMode
+    .ExtraPrimitiveOverestimationSize
+    .DepthClipEnable
+    .SampleLocationsEnable
+    .ColorBlendAdvanced
+    .ProvokingVertexMode
+    .LineRasterizationMode
+    .LineStippleEnable
+    .DepthClipNegativeOneToOne
+    .ViewportWScalingEnable
+    .ViewportSwizzle
+    .CoverageToColorEnable
+    .CoverageToColorLocation
+    .CoverageModulationMode
+    .CoverageModulationTableEnable
+    .CoverageModulationTable
+    .CoverageReductionMode
+    .RepresentativeFragmentTestEnable
+    .ShadingRateImageEnable
+
+    .Tier1 { "CullMode", "FrontFace", "PrimitiveTopology", "DepthTest", "DepthWrite", "DepthCompare", "DepthBoundsTest", "StencilTest", "StencilOp" }
+    .Tier2 { "Tier1", "RasterDiscard", "DepthBias", "PrimitiveRestart", "LogicOp", "PatchControlPoints" }
+    .Tier3 { "Tier2", "TessellationDomainOrigin", "DepthClampEnable", "PolygonMode", "SampleCount", "SampleMask", "AlphaToCoverageEnable", 
+    "AlphaToOneEnable", "LogicOpEnable", "ColorBlendEnable", "ColorBlendEquation", "ColorWriteMask", "RasterStream", "ConservativeRasterMode", "ExtraPrimitiveOverestimationSize", 
+    "DepthClipEnable", "SampleLocationsEnable", "ColorBlendAdvanced", "ProvokingVertexMode", "LineRasterizationMode", "LineStippleEnable", 
+    "DepthClipNegativeOneToOne", "ViewportWScalingEnable", "ViewportSwizzle", "CoverageToColorEnable", "CoverageToColorLocation", 
+    "CoverageModulationMode", "CoverageModulationTableEnable", "CoverageModulationTable", "CoverageReductionMode", "RepresentativeFragmentTestEnable", "ShadingRateImageEnable" }
+
+
 funcptr.LogCallback {vararg}
     "void"
     .userData           "void*"
@@ -677,6 +736,41 @@ struct.Instance
     .enableSetName      "bool"
     .logger             "Logger"
     .allocator          "Allocator"
+
+struct.VendorPreset
+    .deviceId           "uint32_t"
+    .vendorId           "uint32_t"
+    .driverVersion      "uint32_t"
+    .gpuName            "char[64]"
+
+struct.FormatSupport
+    .shaderRead         "bool"
+    .shaderWrite        "bool"
+    .renderTargetWrite  "bool"
+
+struct.AdapterDetail
+    .uniformBufferAlignment                 "uint32_t"
+    .uploadBufferTextureAlignment           "uint32_t"
+    .uploadBufferTextureRowAlignment        "uint32_t"
+    .maxVertexInputBindings                 "uint32_t"
+    .waveLaneCount                          "uint32_t"
+    .hostVisibleVramBudget                  "uint64_t"
+    .dynamicStateFeatures                   "DynamicStateFeatures"
+    .supportHostVisibleVram                 "bool"
+    .multidrawIndirect                      "bool"
+    .supportGeomShader                      "bool"
+    .supportTessellation                    "bool"
+    .isUma                                  "bool"
+    .isVirtual                              "bool"
+    .isCpu                                  "bool"
+    .supportTiledBuffer                     "bool"
+    .supportTiledTexture                    "bool"
+    .supportTiledVolume                     "bool"
+    .supportShadingRate                     "bool"
+    .supportShadingRateMask                 "bool"
+    .supportShadingRateSv                   "bool"
+    .formatSupports                         "FormatSupport[CGPU_TEXTURE_FORMAT_COUNT]"
+    .vendorPreset                           "VendorPreset"
 
 struct.BufferRange
     .offset             "uint64_t"

@@ -730,7 +730,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
     uint32_t aspect_mask = 0;
     VmaAllocation vmaAllocation = VK_NULL_HANDLE;
     const bool is_depth_stencil = FormatUtil_IsDepthStencilFormat(desc->format);
-    const CGPUFormatSupport* format_support = &A->adapter_detail.format_supports[desc->format];
+    const cgpu_format_support_t* format_support = &A->adapter_detail.format_supports[desc->format];
     if (desc->native_handle && !(desc->flags & CGPU_TEXTURE_CREATION_USAGE_IMPORT_SHARED))
     {
         owns_image = false;

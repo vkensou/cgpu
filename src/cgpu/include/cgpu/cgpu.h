@@ -691,6 +691,59 @@ typedef enum cgpu_texture_format_support_flag
 
 } cgpu_texture_format_support_flag;
 
+typedef enum cgpu_dynamic_state_features_flag
+{
+    CGPU_DYNAMIC_STATE_FEATURES_CULL_MODE = 0x0000000000000001,    /** ( 0)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_FRONT_FACE = 0x0000000000000002,   /** ( 1)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_PRIMITIVE_TOPOLOGY = 0x0000000000000004, /** ( 2)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_DEPTH_TEST = 0x0000000000000008,   /** ( 3)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_DEPTH_WRITE = 0x0000000000000010,  /** ( 4)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_DEPTH_COMPARE = 0x0000000000000020, /** ( 5)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_DEPTH_BOUNDS_TEST = 0x0000000000000040, /** ( 6)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_STENCIL_TEST = 0x0000000000000080, /** ( 7)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_STENCIL_OP = 0x0000000000000100,   /** ( 8)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_RASTER_DISCARD = 0x0000000000000200, /** ( 9)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_DEPTH_BIAS = 0x0000000000000400,   /** (10)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_PRIMITIVE_RESTART = 0x0000000000000800, /** (11)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_LOGIC_OP = 0x0000000000001000,     /** (12)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_PATCH_CONTROL_POINTS = 0x0000000000002000, /** (13)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_TESSELLATION_DOMAIN_ORIGIN = 0x0000000000004000, /** (14)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_DEPTH_CLAMP_ENABLE = 0x0000000000008000, /** (15)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_POLYGON_MODE = 0x0000000000010000, /** (16)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_SAMPLE_COUNT = 0x0000000000020000, /** (17)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_SAMPLE_MASK = 0x0000000000040000,  /** (18)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_ALPHA_TO_COVERAGE_ENABLE = 0x0000000000080000, /** (19)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_ALPHA_TO_ONE_ENABLE = 0x0000000000100000, /** (20)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_LOGIC_OP_ENABLE = 0x0000000000200000, /** (21)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_COLOR_BLEND_ENABLE = 0x0000000000400000, /** (22)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_COLOR_BLEND_EQUATION = 0x0000000000800000, /** (23)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_COLOR_WRITE_MASK = 0x0000000001000000, /** (24)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_RASTER_STREAM = 0x0000000002000000, /** (25)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_CONSERVATIVE_RASTER_MODE = 0x0000000004000000, /** (26)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE = 0x0000000008000000, /** (27)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_DEPTH_CLIP_ENABLE = 0x0000000010000000, /** (28)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_SAMPLE_LOCATIONS_ENABLE = 0x0000000020000000, /** (29)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_COLOR_BLEND_ADVANCED = 0x0000000040000000, /** (30)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_PROVOKING_VERTEX_MODE = 0x0000000080000000, /** (31)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_LINE_RASTERIZATION_MODE = 0x0000000100000000, /** (32)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_LINE_STIPPLE_ENABLE = 0x0000000200000000, /** (33)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE = 0x0000000400000000, /** (34)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_VIEWPORT_WSCALING_ENABLE = 0x0000000800000000, /** (35)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_VIEWPORT_SWIZZLE = 0x0000001000000000, /** (36)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_TO_COLOR_ENABLE = 0x0000002000000000, /** (37)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_TO_COLOR_LOCATION = 0x0000004000000000, /** (38)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_MODULATION_MODE = 0x0000008000000000, /** (39)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_MODULATION_TABLE_ENABLE = 0x0000010000000000, /** (40)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_MODULATION_TABLE = 0x0000020000000000, /** (41)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_REDUCTION_MODE = 0x0000040000000000, /** (42)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_REPRESENTATIVE_FRAGMENT_TEST_ENABLE = 0x0000080000000000, /** (43)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_SHADING_RATE_IMAGE_ENABLE = 0x0000100000000000, /** (44)                                */
+    CGPU_DYNAMIC_STATE_FEATURES_TIER1 = CGPU_DYNAMIC_STATE_FEATURES_CULL_MODE | CGPU_DYNAMIC_STATE_FEATURES_FRONT_FACE | CGPU_DYNAMIC_STATE_FEATURES_PRIMITIVE_TOPOLOGY | CGPU_DYNAMIC_STATE_FEATURES_DEPTH_TEST | CGPU_DYNAMIC_STATE_FEATURES_DEPTH_WRITE | CGPU_DYNAMIC_STATE_FEATURES_DEPTH_COMPARE | CGPU_DYNAMIC_STATE_FEATURES_DEPTH_BOUNDS_TEST | CGPU_DYNAMIC_STATE_FEATURES_STENCIL_TEST | CGPU_DYNAMIC_STATE_FEATURES_STENCIL_OP,
+    CGPU_DYNAMIC_STATE_FEATURES_TIER2 = CGPU_DYNAMIC_STATE_FEATURES_TIER1 | CGPU_DYNAMIC_STATE_FEATURES_RASTER_DISCARD | CGPU_DYNAMIC_STATE_FEATURES_DEPTH_BIAS | CGPU_DYNAMIC_STATE_FEATURES_PRIMITIVE_RESTART | CGPU_DYNAMIC_STATE_FEATURES_LOGIC_OP | CGPU_DYNAMIC_STATE_FEATURES_PATCH_CONTROL_POINTS,
+    CGPU_DYNAMIC_STATE_FEATURES_TIER3 = CGPU_DYNAMIC_STATE_FEATURES_TIER2 | CGPU_DYNAMIC_STATE_FEATURES_TESSELLATION_DOMAIN_ORIGIN | CGPU_DYNAMIC_STATE_FEATURES_DEPTH_CLAMP_ENABLE | CGPU_DYNAMIC_STATE_FEATURES_POLYGON_MODE | CGPU_DYNAMIC_STATE_FEATURES_SAMPLE_COUNT | CGPU_DYNAMIC_STATE_FEATURES_SAMPLE_MASK | CGPU_DYNAMIC_STATE_FEATURES_ALPHA_TO_COVERAGE_ENABLE | CGPU_DYNAMIC_STATE_FEATURES_ALPHA_TO_ONE_ENABLE | CGPU_DYNAMIC_STATE_FEATURES_LOGIC_OP_ENABLE | CGPU_DYNAMIC_STATE_FEATURES_COLOR_BLEND_ENABLE | CGPU_DYNAMIC_STATE_FEATURES_COLOR_BLEND_EQUATION | CGPU_DYNAMIC_STATE_FEATURES_COLOR_WRITE_MASK | CGPU_DYNAMIC_STATE_FEATURES_RASTER_STREAM | CGPU_DYNAMIC_STATE_FEATURES_CONSERVATIVE_RASTER_MODE | CGPU_DYNAMIC_STATE_FEATURES_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE | CGPU_DYNAMIC_STATE_FEATURES_DEPTH_CLIP_ENABLE | CGPU_DYNAMIC_STATE_FEATURES_SAMPLE_LOCATIONS_ENABLE | CGPU_DYNAMIC_STATE_FEATURES_COLOR_BLEND_ADVANCED | CGPU_DYNAMIC_STATE_FEATURES_PROVOKING_VERTEX_MODE | CGPU_DYNAMIC_STATE_FEATURES_LINE_RASTERIZATION_MODE | CGPU_DYNAMIC_STATE_FEATURES_LINE_STIPPLE_ENABLE | CGPU_DYNAMIC_STATE_FEATURES_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE | CGPU_DYNAMIC_STATE_FEATURES_VIEWPORT_WSCALING_ENABLE | CGPU_DYNAMIC_STATE_FEATURES_VIEWPORT_SWIZZLE | CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_TO_COLOR_ENABLE | CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_TO_COLOR_LOCATION | CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_MODULATION_MODE | CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_MODULATION_TABLE_ENABLE | CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_MODULATION_TABLE | CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_REDUCTION_MODE | CGPU_DYNAMIC_STATE_FEATURES_REPRESENTATIVE_FRAGMENT_TEST_ENABLE | CGPU_DYNAMIC_STATE_FEATURES_SHADING_RATE_IMAGE_ENABLE,
+
+} cgpu_dynamic_state_features_flag;
+
 
 DEFINE_CGPU_OBJECT2(cgpu_instance)
 
@@ -763,6 +816,50 @@ typedef struct cgpu_instance
     cgpu_allocator_t     allocator;
 
 } cgpu_instance_t;
+
+typedef struct cgpu_vendor_preset
+{
+    uint32_t             device_id;
+    uint32_t             vendor_id;
+    uint32_t             driver_version;
+    char                 gpu_name[64];
+
+} cgpu_vendor_preset_t;
+
+typedef struct cgpu_format_support
+{
+    bool                 shader_read;
+    bool                 shader_write;
+    bool                 render_target_write;
+
+} cgpu_format_support_t;
+
+typedef struct cgpu_adapter_detail
+{
+    uint32_t             uniform_buffer_alignment;
+    uint32_t             upload_buffer_texture_alignment;
+    uint32_t             upload_buffer_texture_row_alignment;
+    uint32_t             max_vertex_input_bindings;
+    uint32_t             wave_lane_count;
+    uint64_t             host_visible_vram_budget;
+    cgpu_dynamic_state_features_flag dynamic_state_features;
+    bool                 support_host_visible_vram;
+    bool                 multidraw_indirect;
+    bool                 support_geom_shader;
+    bool                 support_tessellation;
+    bool                 is_uma;
+    bool                 is_virtual;
+    bool                 is_cpu;
+    bool                 support_tiled_buffer;
+    bool                 support_tiled_texture;
+    bool                 support_tiled_volume;
+    bool                 support_shading_rate;
+    bool                 support_shading_rate_mask;
+    bool                 support_shading_rate_sv;
+    cgpu_format_support_t format_supports[CGPU_TEXTURE_FORMAT_COUNT];
+    cgpu_vendor_preset_t vendor_preset;
+
+} cgpu_adapter_detail_t;
 
 typedef struct cgpu_buffer_range
 {

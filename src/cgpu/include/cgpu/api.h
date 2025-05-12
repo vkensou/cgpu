@@ -100,12 +100,6 @@ static const char* gCGPUBackendNames[CGPU_BACKEND_COUNT] = {
     "vulkan",
 };
 
-typedef struct CGPUFormatSupport {
-    uint8_t shader_read : 1;
-    uint8_t shader_write : 1;
-    uint8_t render_target_write : 1;
-} CGPUFormatSupport;
-
 typedef struct CGPUBufferRange {
     uint64_t offset;
     uint64_t size;
@@ -125,8 +119,8 @@ typedef struct CGPUConstantSpecialization {
 CGPU_API void cgpu_enum_adapters(cgpu_instance_id instance, CGPUAdapterId* const adapters, uint32_t* adapters_num);
 typedef void (*CGPUProcEnumAdapters)(cgpu_instance_id instance, CGPUAdapterId* const adapters, uint32_t* adapters_num);
 
-CGPU_API const struct CGPUAdapterDetail* cgpu_query_adapter_detail(const CGPUAdapterId adapter);
-typedef const struct CGPUAdapterDetail* (*CGPUProcQueryAdapterDetail)(const CGPUAdapterId adapter);
+CGPU_API const cgpu_adapter_detail_t* cgpu_query_adapter_detail(const CGPUAdapterId adapter);
+typedef const cgpu_adapter_detail_t* (*CGPUProcQueryAdapterDetail)(const CGPUAdapterId adapter);
 CGPU_API uint32_t cgpu_query_queue_count(const CGPUAdapterId adapter, const cgpu_queue_type_enum type);
 typedef uint32_t (*CGPUProcQueryQueueCount)(const CGPUAdapterId adapter, const cgpu_queue_type_enum type);
 
@@ -677,92 +671,6 @@ typedef struct cgpu_surfaces_proc_table {
 #endif
     const CGPUSurfaceProc_Free free_surface;
 } cgpu_surfaces_proc_table_t;
-
-typedef struct CGPUVendorPreset {
-    uint32_t device_id;
-    uint32_t vendor_id;
-    uint32_t driver_version;
-    char gpu_name[MAX_GPU_VENDOR_STRING_LENGTH]; // If GPU Name is missing then value will be empty string
-} CGPUVendorPreset;
-
-static const uint64_t CGPU_DYNAMIC_STATE_CullMode = 1ull << 0;
-static const uint64_t CGPU_DYNAMIC_STATE_FrontFace = 1ull << 1;
-static const uint64_t CGPU_DYNAMIC_STATE_PrimitiveTopology = 1ull << 2;
-static const uint64_t CGPU_DYNAMIC_STATE_DepthTest = 1ull << 3;
-static const uint64_t CGPU_DYNAMIC_STATE_DepthWrite = 1ull << 4;
-static const uint64_t CGPU_DYNAMIC_STATE_DepthCompare = 1ull << 5;
-static const uint64_t CGPU_DYNAMIC_STATE_DepthBoundsTest = 1ull << 6;
-static const uint64_t CGPU_DYNAMIC_STATE_StencilTest = 1ull << 7;
-static const uint64_t CGPU_DYNAMIC_STATE_StencilOp = 1ull << 8;
-static const uint64_t CGPU_DYNAMIC_STATE_Tier1 = (1ull << 9) - 1;
-
-static const uint64_t CGPU_DYNAMIC_STATE_RasterDiscard = 1ull << 9;
-static const uint64_t CGPU_DYNAMIC_STATE_DepthBias = 1ull << 10;
-static const uint64_t CGPU_DYNAMIC_STATE_PrimitiveRestart = 1ull << 11;
-static const uint64_t CGPU_DYNAMIC_STATE_LogicOp = 1ull << 12;
-static const uint64_t CGPU_DYNAMIC_STATE_PatchControlPoints = 1ull << 13;
-static const uint64_t CGPU_DYNAMIC_STATE_Tier2 = (1ull << 14) - 1;
-
-static const uint64_t CGPU_DYNAMIC_STATE_TessellationDomainOrigin = 1ull << 14;
-static const uint64_t CGPU_DYNAMIC_STATE_DepthClampEnable = 1ull << 15;
-static const uint64_t CGPU_DYNAMIC_STATE_PolygonMode = 1ull << 16;
-static const uint64_t CGPU_DYNAMIC_STATE_SampleCount = 1ull << 17;
-static const uint64_t CGPU_DYNAMIC_STATE_SampleMask = 1ull << 18;
-static const uint64_t CGPU_DYNAMIC_STATE_AlphaToCoverageEnable = 1ull << 19;
-static const uint64_t CGPU_DYNAMIC_STATE_AlphaToOneEnable = 1ull << 20;
-static const uint64_t CGPU_DYNAMIC_STATE_LogicOpEnable = 1ull << 21;
-static const uint64_t CGPU_DYNAMIC_STATE_ColorBlendEnable = 1ull << 22;
-static const uint64_t CGPU_DYNAMIC_STATE_ColorBlendEquation = 1ull << 23;
-static const uint64_t CGPU_DYNAMIC_STATE_ColorWriteMask = 1ull << 24;
-static const uint64_t CGPU_DYNAMIC_STATE_RasterStream = 1ull << 25;
-static const uint64_t CGPU_DYNAMIC_STATE_ConservativeRasterMode = 1ull << 26;
-static const uint64_t CGPU_DYNAMIC_STATE_ExtraPrimitiveOverestimationSize = 1ull << 27;
-static const uint64_t CGPU_DYNAMIC_STATE_DepthClipEnable = 1ull << 28;
-static const uint64_t CGPU_DYNAMIC_STATE_SampleLocationsEnable = 1ull << 29;
-static const uint64_t CGPU_DYNAMIC_STATE_ColorBlendAdvanced = 1ull << 30;
-static const uint64_t CGPU_DYNAMIC_STATE_ProvokingVertexMode = 1ull << 31;
-static const uint64_t CGPU_DYNAMIC_STATE_LineRasterizationMode = 1ull << 32;
-static const uint64_t CGPU_DYNAMIC_STATE_LineStippleEnable = 1ull << 33;
-static const uint64_t CGPU_DYNAMIC_STATE_DepthClipNegativeOneToOne = 1ull << 34;
-static const uint64_t CGPU_DYNAMIC_STATE_ViewportWScalingEnable = 1ull << 35;
-static const uint64_t CGPU_DYNAMIC_STATE_ViewportSwizzle = 1ull << 36;
-static const uint64_t CGPU_DYNAMIC_STATE_CoverageToColorEnable = 1ull << 37;
-static const uint64_t CGPU_DYNAMIC_STATE_CoverageToColorLocation = 1ull << 38;
-static const uint64_t CGPU_DYNAMIC_STATE_CoverageModulationMode = 1ull << 39;
-static const uint64_t CGPU_DYNAMIC_STATE_CoverageModulationTableEnable = 1ull << 40;
-static const uint64_t CGPU_DYNAMIC_STATE_CoverageModulationTable = 1ull << 41;
-static const uint64_t CGPU_DYNAMIC_STATE_CoverageReductionMode = 1ull << 42;
-static const uint64_t CGPU_DYNAMIC_STATE_RepresentativeFragmentTestEnable = 1ull << 43;
-static const uint64_t CGPU_DYNAMIC_STATE_ShadingRateImageEnable = 1ull << 44;
-static const uint64_t CGPU_DYNAMIC_STATE_Tier3 = (1ull << 45) - 1;
-
-typedef uint64_t CGPUDynamicStateFeatures;
-
-typedef struct CGPUAdapterDetail {
-    uint32_t uniform_buffer_alignment;
-    uint32_t upload_buffer_texture_alignment;
-    uint32_t upload_buffer_texture_row_alignment;
-    uint32_t max_vertex_input_bindings;
-    uint32_t wave_lane_count;
-    uint64_t host_visible_vram_budget;
-    CGPUDynamicStateFeatures dynamic_state_features;
-    bool support_host_visible_vram : 1;
-    bool multidraw_indirect : 1;
-    bool support_geom_shader : 1;
-    bool support_tessellation : 1;
-    bool is_uma : 1;
-    bool is_virtual : 1;
-    bool is_cpu : 1;
-    bool support_tiled_buffer : 1;
-    bool support_tiled_texture : 1;
-    bool support_tiled_volume : 1;
-    // RDNA2 
-    bool support_shading_rate : 1;
-    bool support_shading_rate_mask : 1;
-    bool support_shading_rate_sv : 1;
-    CGPUFormatSupport format_supports[CGPU_TEXTURE_FORMAT_COUNT];
-    CGPUVendorPreset vendor_preset;
-} CGPUAdapterDetail;
 
 typedef struct CGPUAdapter {
     cgpu_instance_id instance;

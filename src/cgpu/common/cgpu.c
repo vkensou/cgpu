@@ -128,12 +128,12 @@ void cgpu_enum_adapters(cgpu_instance_id instance, CGPUAdapterId* const adapters
 }
 
 const char* unknownAdapterName = "UNKNOWN";
-const struct CGPUAdapterDetail* cgpu_query_adapter_detail(const CGPUAdapterId adapter)
+const cgpu_adapter_detail_t* cgpu_query_adapter_detail(const CGPUAdapterId adapter)
 {
     cgpu_assert(adapter != CGPU_NULLPTR && "fatal: call on NULL adapter!");
     cgpu_assert(adapter->proc_table_cache->query_adapter_detail && "query_adapter_detail Proc Missing!");
 
-    CGPUAdapterDetail* detail = (CGPUAdapterDetail*)adapter->proc_table_cache->query_adapter_detail(adapter);
+    cgpu_adapter_detail_t* detail = (cgpu_adapter_detail_t*)adapter->proc_table_cache->query_adapter_detail(adapter);
     return detail;
 }
 
@@ -1332,7 +1332,7 @@ uint64_t size, const char8_t* name, bool device_local_preferred)
     buf_desc.descriptors = CGPU_RESOURCE_TYPE_BUFFER;
     buf_desc.size = size;
     buf_desc.name = name;
-    const CGPUAdapterDetail* detail = cgpu_query_adapter_detail(device->adapter);
+    const cgpu_adapter_detail_t* detail = cgpu_query_adapter_detail(device->adapter);
     buf_desc.memory_usage = CGPU_MEMORY_USAGE_CPU_TO_GPU;
     buf_desc.flags = CGPU_BUFFER_CREATION_USAGE_PERSISTENT_MAP | CGPU_BUFFER_CREATION_USAGE_HOST_VISIBLE;
     buf_desc.start_state = CGPU_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
@@ -1358,19 +1358,19 @@ uint64_t size, const char8_t* name)
 
 bool cgpux_adapter_is_nvidia(CGPUAdapterId adapter)
 {
-    const CGPUAdapterDetail* detail = cgpu_query_adapter_detail(adapter);
+    const cgpu_adapter_detail_t* detail = cgpu_query_adapter_detail(adapter);
     return (detail->vendor_preset.vendor_id == 0x10DE);
 }
 
 bool cgpux_adapter_is_amd(CGPUAdapterId adapter)
 {
-    const CGPUAdapterDetail* detail = cgpu_query_adapter_detail(adapter);
+    const cgpu_adapter_detail_t* detail = cgpu_query_adapter_detail(adapter);
     return (detail->vendor_preset.vendor_id == 0x1002);
 }
 
 bool cgpux_adapter_is_intel(CGPUAdapterId adapter)
 {
-    const CGPUAdapterDetail* detail = cgpu_query_adapter_detail(adapter);
+    const cgpu_adapter_detail_t* detail = cgpu_query_adapter_detail(adapter);
     return (detail->vendor_preset.vendor_id == 0x8086);
 }
 
