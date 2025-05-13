@@ -696,7 +696,14 @@ funcptr.InstanceQueryFeatures
     .instance "InstanceId"
     .features "InstanceFeatures*"
 
+funcptr.InstanceEnumAdapters
+    "void"
+    .instance "InstanceId"
+    .adapters       "AdapterId*"
+    .adaptersNum    "uint32_t*"
+
 id "InstanceId"
+id "AdapterId"
 
 struct.Logger
     .logCallback "LogCallback"
@@ -772,6 +779,10 @@ struct.AdapterDetail
     .formatSupports                         "FormatSupport[CGPU_TEXTURE_FORMAT_COUNT]"
     .vendorPreset                           "VendorPreset"
 
+struct.Adapter
+    .instance       "InstanceId"
+    .procTableCache      "const ProcTable*"
+
 struct.BufferRange
     .offset             "uint64_t"
     .size               "uint64_t"
@@ -790,3 +801,8 @@ func.Instance.getBackend { const }
 func.Instance.queryFeatures { const }
     "void"
     .features "InstanceFeatures*"
+
+func.Instance.enumAdapters { const }
+    "void"
+    .adapters       "AdapterId*"
+    .adaptersNum    "uint32_t*"

@@ -27,12 +27,12 @@ CGPU_API void cgpu_query_instance_features_vulkan(cgpu_instance_id instance, cgp
 CGPU_API void cgpu_free_instance_vulkan(cgpu_instance_id instance);
 
 // Adapter APIs
-CGPU_API void cgpu_enum_adapters_vulkan(cgpu_instance_id instance, CGPUAdapterId* const adapters, uint32_t* adapters_num);
-CGPU_API const cgpu_adapter_detail_t* cgpu_query_adapter_detail_vulkan(const CGPUAdapterId adapter);
-CGPU_API uint32_t cgpu_query_queue_count_vulkan(const CGPUAdapterId adapter, const cgpu_queue_type_enum type);
+CGPU_API void cgpu_enum_adapters_vulkan(cgpu_instance_id instance, cgpu_adapter_id* const adapters, uint32_t* adapters_num);
+CGPU_API const cgpu_adapter_detail_t* cgpu_query_adapter_detail_vulkan(const cgpu_adapter_id adapter);
+CGPU_API uint32_t cgpu_query_queue_count_vulkan(const cgpu_adapter_id adapter, const cgpu_queue_type_enum type);
 
 // Device APIs
-CGPU_API CGPUDeviceId cgpu_create_device_vulkan(CGPUAdapterId adapter, const CGPUDeviceDescriptor* desc);
+CGPU_API CGPUDeviceId cgpu_create_device_vulkan(cgpu_adapter_id adapter, const CGPUDeviceDescriptor* desc);
 CGPU_API void cgpu_query_video_memory_info_vulkan(const CGPUDeviceId device, uint64_t* total, uint64_t* used_bytes);
 CGPU_API void cgpu_query_shared_memory_info_vulkan(const CGPUDeviceId device, uint64_t* total, uint64_t* used_bytes);
 CGPU_API void cgpu_free_device_vulkan(CGPUDeviceId device);
@@ -186,7 +186,7 @@ typedef struct CGPUInstance_Vulkan {
 } CGPUInstance_Vulkan;
 
 typedef struct CGPUAdapter_Vulkan {
-    CGPUAdapter super;
+    cgpu_adapter_t super;
     VkPhysicalDevice pPhysicalDevice;
     /// Physical Device Props & Features
     VkPhysicalDeviceProperties2KHR mPhysicalDeviceProps;

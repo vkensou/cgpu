@@ -31,7 +31,6 @@ CGPU_EXTERN_C_BEGIN
 typedef uint32_t CGPUQueueIndex;
 
 DEFINE_CGPU_OBJECT(CGPUSurface)
-DEFINE_CGPU_OBJECT(CGPUAdapter)
 DEFINE_CGPU_OBJECT(CGPUDevice)
 DEFINE_CGPU_OBJECT(CGPUQueue)
 DEFINE_CGPU_OBJECT(CGPUSemaphore)
@@ -116,17 +115,14 @@ typedef struct CGPUConstantSpecialization {
 } CGPUConstantSpecialization;
 
 // Adapter APIs
-CGPU_API void cgpu_enum_adapters(cgpu_instance_id instance, CGPUAdapterId* const adapters, uint32_t* adapters_num);
-typedef void (*CGPUProcEnumAdapters)(cgpu_instance_id instance, CGPUAdapterId* const adapters, uint32_t* adapters_num);
-
-CGPU_API const cgpu_adapter_detail_t* cgpu_query_adapter_detail(const CGPUAdapterId adapter);
-typedef const cgpu_adapter_detail_t* (*CGPUProcQueryAdapterDetail)(const CGPUAdapterId adapter);
-CGPU_API uint32_t cgpu_query_queue_count(const CGPUAdapterId adapter, const cgpu_queue_type_enum type);
-typedef uint32_t (*CGPUProcQueryQueueCount)(const CGPUAdapterId adapter, const cgpu_queue_type_enum type);
+CGPU_API const cgpu_adapter_detail_t* cgpu_query_adapter_detail(const cgpu_adapter_id adapter);
+typedef const cgpu_adapter_detail_t* (*CGPUProcQueryAdapterDetail)(const cgpu_adapter_id adapter);
+CGPU_API uint32_t cgpu_query_queue_count(const cgpu_adapter_id adapter, const cgpu_queue_type_enum type);
+typedef uint32_t (*CGPUProcQueryQueueCount)(const cgpu_adapter_id adapter, const cgpu_queue_type_enum type);
 
 // Device APIs
-CGPU_API CGPUDeviceId cgpu_create_device(CGPUAdapterId adapter, const struct CGPUDeviceDescriptor* desc);
-typedef CGPUDeviceId (*CGPUProcCreateDevice)(CGPUAdapterId adapter, const struct CGPUDeviceDescriptor* desc);
+CGPU_API CGPUDeviceId cgpu_create_device(cgpu_adapter_id adapter, const struct CGPUDeviceDescriptor* desc);
+typedef CGPUDeviceId (*CGPUProcCreateDevice)(cgpu_adapter_id adapter, const struct CGPUDeviceDescriptor* desc);
 CGPU_API void cgpu_query_video_memory_info(const CGPUDeviceId device, uint64_t* total, uint64_t* used_bytes);
 typedef void (*CGPUProcQueryVideoMemoryInfo)(const CGPUDeviceId device, uint64_t* total, uint64_t* used_bytes);
 CGPU_API void cgpu_query_shared_memory_info(const CGPUDeviceId device, uint64_t* total, uint64_t* used_bytes);
@@ -449,9 +445,9 @@ CGPU_API CGPUBufferId cgpux_create_mapped_constant_buffer(CGPUDeviceId device,
     uint64_t size, const char8_t* name, bool device_local_preferred);
 CGPU_API CGPUBufferId cgpux_create_mapped_upload_buffer(CGPUDeviceId device,
     uint64_t size, const char8_t* name);
-CGPU_API bool cgpux_adapter_is_nvidia(CGPUAdapterId adapter);
-CGPU_API bool cgpux_adapter_is_amd(CGPUAdapterId adapter);
-CGPU_API bool cgpux_adapter_is_intel(CGPUAdapterId adapter);
+CGPU_API bool cgpux_adapter_is_nvidia(cgpu_adapter_id adapter);
+CGPU_API bool cgpux_adapter_is_amd(cgpu_adapter_id adapter);
+CGPU_API bool cgpux_adapter_is_intel(cgpu_adapter_id adapter);
 
 // Types
 typedef struct cgpu_proc_table {
@@ -461,7 +457,7 @@ typedef struct cgpu_proc_table {
     const cgpu_proc_free_instance free_instance;
 
     // Adapter APIs
-    const CGPUProcEnumAdapters enum_adapters;
+    const cgpu_proc_instance_enum_adapters enum_adapters;
     const CGPUProcQueryAdapterDetail query_adapter_detail;
     const CGPUProcQueryVideoMemoryInfo query_video_memory_info;
     const CGPUProcQuerySharedMemoryInfo query_shared_memory_info;
@@ -672,13 +668,8 @@ typedef struct cgpu_surfaces_proc_table {
     const CGPUSurfaceProc_Free free_surface;
 } cgpu_surfaces_proc_table_t;
 
-typedef struct CGPUAdapter {
-    cgpu_instance_id instance;
-    const cgpu_proc_table_t* proc_table_cache;
-} CGPUAdapter;
-
 typedef struct CGPUDevice {
-    const CGPUAdapterId adapter;
+    const cgpu_adapter_id adapter;
     const cgpu_proc_table_t* proc_table_cache;
 #ifdef __cplusplus
     CGPUDevice()

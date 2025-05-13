@@ -489,9 +489,9 @@ int main(int argc, char** argv)
 	instance = cgpu_create_instance(&instance_desc);
 
 	uint32_t adapters_count = 0;
-	cgpu_enum_adapters(instance, CGPU_NULLPTR, &adapters_count);
-	CGPUAdapterId* adapters = (CGPUAdapterId*)_alloca(sizeof(CGPUAdapterId) * (adapters_count));
-	cgpu_enum_adapters(instance, adapters, &adapters_count);
+	cgpu_instance_enum_adapters(instance, CGPU_NULLPTR, &adapters_count);
+	cgpu_adapter_id* adapters = (cgpu_adapter_id*)_alloca(sizeof(cgpu_adapter_id) * (adapters_count));
+	cgpu_instance_enum_adapters(instance, adapters, &adapters_count);
 	auto adapter = adapters[0];
 
 	// Create device

@@ -105,7 +105,7 @@ CGPU_API void cgpu_free_instance(cgpu_instance_id instance)
     // SkrCZoneEnd(zz);
 }
 
-void cgpu_enum_adapters(cgpu_instance_id instance, CGPUAdapterId* const adapters, uint32_t* adapters_num)
+void cgpu_instance_enum_adapters(cgpu_instance_id instance, cgpu_adapter_id* adapters, uint32_t* adapters_num)
 {
     // SkrCZoneN(zz, "CGPUEnumAdapters", 1);
 
@@ -128,7 +128,7 @@ void cgpu_enum_adapters(cgpu_instance_id instance, CGPUAdapterId* const adapters
 }
 
 const char* unknownAdapterName = "UNKNOWN";
-const cgpu_adapter_detail_t* cgpu_query_adapter_detail(const CGPUAdapterId adapter)
+const cgpu_adapter_detail_t* cgpu_query_adapter_detail(const cgpu_adapter_id adapter)
 {
     cgpu_assert(adapter != CGPU_NULLPTR && "fatal: call on NULL adapter!");
     cgpu_assert(adapter->proc_table_cache->query_adapter_detail && "query_adapter_detail Proc Missing!");
@@ -137,7 +137,7 @@ const cgpu_adapter_detail_t* cgpu_query_adapter_detail(const CGPUAdapterId adapt
     return detail;
 }
 
-uint32_t cgpu_query_queue_count(const CGPUAdapterId adapter, const cgpu_queue_type_enum type)
+uint32_t cgpu_query_queue_count(const cgpu_adapter_id adapter, const cgpu_queue_type_enum type)
 {
     cgpu_assert(adapter != CGPU_NULLPTR && "fatal: call on NULL adapter!");
     cgpu_assert(adapter->proc_table_cache->query_queue_count && "query_queue_count Proc Missing!");
@@ -145,7 +145,7 @@ uint32_t cgpu_query_queue_count(const CGPUAdapterId adapter, const cgpu_queue_ty
     return adapter->proc_table_cache->query_queue_count(adapter, type);
 }
 
-CGPUDeviceId cgpu_create_device(CGPUAdapterId adapter, const CGPUDeviceDescriptor* desc)
+CGPUDeviceId cgpu_create_device(cgpu_adapter_id adapter, const CGPUDeviceDescriptor* desc)
 {
     // SkrCZoneN(zz, "CGPUCreateDevice", 1);
 
@@ -1356,19 +1356,19 @@ uint64_t size, const char8_t* name)
     return cgpu_create_buffer(device, &buf_desc);
 }
 
-bool cgpux_adapter_is_nvidia(CGPUAdapterId adapter)
+bool cgpux_adapter_is_nvidia(cgpu_adapter_id adapter)
 {
     const cgpu_adapter_detail_t* detail = cgpu_query_adapter_detail(adapter);
     return (detail->vendor_preset.vendor_id == 0x10DE);
 }
 
-bool cgpux_adapter_is_amd(CGPUAdapterId adapter)
+bool cgpux_adapter_is_amd(cgpu_adapter_id adapter)
 {
     const cgpu_adapter_detail_t* detail = cgpu_query_adapter_detail(adapter);
     return (detail->vendor_preset.vendor_id == 0x1002);
 }
 
-bool cgpux_adapter_is_intel(CGPUAdapterId adapter)
+bool cgpux_adapter_is_intel(cgpu_adapter_id adapter)
 {
     const cgpu_adapter_detail_t* detail = cgpu_query_adapter_detail(adapter);
     return (detail->vendor_preset.vendor_id == 0x8086);

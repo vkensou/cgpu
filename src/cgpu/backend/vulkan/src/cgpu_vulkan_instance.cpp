@@ -411,14 +411,14 @@ const float queuePriorities[] = {
     1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, //
     1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, //
 };
-CGPUDeviceId cgpu_create_device_vulkan(CGPUAdapterId adapter, const CGPUDeviceDescriptor* desc)
+CGPUDeviceId cgpu_create_device_vulkan(cgpu_adapter_id adapter, const CGPUDeviceDescriptor* desc)
 {
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)adapter->instance;
     const cgpu_allocator_t* allocator = &adapter->instance->allocator;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)cgpu_calloc(allocator, 1, sizeof(CGPUDevice_Vulkan));
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)adapter;
 
-    *const_cast<CGPUAdapterId*>(&D->super.adapter) = adapter;
+    *const_cast<cgpu_adapter_id*>(&D->super.adapter) = adapter;
 
     // Prepare Create Queues
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;

@@ -747,6 +747,8 @@ typedef enum cgpu_dynamic_state_features_flag
 
 DEFINE_CGPU_OBJECT2(cgpu_instance)
 
+DEFINE_CGPU_OBJECT2(cgpu_adapter)
+
 
 typedef struct cgpu_instance_descriptor cgpu_instance_descriptor_t;
 typedef struct cgpu_instance_features cgpu_instance_features_t;
@@ -766,6 +768,7 @@ typedef void (*cgpu_proc_free_aligned)(void* user_data, void* ptr, const void* p
 typedef cgpu_instance_id (*cgpu_proc_create_instance)(const cgpu_instance_descriptor_t* desc);
 typedef void (*cgpu_proc_free_instance)(cgpu_instance_id instance);
 typedef void (*cgpu_proc_instance_query_features)(cgpu_instance_id instance, cgpu_instance_features_t* features);
+typedef void (*cgpu_proc_instance_enum_adapters)(cgpu_instance_id instance, cgpu_adapter_id* adapters, uint32_t* adapters_num);
 
 typedef struct cgpu_logger
 {
@@ -861,6 +864,13 @@ typedef struct cgpu_adapter_detail
 
 } cgpu_adapter_detail_t;
 
+typedef struct cgpu_adapter
+{
+    cgpu_instance_id     instance;
+    const cgpu_proc_table_t* proc_table_cache;
+
+} cgpu_adapter_t;
+
 typedef struct cgpu_buffer_range
 {
     uint64_t             offset;
@@ -873,5 +883,6 @@ CGPU_API cgpu_instance_id cgpu_create_instance(const cgpu_instance_descriptor_t*
 CGPU_API void cgpu_free_instance(cgpu_instance_id instance);
 CGPU_API cgpu_backend_enum cgpu_instance_get_backend(const cgpu_instance_id _this);
 CGPU_API void cgpu_instance_query_features(const cgpu_instance_id _this, cgpu_instance_features_t* features);
+CGPU_API void cgpu_instance_enum_adapters(const cgpu_instance_id _this, cgpu_adapter_id* adapters, uint32_t* adapters_num);
 
 #endif // CGPU_C99_H_HEADER_GUARD

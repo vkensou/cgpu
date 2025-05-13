@@ -27,7 +27,7 @@ void cgpu_query_instance_features_vulkan(cgpu_instance_id instance, cgpu_instanc
     features->specialization_constant = true;
 }
 
-void cgpu_enum_adapters_vulkan(cgpu_instance_id instance, CGPUAdapterId* const adapters, uint32_t* adapters_num)
+void cgpu_enum_adapters_vulkan(cgpu_instance_id instance, cgpu_adapter_id* adapters, uint32_t* adapters_num)
 {
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)instance;
     *adapters_num = I->mPhysicalDeviceCount;
@@ -40,13 +40,13 @@ void cgpu_enum_adapters_vulkan(cgpu_instance_id instance, CGPUAdapterId* const a
     }
 }
 
-const cgpu_adapter_detail_t* cgpu_query_adapter_detail_vulkan(const CGPUAdapterId adapter)
+const cgpu_adapter_detail_t* cgpu_query_adapter_detail_vulkan(const cgpu_adapter_id adapter)
 {
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)adapter;
     return &A->adapter_detail;
 }
 
-uint32_t cgpu_query_queue_count_vulkan(const CGPUAdapterId adapter, const cgpu_queue_type_enum type)
+uint32_t cgpu_query_queue_count_vulkan(const cgpu_adapter_id adapter, const cgpu_queue_type_enum type)
 {
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)adapter;
     uint32_t count = 0;
