@@ -51,8 +51,8 @@ struct ImGui_ImplCGPU_ViewportData
     ~ImGui_ImplCGPU_ViewportData() { }
 };
 
-void ImGui_ImplCGPUH_DestroyWindowRenderBuffers(CGPUDeviceId device, ImGui_ImplCGPU_WindowRenderBuffers* buffers);
-void ImGui_ImplCGPU_DestroyAllViewportsRenderBuffers(CGPUDeviceId device);
+void ImGui_ImplCGPUH_DestroyWindowRenderBuffers(cgpu_device_id device, ImGui_ImplCGPU_WindowRenderBuffers* buffers);
+void ImGui_ImplCGPU_DestroyAllViewportsRenderBuffers(cgpu_device_id device);
 
 // CGPU data
 struct ImGui_ImplCGPU_Data
@@ -486,7 +486,7 @@ void ImGui_ImplCGPU_NewFrame()
     IM_UNUSED(bd);
 }
 
-void ImGui_ImplCGPU_DestroyFrameRenderBuffers(CGPUDeviceId device, ImGui_ImplCGPU_FrameRenderBuffers* buffers)
+void ImGui_ImplCGPU_DestroyFrameRenderBuffers(cgpu_device_id device, ImGui_ImplCGPU_FrameRenderBuffers* buffers)
 {
     if (buffers->VertexBuffer) { cgpu_free_buffer(buffers->VertexBuffer); buffers->VertexBuffer = CGPU_NULLPTR; }
     if (buffers->IndexBuffer) { cgpu_free_buffer(buffers->IndexBuffer); buffers->IndexBuffer = CGPU_NULLPTR; }
@@ -494,7 +494,7 @@ void ImGui_ImplCGPU_DestroyFrameRenderBuffers(CGPUDeviceId device, ImGui_ImplCGP
     buffers->IndexBufferSize = 0;
 }
 
-void ImGui_ImplCGPUH_DestroyWindowRenderBuffers(CGPUDeviceId device, ImGui_ImplCGPU_WindowRenderBuffers* buffers)
+void ImGui_ImplCGPUH_DestroyWindowRenderBuffers(cgpu_device_id device, ImGui_ImplCGPU_WindowRenderBuffers* buffers)
 {
     for (uint32_t n = 0; n < buffers->Count; n++)
         ImGui_ImplCGPU_DestroyFrameRenderBuffers(device, &buffers->FrameRenderBuffers[n]);
@@ -504,7 +504,7 @@ void ImGui_ImplCGPUH_DestroyWindowRenderBuffers(CGPUDeviceId device, ImGui_ImplC
     buffers->Count = 0;
 }
 
-void ImGui_ImplCGPU_DestroyAllViewportsRenderBuffers(CGPUDeviceId device)
+void ImGui_ImplCGPU_DestroyAllViewportsRenderBuffers(cgpu_device_id device)
 {
     ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
     for (int n = 0; n < 1; n++)
@@ -518,7 +518,7 @@ void ImGui_ImplCGPU_DestroyAllViewportsRenderBuffers(CGPUDeviceId device)
 // If you are new to dear imgui or creating a new binding for dear imgui, it is recommended that you completely ignore this section first..
 //--------------------------------------------------------------------------------------------------------
 
-static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQueueId present_queue, CGPURenderPassId render_pass, uint32_t image_count, void* windowHandle, uint32_t width, uint32_t height)
+static void CreateWindow(ImGui_ImplCGPU_Window* wd, cgpu_device_id device, CGPUQueueId present_queue, CGPURenderPassId render_pass, uint32_t image_count, void* windowHandle, uint32_t width, uint32_t height)
 {
     wd->Surface = cgpu_surface_from_native_view(device, windowHandle);
 
@@ -567,7 +567,7 @@ static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQue
     wd->Fence = cgpu_create_fence(device);
 }
 
-static void FreeWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device)
+static void FreeWindow(ImGui_ImplCGPU_Window* wd, cgpu_device_id device)
 {
     if (wd->Backbuffers) {
         for (int i = 0; i < wd->ImageCount; ++i)

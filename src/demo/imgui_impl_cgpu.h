@@ -50,7 +50,7 @@
 struct ImGui_ImplCGPU_InitInfo
 {
     cgpu_instance_id                      Instance;
-    CGPUDeviceId                        Device;
+    cgpu_device_id                        Device;
     CGPUQueueId                         GfxQueue;
     CGPUQueueId                         PresentQueue;
     CGPURenderPassId                    RenderPass;

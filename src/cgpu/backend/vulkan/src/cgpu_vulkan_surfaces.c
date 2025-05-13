@@ -23,7 +23,7 @@ const cgpu_surfaces_proc_table_t s_tbl_vk = {
 
 const cgpu_surfaces_proc_table_t* CGPU_VulkanSurfacesProcTable() { return &s_tbl_vk; }
 
-void cgpu_free_surface_vulkan(CGPUDeviceId device, CGPUSurfaceId surface)
+void cgpu_free_surface_vulkan(cgpu_device_id device, CGPUSurfaceId surface)
 {
     cgpu_assert(surface && "CGPU VULKAN ERROR: NULL surface!");
 
@@ -34,7 +34,7 @@ void cgpu_free_surface_vulkan(CGPUDeviceId device, CGPUSurfaceId surface)
 
 #if defined(_WIN32) || defined(_WIN64)
 
-CGPUSurfaceId cgpu_surface_from_hwnd_vulkan(CGPUDeviceId device, HWND window)
+CGPUSurfaceId cgpu_surface_from_hwnd_vulkan(cgpu_device_id device, HWND window)
 {
     cgpu_assert(window && "CGPU VULKAN ERROR: NULL HWND!");
 
@@ -58,7 +58,7 @@ CGPUSurfaceId cgpu_surface_from_hwnd_vulkan(CGPUDeviceId device, HWND window)
 
 #elif defined(_MACOS)
 
-CGPUSurfaceId cgpu_surface_from_ns_view_vulkan(CGPUDeviceId device, CGPUNSView* window)
+CGPUSurfaceId cgpu_surface_from_ns_view_vulkan(cgpu_device_id device, CGPUNSView* window)
 {
     cgpu_assert(window && "CGPU VULKAN ERROR: NULL NSVIEW!");
 
@@ -81,7 +81,7 @@ CGPUSurfaceId cgpu_surface_from_ns_view_vulkan(CGPUDeviceId device, CGPUNSView* 
 
 #elif defined(__ANDROID__)
 
-CGPUSurfaceId cgpu_surface_from_native_window_vulkan(CGPUDeviceId device, struct ANativeWindow* window)
+CGPUSurfaceId cgpu_surface_from_native_window_vulkan(cgpu_device_id device, struct ANativeWindow* window)
 {
     cgpu_assert(window && "CGPU VULKAN ERROR: NULL HWND!");
 

@@ -1,6 +1,6 @@
 #include "GpuTimeStamps.h"
 
-GpuTimeStamps::GpuTimeStamps(CGPUDeviceId device, uint32_t frame_count)
+GpuTimeStamps::GpuTimeStamps(cgpu_device_id device, uint32_t frame_count)
 	: frame_count(frame_count)
 {
 	for (int i = 0; i < frame_count; ++i)

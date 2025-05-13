@@ -342,7 +342,7 @@ static cgpu_texture_dimension_enum ArrDIMLut[SpvDimSubpassData + 1] = {
     CGPU_TEXTURE_DIMENSION_UNDEFINED   // SpvDimSubpassData
 };
 const char8_t* push_constants_name = u8"push_constants";
-void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vulkan* S, const struct CGPUShaderLibraryDescriptor* desc)
+void VkUtil_InitializeShaderReflection(cgpu_device_id device, CGPUShaderLibrary_Vulkan* S, const struct CGPUShaderLibraryDescriptor* desc)
 {
     const cgpu_allocator_t* allocator = &device->adapter->instance->allocator;
     S->pReflect = cgpu_calloc(allocator, 1, sizeof(SpvReflectShaderModule));

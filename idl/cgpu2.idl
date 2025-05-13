@@ -693,17 +693,37 @@ funcptr.FreeInstance
 
 funcptr.InstanceQueryFeatures
     "void"
-    .instance "InstanceId"
-    .features "InstanceFeatures*"
+    .instance       "const InstanceId"
+    .features       "InstanceFeatures*"
 
 funcptr.InstanceEnumAdapters
     "void"
-    .instance "InstanceId"
+    .instance       "const InstanceId"
     .adapters       "AdapterId*"
     .adaptersNum    "uint32_t*"
 
+funcptr.AdapterQueryAdapterDetail
+    "const AdapterDetail*"
+    .adapter        "const AdapterId"
+
+funcptr.AdapterQueryQueueCount
+    "uint32_t"
+    .adapter        "const AdapterId"
+    .type           "QueueType::Enum"
+
+funcptr.AdapterCreateDevice
+    "DeviceId"
+    .adapter        "AdapterId"
+    .desc           "const DeviceDescriptor*"
+
+funcptr.AdapterFreeDevice
+    "void"
+    .adapter        "AdapterId"
+    .device       "DeviceId"
+
 id "InstanceId"
 id "AdapterId"
+id "DeviceId"
 
 struct.Logger
     .logCallback "LogCallback"
@@ -780,8 +800,23 @@ struct.AdapterDetail
     .vendorPreset                           "VendorPreset"
 
 struct.Adapter
-    .instance       "InstanceId"
-    .procTableCache      "const ProcTable*"
+    .instance           "InstanceId"
+    .procTableCache     "const ProcTable*"
+
+struct.QueueGroupDescriptor
+    .queueType          "QueueType::Enum"
+    .queueCount         "uint32_t"
+
+struct.DeviceDescriptor
+    .disablePipelineCache   "bool"
+    .queueGroups            "QueueGroupDescriptor*"
+    .queueGroupCount        "uint32_t"
+
+struct.Device
+    .Adapter            "AdapterId"
+    .procTableCache     "const ProcTable*"
+    .nextTextureId      "uint64_t"
+    .isLost             "bool"
 
 struct.BufferRange
     .offset             "uint64_t"
@@ -806,3 +841,18 @@ func.Instance.enumAdapters { const }
     "void"
     .adapters       "AdapterId*"
     .adaptersNum    "uint32_t*"
+
+func.Adapter.queryAdapterDetail { const }
+    "const AdapterDetail*"
+
+func.Adapter.queryQueueCount { const }
+    "uint32_t"
+    .type           "QueueType::Enum"
+
+func.Adapter.createDevice
+    "DeviceId"
+    .desc           "const DeviceDescriptor*"
+
+func.Adapter.freeDevice
+    "void"
+    .device       "DeviceId"

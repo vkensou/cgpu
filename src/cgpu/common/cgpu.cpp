@@ -17,7 +17,7 @@
 // Runtime Table
 struct cgpu_runtime_table {
     struct CreatedQueue {
-        CGPUDeviceId device;
+        cgpu_device_id device;
         union
         {
             uint64_t type_index;
@@ -33,7 +33,7 @@ struct cgpu_runtime_table {
             return device == rhs.device && type_index == rhs.type_index;
         }
     };
-    CGPUQueueId TryFindQueue(CGPUDeviceId device, cgpu_queue_type_enum type, uint32_t index)
+    CGPUQueueId TryFindQueue(cgpu_device_id device, cgpu_queue_type_enum type, uint32_t index)
     {
         CreatedQueue to_find = {};
         to_find.device = device;
@@ -103,7 +103,7 @@ void cgpu_runtime_table_add_queue(CGPUQueueId queue, cgpu_queue_type_enum type, 
     queue->device->adapter->instance->runtime_table->AddNewQueue(queue, type, index);
 }
 
-CGPUQueueId cgpu_runtime_table_try_get_queue(CGPUDeviceId device, cgpu_queue_type_enum type, uint32_t index)
+CGPUQueueId cgpu_runtime_table_try_get_queue(cgpu_device_id device, cgpu_queue_type_enum type, uint32_t index)
 {
     return device->adapter->instance->runtime_table->TryFindQueue(device, type, index);
 }

@@ -20,7 +20,7 @@ struct TimeStamp
 class GpuTimeStamps
 {
 public:
-	GpuTimeStamps(CGPUDeviceId device, uint32_t frame_count);
+	GpuTimeStamps(cgpu_device_id device, uint32_t frame_count);
 	~GpuTimeStamps();
 	void OnBeginFrame(CGPUCommandBufferId cmd, float gpuTicksPerSecond, std::vector<TimeStamp>& pTimestamps);
 	void GetTimeStamp(CGPUCommandBufferId cmd, const char* label);

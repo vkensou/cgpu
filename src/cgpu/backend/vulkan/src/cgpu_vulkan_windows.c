@@ -5,7 +5,7 @@
     #include "SkrRT/platform/thread.h"
 #endif
 
-CGPU_EXTERN_C uint64_t cgpu_export_shared_texture_handle_vulkan_win32(CGPUDeviceId device, const struct CGPUExportTextureDescriptor* desc)
+CGPU_EXTERN_C uint64_t cgpu_export_shared_texture_handle_vulkan_win32(cgpu_device_id device, const struct CGPUExportTextureDescriptor* desc)
 {
     CGPUTexture_Vulkan* T = (CGPUTexture_Vulkan*)desc->texture;
     const CGPUTextureInfo* info = T->super.info;
@@ -24,7 +24,7 @@ CGPU_EXTERN_C uint64_t cgpu_export_shared_texture_handle_vulkan_win32(CGPUDevice
     return info->unique_id;
 }
 
-CGPU_EXTERN_C CGPUTextureId cgpu_import_shared_texture_handle_vulkan_win32(CGPUDeviceId device, const struct CGPUImportTextureDescriptor* desc)
+CGPU_EXTERN_C CGPUTextureId cgpu_import_shared_texture_handle_vulkan_win32(cgpu_device_id device, const struct CGPUImportTextureDescriptor* desc)
 {
     CGPU_DECLARE_ZERO(CGPUTextureDescriptor, tex_desc);
     tex_desc.descriptors = CGPU_RESOURCE_TYPE_TEXTURE;

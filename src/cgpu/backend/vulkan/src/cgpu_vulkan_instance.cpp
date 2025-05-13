@@ -411,7 +411,7 @@ const float queuePriorities[] = {
     1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, //
     1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, //
 };
-CGPUDeviceId cgpu_create_device_vulkan(cgpu_adapter_id adapter, const CGPUDeviceDescriptor* desc)
+cgpu_device_id cgpu_create_device_vulkan(cgpu_adapter_id adapter, const cgpu_device_descriptor_t* desc)
 {
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)adapter->instance;
     const cgpu_allocator_t* allocator = &adapter->instance->allocator;
@@ -426,7 +426,7 @@ CGPUDeviceId cgpu_create_device_vulkan(cgpu_adapter_id adapter, const CGPUDevice
     for (uint32_t i = 0; i < desc->queue_group_count; i++)
     {
         VkDeviceQueueCreateInfo& info = queueCreateInfos[i];
-        CGPUQueueGroupDescriptor& descriptor = desc->queue_groups[i];
+        cgpu_queue_group_descriptor& descriptor = desc->queue_groups[i];
         info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         info.queueCount = descriptor.queue_count;
         info.queueFamilyIndex = (uint32_t)A->mQueueFamilyIndices[descriptor.queue_type];
@@ -475,7 +475,7 @@ CGPUDeviceId cgpu_create_device_vulkan(cgpu_adapter_id adapter, const CGPUDevice
     return &D->super;
 }
 
-void cgpu_free_device_vulkan(CGPUDeviceId device)
+void cgpu_free_device_vulkan(cgpu_adapter_id _this, cgpu_device_id device)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)device->adapter;

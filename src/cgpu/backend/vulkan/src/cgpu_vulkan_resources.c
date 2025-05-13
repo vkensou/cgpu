@@ -60,7 +60,7 @@ CGPU_FORCEINLINE static VkFormatFeatureFlags VkUtil_ImageUsageToFormatFeatures(V
     return result;
 }
 
-void cgpu_query_video_memory_info_vulkan(const CGPUDeviceId device, uint64_t* total, uint64_t* used_bytes)
+void cgpu_query_video_memory_info_vulkan(const cgpu_device_id device, uint64_t* total, uint64_t* used_bytes)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     const VkPhysicalDeviceMemoryProperties* mem_props = CGPU_NULLPTR;
@@ -79,7 +79,7 @@ void cgpu_query_video_memory_info_vulkan(const CGPUDeviceId device, uint64_t* to
     }
 }
 
-void cgpu_query_shared_memory_info_vulkan(const CGPUDeviceId device, uint64_t* total, uint64_t* used_bytes)
+void cgpu_query_shared_memory_info_vulkan(const cgpu_device_id device, uint64_t* total, uint64_t* used_bytes)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     const VkPhysicalDeviceMemoryProperties* mem_props = CGPU_NULLPTR;
@@ -101,7 +101,7 @@ void cgpu_query_shared_memory_info_vulkan(const CGPUDeviceId device, uint64_t* t
 
 // Buffer APIs
 cgpu_static_assert(sizeof(CGPUBuffer_Vulkan) <= 8 * sizeof(uint64_t), "Acquire Single CacheLine"); // Cache Line
-CGPUBufferId cgpu_create_buffer_vulkan(CGPUDeviceId device, const struct CGPUBufferDescriptor* desc)
+CGPUBufferId cgpu_create_buffer_vulkan(cgpu_device_id device, const struct CGPUBufferDescriptor* desc)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
@@ -703,7 +703,7 @@ VkSparseImageMemoryRequirements VkUtil_FillTiledTextureInfo(CGPUDevice_Vulkan* D
     return sparseReq;
 }
 
-CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUTextureDescriptor* desc)
+CGPUTextureId cgpu_create_texture_vulkan(cgpu_device_id device, const struct CGPUTextureDescriptor* desc)
 {
     if (desc->sample_count > CGPU_SAMPLE_COUNT_1 && desc->mip_levels > 1)
     {
@@ -1279,11 +1279,11 @@ void cgpu_queue_unmap_tiled_texture_vulkan(CGPUQueueId queue, const struct CGPUT
 }
 
 #ifdef _WIN32
-CGPU_EXTERN_C uint64_t cgpu_export_shared_texture_handle_vulkan_win32(CGPUDeviceId device, const struct CGPUExportTextureDescriptor* desc);
-CGPU_EXTERN_C CGPUTextureId cgpu_import_shared_texture_handle_vulkan_win32(CGPUDeviceId device, const struct CGPUImportTextureDescriptor* desc);
+CGPU_EXTERN_C uint64_t cgpu_export_shared_texture_handle_vulkan_win32(cgpu_device_id device, const struct CGPUExportTextureDescriptor* desc);
+CGPU_EXTERN_C CGPUTextureId cgpu_import_shared_texture_handle_vulkan_win32(cgpu_device_id device, const struct CGPUImportTextureDescriptor* desc);
 #endif
 
-uint64_t cgpu_export_shared_texture_handle_vulkan(CGPUDeviceId device, const struct CGPUExportTextureDescriptor* desc)
+uint64_t cgpu_export_shared_texture_handle_vulkan(cgpu_device_id device, const struct CGPUExportTextureDescriptor* desc)
 {
 #ifdef _WIN32
     return cgpu_export_shared_texture_handle_vulkan_win32(device, desc);
@@ -1291,7 +1291,7 @@ uint64_t cgpu_export_shared_texture_handle_vulkan(CGPUDeviceId device, const str
     return UINT64_MAX;
 }
 
-CGPUTextureId cgpu_import_shared_texture_handle_vulkan(CGPUDeviceId device, const struct CGPUImportTextureDescriptor* desc)
+CGPUTextureId cgpu_import_shared_texture_handle_vulkan(cgpu_device_id device, const struct CGPUImportTextureDescriptor* desc)
 {
 #ifdef _WIN32
     return cgpu_import_shared_texture_handle_vulkan_win32(device, desc);
@@ -1370,7 +1370,7 @@ void cgpu_free_texture_vulkan(CGPUTextureId texture)
     cgpu_free_aligned(allocator, T);
 }
 
-CGPUTextureViewId cgpu_create_texture_view_vulkan(CGPUDeviceId device, const struct CGPUTextureViewDescriptor* desc)
+CGPUTextureViewId cgpu_create_texture_view_vulkan(cgpu_device_id device, const struct CGPUTextureViewDescriptor* desc)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)desc->texture->device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
@@ -1477,7 +1477,7 @@ void cgpu_free_texture_view_vulkan(CGPUTextureViewId render_target)
     cgpu_free_aligned(allocator, TV);
 }
 
-bool cgpu_try_bind_aliasing_texture_vulkan(CGPUDeviceId device, const struct CGPUTextureAliasingBindDescriptor* desc)
+bool cgpu_try_bind_aliasing_texture_vulkan(cgpu_device_id device, const struct CGPUTextureAliasingBindDescriptor* desc)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     if (desc->aliased)
@@ -1520,7 +1520,7 @@ bool cgpu_try_bind_aliasing_texture_vulkan(CGPUDeviceId device, const struct CGP
 }
 
 // Sampler APIs
-CGPUSamplerId cgpu_create_sampler_vulkan(CGPUDeviceId device, const struct CGPUSamplerDescriptor* desc)
+CGPUSamplerId cgpu_create_sampler_vulkan(cgpu_device_id device, const struct CGPUSamplerDescriptor* desc)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
@@ -1563,7 +1563,7 @@ void cgpu_free_sampler_vulkan(CGPUSamplerId sampler)
 }
 
 // Shader APIs
-CGPUShaderLibraryId cgpu_create_shader_library_vulkan(CGPUDeviceId device, const struct CGPUShaderLibraryDescriptor* desc)
+CGPUShaderLibraryId cgpu_create_shader_library_vulkan(cgpu_device_id device, const struct CGPUShaderLibraryDescriptor* desc)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;

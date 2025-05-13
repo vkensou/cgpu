@@ -14,7 +14,7 @@ cgpu_runtime_table_t* cgpu_create_runtime_table(const cgpu_allocator_t* allocato
 void cgpu_early_free_runtime_table(cgpu_runtime_table_t* table);
 void cgpu_free_runtime_table(const cgpu_allocator_t* allocator, cgpu_runtime_table_t* table);
 void cgpu_runtime_table_add_queue(CGPUQueueId queue, cgpu_queue_type_enum type, uint32_t index);
-CGPUQueueId cgpu_runtime_table_try_get_queue(CGPUDeviceId device, cgpu_queue_type_enum type, uint32_t index);
+CGPUQueueId cgpu_runtime_table_try_get_queue(cgpu_device_id device, cgpu_queue_type_enum type, uint32_t index);
 
 void cgpu_runtime_table_add_custom_data(cgpu_runtime_table_t* table, const char* key, void* data);
 void cgpu_runtime_table_add_sweep_callback(cgpu_runtime_table_t* table, const char* key, void(pfn)(void*), void* usrdata);

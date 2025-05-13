@@ -121,7 +121,7 @@ uint32_t cgpu_query_queue_count_vulkan(const cgpu_adapter_id adapter, const cgpu
 }
 
 // API Objects APIs
-CGPUFenceId cgpu_create_fence_vulkan(CGPUDeviceId device)
+CGPUFenceId cgpu_create_fence_vulkan(cgpu_device_id device)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
@@ -199,7 +199,7 @@ void cgpu_free_fence_vulkan(CGPUFenceId fence)
     cgpu_free(allocator, F);
 }
 
-CGPUSemaphoreId cgpu_create_semaphore_vulkan(CGPUDeviceId device)
+CGPUSemaphoreId cgpu_create_semaphore_vulkan(cgpu_device_id device)
 {
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
@@ -242,7 +242,7 @@ uint32_t get_set_count(uint32_t set_index_mask)
     return set_count;
 }
 
-CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const struct CGPURootSignatureDescriptor* desc)
+CGPURootSignatureId cgpu_create_root_signature_vulkan(cgpu_device_id device,const struct CGPURootSignatureDescriptor* desc)
 {
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
@@ -459,7 +459,7 @@ void cgpu_free_root_signature_vulkan(CGPURootSignatureId signature)
     cgpu_free(allocator, RS);
 }
 
-CGPURootSignaturePoolId cgpu_create_root_signature_pool_vulkan(CGPUDeviceId device, const struct CGPURootSignaturePoolDescriptor* desc)
+CGPURootSignaturePoolId cgpu_create_root_signature_pool_vulkan(cgpu_device_id device, const struct CGPURootSignaturePoolDescriptor* desc)
 {
     return CGPUUtil_CreateRootSignaturePool(&device->adapter->instance->allocator, desc);
 }
@@ -470,7 +470,7 @@ void cgpu_free_root_signature_pool_vulkan(CGPURootSignaturePoolId pool)
     CGPUUtil_FreeRootSignaturePool(allocator, pool);
 }
 
-CGPUDescriptorSetId cgpu_create_descriptor_set_vulkan(CGPUDeviceId device, const struct CGPUDescriptorSetDescriptor* desc)
+CGPUDescriptorSetId cgpu_create_descriptor_set_vulkan(cgpu_device_id device, const struct CGPUDescriptorSetDescriptor* desc)
 {
     const cgpu_allocator_t* allocator = &device->adapter->instance->allocator;
     size_t totalSize = sizeof(CGPUDescriptorSet_Vulkan);
@@ -759,7 +759,7 @@ void cgpu_free_descriptor_set_vulkan(CGPUDescriptorSetId set)
     cgpu_free_aligned(allocator, Set);
 }
 
-CGPUComputePipelineId cgpu_create_compute_pipeline_vulkan(CGPUDeviceId device, const struct CGPUComputePipelineDescriptor* desc)
+CGPUComputePipelineId cgpu_create_compute_pipeline_vulkan(cgpu_device_id device, const struct CGPUComputePipelineDescriptor* desc)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
@@ -804,7 +804,7 @@ void cgpu_free_compute_pipeline_vulkan(CGPUComputePipelineId pipeline)
 
 /* clang-format off */
 static const char* kVkPSOMemoryPoolName = "cgpu::vk_pso";
-CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, const struct CGPURenderPipelineDescriptor* desc)
+CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(cgpu_device_id device, const struct CGPURenderPipelineDescriptor* desc)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
@@ -1133,7 +1133,7 @@ VkQueryType VkUtil_ToVkQueryType(cgpu_query_type_enum type)
             return VK_QUERY_TYPE_MAX_ENUM;
     }
 }
-CGPUQueryPoolId cgpu_create_query_pool_vulkan(CGPUDeviceId device, const struct CGPUQueryPoolDescriptor* desc)
+CGPUQueryPoolId cgpu_create_query_pool_vulkan(cgpu_device_id device, const struct CGPUQueryPoolDescriptor* desc)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
@@ -1166,7 +1166,7 @@ void cgpu_free_query_pool_vulkan(CGPUQueryPoolId pool)
     cgpu_free(allocator, P);
 }
 
-CGPUMemoryPoolId cgpu_create_memory_pool_vulkan(CGPUDeviceId device, const struct CGPUMemoryPoolDescriptor* desc)
+CGPUMemoryPoolId cgpu_create_memory_pool_vulkan(cgpu_device_id device, const struct CGPUMemoryPoolDescriptor* desc)
 {
     VmaPool vmaPool;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
@@ -1187,7 +1187,7 @@ void cgpu_free_memory_pool_vulkan(CGPUMemoryPoolId pool)
 }
 
 // Queue APIs
-CGPUQueueId cgpu_get_queue_vulkan(CGPUDeviceId device, cgpu_queue_type_enum type, uint32_t index)
+CGPUQueueId cgpu_get_queue_vulkan(cgpu_device_id device, cgpu_queue_type_enum type, uint32_t index)
 {
     cgpu_assert(device && "CGPU VULKAN: NULL DEVICE!");
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
@@ -1290,7 +1290,7 @@ void cgpu_submit_queue_vulkan(CGPUQueueId queue, const struct CGPUQueueSubmitDes
         cgpu_fatal(&D->super.adapter->instance->logger, u8"CGPU VULKAN: Failed to submit queue! Error code: %d\n", res);
         if (res == VK_ERROR_DEVICE_LOST)
         {
-            ((CGPUDevice*)queue->device)->is_lost = true;
+            ((cgpu_device_t*)queue->device)->is_lost = true;
         }
         else
         {
@@ -1380,7 +1380,7 @@ void cgpu_free_queue_vulkan(CGPUQueueId queue)
     cgpu_free(allocator, (void*)queue);
 }
 
-CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struct CGPURenderPassDescriptor* desc)
+CGPURenderPassId cgpu_create_render_pass_vulkan(cgpu_device_id device, const struct CGPURenderPassDescriptor* desc)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
@@ -1489,7 +1489,7 @@ CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struc
     return &R->super;
 }
 
-CGPUFramebufferId cgpu_create_framebuffer_vulkan(CGPUDeviceId device, const struct CGPUFramebufferDescriptor* desc)
+CGPUFramebufferId cgpu_create_framebuffer_vulkan(cgpu_device_id device, const struct CGPUFramebufferDescriptor* desc)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
@@ -2242,7 +2242,7 @@ void cgpu_cmd_end_render_pass_vulkan(CGPUCommandBufferId cmd, CGPURenderPassEnco
 // SwapChain APIs
 #define clamp(x, min, max) (x) < (min) ? (min) : ((x) > (max) ? (max) : (x));
 // TODO: Handle multi-queue presenting
-CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGPUSwapChainDescriptor* desc, CGPUSwapChain_Vulkan* old)
+CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(cgpu_device_id device, const CGPUSwapChainDescriptor* desc, CGPUSwapChain_Vulkan* old)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
@@ -2518,7 +2518,7 @@ void cgpu_free_swapchain_vulkan_impl(CGPUSwapChainId swapchain)
     D->mVkDeviceTable.vkDestroySwapchainKHR(D->pVkDevice, S->pVkSwapChain, &I->vkAllocator);
 }
 
-CGPUSwapChainId cgpu_create_swapchain_vulkan(CGPUDeviceId device, const CGPUSwapChainDescriptor* desc)
+CGPUSwapChainId cgpu_create_swapchain_vulkan(cgpu_device_id device, const CGPUSwapChainDescriptor* desc)
 {
     return cgpu_create_swapchain_vulkan_impl(device, desc, CGPU_NULLPTR);
 }

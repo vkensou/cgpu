@@ -16,7 +16,7 @@ const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
 cgpu_instance_id instance;
-CGPUDeviceId device;
+cgpu_device_id device;
 CGPUQueueId gfx_queue;
 CGPURenderPassId render_pass;
 GpuTimeStamps* gpu_timer;
@@ -92,7 +92,7 @@ struct RenderWindow
 	CGPUTextureViewId swapchain_views[3] = { CGPU_NULLPTR };
 	CGPUSemaphoreId swapchain_prepared_semaphores[3] = { CGPU_NULLPTR };
 	CGPUFramebufferId swapchain_framebuffer[3] = { CGPU_NULLPTR };
-	CGPUDeviceId device = CGPU_NULLPTR;
+	cgpu_device_id device = CGPU_NULLPTR;
 	CGPUQueueId present_queue = CGPU_NULLPTR;
 	CGPURenderPassId render_pass;
 	uint32_t current_swapchain_index = 0;
@@ -104,7 +104,7 @@ struct RenderWindow
 	CGPURootSignatureId imgui_root_sig;
 	CGPURenderPipelineId imgui_pipeline;
 
-	RenderWindow(CGPUDeviceId device, CGPUQueueId present_queue, CGPURenderPassId render_pass, int width, int height, Uint32 flags)
+	RenderWindow(cgpu_device_id device, CGPUQueueId present_queue, CGPURenderPassId render_pass, int width, int height, Uint32 flags)
 	{
 		this->device = device;
 		this->present_queue = present_queue;
@@ -120,7 +120,7 @@ struct RenderWindow
 		CreateSyncObjects();
 	}
 
-	RenderWindow(CGPUDeviceId device, CGPUQueueId present_queue, CGPURenderPassId render_pass, SDL_Window* window)
+	RenderWindow(cgpu_device_id device, CGPUQueueId present_queue, CGPURenderPassId render_pass, SDL_Window* window)
 	{
 		this->device = device;
 		this->present_queue = present_queue;
@@ -340,7 +340,7 @@ std::vector<char> readFile(const std::string& filename)
 	return buffer;
 }
 
-std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGPUDeviceId device, cgpu_texture_format_enum format, const std::string& vertPath, const std::string& fragPath, const CGPUVertexLayout* vertex_layout, CGPUBlendStateDescriptor* blend_state, CGPUDepthStateDesc* depth_state, CGPURasterizerStateDescriptor* rasterizer_state, CGPURenderPassId render_pass, uint32_t subpass)
+std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(cgpu_device_id device, cgpu_texture_format_enum format, const std::string& vertPath, const std::string& fragPath, const CGPUVertexLayout* vertex_layout, CGPUBlendStateDescriptor* blend_state, CGPUDepthStateDesc* depth_state, CGPURasterizerStateDescriptor* rasterizer_state, CGPURenderPassId render_pass, uint32_t subpass)
 {
 	auto vertShaderCode = readFile(vertPath);
 	auto fragShaderCode = readFile(fragPath);
@@ -495,15 +495,15 @@ int main(int argc, char** argv)
 	auto adapter = adapters[0];
 
 	// Create device
-	CGPUQueueGroupDescriptor G = {
+	cgpu_queue_group_descriptor G = {
 		.queue_type = CGPU_QUEUE_TYPE_GRAPHICS,
 		.queue_count = 1
 	};
-	CGPUDeviceDescriptor device_desc = {
+	cgpu_device_descriptor_t device_desc = {
 		.queue_groups = &G,
 		.queue_group_count = 1
 	};
-	device = cgpu_create_device(adapter, &device_desc);
+	device = cgpu_adapter_create_device(adapter, &device_desc);
 	gfx_queue = cgpu_get_queue(device, CGPU_QUEUE_TYPE_GRAPHICS, 0);
 
 	CGPUColorAttachment color_attachments = {
@@ -814,7 +814,7 @@ int main(int argc, char** argv)
 	delete gpu_timer;
 	cgpu_free_render_pass(render_pass);
 	cgpu_free_queue(gfx_queue);
-	cgpu_free_device(device);
+	cgpu_adapter_free_device(adapter, device);
 	cgpu_free_instance(instance);
 
 	printf("%lld\n", malloced);
