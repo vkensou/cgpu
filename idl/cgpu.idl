@@ -1,0 +1,585 @@
+-- vim: syntax=lua
+-- cgpu interface
+
+version(1)
+
+typedef "bool"
+typedef "char"
+typedef "float"
+typedef "int8_t"
+typedef "int32_t"
+typedef "int64_t"
+typedef "uint8_t"
+typedef "uint16_t"
+typedef "uint32_t"
+typedef "uint64_t"
+typedef "uintptr_t"
+typedef "va_list"
+typedef "void"
+
+enum.Backend { comment = "Backend:" }
+	.Vulkan		--- Vulkan
+    .D3d12      --- D3D12
+    .Metal      --- Metal
+	()
+
+enum.BlendFactor { underscore, comment = "" }
+	.Zero
+	.One
+	.SrcColor
+	.OneMinusSrcColor
+	.DstColor
+	.OneMinusDstColor
+	.SrcAlpha
+	.OneMinusSrcAlpha
+	.DstAlpha
+	.OneMinusDstAlpha
+	.SrcAlphaSaturate
+	()
+
+enum.BlendOp { underscore }
+	.Add
+	.Subtract
+	.ReverseSubtract
+	.Min
+	.Max
+	()
+
+flag.ColorMask { bits = 32, base = 1 }
+	.R                      -- R Channel
+	.G                      -- G Channel
+	.B                      -- B Channel
+	.A                      -- A Channel
+    .RGB { "R", "G", "B"}   -- RGB Channel
+    .RGBA { "RGB", "A" }    -- RGBA Channel
+	()
+
+enum.LogSeverity { comment = "Log Severity:" }
+	.Trace
+	.Debug
+	.Info
+	.Warning
+	.Error
+	.Fatal
+	()
+
+enum.TextureFormat { comment = "Texture Formats:" }
+	.Undefined
+    .R4G4_UNorm_Pack8
+    .R4G4B4A4_UNorm_Pack16
+    .B4G4R4A4_UNorm_Pack16
+    .R5G6B5_UNorm_Pack16
+    .B5G6R5_UNorm_Pack16
+    .R5G5B5A1_UNorm_Pack16
+    .B5G5R5A1_UNorm_Pack16
+    .A1R5G5B5_UNorm_Pack16
+    .R8_UNorm
+    .R8_SNorm
+    .R8_UInt
+    .R8_SInt
+    .R8_SRGB
+    .R8G8_UNorm
+    .R8G8_SNorm
+    .R8G8_UInt
+    .R8G8_SInt
+    .R8G8_SRGB
+    .R8G8B8_UNorm
+    .R8G8B8_SNorm
+    .R8G8B8_UInt
+    .R8G8B8_SInt
+    .R8G8B8_SRGB
+    .B8G8R8_UNorm
+    .B8G8R8_SNorm
+    .B8G8R8_UInt
+    .B8G8R8_SInt
+    .B8G8R8_SRGB
+    .R8G8B8A8_UNorm
+    .R8G8B8A8_SNorm
+    .R8G8B8A8_UInt
+    .R8G8B8A8_SInt
+    .R8G8B8A8_SRGB
+    .B8G8R8A8_UNorm
+    .B8G8R8A8_SNorm
+    .B8G8R8A8_UInt
+    .B8G8R8A8_SInt
+    .B8G8R8A8_SRGB
+    .A8B8G8R8_UNorm_Pack32
+    .A8B8G8R8_SNorm_Pack32
+    .A8B8G8R8_UInt_Pack32
+    .A8B8G8R8_SInt_Pack32
+    .A8B8G8R8_SRGB_Pack32
+    .A2R10G10B10_UNorm_Pack32
+    .A2R10G10B10_SNorm_Pack32
+    .A2R10G10B10_UInt_Pack32
+    .A2R10G10B10_SInt_Pack32
+    .A2B10G10R10_UNorm_Pack32
+    .A2B10G10R10_SNorm_Pack32
+    .A2B10G10R10_UInt_Pack32
+    .A2B10G10R10_SInt_Pack32
+    .R16_UNorm
+    .R16_SNorm
+    .R16_UInt
+    .R16_SInt
+    .R16_SFloat
+    .R16G16_UNorm
+    .R16G16_SNorm
+    .R16G16_UInt
+    .R16G16_SInt
+    .R16G16_SFloat
+    .R16G16B16_UNorm
+    .R16G16B16_SNorm
+    .R16G16B16_UInt
+    .R16G16B16_SInt
+    .R16G16B16_SFloat
+    .R16G16B16A16_UNorm
+    .R16G16B16A16_SNorm
+    .R16G16B16A16_UInt
+    .R16G16B16A16_SInt
+    .R16G16B16A16_SFloat
+    .R32_UInt
+    .R32_SInt
+    .R32_SFloat
+    .R32G32_UInt
+    .R32G32_SInt
+    .R32G32_SFloat
+    .R32G32B32_UInt
+    .R32G32B32_SInt
+    .R32G32B32_SFloat
+    .R32G32B32A32_UInt
+    .R32G32B32A32_SInt
+    .R32G32B32A32_SFloat
+    .R64_UInt
+    .R64_SInt
+    .R64_SFloat
+    .R64G64_UInt
+    .R64G64_SInt
+    .R64G64_SFloat
+    .R64G64B64_UInt
+    .R64G64B64_SInt
+    .R64G64B64_SFloat
+    .R64G64B64A64_UInt
+    .R64G64B64A64_SInt
+    .R64G64B64A64_SFloat
+    .B10G11R11_UFloat_Pack32
+    .E5B9G9R9_UFloat_Pack32
+    .D16_UNorm
+    .X8_D24_UNorm_Pack32
+    .D32_SFloat
+    .S8_UInt
+    .D16_UNorm_S8_UInt
+    .D24_UNorm_S8_UInt
+    .D32_SFloat_S8_UInt
+    .BC1_RGB_UNorm_Block
+    .BC1_RGB_SRGB_Block
+    .BC1_RGBA_UNorm_Block
+    .BC1_RGBA_SRGB_Block
+    .BC2_UNorm_Block
+    .BC2_SRGB_Block
+    .BC3_UNorm_Block
+    .BC3_SRGB_Block
+    .BC4_UNorm_Block
+    .BC4_SNorm_Block
+    .BC5_UNorm_Block
+    .BC5_SNorm_Block
+    .BC6H_UFloat_Block
+    .BC6H_SFloat_Block
+    .BC7_UNorm_Block
+    .BC7_SRGB_Block
+    .PVRTC1_2BPP_UNorm_Block
+    .PVRTC1_4BPP_UNorm_Block
+    .PVRTC2_2BPP_UNorm_Block
+    .PVRTC2_4BPP_UNorm_Block
+    .PVRTC1_2BPP_SRGB_Block
+    .PVRTC1_4BPP_SRGB_Block
+    .PVRTC2_2BPP_SRGB_Block
+    .PVRTC2_4BPP_SRGB_Block
+    .ETC2_R8G8B8_UNorm_Block
+    .ETC2_R8G8B8_SRGB_Block
+    .ETC2_R8G8B8A1_UNorm_Block
+    .ETC2_R8G8B8A1_SRGB_Block
+    .ETC2_R8G8B8A8_UNorm_Block
+    .ETC2_R8G8B8A8_SRGB_Block
+    .EAC_R11_UNorm_Block
+    .EAC_R11_SNorm_Block
+    .EAC_R11G11_UNorm_Block
+    .EAC_R11G11_SNorm_Block
+    .ASTC_4x4_UNorm_Block
+    .ASTC_4x4_SRGB_Block
+    .ASTC_5x4_UNorm_Block
+    .ASTC_5x4_SRGB_Block
+    .ASTC_5x5_UNorm_Block
+    .ASTC_5x5_SRGB_Block
+    .ASTC_6x5_UNorm_Block
+    .ASTC_6x5_SRGB_Block
+    .ASTC_6x6_UNorm_Block
+    .ASTC_6x6_SRGB_Block
+    .ASTC_8x5_UNorm_Block
+    .ASTC_8x5_SRGB_Block
+    .ASTC_8x6_UNorm_Block
+    .ASTC_8x6_SRGB_Block
+    .ASTC_8x8_UNorm_Block
+    .ASTC_8x8_SRGB_Block
+    .ASTC_10x5_UNorm_Block
+    .ASTC_10x5_SRGB_Block
+    .ASTC_10x6_UNorm_Block
+    .ASTC_10x6_SRGB_Block
+    .ASTC_10x8_UNorm_Block
+    .ASTC_10x8_SRGB_Block
+    .ASTC_10x10_UNorm_Block
+    .ASTC_10x10_SRGB_Block
+    .ASTC_12x10_UNorm_Block
+    .ASTC_12x10_SRGB_Block
+    .ASTC_12x12_UNorm_Block
+    .ASTC_12x12_SRGB_Block
+    .ASTC_4x4_SFloat_Block
+    .ASTC_5x4_SFloat_Block
+    .ASTC_5x5_SFloat_Block
+    .ASTC_6x5_SFloat_Block
+    .ASTC_6x6_SFloat_Block
+    .ASTC_8x5_SFloat_Block
+    .ASTC_8x6_SFloat_Block
+    .ASTC_8x8_SFloat_Block
+    .ASTC_10x5_SFloat_Block
+    .ASTC_10x6_SFloat_Block
+    .ASTC_10x8_SFloat_Block
+    .ASTC_10x10_SFloat_Block
+    .ASTC_12x10_SFloat_Block
+    .ASTC_12x12_SFloat_Block
+	()
+
+enum.FilterType { comment = "Filter Type:" }
+	.Nearest
+	.Linear
+	()
+
+enum.AddressMode { comment = "Address Mode:" }
+	.Mirror
+	.Repeat
+	.ClampToEdge
+	.ClampToBorder
+	()
+
+enum.MipMapMode { comment = "Mip Map Mode:" }
+	.Nearest
+	.Linear
+	()
+
+enum.LoadAction { comment = "Load Action:" }
+    .DontCare
+    .Load
+    .Clear
+    ()
+
+enum.StoreAction { comment = "Store Action:" }
+    .Store
+    .Discard
+    ()
+
+enum.PrimitiveTopology { comment = "Primitive Topology:" }
+    .PointList
+    .LineList
+    .LineStrip
+    .TriangleList
+    .TriangleStrip
+    .PatchList
+    ()
+
+enum.CompareOp { comment = "Compare Op:" }
+    .Never
+    .Less
+    .Equal
+    .LessEqual
+    .Greater
+    .NotEqual
+    .GreaterEqual
+    .Always
+    ()
+
+flag.CullMode { bits = 32, base = 0 }
+    .None
+    .Back
+    .Front
+    .Both { "Back", "Front" }
+    ()
+
+enum.FillMode { comment = "Fill Mode:" }
+    .Solid
+    .WireFrame
+    ()
+
+enum.FrontFace { comment = "Front Face:" }
+    .CounterClockWise
+    .ClockWise
+    ()
+
+enum.VertexInputRate { comment = "Vertex Input Rate:" }
+    .Vertex
+    .Instance
+    ()
+
+flag.StencilFace { bits = 32, base = 1 }
+    .Front
+    .Back
+    .Both { "Front", "Back" }
+    ()
+
+enum.StencilOp { comment = "Stencil Op:" }
+    .Keep
+    .Zero
+    .Replace
+    .IncrementAndClamp
+    .DecrementAndClamp
+    .Invert
+    .IncrementAndWrap
+    .DecrementAndWrap
+    ()
+
+enum.TextureDimension { comment = "Texture Dimension:" }
+    .Undefined
+    ["1D"]
+    ["2D"]
+    ["2DMS"]
+    ["3D"]
+    .Cube
+    ["1DArray"]
+    ["2DArray"]
+    ["2DMSArray"]
+    .CubeArray
+    ()
+
+enum.ShaderBytecodeType { comment = "Shader Bytecode Type:" }
+    .Spirv
+    .Dxil
+    .Mtl
+    ()
+
+flag.ShaderStage { bits = 32, base = 0, comment = "Shader Stage:" }
+    .None
+    .Vertex
+    .TessellationControl
+    .TessellationEvaluation
+    .Geometry
+    .Fragment
+    .Compute
+    .RayTracing
+    .AllGraphics { "Vertex", "TessellationControl", "TessellationEvaluation", "Geometry", "Fragment" }
+    ()
+
+flag.PipelineStage { bits = 32, base = 1, comment = "Pipeline Stage:" }
+    .Index
+    .Vertex
+    .Fragment
+    .Depth
+    .RenderTarget
+    .Compute
+    .RayTracing
+    .Copy
+    .Resolve
+    .ExecuteIndirect
+    ()
+
+enum.FenceStatus { comment = "Fence Status:" }
+    .Complete
+    .Incomplete
+    .NotSubmitted
+    ()
+
+enum.QueryType { comment = "Query Type:" }
+    .Timestamp
+    .PipelineStatistics
+    .Occlusion
+    ()
+
+flag.ResourceState { bits = 32, base = 0 }
+    .Undefined
+    .VertexAndConstantBuffer
+    .IndexBuffer
+    .RenderTarget
+    .UnorderedAccess
+    .DepthWrite
+    .DepthRead
+    .NonPixelShaderResource
+    .PixelShaderResource
+    .StreamOut
+    .IndirectArgument
+    .CopyDest
+    .CopySource
+    .Present
+    .Common
+    .AccelerationStructure
+    .ShadingRateSource
+    .ResolveDest
+    .ShaderResource { "NonPixelShaderResource", "PixelShaderResource" }
+    .GenericRead { "VertexAndConstantBuffer", "IndexBuffer", "NonPixelShaderResource", "PixelShaderResource", "IndirectArgument", "CopySource" }
+    ()
+
+enum.MemoryUsage { comment = "Memory Usage:" }
+    .Unknown
+    .GpuOnly
+    .CpuOnly
+    .CpuToGpu
+    .GpuToCpu
+    ()
+
+enum.MemoryPoolType { comment = "Memory Pool Type:" }
+    .Automatic
+    .Linear
+    .Tiled
+    ()
+
+flag.BufferCreationUsage { bits = 32, base = 0 }
+    .None
+    .Dedicated
+    .PersistentMap
+    .HostVisible
+    ()
+
+flag.TextureCreationUsage { bits = 32, base = 0 }
+    .None
+    .Dedicated
+    .Force2d
+    .Force3d
+    .AliasingResource
+    .TiledResource
+    .Export
+    .ImportShared
+    ()
+
+flag.SampleCount { bits = 32, const }
+    ._1 (1)
+    ._2 (2)
+    ._4 (4)
+    ._8 (8)
+    ._16 (16)
+    ()
+
+enum.PipelineType { comment = "Pipeline Type:" }
+    .None
+    .Compute
+    .Graphics
+    .RayTracing
+    ()
+
+flag.ResourceType { bits = 32, base = 0 }
+    .None
+    .Sampler
+    .Texture
+    .RenderTarget
+    .DepthStencil
+    .RwTexture
+    .Buffer
+    .BufferRaw
+    .RwBuffer
+    .RwBufferRaw
+    .UniformBuffer
+    .PushConstant
+    .VertexBuffer
+    .IndexBuffer
+    .IndirectBuffer
+    .TextureCube
+    .RenderTargetMipSlices
+    .RenderTargetArraySlices
+    .RenderTargetDepthSlices
+    .RayTracing
+    .InputAttachment
+    .TexelBuffer
+    .RwTexelBuffer
+    .CombinedImageSampler
+    ()
+
+flag.TextureViewUsage { bits = 32, base = 1 }
+    .SRV
+    .RTV_DSV
+    .UAV
+    ()
+
+flag.TextureViewAspect { bits = 32, base = 1 }
+    .Color
+    .Depth
+    .Stencil
+    ()
+
+enum.ShadingRate { comment = "Shading Rate:" }
+    .Full
+    .Half
+    .Quarter
+    ["1X2"]
+    ["2X1"]
+    ["2X4"]
+    ["4X2"]
+    ()
+
+enum.ShadingRateCombiner { comment = "Shading Rate Combiner:" }
+    .PassThrough
+    .Override
+    .Min
+    .Max
+    .Sum
+    ()
+
+enum.QueueType { comment = "Queue Type:" }
+    .Graphics
+    .Compute
+    .Transfer
+    .TileMapping
+    ()
+
+flag.TextureFormmatSupport { bits = 32, base = 1 }
+    .Sample
+    .Render
+    .LoadStore
+    .Blend
+    .Msaa2x
+    .Msaa4x
+    .Msaa8x
+    .Msaa16x
+    ()
+
+enum.VertexFormat { comment = "Vertex Format:" }
+    .Undefined
+    .Float32x1
+    .Float32x2
+    .Float32x3
+    .Float32x4
+    .Sint32x1
+    .Sint32x2
+    .Sint32x3
+    .Sint32x4
+    .Uint32x1
+    .Uint32x2
+    .Uint32x3
+    .Uint32x4
+    .Float16x2
+    .Float16x4
+    .Sint16x2
+    .Sint16x4
+    .Uint16x2
+    .Uint16x4
+    .Snorm16x2
+    .Snorm16x4
+    .Unorm16x2
+    .Unorm16x4
+    .Sint8x4
+    .Uint8x4
+    .Snorm8x4
+    .Unorm8x4
+    ()
+
+id "InstanceId"
+
+struct.InstanceDescriptor
+    .backend            "Backend"
+    .enableDebugLayer   "bool"
+    .enableGpuBasedValidation   "bool"
+    .enableSetName      "bool"
+
+struct.Instance 
+    .backend            "Backend"
+
+struct.BufferRange
+    .offset             "uint64_t"
+    .size               "uint64_t"
+
+func.createInstance { cfunc }
+    "InstanceId"
+    .desc "const InstanceDescriptor*"
