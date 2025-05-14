@@ -691,39 +691,67 @@ funcptr.FreeInstance
     "void"
     .instance "InstanceId"
 
-funcptr.InstanceQueryFeatures
+funcptr.QueryInstanceFeatures
     "void"
     .instance       "const InstanceId"
     .features       "InstanceFeatures*"
 
-funcptr.InstanceEnumAdapters
+funcptr.EnumAdapters
     "void"
     .instance       "const InstanceId"
     .adapters       "AdapterId*"
     .adaptersNum    "uint32_t*"
 
-funcptr.AdapterQueryAdapterDetail
+funcptr.QueryAdapterDetail
     "const AdapterDetail*"
     .adapter        "const AdapterId"
 
-funcptr.AdapterQueryQueueCount
+funcptr.QueryQueueCount
     "uint32_t"
     .adapter        "const AdapterId"
     .type           "QueueType::Enum"
 
-funcptr.AdapterCreateDevice
+funcptr.CreateDevice
     "DeviceId"
     .adapter        "AdapterId"
     .desc           "const DeviceDescriptor*"
 
-funcptr.AdapterFreeDevice
+funcptr.FreeDevice
     "void"
     .adapter        "AdapterId"
     .device       "DeviceId"
 
+funcptr.QueryVideoMemoryInfo
+    "void"
+    .device         "DeviceId"
+    .total          "uint64_t*"
+    .used_bytes     "uint64_t*"
+
+funcptr.QuerySharedMemoryInfo
+    "void"
+    .device         "DeviceId"
+    .total          "uint64_t*"
+    .used_bytes     "uint64_t*"
+
+
 id "InstanceId"
 id "AdapterId"
 id "DeviceId"
+id "QueueId"
+id "SemaphoreId"
+id "FenceId"
+id "CommandPoolId"
+id "CommandBufferId"
+id "QueryPoolId"
+id "ComputePassEncoderId"
+id "RenderPassEncoderId"
+id "RenderPassId"
+id "FramebufferId"
+id "StateBufferId"
+id "RasterStateEncoderId"
+id "ShaderStateEncoderId"
+id "UserStateEncoderId"
+id "BinderId"
 
 struct.Logger
     .logCallback "LogCallback"
@@ -818,6 +846,63 @@ struct.Device
     .nextTextureId      "uint64_t"
     .isLost             "bool"
 
+struct.Queue
+    .device             "DeviceId"
+    .type               "QueueType::Enum"
+    .index              "uint32_t"
+
+struct.Fence
+    .device             "DeviceId"
+
+struct.Semaphore
+    .device             "DeviceId"
+
+struct.CommandPool
+    .queue              "QueueId"
+
+struct.CommandBuffer
+    .device             "DeviceId"
+    .pool               "CommandPoolId"
+    .currentDispatch    "PipelineType::Enum"
+
+struct.QueryPool
+    .device             "DeviceId"
+    .count              "uint32_t"
+
+struct.ComputePassEncoder
+    .device             "DeviceId"
+
+struct.RenderPassEncoder
+    .device             "DeviceId"
+
+struct.RenderPass
+    .device             "DeviceId"
+
+struct.FramebufferInfo
+    .width              "uint32_t"
+    .height             "uint32_t"
+
+struct.Framebuffer
+    .device             "DeviceId"
+    .Info               "const FramebufferInfo*"
+
+struct.StateBuffer
+    .device             "DeviceId"
+    .cmd                "CommandBufferId"
+
+struct.RasterStateEncoder
+    .device             "DeviceId"
+
+struct.ShaderStateEncoder
+    .device             "DeviceId"
+
+struct.UserStateEncoder
+    .device             "DeviceId"
+
+struct.Binder
+    .device             "DeviceId"
+    .cmd                "CommandBufferId"
+
 struct.BufferRange
     .offset             "uint64_t"
     .size               "uint64_t"
@@ -856,3 +941,13 @@ func.Adapter.createDevice
 func.Adapter.freeDevice
     "void"
     .device       "DeviceId"
+
+func.Device.queryVideoMemoryInfo
+    "void"
+    .total          "uint64_t*"
+    .used_bytes     "uint64_t*"
+
+func.Device.querySharedMemoryInfo
+    "void"
+    .total          "uint64_t*"
+    .used_bytes     "uint64_t*"

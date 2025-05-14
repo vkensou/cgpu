@@ -24,13 +24,6 @@ CGPU_EXTERN_C_BEGIN
 typedef uint32_t CGPUQueueIndex;
 
 DEFINE_CGPU_OBJECT(CGPUSurface)
-DEFINE_CGPU_OBJECT(CGPUQueue)
-DEFINE_CGPU_OBJECT(CGPUSemaphore)
-DEFINE_CGPU_OBJECT(CGPUFence)
-DEFINE_CGPU_OBJECT(CGPURenderPass)
-DEFINE_CGPU_OBJECT(CGPUFramebuffer)
-DEFINE_CGPU_OBJECT(CGPUCommandPool)
-DEFINE_CGPU_OBJECT(CGPUCommandBuffer)
 DEFINE_CGPU_OBJECT(CGPUSwapChain)
 DEFINE_CGPU_OBJECT(CGPUShaderLibrary)
 DEFINE_CGPU_OBJECT(CGPURootSignature)
@@ -41,9 +34,6 @@ DEFINE_CGPU_OBJECT(CGPUBuffer)
 DEFINE_CGPU_OBJECT(CGPUTexture)
 DEFINE_CGPU_OBJECT(CGPUSampler)
 DEFINE_CGPU_OBJECT(CGPUTextureView)
-DEFINE_CGPU_OBJECT(CGPUQueryPool)
-DEFINE_CGPU_OBJECT(CGPURenderPassEncoder)
-DEFINE_CGPU_OBJECT(CGPUComputePassEncoder)
 DEFINE_CGPU_OBJECT(CGPURenderPipeline)
 DEFINE_CGPU_OBJECT(CGPUComputePipeline)
 DEFINE_CGPU_OBJECT(CGPUShaderReflection)
@@ -51,12 +41,6 @@ DEFINE_CGPU_OBJECT(CGPUPipelineReflection)
 
 DEFINE_CGPU_OBJECT(CGPUCompiledShader)
 DEFINE_CGPU_OBJECT(CGPULinkedShader)
-DEFINE_CGPU_OBJECT(CGPUBinder)
-DEFINE_CGPU_OBJECT(CGPUStateBuffer)
-DEFINE_CGPU_OBJECT(CGPUShaderStateEncoder)
-// compute dispatches never use these state
-DEFINE_CGPU_OBJECT(CGPURasterStateEncoder)
-DEFINE_CGPU_OBJECT(CGPUUserStateEncoder)
 
 struct CGPUExportTextureDescriptor;
 struct CGPUImportTextureDescriptor;
@@ -110,10 +94,6 @@ typedef struct CGPUConstantSpecialization {
 // Adapter APIs
 
 // Device APIs
-CGPU_API void cgpu_query_video_memory_info(const CGPUDeviceId device, uint64_t* total, uint64_t* used_bytes);
-typedef void (*CGPUProcQueryVideoMemoryInfo)(const CGPUDeviceId device, uint64_t* total, uint64_t* used_bytes);
-CGPU_API void cgpu_query_shared_memory_info(const CGPUDeviceId device, uint64_t* total, uint64_t* used_bytes);
-typedef void (*CGPUProcQuerySharedMemoryInfo)(const CGPUDeviceId device, uint64_t* total, uint64_t* used_bytes);
 
 // API Objects APIs
 CGPU_API CGPUFenceId cgpu_create_fence(CGPUDeviceId device);
@@ -438,19 +418,19 @@ CGPU_API bool cgpux_adapter_is_intel(CGPUAdapterId adapter);
 typedef struct CGPUProcTable {
     // Instance APIs
     const CGPUProcCreateInstance create_instance;
-    const CGPUProcInstanceQueryFeatures query_instance_features;
+    const CGPUProcQueryInstanceFeatures query_instance_features;
     const CGPUProcFreeInstance free_instance;
 
     // Adapter APIs
-    const CGPUProcInstanceEnumAdapters enum_adapters;
-    const CGPUProcAdapterQueryAdapterDetail query_adapter_detail;
+    const CGPUProcEnumAdapters enum_adapters;
+    const CGPUProcQueryAdapterDetail query_adapter_detail;
     const CGPUProcQueryVideoMemoryInfo query_video_memory_info;
     const CGPUProcQuerySharedMemoryInfo query_shared_memory_info;
-    const CGPUProcAdapterQueryQueueCount query_queue_count;
+    const CGPUProcQueryQueueCount query_queue_count;
 
     // Device APIs
-    const CGPUProcAdapterCreateDevice create_device;
-    const CGPUProcAdapterFreeDevice free_device;
+    const CGPUProcCreateDevice create_device;
+    const CGPUProcFreeDevice free_device;
 
     // API Objects
     const CGPUProcCreateFence create_fence;
@@ -652,49 +632,6 @@ typedef struct CGPUSurfacesProcTable {
 #endif
     const CGPUSurfaceProc_Free free_surface;
 } CGPUSurfacesProcTable;
-
-typedef struct CGPUQueue {
-    CGPUDeviceId device;
-    ECGPUQueueType type;
-    CGPUQueueIndex index;
-} CGPUQueue;
-
-typedef struct CGPUFence {
-    CGPUDeviceId device;
-} CGPUFence; // Empty struct so we dont need to def it
-
-typedef struct CGPUSemaphore {
-    CGPUDeviceId device;
-} CGPUSemaphore; // Empty struct so we dont need to def it
-
-typedef struct CGPUCommandPool {
-    CGPUQueueId queue;
-} CGPUCommandPool;
-
-typedef struct CGPUCommandBuffer {
-    CGPUDeviceId device;
-    CGPUCommandPoolId pool;
-    ECGPUPipelineType current_dispatch;
-#ifdef __cplusplus
-    inline void begin() const { cgpu_cmd_begin(this); }
-    inline void end() const { cgpu_cmd_end(this); }
-#endif
-} CGPUCommandBuffer;
-
-typedef struct CGPUQueryPool {
-    CGPUDeviceId device;
-    uint32_t count;
-} CGPUQueryPool;
-
-// Notice that we must keep this header same with CGPUCommandBuffer
-// because Vulkan & D3D12 Backend simply use command buffer handle as encoder handle
-typedef struct CGPUComputePassEncoder {
-    CGPUDeviceId device;
-} CGPUComputePassEncoder;
-
-typedef struct CGPURenderPassEncoder {
-    CGPUDeviceId device;
-} CGPURenderPassEncoder;
 
 // Shaders
 typedef struct CGPUShaderResource {
@@ -1021,10 +958,6 @@ typedef struct CGPURenderPassDescriptor {
     CGPUDepthStencilAttachment depth_stencil;
 } CGPURenderPassDescriptor;
 
-typedef struct CGPURenderPass {
-    CGPUDeviceId device;
-} CGPURenderPass;
-
 typedef struct CGPUFramebufferDescriptor {
     CGPURenderPassId renderpass;
     uint32_t attachment_count;
@@ -1033,16 +966,6 @@ typedef struct CGPUFramebufferDescriptor {
     uint32_t height;
     uint32_t layers;
 } CGPUFramebufferDescriptor;
-
-typedef struct CGPUFramebufferInfo {
-    uint32_t width;
-    uint32_t height;
-} CGPUFramebufferInfo;
-
-typedef struct CGPUFramebuffer {
-    CGPUDeviceId device;
-    const CGPUFramebufferInfo* info;
-} CGPUFramebuffer;
 
 typedef struct CGPURootSignaturePoolDescriptor {
     const char8_t* name;
@@ -1232,28 +1155,6 @@ typedef struct CGPULinkedShader {
     CGPUDeviceId device;
     CGPURootSignatureId root_signature;
 } CGPULinkedShader;
-
-typedef struct CGPUStateBuffer {
-    CGPUDeviceId device;
-    CGPUCommandBufferId cmd;
-} CGPUStateBuffer;
-
-typedef struct CGPURasterStateEncoder {
-    CGPUDeviceId device;
-} CGPURasterStateEncoder;
-
-typedef struct CGPUShaderStateEncoder {
-    CGPUDeviceId device;
-} CGPUShaderStateEncoder;
-
-typedef struct CGPUUserStateEncoder {
-    CGPUDeviceId device;
-} CGPUUserStateEncoder;
-
-typedef struct CGPUBinder {
-    CGPUDeviceId device;
-    CGPUCommandBufferId cmd;
-} CGPUBinder;
 
 // Resources
 typedef struct CGPUShaderLibraryDescriptor {

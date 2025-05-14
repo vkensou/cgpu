@@ -768,6 +768,36 @@ DEFINE_CGPU_OBJECT(CGPUAdapter)
 
 DEFINE_CGPU_OBJECT(CGPUDevice)
 
+DEFINE_CGPU_OBJECT(CGPUQueue)
+
+DEFINE_CGPU_OBJECT(CGPUSemaphore)
+
+DEFINE_CGPU_OBJECT(CGPUFence)
+
+DEFINE_CGPU_OBJECT(CGPUCommandPool)
+
+DEFINE_CGPU_OBJECT(CGPUCommandBuffer)
+
+DEFINE_CGPU_OBJECT(CGPUQueryPool)
+
+DEFINE_CGPU_OBJECT(CGPUComputePassEncoder)
+
+DEFINE_CGPU_OBJECT(CGPURenderPassEncoder)
+
+DEFINE_CGPU_OBJECT(CGPURenderPass)
+
+DEFINE_CGPU_OBJECT(CGPUFramebuffer)
+
+DEFINE_CGPU_OBJECT(CGPUStateBuffer)
+
+DEFINE_CGPU_OBJECT(CGPURasterStateEncoder)
+
+DEFINE_CGPU_OBJECT(CGPUShaderStateEncoder)
+
+DEFINE_CGPU_OBJECT(CGPUUserStateEncoder)
+
+DEFINE_CGPU_OBJECT(CGPUBinder)
+
 
 typedef struct CGPUInstanceDescriptor CGPUInstanceDescriptor;
 typedef struct CGPUInstanceFeatures CGPUInstanceFeatures;
@@ -788,12 +818,14 @@ typedef void* (*CGPUProcCallocAligned)(void* user_data, size_t count, size_t siz
 typedef void (*CGPUProcFreeAligned)(void* user_data, void* ptr, const void* pool);
 typedef CGPUInstanceId (*CGPUProcCreateInstance)(const CGPUInstanceDescriptor* desc);
 typedef void (*CGPUProcFreeInstance)(CGPUInstanceId instance);
-typedef void (*CGPUProcInstanceQueryFeatures)(const CGPUInstanceId instance, CGPUInstanceFeatures* features);
-typedef void (*CGPUProcInstanceEnumAdapters)(const CGPUInstanceId instance, CGPUAdapterId* adapters, uint32_t* adapters_num);
-typedef const CGPUAdapterDetail* (*CGPUProcAdapterQueryAdapterDetail)(const CGPUAdapterId adapter);
-typedef uint32_t (*CGPUProcAdapterQueryQueueCount)(const CGPUAdapterId adapter, ECGPUQueueType type);
-typedef CGPUDeviceId (*CGPUProcAdapterCreateDevice)(CGPUAdapterId adapter, const CGPUDeviceDescriptor* desc);
-typedef void (*CGPUProcAdapterFreeDevice)(CGPUAdapterId adapter, CGPUDeviceId device);
+typedef void (*CGPUProcQueryInstanceFeatures)(const CGPUInstanceId instance, CGPUInstanceFeatures* features);
+typedef void (*CGPUProcEnumAdapters)(const CGPUInstanceId instance, CGPUAdapterId* adapters, uint32_t* adapters_num);
+typedef const CGPUAdapterDetail* (*CGPUProcQueryAdapterDetail)(const CGPUAdapterId adapter);
+typedef uint32_t (*CGPUProcQueryQueueCount)(const CGPUAdapterId adapter, ECGPUQueueType type);
+typedef CGPUDeviceId (*CGPUProcCreateDevice)(CGPUAdapterId adapter, const CGPUDeviceDescriptor* desc);
+typedef void (*CGPUProcFreeDevice)(CGPUAdapterId adapter, CGPUDeviceId device);
+typedef void (*CGPUProcQueryVideoMemoryInfo)(CGPUDeviceId device, uint64_t* total, uint64_t* used);
+typedef void (*CGPUProcQuerySharedMemoryInfo)(CGPUDeviceId device, uint64_t* total, uint64_t* used);
 
 typedef struct CGPULogger
 {
@@ -920,6 +952,111 @@ typedef struct CGPUDevice
 
 } CGPUDevice;
 
+typedef struct CGPUQueue
+{
+    CGPUDeviceId         device;
+    ECGPUQueueType       type;
+    uint32_t             index;
+
+} CGPUQueue;
+
+typedef struct CGPUFence
+{
+    CGPUDeviceId         device;
+
+} CGPUFence;
+
+typedef struct CGPUSemaphore
+{
+    CGPUDeviceId         device;
+
+} CGPUSemaphore;
+
+typedef struct CGPUCommandPool
+{
+    CGPUQueueId          queue;
+
+} CGPUCommandPool;
+
+typedef struct CGPUCommandBuffer
+{
+    CGPUDeviceId         device;
+    CGPUCommandPoolId    pool;
+    ECGPUPipelineType    current_dispatch;
+
+} CGPUCommandBuffer;
+
+typedef struct CGPUQueryPool
+{
+    CGPUDeviceId         device;
+    uint32_t             count;
+
+} CGPUQueryPool;
+
+typedef struct CGPUComputePassEncoder
+{
+    CGPUDeviceId         device;
+
+} CGPUComputePassEncoder;
+
+typedef struct CGPURenderPassEncoder
+{
+    CGPUDeviceId         device;
+
+} CGPURenderPassEncoder;
+
+typedef struct CGPURenderPass
+{
+    CGPUDeviceId         device;
+
+} CGPURenderPass;
+
+typedef struct CGPUFramebufferInfo
+{
+    uint32_t             width;
+    uint32_t             height;
+
+} CGPUFramebufferInfo;
+
+typedef struct CGPUFramebuffer
+{
+    CGPUDeviceId         device;
+    const CGPUFramebufferInfo* info;
+
+} CGPUFramebuffer;
+
+typedef struct CGPUStateBuffer
+{
+    CGPUDeviceId         device;
+    CGPUCommandBufferId  cmd;
+
+} CGPUStateBuffer;
+
+typedef struct CGPURasterStateEncoder
+{
+    CGPUDeviceId         device;
+
+} CGPURasterStateEncoder;
+
+typedef struct CGPUShaderStateEncoder
+{
+    CGPUDeviceId         device;
+
+} CGPUShaderStateEncoder;
+
+typedef struct CGPUUserStateEncoder
+{
+    CGPUDeviceId         device;
+
+} CGPUUserStateEncoder;
+
+typedef struct CGPUBinder
+{
+    CGPUDeviceId         device;
+    CGPUCommandBufferId  cmd;
+
+} CGPUBinder;
+
 typedef struct CGPUBufferRange
 {
     uint64_t             offset;
@@ -937,5 +1074,7 @@ CGPU_API const CGPUAdapterDetail* cgpu_query_adapter_detail(const CGPUAdapterId 
 CGPU_API uint32_t cgpu_query_queue_count(const CGPUAdapterId _this, ECGPUQueueType type);
 CGPU_API CGPUDeviceId cgpu_create_device(CGPUAdapterId _this, const CGPUDeviceDescriptor* desc);
 CGPU_API void cgpu_free_device(CGPUAdapterId _this, CGPUDeviceId device);
+CGPU_API void cgpu_query_video_memory_info(CGPUDeviceId _this, uint64_t* total, uint64_t* used);
+CGPU_API void cgpu_query_shared_memory_info(CGPUDeviceId _this, uint64_t* total, uint64_t* used);
 
 #endif // CGPU_C99_H_HEADER_GUARD
