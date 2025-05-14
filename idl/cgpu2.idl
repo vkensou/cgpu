@@ -833,7 +833,7 @@ func.freeInstance
 func.Instance.getBackend { const }
     "Backend::Enum"
 
-func.Instance.queryFeatures { const }
+func.Instance.queryInstanceFeatures { const }
     "void"
     .features "InstanceFeatures*"
 

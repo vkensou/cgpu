@@ -12,7 +12,7 @@ class VkUtil_Blackboard
 public:
     VkUtil_Blackboard(CGPUInstanceDescriptor const* desc)
     {
-        const CGPUVulkanInstanceDescriptor* exts_desc = (const CGPUVulkanInstanceDescriptor*)desc->chained;
+        const CGPUVulkanInstanceDescriptor* exts_desc = CGPU_NULLPTR;
         // default
         device_extensions.insert(device_extensions.end(),
         std::begin(cgpu_wanted_device_exts), std::end(cgpu_wanted_device_exts));
@@ -196,14 +196,14 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
     // Merge All Parameters into one blackboard
     const VkUtil_Blackboard blackboard(desc);
 
-    cgpu_malloc_fn malloc_fn;
-    cgpu_realloc_fn realloc_fn;
-    cgpu_calloc_fn calloc_fn;
-    cgpu_free_fn free_fn;
-    cgpu_malloc_aligned_fn malloc_aligned_fn;
-    cgpu_realloc_aligned_fn realloc_aligned_fn;
-    cgpu_calloc_aligned_fn calloc_aligned_fn;
-    cgpu_free_aligned_fn free_aligned_fn;
+    CGPUProcMalloc malloc_fn;
+    CGPUProcRealloc realloc_fn;
+    CGPUProcCalloc calloc_fn;
+    CGPUProcFree free_fn;
+    CGPUProcMallocAligned malloc_aligned_fn;
+    CGPUProcReallocAligned realloc_aligned_fn;
+    CGPUProcCallocAligned calloc_aligned_fn;
+    CGPUProcFreeAligned free_aligned_fn;
     if (desc->allocator.malloc_fn && desc->allocator.calloc_fn && desc->allocator.free_fn)
     {
         malloc_fn = desc->allocator.malloc_fn;
@@ -241,7 +241,7 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
         I->super.logger.log_callback = desc->logger.log_callback;
     else
         I->super.logger.log_callback = logger_default;
-    I->super.logger.log_callback_user_data = desc->logger.log_callback_user_data;
+    I->super.logger.user_data = desc->logger.user_data;
 
     I->super.allocator.malloc_fn = malloc_fn;
     I->super.allocator.realloc_fn = realloc_fn;
@@ -475,7 +475,7 @@ CGPUDeviceId cgpu_create_device_vulkan(CGPUAdapterId adapter, const CGPUDeviceDe
     return &D->super;
 }
 
-void cgpu_free_device_vulkan(CGPUDeviceId device)
+void cgpu_free_device_vulkan(CGPUAdapterId adapter, CGPUDeviceId device)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)device->adapter;

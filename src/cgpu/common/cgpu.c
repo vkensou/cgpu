@@ -97,7 +97,7 @@ CGPU_API void cgpu_free_instance(CGPUInstanceId instance)
 
     const CGPUAllocator* allocator = &instance->allocator;
 
-    struct CGPURuntimeTable* runtime_table = instance->runtime_table;
+    CGPURuntimeTable* runtime_table = instance->runtime_table;
     cgpu_early_free_runtime_table(runtime_table);
     cgpu_free_runtime_table(allocator, runtime_table);
     instance->proc_table->free_instance(instance);
@@ -446,12 +446,12 @@ void cgpu_free_query_pool(CGPUQueryPoolId pool)
     fn_free_query_pool(pool);
 }
 
-void cgpu_free_device(CGPUDeviceId device)
+void cgpu_free_device(CGPUAdapterId adapter, CGPUDeviceId device)
 {
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
     cgpu_assert(device->proc_table_cache->free_device && "free_device Proc Missing!");
 
-    device->proc_table_cache->free_device(device);
+    device->proc_table_cache->free_device(adapter, device);
     return;
 }
 

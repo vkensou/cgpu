@@ -10,17 +10,17 @@
 
 CGPU_EXTERN_C_BEGIN
 
-struct CGPURuntimeTable* cgpu_create_runtime_table(const CGPUAllocator* allocator);
-void cgpu_early_free_runtime_table(struct CGPURuntimeTable* table);
-void cgpu_free_runtime_table(const CGPUAllocator* allocator, struct CGPURuntimeTable* table);
+CGPURuntimeTable* cgpu_create_runtime_table(const CGPUAllocator* allocator);
+void cgpu_early_free_runtime_table(CGPURuntimeTable* table);
+void cgpu_free_runtime_table(const CGPUAllocator* allocator, CGPURuntimeTable* table);
 void cgpu_runtime_table_add_queue(CGPUQueueId queue, ECGPUQueueType type, uint32_t index);
 CGPUQueueId cgpu_runtime_table_try_get_queue(CGPUDeviceId device, ECGPUQueueType type, uint32_t index);
 
-void cgpu_runtime_table_add_custom_data(struct CGPURuntimeTable* table, const char* key, void* data);
-void cgpu_runtime_table_add_sweep_callback(struct CGPURuntimeTable* table, const char* key, void(pfn)(void*), void* usrdata);
-void cgpu_runtime_table_add_early_sweep_callback(struct CGPURuntimeTable* table, const char* key, void(pfn)(void*), void* usrdata);
-void* cgpu_runtime_table_try_get_custom_data(struct CGPURuntimeTable* table, const char* key);
-bool cgpu_runtime_table_remove_custom_data(struct CGPURuntimeTable* table, const char* key);
+void cgpu_runtime_table_add_custom_data(CGPURuntimeTable* table, const char* key, void* data);
+void cgpu_runtime_table_add_sweep_callback(CGPURuntimeTable* table, const char* key, void(pfn)(void*), void* usrdata);
+void cgpu_runtime_table_add_early_sweep_callback(CGPURuntimeTable* table, const char* key, void(pfn)(void*), void* usrdata);
+void* cgpu_runtime_table_try_get_custom_data(CGPURuntimeTable* table, const char* key);
+bool cgpu_runtime_table_remove_custom_data(CGPURuntimeTable* table, const char* key);
 
 void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSignatureDescriptor* desc, const CGPUAllocator* allocator);
 void CGPUUtil_FreeRSParamTables(CGPURootSignature* RS);
@@ -100,12 +100,12 @@ CGPU_FORCEINLINE static void logger_default(void* user_data, ECGPULogSeverity se
     va_end(args);
 }
 
-#define cgpu_trace(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_SEVERITY_TRACE, fmt, ##__VA_ARGS__);}
-#define cgpu_debug(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_SEVERITY_DEBUG, fmt, ##__VA_ARGS__);}
-#define cgpu_info(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_SEVERITY_INFO, fmt, ##__VA_ARGS__);}
-#define cgpu_warn(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_SEVERITY_WARNING, fmt, ##__VA_ARGS__);}
-#define cgpu_error(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_SEVERITY_ERROR, fmt, ##__VA_ARGS__);}
-#define cgpu_fatal(logger, fmt, ...) {(logger)->log_callback((logger)->log_callback_user_data, CGPU_LOG_SEVERITY_FATAL, fmt, ##__VA_ARGS__);}
+#define cgpu_trace(logger, fmt, ...) {(logger)->log_callback((logger)->user_data, CGPU_LOG_SEVERITY_TRACE, fmt, ##__VA_ARGS__);}
+#define cgpu_debug(logger, fmt, ...) {(logger)->log_callback((logger)->user_data, CGPU_LOG_SEVERITY_DEBUG, fmt, ##__VA_ARGS__);}
+#define cgpu_info(logger, fmt, ...) {(logger)->log_callback((logger)->user_data, CGPU_LOG_SEVERITY_INFO, fmt, ##__VA_ARGS__);}
+#define cgpu_warn(logger, fmt, ...) {(logger)->log_callback((logger)->user_data, CGPU_LOG_SEVERITY_WARNING, fmt, ##__VA_ARGS__);}
+#define cgpu_error(logger, fmt, ...) {(logger)->log_callback((logger)->user_data, CGPU_LOG_SEVERITY_ERROR, fmt, ##__VA_ARGS__);}
+#define cgpu_fatal(logger, fmt, ...) {(logger)->log_callback((logger)->user_data, CGPU_LOG_SEVERITY_FATAL, fmt, ##__VA_ARGS__);}
 
 #define CGPU_UNIMPLEMENTED_FUNCTION()
 

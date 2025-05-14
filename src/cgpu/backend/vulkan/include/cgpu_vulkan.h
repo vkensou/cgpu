@@ -35,7 +35,7 @@ CGPU_API uint32_t cgpu_query_queue_count_vulkan(const CGPUAdapterId adapter, con
 CGPU_API CGPUDeviceId cgpu_create_device_vulkan(CGPUAdapterId adapter, const CGPUDeviceDescriptor* desc);
 CGPU_API void cgpu_query_video_memory_info_vulkan(const CGPUDeviceId device, uint64_t* total, uint64_t* used_bytes);
 CGPU_API void cgpu_query_shared_memory_info_vulkan(const CGPUDeviceId device, uint64_t* total, uint64_t* used_bytes);
-CGPU_API void cgpu_free_device_vulkan(CGPUDeviceId device);
+CGPU_API void cgpu_free_device_vulkan(CGPUAdapterId adapter, CGPUDeviceId device);
 
 // API Object APIs
 CGPU_API CGPUFenceId cgpu_create_fence_vulkan(CGPUDeviceId device);

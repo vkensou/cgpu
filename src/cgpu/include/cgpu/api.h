@@ -1,5 +1,10 @@
 #pragma once
 #include "platform.h"
+
+#ifdef __cplusplus
+CGPU_EXTERN_C_BEGIN
+#endif
+
 #include "flags.h"
 
 #define CGPU_ARRAY_LEN(array) ((sizeof(array) / sizeof(array[0])))
@@ -16,18 +21,9 @@
 #define CGPU_CULL_MODE_COUNT 3
 #define CGPU_COMPARE_OP_COUNT 8
 
-#if defined(CGPU_PLATFORM_WA32)
-#define DEFINE_CGPU_OBJECT(name) struct name##Descriptor; typedef const host_ptr_t name##Id;
-#else
-#define DEFINE_CGPU_OBJECT(name) struct name##Descriptor; typedef const struct name* name##Id;
-#endif
-
 typedef uint32_t CGPUQueueIndex;
 
 DEFINE_CGPU_OBJECT(CGPUSurface)
-DEFINE_CGPU_OBJECT(CGPUInstance)
-DEFINE_CGPU_OBJECT(CGPUAdapter)
-DEFINE_CGPU_OBJECT(CGPUDevice)
 DEFINE_CGPU_OBJECT(CGPUQueue)
 DEFINE_CGPU_OBJECT(CGPUSemaphore)
 DEFINE_CGPU_OBJECT(CGPUFence)
@@ -88,10 +84,6 @@ struct CGPUAcquireNextDescriptor;
 #pragma clang diagnostic ignored "-Wunused-variable"
 #endif
 
-#ifdef __cplusplus
-CGPU_EXTERN_C_BEGIN
-#endif
-
 CGPU_UNUSED static const CGPUBufferId CGPU_BUFFER_OUT_OF_HOST_MEMORY = (CGPUBufferId)1;
 CGPU_UNUSED static const CGPUBufferId CGPU_BUFFER_OUT_OF_DEVICE_MEMORY = (CGPUBufferId)3;
 
@@ -100,21 +92,6 @@ static const char* gCGPUBackendNames[CGPU_BACKEND_COUNT] = {
     "d3d12",
     "metal",
 };
-
-typedef struct CGPUFormatSupport {
-    uint8_t shader_read : 1;
-    uint8_t shader_write : 1;
-    uint8_t render_target_write : 1;
-} CGPUFormatSupport;
-
-typedef struct CGPUInstanceFeatures {
-    bool specialization_constant;
-} CGPUInstanceFeatures;
-
-typedef struct CGPUBufferRange {
-    uint64_t offset;
-    uint64_t size;
-} CGPUBufferRange;
 
 typedef struct CGPUConstantSpecialization {
     uint32_t constantID;
@@ -127,34 +104,16 @@ typedef struct CGPUConstantSpecialization {
 } CGPUConstantSpecialization;
 
 // Above APIs
-CGPU_API ECGPUBackend cgpu_instance_get_backend(CGPUInstanceId instance);
 
 // Instance APIs
-CGPU_API CGPUInstanceId cgpu_create_instance(const struct CGPUInstanceDescriptor* desc);
-typedef CGPUInstanceId (*CGPUProcCreateInstance)(const struct CGPUInstanceDescriptor* descriptor);
-CGPU_API void cgpu_query_instance_features(CGPUInstanceId instance, struct CGPUInstanceFeatures* features);
-typedef void (*CGPUProcQueryInstanceFeatures)(CGPUInstanceId instance, struct CGPUInstanceFeatures* features);
-CGPU_API void cgpu_free_instance(CGPUInstanceId instance);
-typedef void (*CGPUProcFreeInstance)(CGPUInstanceId instance);
 
 // Adapter APIs
-CGPU_API void cgpu_enum_adapters(CGPUInstanceId instance, CGPUAdapterId* const adapters, uint32_t* adapters_num);
-typedef void (*CGPUProcEnumAdapters)(CGPUInstanceId instance, CGPUAdapterId* const adapters, uint32_t* adapters_num);
-
-CGPU_API const struct CGPUAdapterDetail* cgpu_query_adapter_detail(const CGPUAdapterId adapter);
-typedef const struct CGPUAdapterDetail* (*CGPUProcQueryAdapterDetail)(const CGPUAdapterId adapter);
-CGPU_API uint32_t cgpu_query_queue_count(const CGPUAdapterId adapter, const ECGPUQueueType type);
-typedef uint32_t (*CGPUProcQueryQueueCount)(const CGPUAdapterId adapter, const ECGPUQueueType type);
 
 // Device APIs
-CGPU_API CGPUDeviceId cgpu_create_device(CGPUAdapterId adapter, const struct CGPUDeviceDescriptor* desc);
-typedef CGPUDeviceId (*CGPUProcCreateDevice)(CGPUAdapterId adapter, const struct CGPUDeviceDescriptor* desc);
 CGPU_API void cgpu_query_video_memory_info(const CGPUDeviceId device, uint64_t* total, uint64_t* used_bytes);
 typedef void (*CGPUProcQueryVideoMemoryInfo)(const CGPUDeviceId device, uint64_t* total, uint64_t* used_bytes);
 CGPU_API void cgpu_query_shared_memory_info(const CGPUDeviceId device, uint64_t* total, uint64_t* used_bytes);
 typedef void (*CGPUProcQuerySharedMemoryInfo)(const CGPUDeviceId device, uint64_t* total, uint64_t* used_bytes);
-CGPU_API void cgpu_free_device(CGPUDeviceId device);
-typedef void (*CGPUProcFreeDevice)(CGPUDeviceId device);
 
 // API Objects APIs
 CGPU_API CGPUFenceId cgpu_create_fence(CGPUDeviceId device);
@@ -479,19 +438,19 @@ CGPU_API bool cgpux_adapter_is_intel(CGPUAdapterId adapter);
 typedef struct CGPUProcTable {
     // Instance APIs
     const CGPUProcCreateInstance create_instance;
-    const CGPUProcQueryInstanceFeatures query_instance_features;
+    const CGPUProcInstanceQueryFeatures query_instance_features;
     const CGPUProcFreeInstance free_instance;
 
     // Adapter APIs
-    const CGPUProcEnumAdapters enum_adapters;
-    const CGPUProcQueryAdapterDetail query_adapter_detail;
+    const CGPUProcInstanceEnumAdapters enum_adapters;
+    const CGPUProcAdapterQueryAdapterDetail query_adapter_detail;
     const CGPUProcQueryVideoMemoryInfo query_video_memory_info;
     const CGPUProcQuerySharedMemoryInfo query_shared_memory_info;
-    const CGPUProcQueryQueueCount query_queue_count;
+    const CGPUProcAdapterQueryQueueCount query_queue_count;
 
     // Device APIs
-    const CGPUProcCreateDevice create_device;
-    const CGPUProcFreeDevice free_device;
+    const CGPUProcAdapterCreateDevice create_device;
+    const CGPUProcAdapterFreeDevice free_device;
 
     // API Objects
     const CGPUProcCreateFence create_fence;
@@ -694,153 +653,6 @@ typedef struct CGPUSurfacesProcTable {
     const CGPUSurfaceProc_Free free_surface;
 } CGPUSurfacesProcTable;
 
-typedef struct CGPUVendorPreset {
-    uint32_t device_id;
-    uint32_t vendor_id;
-    uint32_t driver_version;
-    char gpu_name[MAX_GPU_VENDOR_STRING_LENGTH]; // If GPU Name is missing then value will be empty string
-} CGPUVendorPreset;
-
-static const uint64_t CGPU_DYNAMIC_STATE_CullMode = 1ull << 0;
-static const uint64_t CGPU_DYNAMIC_STATE_FrontFace = 1ull << 1;
-static const uint64_t CGPU_DYNAMIC_STATE_PrimitiveTopology = 1ull << 2;
-static const uint64_t CGPU_DYNAMIC_STATE_DepthTest = 1ull << 3;
-static const uint64_t CGPU_DYNAMIC_STATE_DepthWrite = 1ull << 4;
-static const uint64_t CGPU_DYNAMIC_STATE_DepthCompare = 1ull << 5;
-static const uint64_t CGPU_DYNAMIC_STATE_DepthBoundsTest = 1ull << 6;
-static const uint64_t CGPU_DYNAMIC_STATE_StencilTest = 1ull << 7;
-static const uint64_t CGPU_DYNAMIC_STATE_StencilOp = 1ull << 8;
-static const uint64_t CGPU_DYNAMIC_STATE_Tier1 = (1ull << 9) - 1;
-
-static const uint64_t CGPU_DYNAMIC_STATE_RasterDiscard = 1ull << 9;
-static const uint64_t CGPU_DYNAMIC_STATE_DepthBias = 1ull << 10;
-static const uint64_t CGPU_DYNAMIC_STATE_PrimitiveRestart = 1ull << 11;
-static const uint64_t CGPU_DYNAMIC_STATE_LogicOp = 1ull << 12;
-static const uint64_t CGPU_DYNAMIC_STATE_PatchControlPoints = 1ull << 13;
-static const uint64_t CGPU_DYNAMIC_STATE_Tier2 = (1ull << 14) - 1;
-
-static const uint64_t CGPU_DYNAMIC_STATE_TessellationDomainOrigin = 1ull << 14;
-static const uint64_t CGPU_DYNAMIC_STATE_DepthClampEnable = 1ull << 15;
-static const uint64_t CGPU_DYNAMIC_STATE_PolygonMode = 1ull << 16;
-static const uint64_t CGPU_DYNAMIC_STATE_SampleCount = 1ull << 17;
-static const uint64_t CGPU_DYNAMIC_STATE_SampleMask = 1ull << 18;
-static const uint64_t CGPU_DYNAMIC_STATE_AlphaToCoverageEnable = 1ull << 19;
-static const uint64_t CGPU_DYNAMIC_STATE_AlphaToOneEnable = 1ull << 20;
-static const uint64_t CGPU_DYNAMIC_STATE_LogicOpEnable = 1ull << 21;
-static const uint64_t CGPU_DYNAMIC_STATE_ColorBlendEnable = 1ull << 22;
-static const uint64_t CGPU_DYNAMIC_STATE_ColorBlendEquation = 1ull << 23;
-static const uint64_t CGPU_DYNAMIC_STATE_ColorWriteMask = 1ull << 24;
-static const uint64_t CGPU_DYNAMIC_STATE_RasterStream = 1ull << 25;
-static const uint64_t CGPU_DYNAMIC_STATE_ConservativeRasterMode = 1ull << 26;
-static const uint64_t CGPU_DYNAMIC_STATE_ExtraPrimitiveOverestimationSize = 1ull << 27;
-static const uint64_t CGPU_DYNAMIC_STATE_DepthClipEnable = 1ull << 28;
-static const uint64_t CGPU_DYNAMIC_STATE_SampleLocationsEnable = 1ull << 29;
-static const uint64_t CGPU_DYNAMIC_STATE_ColorBlendAdvanced = 1ull << 30;
-static const uint64_t CGPU_DYNAMIC_STATE_ProvokingVertexMode = 1ull << 31;
-static const uint64_t CGPU_DYNAMIC_STATE_LineRasterizationMode = 1ull << 32;
-static const uint64_t CGPU_DYNAMIC_STATE_LineStippleEnable = 1ull << 33;
-static const uint64_t CGPU_DYNAMIC_STATE_DepthClipNegativeOneToOne = 1ull << 34;
-static const uint64_t CGPU_DYNAMIC_STATE_ViewportWScalingEnable = 1ull << 35;
-static const uint64_t CGPU_DYNAMIC_STATE_ViewportSwizzle = 1ull << 36;
-static const uint64_t CGPU_DYNAMIC_STATE_CoverageToColorEnable = 1ull << 37;
-static const uint64_t CGPU_DYNAMIC_STATE_CoverageToColorLocation = 1ull << 38;
-static const uint64_t CGPU_DYNAMIC_STATE_CoverageModulationMode = 1ull << 39;
-static const uint64_t CGPU_DYNAMIC_STATE_CoverageModulationTableEnable = 1ull << 40;
-static const uint64_t CGPU_DYNAMIC_STATE_CoverageModulationTable = 1ull << 41;
-static const uint64_t CGPU_DYNAMIC_STATE_CoverageReductionMode = 1ull << 42;
-static const uint64_t CGPU_DYNAMIC_STATE_RepresentativeFragmentTestEnable = 1ull << 43;
-static const uint64_t CGPU_DYNAMIC_STATE_ShadingRateImageEnable = 1ull << 44;
-static const uint64_t CGPU_DYNAMIC_STATE_Tier3 = (1ull << 45) - 1;
-
-typedef uint64_t CGPUDynamicStateFeatures;
-
-typedef struct CGPUAdapterDetail {
-    uint32_t uniform_buffer_alignment;
-    uint32_t upload_buffer_texture_alignment;
-    uint32_t upload_buffer_texture_row_alignment;
-    uint32_t max_vertex_input_bindings;
-    uint32_t wave_lane_count;
-    uint64_t host_visible_vram_budget;
-    CGPUDynamicStateFeatures dynamic_state_features;
-    bool support_host_visible_vram : 1;
-    bool multidraw_indirect : 1;
-    bool support_geom_shader : 1;
-    bool support_tessellation : 1;
-    bool is_uma : 1;
-    bool is_virtual : 1;
-    bool is_cpu : 1;
-    bool support_tiled_buffer : 1;
-    bool support_tiled_texture : 1;
-    bool support_tiled_volume : 1;
-    // RDNA2 
-    bool support_shading_rate : 1;
-    bool support_shading_rate_mask : 1;
-    bool support_shading_rate_sv : 1;
-    CGPUFormatSupport format_supports[CGPU_TEXTURE_FORMAT_COUNT];
-    CGPUVendorPreset vendor_preset;
-} CGPUAdapterDetail;
-
-// Log Callback
-typedef void (*cgpu_log_callback_fn)(void* user_data, ECGPULogSeverity severity, const char* fmt, ...);
-
-typedef struct CGPULogger
-{
-    cgpu_log_callback_fn log_callback;
-    void* log_callback_user_data;
-} CGPULogger;
-
-// Memory Delegates
-typedef void* (*cgpu_malloc_fn)(void* user_data, size_t size, const void* pool);
-typedef void* (*cgpu_realloc_fn)(void* user_data, void* ptr, size_t size, const void* pool);
-typedef void* (*cgpu_calloc_fn)(void* user_data, size_t count, size_t size, const void* pool);
-typedef void (*cgpu_free_fn)(void* user_data, void* ptr, const void* pool);
-typedef void* (*cgpu_malloc_aligned_fn)(void* user_data, size_t size, size_t alignment, const void* pool);
-typedef void* (*cgpu_realloc_aligned_fn)(void* user_data, void* ptr, size_t size, size_t alignment, const void* pool);
-typedef void* (*cgpu_calloc_aligned_fn)(void* user_data, size_t count, size_t size, size_t alignment, const void* pool);
-typedef void (*cgpu_free_aligned_fn)(void* user_data, void* ptr, const void* pool);
-
-typedef struct CGPUAllocator {
-    cgpu_malloc_fn malloc_fn;
-    cgpu_realloc_fn realloc_fn;
-    cgpu_calloc_fn calloc_fn;
-    cgpu_free_fn free_fn;
-    cgpu_malloc_aligned_fn malloc_aligned_fn;
-    cgpu_realloc_aligned_fn realloc_aligned_fn;
-    cgpu_calloc_aligned_fn calloc_aligned_fn;
-    cgpu_free_aligned_fn free_aligned_fn;
-    void* user_data;
-} CGPUAllocator;
-
-// Objects (Heap Safety)
-typedef struct CGPUInstance {
-    const CGPUProcTable* proc_table;
-    const CGPUSurfacesProcTable* surfaces_table;
-    // Some Cached Data
-    struct CGPURuntimeTable* runtime_table;
-    ECGPUBackend backend;
-    bool enable_set_name;
-    CGPULogger logger;
-    CGPUAllocator allocator;
-} CGPUInstance;
-
-typedef struct CGPUAdapter {
-    CGPUInstanceId instance;
-    const CGPUProcTable* proc_table_cache;
-} CGPUAdapter;
-
-typedef struct CGPUDevice {
-    const CGPUAdapterId adapter;
-    const CGPUProcTable* proc_table_cache;
-#ifdef __cplusplus
-    CGPUDevice()
-        : adapter(CGPU_NULLPTR)
-    {
-    }
-#endif
-    uint64_t next_texture_id;
-    bool is_lost CGPU_IF_CPP(= false);
-} CGPUDevice;
-
 typedef struct CGPUQueue {
     CGPUDeviceId device;
     ECGPUQueueType type;
@@ -1004,21 +816,6 @@ typedef struct CGPUChainedDescriptor {
 } CGPUChainedDescriptor;
 
 // Device & Pipeline
-typedef struct CGPUInstanceDescriptor {
-    const CGPUChainedDescriptor* chained;
-    ECGPUBackend backend;
-    bool enable_debug_layer;
-    bool enable_gpu_based_validation;
-    bool enable_set_name;
-    CGPULogger logger;
-    CGPUAllocator allocator;
-} CGPUInstanceDescriptor;
-
-typedef struct CGPUQueueGroupDescriptor {
-    ECGPUQueueType queue_type;
-    uint32_t queue_count;
-} CGPUQueueGroupDescriptor;
-
 typedef struct CGPUQueueSubmitDescriptor {
     CGPUCommandBufferId* cmds;
     CGPUFenceId signal_fence;
@@ -1154,12 +951,6 @@ typedef struct CGPUResourceBarrierDescriptor {
     const CGPUTextureBarrier* texture_barriers;
     uint32_t texture_barriers_count;
 } CGPUResourceBarrierDescriptor;
-
-typedef struct CGPUDeviceDescriptor {
-    bool disable_pipeline_cache;
-    CGPUQueueGroupDescriptor* queue_groups;
-    uint32_t queue_group_count;
-} CGPUDeviceDescriptor;
 
 typedef struct CGPUCommandPoolDescriptor {
     const char8_t* name;

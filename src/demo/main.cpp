@@ -814,7 +814,7 @@ int main(int argc, char** argv)
 	delete gpu_timer;
 	cgpu_free_render_pass(render_pass);
 	cgpu_free_queue(gfx_queue);
-	cgpu_free_device(device);
+	cgpu_free_device(adapter, device);
 	cgpu_free_instance(instance);
 
 	printf("%lld\n", malloced);

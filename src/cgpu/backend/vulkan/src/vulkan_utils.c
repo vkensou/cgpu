@@ -545,11 +545,11 @@ void VkUtil_EnsureFeatures(CGPUAdapter_Vulkan* A, CGPUDevice_Vulkan* D)
 #if VK_EXT_extended_dynamic_state
     if (D->mVkDeviceTable.vkCmdSetCullModeEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetDepthCompareOpEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetDepthTestEnableEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetDepthWriteEnableEXT == VK_NULL_HANDLE ||
         D->mVkDeviceTable.vkCmdSetFrontFaceEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetPrimitiveTopologyEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetStencilTestEnableEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetStencilOp == VK_NULL_HANDLE)
-        A->adapter_detail.dynamic_state_features &= ~CGPU_DYNAMIC_STATE_Tier1;
+        A->adapter_detail.dynamic_state_features &= ~CGPU_DYNAMIC_STATE_FEATURES_TIER1;
 #endif
 #if VK_EXT_extended_dynamic_state3
     if (D->mVkDeviceTable.vkCmdSetPolygonModeEXT == VK_NULL_HANDLE || D->mVkDeviceTable.vkCmdSetRasterizationSamplesEXT == VK_NULL_HANDLE)
-        A->adapter_detail.dynamic_state_features &= ~CGPU_DYNAMIC_STATE_Tier3;
+        A->adapter_detail.dynamic_state_features &= ~CGPU_DYNAMIC_STATE_FEATURES_TIER3;
 #endif
 }
 
@@ -755,7 +755,7 @@ void VkUitl_QueryDynamicPipelineStates(CGPUAdapter_Vulkan* VkAdapter, uint64_t d
     {
         memcpy(pStates, base_states, sizeof(base_states));
     }
-    if (dynamic_state & CGPU_DYNAMIC_STATE_Tier1)
+    if (dynamic_state & CGPU_DYNAMIC_STATE_FEATURES_TIER1)
     {
         VkDynamicState dynamic_states_1[] =
         {
@@ -838,47 +838,47 @@ void VkUtil_RecordAdapterDetail(CGPUAdapter_Vulkan* VkAdapter)
     adapter_detail->support_shading_rate_sv = VkAdapter->mPhysicalDeviceFragmentShadingRateFeatures.primitiveFragmentShadingRate;
 #endif
 #if VK_EXT_extended_dynamic_state
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicStateFeatures.extendedDynamicState ? CGPU_DYNAMIC_STATE_Tier1 : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicStateFeatures.extendedDynamicState ? CGPU_DYNAMIC_STATE_FEATURES_TIER1 : 0;
 #endif
 #if VK_EXT_extended_dynamic_state2
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState2Features.extendedDynamicState2 ? CGPU_DYNAMIC_STATE_RasterDiscard : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState2Features.extendedDynamicState2 ? CGPU_DYNAMIC_STATE_DepthBias : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState2Features.extendedDynamicState2 ? CGPU_DYNAMIC_STATE_PrimitiveRestart : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState2Features.extendedDynamicState2LogicOp ? CGPU_DYNAMIC_STATE_LogicOp : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState2Features.extendedDynamicState2PatchControlPoints ? CGPU_DYNAMIC_STATE_PatchControlPoints : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState2Features.extendedDynamicState2 ? CGPU_DYNAMIC_STATE_FEATURES_RASTER_DISCARD : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState2Features.extendedDynamicState2 ? CGPU_DYNAMIC_STATE_FEATURES_DEPTH_BIAS : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState2Features.extendedDynamicState2 ? CGPU_DYNAMIC_STATE_FEATURES_PRIMITIVE_RESTART : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState2Features.extendedDynamicState2LogicOp ? CGPU_DYNAMIC_STATE_FEATURES_LOGIC_OP : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState2Features.extendedDynamicState2PatchControlPoints ? CGPU_DYNAMIC_STATE_FEATURES_PATCH_CONTROL_POINTS : 0;
 #endif
 #if VK_EXT_extended_dynamic_state3
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3TessellationDomainOrigin ? CGPU_DYNAMIC_STATE_TessellationDomainOrigin : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3DepthClampEnable ? CGPU_DYNAMIC_STATE_DepthClampEnable : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3PolygonMode ? CGPU_DYNAMIC_STATE_PolygonMode : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3RasterizationSamples ? CGPU_DYNAMIC_STATE_SampleCount : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3SampleMask ? CGPU_DYNAMIC_STATE_SampleMask : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3AlphaToCoverageEnable ? CGPU_DYNAMIC_STATE_AlphaToCoverageEnable : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3AlphaToOneEnable ? CGPU_DYNAMIC_STATE_AlphaToOneEnable : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3LogicOpEnable ? CGPU_DYNAMIC_STATE_LogicOpEnable : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ColorBlendEnable ? CGPU_DYNAMIC_STATE_ColorBlendEnable : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ColorBlendEquation ? CGPU_DYNAMIC_STATE_ColorBlendEquation : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ColorWriteMask ? CGPU_DYNAMIC_STATE_ColorWriteMask : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3RasterizationStream ? CGPU_DYNAMIC_STATE_RasterStream : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ConservativeRasterizationMode ? CGPU_DYNAMIC_STATE_ConservativeRasterMode : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ExtraPrimitiveOverestimationSize ? CGPU_DYNAMIC_STATE_ExtraPrimitiveOverestimationSize : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3DepthClipEnable ? CGPU_DYNAMIC_STATE_DepthClipEnable : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3SampleLocationsEnable ? CGPU_DYNAMIC_STATE_SampleLocationsEnable : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ColorBlendAdvanced ? CGPU_DYNAMIC_STATE_ColorBlendAdvanced : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ProvokingVertexMode ? CGPU_DYNAMIC_STATE_ProvokingVertexMode : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3LineRasterizationMode ? CGPU_DYNAMIC_STATE_LineRasterizationMode : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3LineStippleEnable ? CGPU_DYNAMIC_STATE_LineStippleEnable : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3DepthClipNegativeOneToOne ? CGPU_DYNAMIC_STATE_DepthClipNegativeOneToOne : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ViewportWScalingEnable ? CGPU_DYNAMIC_STATE_ViewportWScalingEnable : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ViewportSwizzle ? CGPU_DYNAMIC_STATE_ViewportSwizzle : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3CoverageToColorEnable ? CGPU_DYNAMIC_STATE_CoverageToColorEnable : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3CoverageToColorLocation ? CGPU_DYNAMIC_STATE_CoverageToColorLocation : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3CoverageModulationMode ? CGPU_DYNAMIC_STATE_CoverageModulationMode : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3CoverageModulationTableEnable ? CGPU_DYNAMIC_STATE_CoverageModulationTableEnable : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3CoverageModulationTable ? CGPU_DYNAMIC_STATE_CoverageModulationTable : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3CoverageModulationMode ? CGPU_DYNAMIC_STATE_CoverageReductionMode : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3RepresentativeFragmentTestEnable ? CGPU_DYNAMIC_STATE_RepresentativeFragmentTestEnable : 0;
-    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ShadingRateImageEnable ? CGPU_DYNAMIC_STATE_ShadingRateImageEnable : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3TessellationDomainOrigin ? CGPU_DYNAMIC_STATE_FEATURES_TESSELLATION_DOMAIN_ORIGIN : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3DepthClampEnable ? CGPU_DYNAMIC_STATE_FEATURES_DEPTH_CLAMP_ENABLE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3PolygonMode ? CGPU_DYNAMIC_STATE_FEATURES_POLYGON_MODE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3RasterizationSamples ? CGPU_DYNAMIC_STATE_FEATURES_SAMPLE_COUNT : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3SampleMask ? CGPU_DYNAMIC_STATE_FEATURES_SAMPLE_MASK : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3AlphaToCoverageEnable ? CGPU_DYNAMIC_STATE_FEATURES_ALPHA_TO_COVERAGE_ENABLE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3AlphaToOneEnable ? CGPU_DYNAMIC_STATE_FEATURES_ALPHA_TO_ONE_ENABLE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3LogicOpEnable ? CGPU_DYNAMIC_STATE_FEATURES_LOGIC_OP_ENABLE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ColorBlendEnable ? CGPU_DYNAMIC_STATE_FEATURES_COLOR_BLEND_ENABLE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ColorBlendEquation ? CGPU_DYNAMIC_STATE_FEATURES_COLOR_BLEND_EQUATION : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ColorWriteMask ? CGPU_DYNAMIC_STATE_FEATURES_COLOR_WRITE_MASK : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3RasterizationStream ? CGPU_DYNAMIC_STATE_FEATURES_RASTER_STREAM : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ConservativeRasterizationMode ? CGPU_DYNAMIC_STATE_FEATURES_CONSERVATIVE_RASTER_MODE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ExtraPrimitiveOverestimationSize ? CGPU_DYNAMIC_STATE_FEATURES_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3DepthClipEnable ? CGPU_DYNAMIC_STATE_FEATURES_DEPTH_CLIP_ENABLE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3SampleLocationsEnable ? CGPU_DYNAMIC_STATE_FEATURES_SAMPLE_LOCATIONS_ENABLE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ColorBlendAdvanced ? CGPU_DYNAMIC_STATE_FEATURES_COLOR_BLEND_ADVANCED : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ProvokingVertexMode ? CGPU_DYNAMIC_STATE_FEATURES_PROVOKING_VERTEX_MODE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3LineRasterizationMode ? CGPU_DYNAMIC_STATE_FEATURES_LINE_RASTERIZATION_MODE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3LineStippleEnable ? CGPU_DYNAMIC_STATE_FEATURES_LINE_STIPPLE_ENABLE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3DepthClipNegativeOneToOne ? CGPU_DYNAMIC_STATE_FEATURES_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ViewportWScalingEnable ? CGPU_DYNAMIC_STATE_FEATURES_VIEWPORT_WSCALING_ENABLE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ViewportSwizzle ? CGPU_DYNAMIC_STATE_FEATURES_VIEWPORT_SWIZZLE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3CoverageToColorEnable ? CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_TO_COLOR_ENABLE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3CoverageToColorLocation ? CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_TO_COLOR_LOCATION : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3CoverageModulationMode ? CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_MODULATION_MODE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3CoverageModulationTableEnable ? CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_MODULATION_TABLE_ENABLE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3CoverageModulationTable ? CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_MODULATION_TABLE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3CoverageModulationMode ? CGPU_DYNAMIC_STATE_FEATURES_COVERAGE_REDUCTION_MODE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3RepresentativeFragmentTestEnable ? CGPU_DYNAMIC_STATE_FEATURES_REPRESENTATIVE_FRAGMENT_TEST_ENABLE : 0;
+    adapter_detail->dynamic_state_features |= VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.extendedDynamicState3ShadingRateImageEnable ? CGPU_DYNAMIC_STATE_FEATURES_SHADING_RATE_IMAGE_ENABLE : 0;
 #endif
     // memory features
     VkUtil_QueryHostVisbleVramInfo(VkAdapter);
@@ -1159,16 +1159,16 @@ VkUtil_DebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity
     switch (messageSeverity)
     {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_TRACE, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
+            I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_TRACE, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_INFO, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
+            I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_INFO, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_WARNING, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
+            I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_WARNING, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_ERROR, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
+            I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_ERROR, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
             break;
     }
     return VK_FALSE;
@@ -1188,19 +1188,19 @@ VkUtil_DebugReportCallback(
     switch (flags)
     {
         case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_INFO, "Vulkan validation layer: %s\n", pMessage);
+            I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_INFO, "Vulkan validation layer: %s\n", pMessage);
             break;
         case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_WARNING, "Vulkan validation layer: %s\n", pMessage);
+            I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_WARNING, "Vulkan validation layer: %s\n", pMessage);
             break;
         case VK_DEBUG_REPORT_WARNING_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_WARNING, "Vulkan validation layer: %s\n", pMessage);
+            I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_WARNING, "Vulkan validation layer: %s\n", pMessage);
             break;
         case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_DEBUG, "Vulkan validation layer: %s\n", pMessage);
+            I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_DEBUG, "Vulkan validation layer: %s\n", pMessage);
             break;
         case VK_DEBUG_REPORT_ERROR_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_ERROR, "Vulkan validation layer: %s\n", pMessage);
+            I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_ERROR, "Vulkan validation layer: %s\n", pMessage);
             break;
     }
     return VK_FALSE;

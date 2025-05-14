@@ -380,7 +380,6 @@ function codegen.nameconversion(all_types, all_funcs)
 			v.cname = convert_funcname(v.name)
 		end
 		if v.class then
-			v.cname = convert_funcname(v.class) .. "_" .. v.cname
 			local classtype = all_types[v.class]
 			if classtype then
 				local methods = classtype.methods
@@ -985,7 +984,7 @@ typedef struct $NAME
 {
 	$ITEMS
 
-} $NAME_t;
+} $NAME;
 ]]
 local cstruct_empty_temp = [[
 struct $NAME_s;
@@ -1024,7 +1023,7 @@ function codegen.gen_handle(handle)
 end
 
 local cid_temp = [[
-DEFINE_CGPU_OBJECT2($NAME)
+DEFINE_CGPU_OBJECT($NAME)
 ]]
 function codegen.gen_cid(id)
 	assert(id.id, "Not a id")

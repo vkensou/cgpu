@@ -6,7 +6,7 @@
 #include <stdint.h>  // uint32_t
 #include <stdlib.h>  // size_t
 
-#define DEFINE_CGPU_OBJECT2(name) typedef const struct name* name##_id;
+#define DEFINE_CGPU_OBJECT(name) typedef const struct name* name##Id;
 
 typedef uint32_t ECGPUFlags;
 typedef uint32_t ECGPUFlags64;
