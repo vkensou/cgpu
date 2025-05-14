@@ -733,6 +733,30 @@ funcptr.QuerySharedMemoryInfo
     .total          "uint64_t*"
     .used_bytes     "uint64_t*"
 
+funcptr.CreateFence
+    "FenceId"
+    .device         "DeviceId"
+
+funcptr.WaitFences
+    "void"
+    .fences         "const FenceId*"
+    .fence_count    "uint32_t"
+
+funcptr.QueryFenceStatus
+    "FenceStatus::Enum"
+    .fence          "FenceId"
+
+funcptr.FreeFence
+    "void"
+    .fence          "FenceId"
+
+funcptr.CreateSemaphore
+    "SemaphoreId"
+    .device         "DeviceId"
+
+funcptr.FreeSemaphore
+    "void"
+    .semaphore      "SemaphoreId"
 
 id "InstanceId"
 id "AdapterId"
@@ -752,6 +776,9 @@ id "RasterStateEncoderId"
 id "ShaderStateEncoderId"
 id "UserStateEncoderId"
 id "BinderId"
+id "ShaderLibraryId"
+id "RootSignaturePoolId"
+id "RootSignatureId"
 
 struct.Logger
     .logCallback "LogCallback"
@@ -903,6 +930,61 @@ struct.Binder
     .device             "DeviceId"
     .cmd                "CommandBufferId"
 
+struct.RootSignaturePoolDescriptor
+    .name               "const char*"
+
+struct.RootSignaturePool
+    .device             "DeviceId"
+    .pipelineType       "PipelineType::Enum"
+
+struct.VertexInput
+    .name               "const char*"
+    .semantics          "const char*"
+    .format             "VertexFormat::Enum"
+
+struct.ShaderResource
+    .name               "const char*"
+    .nameHash           "uint64_t"
+    .type               "ResourceType"
+    .dim                "TextureDimension::Enum"
+    .set                "uint32_t"
+    .binding            "uint32_t"
+    .size               "uint32_t"
+    .offset             "uint32_t"
+    .stages             "ShaderStage"
+
+struct.ShaderReflection
+    .entryName          "const char*"
+    .stage              "ShaderStage"
+    .vertexInputs       "VertexInput*"
+    .shaderResources    "ShaderResource*"
+    .vertexInputsCount  "uint32_t"
+    .shaderResourcesCount   "uint32_t"
+    .threadGroupSizes   "uint32_t[3]"
+
+struct.ShaderLibrary
+    .device             "DeviceId"
+    .name               "const char*"
+    .entryReflections   "ShaderReflection*"
+    .entrysCount        "uint32_t"
+
+struct.ParameterTable
+    .resources          "ShaderResource*"
+    .resourcesCount     "uint32_t"
+    .setIndex           "uint32_t"
+
+struct.RootSignature
+    .device             "DeviceId"
+    .tables             "ParameterTable*"
+    .tableCount         "uint32_t"
+    .pushConstants      "ShaderResource*"
+    .pushConstantCount  "uint32_t"
+    .staticSamplers     "ShaderResource*"
+    .staticSamplerCount "uint32_t"
+    .pipelineType       "PipelineType::Enum"
+    .pool               "RootSignaturePoolId"
+    .poolSig            "RootSignatureId"
+
 struct.BufferRange
     .offset             "uint64_t"
     .size               "uint64_t"
@@ -951,3 +1033,26 @@ func.Device.querySharedMemoryInfo
     "void"
     .total          "uint64_t*"
     .used_bytes     "uint64_t*"
+
+func.Device.createFence
+    "FenceId"
+
+func.waitFences
+    "void"
+    .fences         "const FenceId*"
+    .fence_count    "uint32_t"
+
+func.queryFenceStatus
+    "FenceStatus::Enum"
+    .fence          "FenceId"
+
+func.freeFence
+    "void"
+    .fence          "FenceId"
+
+func.Device.createSemaphore
+    "SemaphoreId"
+
+func.freeSemaphore
+    "void"
+    .semaphore      "SemaphoreId"

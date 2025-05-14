@@ -29,12 +29,12 @@ bool CGPUUtil_ShaderResourceIsRootConst(CGPUShaderResource* resource, const stru
     return false;
 }
 
-inline static char8_t* duplicate_string(const char8_t* src_string, const CGPUAllocator* allocator)
+inline static char* duplicate_string(const char* src_string, const CGPUAllocator* allocator)
 {
     if (src_string != CGPU_NULLPTR)
     {
         const size_t source_len = strlen((const char*)src_string);
-        char8_t* result = (char8_t*)cgpu_malloc(allocator, sizeof(char8_t) * (1 + source_len));
+        char* result = (char*)cgpu_malloc(allocator, sizeof(char) * (1 + source_len));
 #ifdef _WIN32
         strcpy_s((char*)result, source_len + 1, (const char*)src_string);
 #else

@@ -25,9 +25,6 @@ typedef uint32_t CGPUQueueIndex;
 
 DEFINE_CGPU_OBJECT(CGPUSurface)
 DEFINE_CGPU_OBJECT(CGPUSwapChain)
-DEFINE_CGPU_OBJECT(CGPUShaderLibrary)
-DEFINE_CGPU_OBJECT(CGPURootSignature)
-DEFINE_CGPU_OBJECT(CGPURootSignaturePool)
 DEFINE_CGPU_OBJECT(CGPUDescriptorSet)
 DEFINE_CGPU_OBJECT(CGPUMemoryPool)
 DEFINE_CGPU_OBJECT(CGPUBuffer)
@@ -96,18 +93,6 @@ typedef struct CGPUConstantSpecialization {
 // Device APIs
 
 // API Objects APIs
-CGPU_API CGPUFenceId cgpu_create_fence(CGPUDeviceId device);
-typedef CGPUFenceId (*CGPUProcCreateFence)(CGPUDeviceId device);
-CGPU_API void cgpu_wait_fences(const CGPUFenceId* fences, uint32_t fence_count);
-typedef void (*CGPUProcWaitFences)(const CGPUFenceId* fences, uint32_t fence_count);
-CGPU_API ECGPUFenceStatus cgpu_query_fence_status(CGPUFenceId fence);
-typedef ECGPUFenceStatus (*CGPUProcQueryFenceStatus)(CGPUFenceId fence);
-CGPU_API void cgpu_free_fence(CGPUFenceId fence);
-typedef void (*CGPUProcFreeFence)(CGPUFenceId fence);
-CGPU_API CGPUSemaphoreId cgpu_create_semaphore(CGPUDeviceId device);
-typedef CGPUSemaphoreId (*CGPUProcCreateSemaphore)(CGPUDeviceId device);
-CGPU_API void cgpu_free_semaphore(CGPUSemaphoreId semaphore);
-typedef void (*CGPUProcFreeSemaphore)(CGPUSemaphoreId semaphore);
 CGPU_API CGPURootSignaturePoolId cgpu_create_root_signature_pool(CGPUDeviceId device, const struct CGPURootSignaturePoolDescriptor* desc);
 typedef CGPURootSignaturePoolId (*CGPUProcCreateRootSignaturePool)(CGPUDeviceId device, const struct CGPURootSignaturePoolDescriptor* desc);
 CGPU_API void cgpu_free_root_signature_pool(CGPURootSignaturePoolId pool);
@@ -634,41 +619,6 @@ typedef struct CGPUSurfacesProcTable {
 } CGPUSurfacesProcTable;
 
 // Shaders
-typedef struct CGPUShaderResource {
-    const char8_t* name;
-    uint64_t name_hash;
-    ECGPUResourceTypeFlags type;
-    ECGPUTextureDimension dim;
-    uint32_t set;
-    uint32_t binding;
-    uint32_t size;
-    uint32_t offset;
-    ECGPUShaderStageFlags stages;
-} CGPUShaderResource;
-
-typedef struct CGPUVertexInput {
-    const char8_t* name;
-    const char8_t* semantics;
-    ECGPUVertexFormat format;
-} CGPUVertexInput;
-
-typedef struct CGPUShaderReflection {
-    const char8_t* entry_name;
-    ECGPUShaderStageFlags stage;
-    CGPUVertexInput* vertex_inputs;
-    CGPUShaderResource* shader_resources;
-    uint32_t vertex_inputs_count;
-    uint32_t shader_resources_count;
-    uint32_t thread_group_sizes[3];
-} CGPUShaderReflection;
-
-typedef struct CGPUShaderLibrary {
-    CGPUDeviceId device;
-    char8_t* name;
-    CGPUShaderReflection* entry_reflections;
-    uint32_t entrys_count;
-} CGPUShaderLibrary;
-
 typedef struct CGPUPipelineReflection {
     CGPUShaderReflection* stages[CGPU_SHADER_STAGE_COUNT];
     // descriptor sets / root tables
@@ -967,10 +917,6 @@ typedef struct CGPUFramebufferDescriptor {
     uint32_t layers;
 } CGPUFramebufferDescriptor;
 
-typedef struct CGPURootSignaturePoolDescriptor {
-    const char8_t* name;
-} CGPURootSignaturePoolDescriptor;
-
 typedef struct CGPURootSignatureDescriptor {
     struct CGPUShaderEntryDescriptor* shaders;
     uint32_t shader_count;
@@ -1105,31 +1051,6 @@ typedef struct CGPUMemoryPool {
     CGPUDeviceId device;
     ECGPUMemoryPoolType type;
 } CGPUMemoryPool;
-
-typedef struct CGPUParameterTable {
-    // This should be stored here because shader could be destoryed after RS creation
-    CGPUShaderResource* resources;
-    uint32_t resources_count;
-    uint32_t set_index;
-} CGPUParameterTable;
-
-typedef struct CGPURootSignaturePool {
-    CGPUDeviceId device;
-    ECGPUPipelineType pipeline_type;
-} CGPURootSignaturePool; 
-
-typedef struct CGPURootSignature {
-    CGPUDeviceId device;
-    CGPUParameterTable* tables;
-    uint32_t table_count;
-    CGPUShaderResource* push_constants;
-    uint32_t push_constant_count;
-    CGPUShaderResource* static_samplers;
-    uint32_t static_sampler_count;
-    ECGPUPipelineType pipeline_type;
-    CGPURootSignaturePoolId pool;
-    CGPURootSignatureId pool_sig;
-} CGPURootSignature;
 
 typedef struct CGPUDescriptorSet {
     CGPURootSignatureId root_signature;

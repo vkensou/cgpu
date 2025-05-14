@@ -48,7 +48,7 @@ struct RSCharacteristic
 class CGPURootSignaturePoolImpl : public CGPURootSignaturePool
 {
 public:
-    CGPURootSignaturePoolImpl(const char8_t* name)
+    CGPURootSignaturePoolImpl(const char* name)
         :name((const char*)name)
     {
 

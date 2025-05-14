@@ -798,6 +798,12 @@ DEFINE_CGPU_OBJECT(CGPUUserStateEncoder)
 
 DEFINE_CGPU_OBJECT(CGPUBinder)
 
+DEFINE_CGPU_OBJECT(CGPUShaderLibrary)
+
+DEFINE_CGPU_OBJECT(CGPURootSignaturePool)
+
+DEFINE_CGPU_OBJECT(CGPURootSignature)
+
 
 typedef struct CGPUInstanceDescriptor CGPUInstanceDescriptor;
 typedef struct CGPUInstanceFeatures CGPUInstanceFeatures;
@@ -826,6 +832,12 @@ typedef CGPUDeviceId (*CGPUProcCreateDevice)(CGPUAdapterId adapter, const CGPUDe
 typedef void (*CGPUProcFreeDevice)(CGPUAdapterId adapter, CGPUDeviceId device);
 typedef void (*CGPUProcQueryVideoMemoryInfo)(CGPUDeviceId device, uint64_t* total, uint64_t* used);
 typedef void (*CGPUProcQuerySharedMemoryInfo)(CGPUDeviceId device, uint64_t* total, uint64_t* used);
+typedef CGPUFenceId (*CGPUProcCreateFence)(CGPUDeviceId device);
+typedef void (*CGPUProcWaitFences)(const CGPUFenceId* fences, uint32_t fence);
+typedef ECGPUFenceStatus (*CGPUProcQueryFenceStatus)(CGPUFenceId fence);
+typedef void (*CGPUProcFreeFence)(CGPUFenceId fence);
+typedef CGPUSemaphoreId (*CGPUProcCreateSemaphore)(CGPUDeviceId device);
+typedef void (*CGPUProcFreeSemaphore)(CGPUSemaphoreId semaphore);
 
 typedef struct CGPULogger
 {
@@ -1057,6 +1069,85 @@ typedef struct CGPUBinder
 
 } CGPUBinder;
 
+typedef struct CGPURootSignaturePoolDescriptor
+{
+    const char*          name;
+
+} CGPURootSignaturePoolDescriptor;
+
+typedef struct CGPURootSignaturePool
+{
+    CGPUDeviceId         device;
+    ECGPUPipelineType    pipeline_type;
+
+} CGPURootSignaturePool;
+
+typedef struct CGPUVertexInput
+{
+    const char*          name;
+    const char*          semantics;
+    ECGPUVertexFormat    format;
+
+} CGPUVertexInput;
+
+typedef struct CGPUShaderResource
+{
+    const char*          name;
+    uint64_t             name_hash;
+    ECGPUResourceTypeFlags type;
+    ECGPUTextureDimension dim;
+    uint32_t             set;
+    uint32_t             binding;
+    uint32_t             size;
+    uint32_t             offset;
+    ECGPUShaderStageFlags stages;
+
+} CGPUShaderResource;
+
+typedef struct CGPUShaderReflection
+{
+    const char*          entry_name;
+    ECGPUShaderStageFlags stage;
+    CGPUVertexInput*     vertex_inputs;
+    CGPUShaderResource*  shader_resources;
+    uint32_t             vertex_inputs_count;
+    uint32_t             shader_resources_count;
+    uint32_t             thread_group_sizes[3];
+
+} CGPUShaderReflection;
+
+typedef struct CGPUShaderLibrary
+{
+    CGPUDeviceId         device;
+    const char*          name;
+    CGPUShaderReflection* entry_reflections;
+    uint32_t             entrys_count;
+
+} CGPUShaderLibrary;
+
+typedef struct CGPUParameterTable
+{
+    CGPUShaderResource*  resources;
+    uint32_t             resources_count;
+    uint32_t             set_index;
+
+} CGPUParameterTable;
+
+typedef struct CGPURootSignature
+{
+    CGPUDeviceId         device;
+    CGPUParameterTable*  tables;
+    uint32_t             table_count;
+    CGPUShaderResource*  push_constants;
+    uint32_t             push_constant_count;
+    CGPUShaderResource*  static_samplers;
+    uint32_t             static_sampler_count;
+    ECGPUPipelineType    pipeline_type;
+    CGPURootSignaturePoolId pool;
+    CGPURootSignatureId  pool_sig;
+
+} CGPURootSignature;
+
 typedef struct CGPUBufferRange
 {
     uint64_t             offset;
@@ -1076,5 +1167,11 @@ CGPU_API CGPUDeviceId cgpu_create_device(CGPUAdapterId _this, const CGPUDeviceDe
 CGPU_API void cgpu_free_device(CGPUAdapterId _this, CGPUDeviceId device);
 CGPU_API void cgpu_query_video_memory_info(CGPUDeviceId _this, uint64_t* total, uint64_t* used);
 CGPU_API void cgpu_query_shared_memory_info(CGPUDeviceId _this, uint64_t* total, uint64_t* used);
+CGPU_API CGPUFenceId cgpu_create_fence(CGPUDeviceId _this);
+CGPU_API void cgpu_wait_fences(const CGPUFenceId* fences, uint32_t fence);
+CGPU_API ECGPUFenceStatus cgpu_query_fence_status(CGPUFenceId fence);
+CGPU_API void cgpu_free_fence(CGPUFenceId fence);
+CGPU_API CGPUSemaphoreId cgpu_create_semaphore(CGPUDeviceId _this);
+CGPU_API void cgpu_free_semaphore(CGPUSemaphoreId semaphore);
 
 #endif // CGPU_C99_H_HEADER_GUARD
