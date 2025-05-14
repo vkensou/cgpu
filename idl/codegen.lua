@@ -300,9 +300,9 @@ function codegen.nameconversion(all_types, all_funcs)
 			if v.namespace then
 				cname = camelcase_to_underscorecase(v.namespace) .. "_" .. cname
 			elseif v.enum then
-				v.cname = "cgpu_".. cname .. "_enum"
+				v.cname = "ECGPU" .. name
 			elseif v.flag then
-				v.cname = "cgpu_".. cname .. "_flag"
+				v.cname = "ECGPU".. name .. "Flags"
 			elseif v.id then
 				v.cname = "cgpu_".. name:match("(.-)Id$"):lower() .. "_id"
 			elseif v.args then
@@ -723,8 +723,8 @@ typedef enum $NAME
 ]]
 function codegen.gen_enum_cdefine(enum)
 	assert(type(enum.enum) == "table", "Not an enum")
-	local cname = enum.cname:match "(.-)_enum$"
-	local uname = cname:upper()
+	local cname = enum.cname
+	local uname = ("cgpu_" .. camelcase_to_underscorecase(enum.name)):upper()
 	local items = {}
 	for index , item in ipairs(enum.enum) do
 		local comment = ""
@@ -765,17 +765,27 @@ local function flag_format(flag)
 end
 
 local flag_temp = [[
-typedef enum $NAME
+typedef enum $BITSNAME
 {
     $ITEMS
         
-} $NAME;
+} $BITSNAME;
+typedef ECGPUFlags $NAME;
+]]
+
+local flag_temp64 = [[
+typedef enum $BITSNAME
+{
+    $ITEMS
+        
+} $BITSNAME;
+typedef ECGPUFlags64 $NAME;
 ]]
 
 function codegen.gen_flag_cdefine(flag)
 	assert(type(flag.flag) == "table", "Not a flag")
 	flag_format(flag)
-	local cname = (flag.cname:match "(.-)_flag$"):upper()
+	local cname = ("cgpu_" .. camelcase_to_underscorecase(flag.name)):upper()
 	local s = {}
 	local shift = flag.shift
 	for index, item in ipairs(flag.flag) do
@@ -865,12 +875,16 @@ function codegen.gen_flag_cdefine(flag)
 			(cname .. "_MASK"))
 	end
 
+	local bits_name = (flag.cname:match "(.-)Flags$") .. "FlagBits"
+
     local temp = {
+		BITSNAME = bits_name,
         NAME = flag.cname,
         ITEMS = table.concat(s, "\n\t")
     }
 
-    return (flag_temp:gsub("$(%u+)", temp))
+	local temp_used = flag.bits == 64 and flag_temp64 or flag_temp
+    return (temp_used:gsub("$(%u+)", temp))
 end
 
 local function text_with_comments(items, item, cstyle, is_classmember)

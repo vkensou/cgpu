@@ -8,6 +8,9 @@
 
 #define DEFINE_CGPU_OBJECT2(name) typedef const struct name* name##_id;
 
+typedef uint32_t ECGPUFlags;
+typedef uint32_t ECGPUFlags64;
+
 $cenums
 
 $cflags
