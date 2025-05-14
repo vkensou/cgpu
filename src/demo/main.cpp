@@ -293,7 +293,7 @@ struct RenderWindow
 		};
 
 		CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass(cmd, &begin_info);
-
+		cgpu_render_encoder_set_shading_rate(rp_encoder, CGPU_SHADING_RATE_FULL, CGPU_SHADING_RATE_COMBINER_PASSTHROUGH, CGPU_SHADING_RATE_COMBINER_PASSTHROUGH);
 		cgpu_render_encoder_set_viewport(rp_encoder,
 			0.0f, 0.0f,
 			(float)w, (float)h,
@@ -450,9 +450,9 @@ void* demo_calloc_aligned(void* user_data, size_t count, size_t size, size_t ali
 	return memory;
 }
 
-void demo_free_aligned(void* user_data, void* ptr, size_t alignment, const void* pool)
+void demo_free_aligned(void* user_data, void* ptr, const void* pool)
 {
-	aligned_malloced -= ptr ? _aligned_msize(ptr, alignment, 0) : 0;
+	//aligned_malloced -= ptr ? _aligned_msize(ptr, alignment, 0) : 0;
 	_aligned_free(ptr);
 }
 
