@@ -304,11 +304,13 @@ function codegen.nameconversion(all_types, all_funcs)
 			elseif v.flag then
 				v.cname = "ECGPU".. name .. "Flags"
 			elseif v.id then
-				v.cname = "cgpu_".. name:match("(.-)Id$"):lower() .. "_id"
+				v.cname = "CGPU".. name:match("(.-)Id$") .. "Id"
 			elseif v.args then
-				v.cname = "cgpu" .. "_proc_".. cname
+				v.cname = "CGPU" .. "Proc".. name
+			elseif v.struct then
+				v.cname = "CGPU" .. name
 			else
-				v.cname = "cgpu_".. cname .. "_t"
+				v.cname = name
 			end
 		end
 		if v.enum then
@@ -991,7 +993,7 @@ typedef struct $NAME_s $NAME_t;
 ]]
 function codegen.gen_struct_cdefine(struct)
 	assert(type(struct.struct) == "table", "Not a struct")
-	local cname = struct.cname:match "(.-)_t$"
+	local cname = struct.cname
 	local items = {}
 	for _, item in ipairs(struct.struct) do
 		text_with_comments(items, item, true)
@@ -1026,7 +1028,7 @@ DEFINE_CGPU_OBJECT2($NAME)
 ]]
 function codegen.gen_cid(id)
 	assert(id.id, "Not a id")
-	local cname = id.cname:match("(.-)_id$")
+	local cname = id.cname:match("(.-)Id$")
 	return (cid_temp:gsub("$(%u+)", { NAME = cname }))
 end
 

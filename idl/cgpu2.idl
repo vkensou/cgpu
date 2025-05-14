@@ -751,14 +751,14 @@ struct.InstanceDescriptor
 struct.InstanceFeatures
     .specializationConstant "bool"
 
-typedef "ProcTable"
-typedef "SurfacesProcTable"
-typedef "RuntimeTable"
+typedef "CGPUProcTable"
+typedef "CGPUSurfacesProcTable"
+typedef "CGPURuntimeTable"
 
 struct.Instance 
-    .procTable          "const ProcTable*"
-    .surfacesTable      "const SurfacesProcTable*"
-    .runtimeTable       "RuntimeTable*"
+    .procTable          "const CGPUProcTable*"
+    .surfacesTable      "const CGPUSurfacesProcTable*"
+    .runtimeTable       "CGPURuntimeTable*"
     .backend            "Backend::Enum"
     .enableSetName      "bool"
     .logger             "Logger"
@@ -801,7 +801,7 @@ struct.AdapterDetail
 
 struct.Adapter
     .instance           "InstanceId"
-    .procTableCache     "const ProcTable*"
+    .procTableCache     "const CGPUProcTable*"
 
 struct.QueueGroupDescriptor
     .queueType          "QueueType::Enum"
@@ -814,7 +814,7 @@ struct.DeviceDescriptor
 
 struct.Device
     .Adapter            "AdapterId"
-    .procTableCache     "const ProcTable*"
+    .procTableCache     "const CGPUProcTable*"
     .nextTextureId      "uint64_t"
     .isLost             "bool"
 

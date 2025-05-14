@@ -17,13 +17,13 @@ $cflags
 
 $cids
 
-typedef struct cgpu_instance_descriptor cgpu_instance_descriptor_t;
-typedef struct cgpu_instance_features cgpu_instance_features_t;
-typedef struct cgpu_proc_table cgpu_proc_table_t;
-typedef struct cgpu_surfaces_proc_table cgpu_surfaces_proc_table_t;
-typedef struct cgpu_runtime_table cgpu_runtime_table_t;
-typedef struct cgpu_adapter_detail cgpu_adapter_detail_t;
-typedef struct cgpu_device_descriptor cgpu_device_descriptor_t;
+typedef struct CGPUInstanceDescriptor CGPUInstanceDescriptor;
+typedef struct CGPUInstanceFeatures CGPUInstanceFeatures;
+typedef struct CGPUProcTable CGPUProcTable;
+typedef struct CGPUSurfacesProcTable CGPUSurfacesProcTable;
+typedef struct CGPURuntimeTable CGPURuntimeTable;
+typedef struct CGPUAdapterDetail CGPUAdapterDetail;
+typedef struct CGPUDeviceDescriptor CGPUDeviceDescriptor;
 
 $cfuncptrs
 
