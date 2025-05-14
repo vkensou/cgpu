@@ -20,7 +20,7 @@ CGPU_UNUSED static const VkFrontFace gVkFrontFaceTranslator[] = {
     VK_FRONT_FACE_CLOCKWISE
 };
 
-CGPU_UNUSED static const VkBlendFactor gVkBlendConstantTranslator[CGPU_BLEND_CONST_COUNT] = {
+CGPU_UNUSED static const VkBlendFactor gVkBlendConstantTranslator[CGPU_BLEND_FACTOR_COUNT] = {
     VK_BLEND_FACTOR_ZERO,
     VK_BLEND_FACTOR_ONE,
     VK_BLEND_FACTOR_SRC_COLOR,
@@ -32,11 +32,9 @@ CGPU_UNUSED static const VkBlendFactor gVkBlendConstantTranslator[CGPU_BLEND_CON
     VK_BLEND_FACTOR_DST_ALPHA,
     VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA,
     VK_BLEND_FACTOR_SRC_ALPHA_SATURATE,
-    VK_BLEND_FACTOR_CONSTANT_COLOR,
-    VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR,
 };
 
-CGPU_UNUSED static const VkBlendOp gVkBlendOpTranslator[CGPU_BLEND_MODE_COUNT] = {
+CGPU_UNUSED static const VkBlendOp gVkBlendOpTranslator[CGPU_BLEND_OP_COUNT] = {
     VK_BLEND_OP_ADD,
     VK_BLEND_OP_SUBTRACT,
     VK_BLEND_OP_REVERSE_SUBTRACT,
@@ -79,18 +77,18 @@ CGPU_FORCEINLINE static VkPrimitiveTopology VkUtil_TranslateTopology(ECGPUPrimit
     VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     switch (prim_topology)
     {
-        case CGPU_PRIM_TOPO_POINT_LIST: topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST; break;
-        case CGPU_PRIM_TOPO_LINE_LIST: topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST; break;
-        case CGPU_PRIM_TOPO_LINE_STRIP: topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP; break;
-        case CGPU_PRIM_TOPO_TRI_STRIP: topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP; break;
-        case CGPU_PRIM_TOPO_PATCH_LIST: topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST; break;
-        case CGPU_PRIM_TOPO_TRI_LIST: topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; break;
+        case CGPU_PRIMITIVE_TOPOLOGY_POINT_LIST: topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST; break;
+        case CGPU_PRIMITIVE_TOPOLOGY_LINE_LIST: topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST; break;
+        case CGPU_PRIMITIVE_TOPOLOGY_LINE_STRIP: topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP; break;
+        case CGPU_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP: topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP; break;
+        case CGPU_PRIMITIVE_TOPOLOGY_PATCH_LIST: topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST; break;
+        case CGPU_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST: topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; break;
         default:  cgpu_assert(false && "Primitive Topo not supported!"); break;
     }
     return topology;
 }
 
-CGPU_FORCEINLINE static VkImageUsageFlags VkUtil_DescriptorTypesToImageUsage(CGPUResourceTypes descriptors)
+CGPU_FORCEINLINE static VkImageUsageFlags VkUtil_DescriptorTypesToImageUsage(ECGPUResourceTypeFlags descriptors)
 {
     VkImageUsageFlags result = 0;
     if (CGPU_RESOURCE_TYPE_TEXTURE == (descriptors & CGPU_RESOURCE_TYPE_TEXTURE))
@@ -117,9 +115,9 @@ CGPU_FORCEINLINE static VkSamplerMipmapMode VkUtil_TranslateMipMapMode(ECGPUMipM
 {
     switch (mipMapMode)
     {
-        case CGPU_MIPMAP_MODE_NEAREST:
+        case CGPU_MIP_MAP_MODE_NEAREST:
             return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-        case CGPU_MIPMAP_MODE_LINEAR:
+        case CGPU_MIP_MAP_MODE_LINEAR:
             return VK_SAMPLER_MIPMAP_MODE_LINEAR;
         default:
             cgpu_assert(false && "Invalid Mip Map Mode");
@@ -144,7 +142,7 @@ CGPU_FORCEINLINE static VkSamplerAddressMode VkUtil_TranslateAddressMode(ECGPUAd
     }
 }
 
-CGPU_FORCEINLINE static VkImageLayout VkUtil_ResourceStateToImageLayout(ECGPUResourceState usage)
+CGPU_FORCEINLINE static VkImageLayout VkUtil_ResourceStateToImageLayout(ECGPUResourceStateFlags usage)
 {
     if (usage & CGPU_RESOURCE_STATE_COPY_SOURCE)
         return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
@@ -210,7 +208,7 @@ CGPU_FORCEINLINE static VkImageAspectFlags VkUtil_DeterminAspectMask(VkFormat fo
     return result;
 }
 
-CGPU_FORCEINLINE static VkBufferUsageFlags VkUtil_DescriptorTypesToBufferUsage(CGPUResourceTypes descriptors, bool texel)
+CGPU_FORCEINLINE static VkBufferUsageFlags VkUtil_DescriptorTypesToBufferUsage(ECGPUResourceTypeFlags descriptors, bool texel)
 {
     VkBufferUsageFlags result = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     if (descriptors & CGPU_RESOURCE_TYPE_UNIFORM_BUFFER)
@@ -248,7 +246,7 @@ CGPU_FORCEINLINE static VkBufferUsageFlags VkUtil_DescriptorTypesToBufferUsage(C
     return result;
 }
 
-CGPU_FORCEINLINE static VkShaderStageFlags VkUtil_TranslateShaderUsages(CGPUShaderStages shader_stages)
+CGPU_FORCEINLINE static VkShaderStageFlags VkUtil_TranslateShaderUsages(ECGPUShaderStageFlags shader_stages)
 {
     VkShaderStageFlags result = 0;
     if (CGPU_SHADER_STAGE_ALL_GRAPHICS == (shader_stages & CGPU_SHADER_STAGE_ALL_GRAPHICS))
@@ -257,23 +255,23 @@ CGPU_FORCEINLINE static VkShaderStageFlags VkUtil_TranslateShaderUsages(CGPUShad
     }
     else
     {
-        if (CGPU_SHADER_STAGE_VERT == (shader_stages & CGPU_SHADER_STAGE_VERT))
+        if (CGPU_SHADER_STAGE_VERTEX == (shader_stages & CGPU_SHADER_STAGE_VERTEX))
         {
             result |= VK_SHADER_STAGE_VERTEX_BIT;
         }
-        if (CGPU_SHADER_STAGE_TESC == (shader_stages & CGPU_SHADER_STAGE_TESC))
+        if (CGPU_SHADER_STAGE_TESSELLATION_CONTROL == (shader_stages & CGPU_SHADER_STAGE_TESSELLATION_CONTROL))
         {
             result |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
         }
-        if (CGPU_SHADER_STAGE_TESE == (shader_stages & CGPU_SHADER_STAGE_TESE))
+        if (CGPU_SHADER_STAGE_TESSELLATION_EVALUATION == (shader_stages & CGPU_SHADER_STAGE_TESSELLATION_EVALUATION))
         {
             result |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
         }
-        if (CGPU_SHADER_STAGE_GEOM == (shader_stages & CGPU_SHADER_STAGE_GEOM))
+        if (CGPU_SHADER_STAGE_GEOMETRY == (shader_stages & CGPU_SHADER_STAGE_GEOMETRY))
         {
             result |= VK_SHADER_STAGE_GEOMETRY_BIT;
         }
-        if (CGPU_SHADER_STAGE_FRAG == (shader_stages & CGPU_SHADER_STAGE_FRAG))
+        if (CGPU_SHADER_STAGE_FRAGMENT == (shader_stages & CGPU_SHADER_STAGE_FRAGMENT))
         {
             result |= VK_SHADER_STAGE_FRAGMENT_BIT;
         }
@@ -327,7 +325,7 @@ CGPU_FORCEINLINE static VkFragmentShadingRateCombinerOpKHR VkUtil_TranslateShadi
 {
     switch (combiner)
     {
-        case CGPU_SHADING_RATE_COMBINER_PASSTHROUGH:
+        case CGPU_SHADING_RATE_COMBINER_PASS_THROUGH:
             return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
         case CGPU_SHADING_RATE_COMBINER_OVERRIDE:
             return VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR;
@@ -343,7 +341,7 @@ CGPU_FORCEINLINE static VkFragmentShadingRateCombinerOpKHR VkUtil_TranslateShadi
 }
 
 /* clang-format off */
-CGPU_FORCEINLINE static VkDescriptorType VkUtil_TranslateResourceType(ECGPUResourceType type)
+CGPU_FORCEINLINE static VkDescriptorType VkUtil_TranslateResourceType(ECGPUResourceTypeFlags type)
 {
 	switch (type)
 	{
@@ -439,7 +437,7 @@ CGPU_FORCEINLINE static VkPipelineStageFlags VkUtil_DeterminePipelineStageFlags(
     return flags;
 }
 
-CGPU_FORCEINLINE static VkAccessFlags VkUtil_ResourceStateToVkAccessFlags(ECGPUResourceState state)
+CGPU_FORCEINLINE static VkAccessFlags VkUtil_ResourceStateToVkAccessFlags(ECGPUResourceStateFlags state)
 {
 	VkAccessFlags ret = VK_ACCESS_NONE;
 	if (state & CGPU_RESOURCE_STATE_COPY_SOURCE)

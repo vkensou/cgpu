@@ -130,8 +130,8 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
         // Pipeline Type
         if (reflection->stage & CGPU_SHADER_STAGE_COMPUTE)
             RS->pipeline_type = CGPU_PIPELINE_TYPE_COMPUTE;
-        else if (reflection->stage & CGPU_SHADER_STAGE_RAYTRACING)
-            RS->pipeline_type = CGPU_PIPELINE_TYPE_RAYTRACING;
+        else if (reflection->stage & CGPU_SHADER_STAGE_RAY_TRACING)
+            RS->pipeline_type = CGPU_PIPELINE_TYPE_RAY_TRACING;
         else
             RS->pipeline_type = CGPU_PIPELINE_TYPE_GRAPHICS;
     }

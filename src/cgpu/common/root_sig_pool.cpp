@@ -21,13 +21,13 @@ struct RSCharacteristic
     struct hasher { inline size_t operator()(const RSCharacteristic& val) const { return (size_t)val; } };
     struct RSTResource
     {
-        ECGPUResourceType type;
+        ECGPUResourceTypeFlags type;
         ECGPUTextureDimension dim;
         uint32_t set;
         uint32_t binding;
         uint32_t size;
         uint32_t offset;
-        CGPUShaderStages stages;
+        ECGPUShaderStageFlags stages;
     };
     struct StaticSampler
     {
@@ -41,7 +41,7 @@ struct RSCharacteristic
         uint32_t binding;
         uint32_t size;
         uint32_t offset;
-        CGPUShaderStages stages;
+        ECGPUShaderStageFlags stages;
     };
 };
 

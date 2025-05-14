@@ -185,7 +185,7 @@ struct RenderWindow
 			.width = (uint32_t)w,
 			.height = (uint32_t)h,
 			.enable_vsync = true,
-			.format = CGPU_FORMAT_R8G8B8A8_UNORM,
+			.format = CGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM,
 		};
 		swapchain = cgpu_create_swapchain(device, &descriptor);
 
@@ -194,9 +194,9 @@ struct RenderWindow
 			CGPUTextureViewDescriptor view_desc = {
 				.texture = swapchain->back_buffers[i],
 				.format = swapchain->back_buffers[i]->info->format,
-				.usages = CGPU_TVU_RTV_DSV,
-				.aspects = CGPU_TVA_COLOR,
-				.dims = CGPU_TEX_DIMENSION_2D,
+				.usages = CGPU_TEXTURE_VIEW_USAGE_RTV_DSV,
+				.aspects = CGPU_TEXTURE_VIEW_ASPECT_COLOR,
+				.dims = CGPU_TEXTURE_DIMENSION_2D,
 				.array_layer_count = 1,
 			};
 			swapchain_views[i] = cgpu_create_texture_view(device, &view_desc);
@@ -293,7 +293,7 @@ struct RenderWindow
 		};
 
 		CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass(cmd, &begin_info);
-		cgpu_render_encoder_set_shading_rate(rp_encoder, CGPU_SHADING_RATE_FULL, CGPU_SHADING_RATE_COMBINER_PASSTHROUGH, CGPU_SHADING_RATE_COMBINER_PASSTHROUGH);
+		cgpu_render_encoder_set_shading_rate(rp_encoder, CGPU_SHADING_RATE_FULL, CGPU_SHADING_RATE_COMBINER_PASS_THROUGH, CGPU_SHADING_RATE_COMBINER_PASS_THROUGH);
 		cgpu_render_encoder_set_viewport(rp_encoder,
 			0.0f, 0.0f,
 			(float)w, (float)h,
@@ -340,7 +340,7 @@ std::vector<char> readFile(const std::string& filename)
 	return buffer;
 }
 
-std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGPUDeviceId device, ECGPUFormat format, const std::string& vertPath, const std::string& fragPath, const CGPUVertexLayout* vertex_layout, CGPUBlendStateDescriptor* blend_state, CGPUDepthStateDesc* depth_state, CGPURasterizerStateDescriptor* rasterizer_state, CGPURenderPassId render_pass, uint32_t subpass)
+std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGPUDeviceId device, ECGPUTextureFormat format, const std::string& vertPath, const std::string& fragPath, const CGPUVertexLayout* vertex_layout, CGPUBlendStateDescriptor* blend_state, CGPUDepthStateDesc* depth_state, CGPURasterizerStateDescriptor* rasterizer_state, CGPURenderPassId render_pass, uint32_t subpass)
 {
 	auto vertShaderCode = readFile(vertPath);
 	auto fragShaderCode = readFile(fragPath);
@@ -348,21 +348,21 @@ std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGP
 		.name = u8"VertexShaderLibrary",
 		.code = reinterpret_cast<const uint32_t*>(vertShaderCode.data()),
 		.code_size = (uint32_t)vertShaderCode.size(),
-		.stage = CGPU_SHADER_STAGE_VERT,
+		.stage = CGPU_SHADER_STAGE_VERTEX,
 	};
 	CGPUShaderLibraryDescriptor ps_desc = {
 		.name = u8"FragmentShaderLibrary",
 		.code = reinterpret_cast<const uint32_t*>(fragShaderCode.data()),
 		.code_size = (uint32_t)fragShaderCode.size(),
-		.stage = CGPU_SHADER_STAGE_FRAG,
+		.stage = CGPU_SHADER_STAGE_FRAGMENT,
 	};
 	CGPUShaderLibraryId vertex_shader = cgpu_create_shader_library(device, &vs_desc);
 	CGPUShaderLibraryId fragment_shader = cgpu_create_shader_library(device, &ps_desc);
 	CGPUShaderEntryDescriptor ppl_shaders[2];
-	ppl_shaders[0].stage = CGPU_SHADER_STAGE_VERT;
+	ppl_shaders[0].stage = CGPU_SHADER_STAGE_VERTEX;
 	ppl_shaders[0].entry = u8"main";
 	ppl_shaders[0].library = vertex_shader;
-	ppl_shaders[1].stage = CGPU_SHADER_STAGE_FRAG;
+	ppl_shaders[1].stage = CGPU_SHADER_STAGE_FRAGMENT;
 	ppl_shaders[1].entry = u8"main";
 	ppl_shaders[1].library = fragment_shader;
 	CGPURootSignatureDescriptor rs_desc = {
@@ -370,7 +370,7 @@ std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGP
 		.shader_count = 2
 	};
 	auto root_sig = cgpu_create_root_signature(device, &rs_desc);
-	ECGPUFormat formats[1] = { format };
+	ECGPUTextureFormat formats[1] = { format };
 	CGPURenderPipelineDescriptor rp_desc = {
 		.root_signature = root_sig,
 		.vertex_shader = &ppl_shaders[0],
@@ -382,7 +382,7 @@ std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGP
 		.render_pass = render_pass,
 		.subpass = subpass,
 		.render_target_count = 1,
-		.prim_topology = CGPU_PRIM_TOPO_TRI_LIST,
+		.prim_topology = CGPU_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 	};
 	auto pipeline = cgpu_create_render_pipeline(device, &rp_desc);
 	cgpu_free_shader_library(vertex_shader);
@@ -507,7 +507,7 @@ int main(int argc, char** argv)
 	gfx_queue = cgpu_get_queue(device, CGPU_QUEUE_TYPE_GRAPHICS, 0);
 
 	CGPUColorAttachment color_attachments = {
-		.format = CGPU_FORMAT_R8G8B8A8_UNORM,
+		.format = CGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM,
 		.load_action = CGPU_LOAD_ACTION_CLEAR,
 		.store_action = CGPU_STORE_ACTION_STORE,
 	};
@@ -575,18 +575,18 @@ int main(int argc, char** argv)
 			CGPUVertexLayout imgui_vertex_layout = {
 				.attribute_count = 3,
 				.attributes = {
-					{ u8"POSITION", 1, CGPU_FORMAT_R32G32_SFLOAT, 0, 0, sizeof(float) * 2, CGPU_INPUT_RATE_VERTEX },
-					{ u8"TEXCOORD", 1, CGPU_FORMAT_R32G32_SFLOAT, 0, sizeof(float) * 2, sizeof(float) * 2, CGPU_INPUT_RATE_VERTEX },
-					{ u8"COLOR", 1, CGPU_FORMAT_R8G8B8A8_UNORM, 0, sizeof(float) * 4, sizeof(uint32_t), CGPU_INPUT_RATE_VERTEX },
+					{ u8"POSITION", 1, CGPU_VERTEX_FORMAT_FLOAT32X2, 0, 0, sizeof(float) * 2, CGPU_VERTEX_INPUT_RATE_VERTEX },
+					{ u8"TEXCOORD", 1, CGPU_VERTEX_FORMAT_FLOAT32X2, 0, sizeof(float) * 2, sizeof(float) * 2, CGPU_VERTEX_INPUT_RATE_VERTEX },
+					{ u8"COLOR", 1, CGPU_VERTEX_FORMAT_UNORM8X4, 0, sizeof(float) * 4, sizeof(uint32_t), CGPU_VERTEX_INPUT_RATE_VERTEX },
 				}
 			};
 			CGPUBlendStateDescriptor imgui_blend_desc = {
-				.src_factors = { CGPU_BLEND_CONST_SRC_ALPHA },
-				.dst_factors = { CGPU_BLEND_CONST_ONE_MINUS_SRC_ALPHA },
-				.src_alpha_factors = { CGPU_BLEND_CONST_SRC_ALPHA },
-				.dst_alpha_factors = { CGPU_BLEND_CONST_ONE_MINUS_SRC_ALPHA },
-				.blend_modes = { CGPU_BLEND_MODE_ADD },
-				.blend_alpha_modes = { CGPU_BLEND_MODE_ADD },
+				.src_factors = { CGPU_BLEND_FACTOR_SRC_ALPHA },
+				.dst_factors = { CGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA },
+				.src_alpha_factors = { CGPU_BLEND_FACTOR_SRC_ALPHA },
+				.dst_alpha_factors = { CGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA },
+				.blend_modes = { CGPU_BLEND_OP_ADD },
+				.blend_alpha_modes = { CGPU_BLEND_OP_ADD },
 				.masks = { CGPU_COLOR_MASK_ALL },
 				.alpha_to_coverage = false,
 				.independent_blend = false,
@@ -610,12 +610,12 @@ int main(int argc, char** argv)
 
 			CGPUVertexLayout vertex_layout = { .attribute_count = 0 };
 			CGPUBlendStateDescriptor blend_desc = {
-				.src_factors = { CGPU_BLEND_CONST_ONE },
-				.dst_factors = { CGPU_BLEND_CONST_ZERO },
-				.src_alpha_factors = { CGPU_BLEND_CONST_ONE },
-				.dst_alpha_factors = { CGPU_BLEND_CONST_ZERO },
-				.blend_modes = { CGPU_BLEND_MODE_ADD },
-				.blend_alpha_modes = { CGPU_BLEND_MODE_ADD },
+				.src_factors = { CGPU_BLEND_FACTOR_ONE },
+				.dst_factors = { CGPU_BLEND_FACTOR_ZERO },
+				.src_alpha_factors = { CGPU_BLEND_FACTOR_ONE },
+				.dst_alpha_factors = { CGPU_BLEND_FACTOR_ZERO },
+				.blend_modes = { CGPU_BLEND_OP_ADD },
+				.blend_alpha_modes = { CGPU_BLEND_OP_ADD },
 				.masks = { CGPU_COLOR_MASK_ALL },
 				.alpha_to_coverage = false,
 				.independent_blend = false,

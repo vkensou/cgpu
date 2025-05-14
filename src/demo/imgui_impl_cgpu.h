@@ -58,7 +58,7 @@ struct ImGui_ImplCGPU_InitInfo
     CGPURootSignatureId                 RootSig;
     CGPURenderPipelineId                Pipeline;
     // Dynamic Rendering (Optional)
-    ECGPUFormat                        ColorAttachmentFormat;  // Required for dynamic rendering
+    ECGPUTextureFormat                        ColorAttachmentFormat;  // Required for dynamic rendering
 
     // Allocation, CGPU
     // const VkAllocationCallbacks*    Allocator;

@@ -183,7 +183,7 @@ ECGPUFenceStatus cgpu_query_fence_status_vulkan(CGPUFenceId fence)
     }
     else
     {
-        status = CGPU_FENCE_STATUS_NOTSUBMITTED;
+        status = CGPU_FENCE_STATUS_NOT_SUBMITTED;
     }
     return status;
 }
@@ -545,7 +545,7 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
             }
             // Update Info
             const uint32_t arrayCount = cgpu_max(1U, pParam->count);
-            const ECGPUResourceType resourceType = (ECGPUResourceType)ResData->type;
+            const ECGPUResourceTypeFlags resourceType = (ECGPUResourceTypeFlags)ResData->type;
             switch (resourceType)
             {
             case CGPU_RESOURCE_TYPE_RW_TEXTURE:
@@ -631,7 +631,7 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
         {
             const CGPUDescriptorData* pParam = datas + i;
             const uint32_t arrayCount = cgpu_max(1U, pParam->count);
-            const ECGPUResourceType resourceType = (ECGPUResourceType)pParam->binding_type;
+            const ECGPUResourceTypeFlags resourceType = (ECGPUResourceTypeFlags)pParam->binding_type;
             switch (resourceType)
             {
             case CGPU_RESOURCE_TYPE_RW_TEXTURE:
@@ -839,7 +839,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
 
             VkVertexInputBindingDescription* current_binding = &input_bindings[attrib->binding];
             current_binding->binding = attrib->binding;
-            if (attrib->rate == CGPU_INPUT_RATE_INSTANCE)
+            if (attrib->rate == CGPU_VERTEX_INPUT_RATE_INSTANCE)
                 current_binding->inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
             else
                 current_binding->inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -849,7 +849,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
             {
                 input_attributes[attr_slot].location = attr_slot;
                 input_attributes[attr_slot].binding = attrib->binding;
-                input_attributes[attr_slot].format = VkUtil_FormatTranslateToVk(attrib->format);
+                input_attributes[attr_slot].format = VkUtil_VertexFormatTranslateToVk(attrib->format);
                 input_attributes[attr_slot].offset = attrib->offset + (j * FormatUtil_BitSizeOfBlock(attrib->format) / 8);
                 ++attr_slot;
             }
@@ -873,14 +873,14 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
     uint32_t stage_count = 0;
     for (uint32_t i = 0; i < 5; ++i)
     {
-        ECGPUShaderStage stage_mask = (ECGPUShaderStage)(1 << i);
+        ECGPUShaderStageFlags stage_mask = (ECGPUShaderStageFlags)(1 << i);
         shaderStages[stage_count].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         shaderStages[stage_count].pNext = NULL;
         shaderStages[stage_count].flags = 0;
         shaderStages[stage_count].pSpecializationInfo = specializationInfo;
         switch (stage_mask)
         {
-            case CGPU_SHADER_STAGE_VERT:
+            case CGPU_SHADER_STAGE_VERTEX:
             {
                 if(desc->vertex_shader)
                 {
@@ -891,7 +891,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
                 }
             }
             break;
-            case CGPU_SHADER_STAGE_TESC:
+            case CGPU_SHADER_STAGE_TESSELLATION_CONTROL:
             {
                 if(desc->tesc_shader)
                 {
@@ -902,7 +902,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
                 }
             }
             break;
-            case CGPU_SHADER_STAGE_TESE:
+            case CGPU_SHADER_STAGE_TESSELLATION_EVALUATION:
             {
                 if(desc->tese_shader)
                 {
@@ -913,7 +913,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
                 }
             }
             break;
-            case CGPU_SHADER_STAGE_GEOM:
+            case CGPU_SHADER_STAGE_GEOMETRY:
             {
                 if(desc->geom_shader)
                 {
@@ -924,7 +924,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
                 }
             }
             break;
-            case CGPU_SHADER_STAGE_FRAG:
+            case CGPU_SHADER_STAGE_FRAGMENT:
             {
                 if(desc->fragment_shader)
                 {
@@ -1390,7 +1390,7 @@ CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struc
     cgpu_assert(VK_NULL_HANDLE != D->pVkDevice);
     uint32_t colorAttachmentCount = 0;
     uint32_t colorResolveAttachmentCount = 0;
-    uint32_t depthAttachmentCount = (desc->depth_stencil.format != CGPU_FORMAT_UNDEFINED) ? 1 : 0;
+    uint32_t depthAttachmentCount = (desc->depth_stencil.format != CGPU_TEXTURE_FORMAT_UNDEFINED) ? 1 : 0;
     VkAttachmentDescription attachments[CGPU_MAX_MRT_COUNT + 1] = { 0 };
     VkAttachmentReference color_attachment_refs[CGPU_MAX_MRT_COUNT] = { 0 };
     VkAttachmentReference color_resolve_attachment_refs[CGPU_MAX_MRT_COUNT] = { 0 };
@@ -1401,7 +1401,7 @@ CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struc
     // Color
     for (uint32_t i = 0; i < CGPU_MAX_MRT_COUNT; i++)
     {
-        if (desc->color_attachments[i].format == CGPU_FORMAT_UNDEFINED)
+        if (desc->color_attachments[i].format == CGPU_TEXTURE_FORMAT_UNDEFINED)
             break;
 
         colorAttachmentCount++;
@@ -1800,17 +1800,17 @@ void cgpu_cmd_resource_barrier_vulkan(CGPUCommandBufferId cmd, const struct CGPU
     }
 }
 
-VkPipelineStageFlagBits VkUtil_ShaderStagesToPipelineStage(ECGPUShaderStage stage)
+VkPipelineStageFlagBits VkUtil_ShaderStagesToPipelineStage(ECGPUShaderStageFlags stage)
 {
     if (stage == CGPU_SHADER_STAGE_ALL_GRAPHICS) return VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
     if (stage == CGPU_SHADER_STAGE_NONE) return VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    if (stage == CGPU_SHADER_STAGE_VERT) return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-    if (stage == CGPU_SHADER_STAGE_TESC) return VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
-    if (stage == CGPU_SHADER_STAGE_TESE) return VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
-    if (stage == CGPU_SHADER_STAGE_GEOM) return VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
-    if (stage == CGPU_SHADER_STAGE_FRAG) return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    if (stage == CGPU_SHADER_STAGE_VERTEX) return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+    if (stage == CGPU_SHADER_STAGE_TESSELLATION_CONTROL) return VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
+    if (stage == CGPU_SHADER_STAGE_TESSELLATION_EVALUATION) return VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
+    if (stage == CGPU_SHADER_STAGE_GEOMETRY) return VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
+    if (stage == CGPU_SHADER_STAGE_FRAGMENT) return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     if (stage == CGPU_SHADER_STAGE_COMPUTE) return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-    if (stage == CGPU_SHADER_STAGE_RAYTRACING) return VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+    if (stage == CGPU_SHADER_STAGE_RAY_TRACING) return VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
     return VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 }
 

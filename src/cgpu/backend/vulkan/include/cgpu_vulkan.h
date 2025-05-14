@@ -425,7 +425,7 @@ typedef struct CGPUCompiledShader_Vulkan {
 typedef struct CGPULinkedShader_Vulkan {
     CGPULinkedShader super;
     VkShaderEXT pVkShaders[CGPU_SHADER_STAGE_COUNT];
-    ECGPUShaderStage pStages[CGPU_SHADER_STAGE_COUNT];
+    ECGPUShaderStageFlags pStages[CGPU_SHADER_STAGE_COUNT];
 } CGPULinkedShader_Vulkan;
 
 typedef union VkDescriptorUpdateData
@@ -470,7 +470,7 @@ static const VkAttachmentLoadOp gVkAttachmentLoadOpTranslator[CGPU_LOAD_ACTION_C
     VK_ATTACHMENT_LOAD_OP_CLEAR,
 };
 
-static const VkCompareOp gVkComparisonFuncTranslator[CGPU_CMP_COUNT] = {
+static const VkCompareOp gVkComparisonFuncTranslator[CGPU_COMPARE_OP_COUNT] = {
     VK_COMPARE_OP_NEVER,
     VK_COMPARE_OP_LESS,
     VK_COMPARE_OP_EQUAL,
@@ -500,7 +500,7 @@ static const VkStencilOp gVkStencilOpTranslator[CGPU_STENCIL_OP_COUNT] = {
 extern "C" {
 #endif
 
-CGPU_FORCEINLINE static VkFormat VkUtil_FormatTranslateToVk(const ECGPUFormat format);
+CGPU_FORCEINLINE static VkFormat VkUtil_FormatTranslateToVk(const ECGPUTextureFormat format);
 
 #include "cgpu_vulkan.inl"
 #ifdef __cplusplus

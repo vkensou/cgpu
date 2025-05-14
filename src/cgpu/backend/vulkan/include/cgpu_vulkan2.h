@@ -19,23 +19,23 @@ CGPU_API void cgpu_close_raster_state_encoder_vulkan(CGPURasterStateEncoderId en
 // dynamic_state
 CGPU_API void cgpu_raster_state_encoder_set_viewport_vulkan(CGPURasterStateEncoderId, float x, float y, float width, float height, float min_depth, float max_depth);
 CGPU_API void cgpu_raster_state_encoder_set_scissor_vulkan(CGPURasterStateEncoderId, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
-CGPU_API void cgpu_raster_state_encoder_set_cull_mode_vulkan(CGPURasterStateEncoderId, ECGPUCullMode cull_mode);
+CGPU_API void cgpu_raster_state_encoder_set_cull_mode_vulkan(CGPURasterStateEncoderId, ECGPUCullModeFlags cull_mode);
 CGPU_API void cgpu_raster_state_encoder_set_front_face_vulkan(CGPURasterStateEncoderId, ECGPUFrontFace front_face);
 CGPU_API void cgpu_raster_state_encoder_set_primitive_topology_vulkan(CGPURasterStateEncoderId, ECGPUPrimitiveTopology topology);
 CGPU_API void cgpu_raster_state_encoder_set_depth_test_enabled_vulkan(CGPURasterStateEncoderId, bool enabled);
 CGPU_API void cgpu_raster_state_encoder_set_depth_write_enabled_vulkan(CGPURasterStateEncoderId, bool enabled);
-CGPU_API void cgpu_raster_state_encoder_set_depth_compare_op_vulkan(CGPURasterStateEncoderId, ECGPUCompareMode compare_op);
+CGPU_API void cgpu_raster_state_encoder_set_depth_compare_op_vulkan(CGPURasterStateEncoderId, ECGPUCompareOp compare_op);
 CGPU_API void cgpu_raster_state_encoder_set_stencil_test_enabled_vulkan(CGPURasterStateEncoderId, bool enabled);
-CGPU_API void cgpu_raster_state_encoder_set_stencil_compare_op_vulkan(CGPURasterStateEncoderId, CGPUStencilFaces faces, ECGPUStencilOp failOp, ECGPUStencilOp passOp, ECGPUStencilOp depthFailOp, ECGPUCompareMode compareOp);
+CGPU_API void cgpu_raster_state_encoder_set_stencil_compare_op_vulkan(CGPURasterStateEncoderId, ECGPUStencilFaceFlags faces, ECGPUStencilOp failOp, ECGPUStencilOp passOp, ECGPUStencilOp depthFailOp, ECGPUCompareOp compareOp);
 // dynamic_state2
 // dynamic_state3
 CGPU_API void cgpu_raster_state_encoder_set_fill_mode_vulkan(CGPURasterStateEncoderId, ECGPUFillMode fill_mode);
-CGPU_API void cgpu_raster_state_encoder_set_sample_count_vulkan(CGPURasterStateEncoderId, ECGPUSampleCount sample_count);
+CGPU_API void cgpu_raster_state_encoder_set_sample_count_vulkan(CGPURasterStateEncoderId, ECGPUSampleCountFlags sample_count);
 
 // shader state encoder APIs
 CGPU_API CGPUShaderStateEncoderId cgpu_open_shader_state_encoder_r_vulkan(CGPUStateBufferId stream, CGPURenderPassEncoderId encoder);
 CGPU_API CGPUShaderStateEncoderId cgpu_open_shader_state_encoder_c_vulkan(CGPUStateBufferId stream, CGPUComputePassEncoderId encoder);
-CGPU_API void cgpu_shader_state_encoder_bind_shaders_vulkan(CGPUShaderStateEncoderId, uint32_t stage_count, const ECGPUShaderStage* stages, const CGPUCompiledShaderId* shaders);
+CGPU_API void cgpu_shader_state_encoder_bind_shaders_vulkan(CGPUShaderStateEncoderId, uint32_t stage_count, const ECGPUShaderStageFlags* stages, const CGPUCompiledShaderId* shaders);
 CGPU_API void cgpu_shader_state_encoder_bind_linked_shader_vulkan(CGPUShaderStateEncoderId, CGPULinkedShaderId linked);
 CGPU_API void cgpu_close_shader_state_encoder_vulkan(CGPUShaderStateEncoderId encoder);
 

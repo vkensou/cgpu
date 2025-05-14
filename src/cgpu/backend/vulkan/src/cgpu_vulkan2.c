@@ -235,7 +235,7 @@ void cgpu_raster_state_encoder_set_scissor_vulkan(CGPURasterStateEncoderId encod
     D->mVkDeviceTable.vkCmdSetScissor(CB->pVkCmdBuf, 0, 1, &scissor);
 }
 
-void cgpu_raster_state_encoder_set_cull_mode_vulkan(CGPURasterStateEncoderId encoder, ECGPUCullMode cull_mode)
+void cgpu_raster_state_encoder_set_cull_mode_vulkan(CGPURasterStateEncoderId encoder, ECGPUCullModeFlags cull_mode)
 {
     CGPUStateBuffer_Vulkan* S = (CGPUStateBuffer_Vulkan*)encoder;
     CGPUCommandBuffer_Vulkan* CB = (CGPUCommandBuffer_Vulkan*)S->pREncoder;
@@ -286,7 +286,7 @@ void cgpu_raster_state_encoder_set_depth_write_enabled_vulkan(CGPURasterStateEnc
     D->mVkDeviceTable.vkCmdSetDepthWriteEnableEXT(CB->pVkCmdBuf, enabled);
 }
 
-void cgpu_raster_state_encoder_set_depth_compare_op_vulkan(CGPURasterStateEncoderId encoder, ECGPUCompareMode compare_op)
+void cgpu_raster_state_encoder_set_depth_compare_op_vulkan(CGPURasterStateEncoderId encoder, ECGPUCompareOp compare_op)
 {
     CGPUStateBuffer_Vulkan* S = (CGPUStateBuffer_Vulkan*)encoder;
     CGPUCommandBuffer_Vulkan* CB = (CGPUCommandBuffer_Vulkan*)S->pREncoder;
@@ -304,7 +304,7 @@ void cgpu_raster_state_encoder_set_stencil_test_enabled_vulkan(CGPURasterStateEn
     D->mVkDeviceTable.vkCmdSetStencilTestEnableEXT(CB->pVkCmdBuf, enabled);
 }
 
-void cgpu_raster_state_encoder_set_stencil_compare_op_vulkan(CGPURasterStateEncoderId encoder, CGPUStencilFaces faces, ECGPUStencilOp failOp, ECGPUStencilOp passOp, ECGPUStencilOp depthFailOp, ECGPUCompareMode compareOp)
+void cgpu_raster_state_encoder_set_stencil_compare_op_vulkan(CGPURasterStateEncoderId encoder, ECGPUStencilFaceFlags faces, ECGPUStencilOp failOp, ECGPUStencilOp passOp, ECGPUStencilOp depthFailOp, ECGPUCompareOp compareOp)
 {
     CGPUStateBuffer_Vulkan* S = (CGPUStateBuffer_Vulkan*)encoder;
     CGPUCommandBuffer_Vulkan* CB = (CGPUCommandBuffer_Vulkan*)S->pREncoder;
@@ -332,7 +332,7 @@ void cgpu_raster_state_encoder_set_fill_mode_vulkan(CGPURasterStateEncoderId enc
     D->mVkDeviceTable.vkCmdSetPolygonModeEXT(CB->pVkCmdBuf, gVkFillModeTranslator[fill_mode]);
 }
 
-void cgpu_raster_state_encoder_set_sample_count_vulkan(CGPURasterStateEncoderId encoder, ECGPUSampleCount sample_count)
+void cgpu_raster_state_encoder_set_sample_count_vulkan(CGPURasterStateEncoderId encoder, ECGPUSampleCountFlags sample_count)
 {
     CGPUStateBuffer_Vulkan* S = (CGPUStateBuffer_Vulkan*)encoder;
     CGPUCommandBuffer_Vulkan* CB = (CGPUCommandBuffer_Vulkan*)S->pREncoder;
@@ -357,7 +357,7 @@ CGPUShaderStateEncoderId cgpu_open_shader_state_encoder_c_vulkan(CGPUStateBuffer
     return (CGPUShaderStateEncoderId)sb;
 }
 
-void cgpu_shader_state_encoder_bind_shaders_vulkan(CGPUShaderStateEncoderId encoder, uint32_t stage_count, const ECGPUShaderStage* stages, const CGPUCompiledShaderId* shaders)
+void cgpu_shader_state_encoder_bind_shaders_vulkan(CGPUShaderStateEncoderId encoder, uint32_t stage_count, const ECGPUShaderStageFlags* stages, const CGPUCompiledShaderId* shaders)
 {
     CGPUStateBuffer_Vulkan* S = (CGPUStateBuffer_Vulkan*)encoder;
     CGPUCommandBuffer_Vulkan* CB = S->pCEncoder ? (CGPUCommandBuffer_Vulkan*)S->pCEncoder : (CGPUCommandBuffer_Vulkan*)S->pREncoder;
@@ -457,7 +457,7 @@ void cgpu_binder_bind_vertex_layout_vulkan(CGPUBinderId binder, const struct CGP
 
             VkVertexInputBindingDescription2EXT* current_binding = &input_bindings[attrib->binding];
             current_binding->binding = attrib->binding;
-            if (attrib->rate == CGPU_INPUT_RATE_INSTANCE)
+            if (attrib->rate == CGPU_VERTEX_INPUT_RATE_INSTANCE)
                 current_binding->inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
             else
                 current_binding->inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -467,7 +467,7 @@ void cgpu_binder_bind_vertex_layout_vulkan(CGPUBinderId binder, const struct CGP
             {
                 input_attributes[attr_slot].location = attr_slot;
                 input_attributes[attr_slot].binding = attrib->binding;
-                input_attributes[attr_slot].format = VkUtil_FormatTranslateToVk(attrib->format);
+                input_attributes[attr_slot].format = VkUtil_VertexFormatTranslateToVk(attrib->format);
                 input_attributes[attr_slot].offset = attrib->offset + (j * FormatUtil_BitSizeOfBlock(attrib->format) / 8);
                 ++attr_slot;
             }

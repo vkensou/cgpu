@@ -21,7 +21,7 @@
 #include "vulkan/vulkan_macos.h"
 #endif
 
-#define CGPU_INNER_TCF_IMPORT_SHARED_HANDLE (CGPU_TCF_USABLE_MAX << 1)
+#define CGPU_INNER_TCF_IMPORT_SHARED_HANDLE (0x40000 << 1)
 #define USE_EXTERNAL_MEMORY_EXTENSIONS
 #define VK_SPARSE_PAGE_STANDARD_SIZE ( 65536 )
 
@@ -146,15 +146,15 @@ typedef struct VkUtil_DescriptorPool {
 } VkUtil_DescriptorPool;
 
 typedef struct VkUtil_RenderPassDesc {
-    ECGPUFormat pColorFormats[CGPU_MAX_MRT_COUNT];
+    ECGPUTextureFormat pColorFormats[CGPU_MAX_MRT_COUNT];
     ECGPULoadAction pLoadActionsColor[CGPU_MAX_MRT_COUNT];
     ECGPUStoreAction pStoreActionsColor[CGPU_MAX_MRT_COUNT];
     ECGPULoadAction pLoadActionsColorResolve[CGPU_MAX_MRT_COUNT];
     ECGPUStoreAction pStoreActionsColorResolve[CGPU_MAX_MRT_COUNT];
     bool pResolveMasks[CGPU_MAX_MRT_COUNT];
     uint32_t mColorAttachmentCount;
-    ECGPUSampleCount mSampleCount;
-    ECGPUFormat mDepthStencilFormat;
+    ECGPUSampleCountFlags mSampleCount;
+    ECGPUTextureFormat mDepthStencilFormat;
     ECGPULoadAction mLoadActionDepth;
     ECGPUStoreAction mStoreActionDepth;
     ECGPULoadAction mLoadActionStencil;

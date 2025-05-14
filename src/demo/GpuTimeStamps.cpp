@@ -15,8 +15,8 @@ GpuTimeStamps::GpuTimeStamps(CGPUDeviceId device, uint32_t frame_count)
 		   .size = sizeof(uint64_t) * MaxValuesPerFrame,
 		   .name = u8"QueryBuffer",
 		   .descriptors = CGPU_RESOURCE_TYPE_NONE,
-		   .memory_usage = CGPU_MEM_USAGE_GPU_TO_CPU,
-		   .flags = CGPU_BCF_PERSISTENT_MAP_BIT,
+		   .memory_usage = CGPU_MEMORY_USAGE_GPU_TO_CPU,
+		   .flags = CGPU_BUFFER_CREATION_USAGE_PERSISTENT_MAP,
 		   .start_state = CGPU_RESOURCE_STATE_UNDEFINED,
 		};
 		auto query_buffer = cgpu_create_buffer(device, &query_buffer_desc);

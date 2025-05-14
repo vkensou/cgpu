@@ -19,7 +19,7 @@ struct ImGui_ImplCGPU_Window
     CGPUSurfaceId       Surface;
     CGPUCommandPoolId   CommandPool;
     CGPUCommandBufferId Command;
-    ECGPUFormat         SurfaceFormat;
+    ECGPUTextureFormat         SurfaceFormat;
     CGPURenderPipelineId          Pipeline;               // The window pipeline may uses a different VkRenderPass than the one passed in ImGui_ImplCGPU_InitInfo
     bool                UseDynamicRendering;
     bool                ClearEnable;
@@ -88,7 +88,7 @@ static ImGui_ImplCGPU_Data* ImGui_ImplCGPU_GetBackendData()
     return ImGui::GetCurrentContext() ? (ImGui_ImplCGPU_Data*)ImGui::GetIO().BackendRendererUserData : nullptr;
 }
 
-static void CreateOrResizeBuffer(CGPUBufferId& buffer, size_t& p_buffer_size, size_t new_size, CGPUResourceTypes resourceType, ECGPUResourceState state)
+static void CreateOrResizeBuffer(CGPUBufferId& buffer, size_t& p_buffer_size, size_t new_size, ECGPUResourceTypeFlags resourceType, ECGPUResourceStateFlags state)
 {
     ImGui_ImplCGPU_Data* bd = ImGui_ImplCGPU_GetBackendData();
     ImGui_ImplCGPU_InitInfo* v = &bd->CGPUInitInfo;
@@ -99,8 +99,8 @@ static void CreateOrResizeBuffer(CGPUBufferId& buffer, size_t& p_buffer_size, si
         .size = new_size,
         .name = u8"DataBuffer",
         .descriptors = resourceType,
-        .memory_usage = CGPU_MEM_USAGE_GPU_ONLY,
-        .flags = CGPU_BCF_HOST_VISIBLE,
+        .memory_usage = CGPU_MEMORY_USAGE_GPU_ONLY,
+        .flags = CGPU_BUFFER_CREATION_USAGE_HOST_VISIBLE,
         .start_state = state,
     };
     buffer = cgpu_create_buffer(v->Device, &buffer_desc);
@@ -310,7 +310,7 @@ bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId ro
         .height = (uint64_t)height,
         .depth = 1,
         .array_size = 1,
-        .format = CGPU_FORMAT_R8G8B8A8_UNORM,
+        .format = CGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM,
         .mip_levels = 1,
         .owner_queue = queue,
         .start_state = CGPU_RESOURCE_STATE_COPY_DEST,
@@ -323,9 +323,9 @@ bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId ro
     CGPUCommandBufferDescriptor cmd_desc = {};
     CGPUBufferDescriptor upload_buffer_desc = {};
     upload_buffer_desc.name = u8"IMGUI_FontUploadBuffer";
-    upload_buffer_desc.flags = CGPU_BCF_PERSISTENT_MAP_BIT;
+    upload_buffer_desc.flags = CGPU_BUFFER_CREATION_USAGE_PERSISTENT_MAP;
     upload_buffer_desc.descriptors = CGPU_RESOURCE_TYPE_NONE;
-    upload_buffer_desc.memory_usage = CGPU_MEM_USAGE_CPU_ONLY;
+    upload_buffer_desc.memory_usage = CGPU_MEMORY_USAGE_CPU_ONLY;
     upload_buffer_desc.size = upload_size;
     CGPUBufferId tex_upload_buffer = cgpu_create_buffer(queue->device, &upload_buffer_desc);
     {
@@ -363,16 +363,16 @@ bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId ro
 
     CGPUTextureViewDescriptor view_desc = {
         .texture = bd->FontImage,
-        .format = CGPU_FORMAT_R8G8B8A8_UNORM,
-        .usages = CGPU_TVU_SRV,
-        .aspects = CGPU_TVA_COLOR,
+        .format = CGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM,
+        .usages = CGPU_TEXTURE_VIEW_USAGE_SRV,
+        .aspects = CGPU_TEXTURE_VIEW_ASPECT_COLOR,
     };
     bd->FontView = cgpu_create_texture_view(v->Device, &view_desc);
 
     CGPUSamplerDescriptor sampler_desc = {
         .min_filter = CGPU_FILTER_TYPE_LINEAR,
         .mag_filter = CGPU_FILTER_TYPE_LINEAR,
-        .mipmap_mode = CGPU_MIPMAP_MODE_LINEAR,
+        .mipmap_mode = CGPU_MIP_MAP_MODE_LINEAR,
         .address_u = CGPU_ADDRESS_MODE_REPEAT,
         .address_v = CGPU_ADDRESS_MODE_REPEAT,
         .address_w = CGPU_ADDRESS_MODE_REPEAT,
@@ -530,7 +530,7 @@ static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQue
         .width = width,
         .height = height,
         .enable_vsync = true,
-        .format = CGPU_FORMAT_R8G8B8A8_UNORM,
+        .format = CGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM,
     };
     wd->Swapchain = cgpu_create_swapchain(device, &descriptor);
     wd->Width = width;
@@ -544,9 +544,9 @@ static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQue
         CGPUTextureViewDescriptor view_desc = {
             .texture = wd->Swapchain->back_buffers[i],
             .format = wd->Swapchain->back_buffers[i]->info->format,
-            .usages = CGPU_TVU_RTV_DSV,
-            .aspects = CGPU_TVA_COLOR,
-            .dims = CGPU_TEX_DIMENSION_2D,
+            .usages = CGPU_TEXTURE_VIEW_USAGE_RTV_DSV,
+            .aspects = CGPU_TEXTURE_VIEW_ASPECT_COLOR,
+            .dims = CGPU_TEXTURE_DIMENSION_2D,
             .array_layer_count = 1,
         };
         wd->Backbuffers[i] = cgpu_create_texture_view(device, &view_desc);

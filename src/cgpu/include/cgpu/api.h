@@ -12,6 +12,9 @@
 #define CGPU_COLOR_MASK_ALPHA 0x8
 #define CGPU_COLOR_MASK_ALL CGPU_COLOR_MASK_RED | CGPU_COLOR_MASK_GREEN | CGPU_COLOR_MASK_BLUE | CGPU_COLOR_MASK_ALPHA
 #define CGPU_COLOR_MASK_NONE 0
+#define CGPU_SHADER_STAGE_COUNT 6
+#define CGPU_CULL_MODE_COUNT 3
+#define CGPU_COMPARE_OP_COUNT 8
 
 #if defined(CGPU_PLATFORM_WA32)
 #define DEFINE_CGPU_OBJECT(name) struct name##Descriptor; typedef const host_ptr_t name##Id;
@@ -92,34 +95,11 @@ CGPU_EXTERN_C_BEGIN
 CGPU_UNUSED static const CGPUBufferId CGPU_BUFFER_OUT_OF_HOST_MEMORY = (CGPUBufferId)1;
 CGPU_UNUSED static const CGPUBufferId CGPU_BUFFER_OUT_OF_DEVICE_MEMORY = (CGPUBufferId)3;
 
-typedef enum ECGPUBackend
-{
-    CGPU_BACKEND_VULKAN = 0,
-    CGPU_BACKEND_D3D12 = 1,
-    CGPU_BACKEND_XBOX_D3D12 = 2,
-    CGPU_BACKEND_AGC = 3,
-    CGPU_BACKEND_METAL = 4,
-    CGPU_BACKEND_COUNT,
-    CGPU_BACKEND_MAX_ENUM_BIT = 0x7FFFFFFF
-} ECGPUBackend;
-
 static const char* gCGPUBackendNames[CGPU_BACKEND_COUNT] = {
     "vulkan",
     "d3d12",
-    "d3d12(xbox)",
-    "agc",
     "metal",
 };
-
-typedef enum ECGPUQueueType
-{
-    CGPU_QUEUE_TYPE_GRAPHICS = 0,
-    CGPU_QUEUE_TYPE_COMPUTE = 1,
-    CGPU_QUEUE_TYPE_TRANSFER = 2,
-    CGPU_QUEUE_TYPE_TILE_MAPPING = 3,
-    CGPU_QUEUE_TYPE_COUNT,
-    CGPU_QUEUE_TYPE_MAX_ENUM_BIT = 0x7FFFFFFF
-} ECGPUQueueType;
 
 typedef struct CGPUFormatSupport {
     uint8_t shader_read : 1;
@@ -435,8 +415,8 @@ CGPU_API void cgpu_raster_state_encoder_set_viewport(CGPURasterStateEncoderId, f
 typedef void (*CGPUProcRasterStateEncoderSetViewport)(CGPURasterStateEncoderId, float x, float y, float width, float height, float min_depth, float max_depth);
 CGPU_API void cgpu_raster_state_encoder_set_scissor(CGPURasterStateEncoderId, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 typedef void (*CGPUProcRasterStateEncoderSetScissor)(CGPURasterStateEncoderId, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
-CGPU_API void cgpu_raster_state_encoder_set_cull_mode(CGPURasterStateEncoderId, ECGPUCullMode cull_mode);
-typedef void (*CGPUProcRasterStateEncoderSetCullMode)(CGPURasterStateEncoderId, ECGPUCullMode cull_mode);
+CGPU_API void cgpu_raster_state_encoder_set_cull_mode(CGPURasterStateEncoderId, ECGPUCullModeFlags cull_mode);
+typedef void (*CGPUProcRasterStateEncoderSetCullMode)(CGPURasterStateEncoderId, ECGPUCullModeFlags cull_mode);
 CGPU_API void cgpu_raster_state_encoder_set_front_face(CGPURasterStateEncoderId, ECGPUFrontFace front_face);
 typedef void (*CGPUProcRasterStateEncoderSetFrontFace)(CGPURasterStateEncoderId, ECGPUFrontFace front_face);
 CGPU_API void cgpu_raster_state_encoder_set_primitive_topology(CGPURasterStateEncoderId, ECGPUPrimitiveTopology topology);
@@ -445,16 +425,16 @@ CGPU_API void cgpu_raster_state_encoder_set_depth_test_enabled(CGPURasterStateEn
 typedef void (*CGPUProcRasterStateEncoderSetDepthTestEnabled)(CGPURasterStateEncoderId, bool enabled);
 CGPU_API void cgpu_raster_state_encoder_set_depth_write_enabled(CGPURasterStateEncoderId, bool enabled);
 typedef void (*CGPUProcRasterStateEncoderSetDepthWriteEnabled)(CGPURasterStateEncoderId, bool enabled);
-CGPU_API void cgpu_raster_state_encoder_set_depth_compare_op(CGPURasterStateEncoderId, ECGPUCompareMode compare_op);
-typedef void (*CGPUProcRasterStateEncoderSetDepthCompareOp)(CGPURasterStateEncoderId, ECGPUCompareMode compare_op);
+CGPU_API void cgpu_raster_state_encoder_set_depth_compare_op(CGPURasterStateEncoderId, ECGPUCompareOp compare_op);
+typedef void (*CGPUProcRasterStateEncoderSetDepthCompareOp)(CGPURasterStateEncoderId, ECGPUCompareOp compare_op);
 CGPU_API void cgpu_raster_state_encoder_set_stencil_test_enabled(CGPURasterStateEncoderId, bool enabled);
 typedef void (*CGPUProcRasterStateEncoderSetStencilTestEnabled)(CGPURasterStateEncoderId, bool enabled);
-CGPU_API void cgpu_raster_state_encoder_set_stencil_compare_op(CGPURasterStateEncoderId, CGPUStencilFaces faces, ECGPUStencilOp failOp, ECGPUStencilOp passOp, ECGPUStencilOp depthFailOp, ECGPUCompareMode compareOp);
-typedef void (*CGPUProcRasterStateEncoderSetStencilCompareOp)(CGPURasterStateEncoderId, CGPUStencilFaces faces, ECGPUStencilOp failOp, ECGPUStencilOp passOp, ECGPUStencilOp depthFailOp, ECGPUCompareMode compareOp);
+CGPU_API void cgpu_raster_state_encoder_set_stencil_compare_op(CGPURasterStateEncoderId, ECGPUStencilFaceFlags faces, ECGPUStencilOp failOp, ECGPUStencilOp passOp, ECGPUStencilOp depthFailOp, ECGPUCompareOp compareOp);
+typedef void (*CGPUProcRasterStateEncoderSetStencilCompareOp)(CGPURasterStateEncoderId, ECGPUStencilFaceFlags faces, ECGPUStencilOp failOp, ECGPUStencilOp passOp, ECGPUStencilOp depthFailOp, ECGPUCompareOp compareOp);
 CGPU_API void cgpu_raster_state_encoder_set_fill_mode(CGPURasterStateEncoderId, ECGPUFillMode fill_mode);
 typedef void (*CGPUProcRasterStateEncoderSetFillMode)(CGPURasterStateEncoderId, ECGPUFillMode fill_mode);
-CGPU_API void cgpu_raster_state_encoder_set_sample_count(CGPURasterStateEncoderId, ECGPUSampleCount sample_count);
-typedef void (*CGPUProcRasterStateEncoderSetSampleCount)(CGPURasterStateEncoderId, ECGPUSampleCount sample_count);
+CGPU_API void cgpu_raster_state_encoder_set_sample_count(CGPURasterStateEncoderId, ECGPUSampleCountFlags sample_count);
+typedef void (*CGPUProcRasterStateEncoderSetSampleCount)(CGPURasterStateEncoderId, ECGPUSampleCountFlags sample_count);
 CGPU_API void cgpu_close_raster_state_encoder(CGPURasterStateEncoderId encoder);
 typedef void (*CGPUProcCloseRasterStateEncoder)(CGPURasterStateEncoderId encoder);
 
@@ -463,8 +443,8 @@ CGPU_API CGPUShaderStateEncoderId cgpu_open_shader_state_encoder_r(CGPUStateBuff
 typedef CGPUShaderStateEncoderId (*CGPUProcOpenShaderStateEncoderR)(CGPUStateBufferId stream, CGPURenderPassEncoderId encoder);
 CGPU_API CGPUShaderStateEncoderId cgpu_open_shader_state_encoder_c(CGPUStateBufferId stream, CGPUComputePassEncoderId encoder);
 typedef CGPUShaderStateEncoderId (*CGPUProcOpenShaderStateEncoderC)(CGPUStateBufferId stream, CGPUComputePassEncoderId encoder);
-CGPU_API void cgpu_shader_state_encoder_bind_shaders(CGPUShaderStateEncoderId, uint32_t stage_count, const ECGPUShaderStage* stages, const CGPUCompiledShaderId* shaders);
-typedef void (*CGPUProcShaderStateEncoderBindShaders)(CGPUShaderStateEncoderId, uint32_t stage_count, const ECGPUShaderStage* stages, const CGPUCompiledShaderId* shaders);
+CGPU_API void cgpu_shader_state_encoder_bind_shaders(CGPUShaderStateEncoderId, uint32_t stage_count, const ECGPUShaderStageFlags* stages, const CGPUCompiledShaderId* shaders);
+typedef void (*CGPUProcShaderStateEncoderBindShaders)(CGPUShaderStateEncoderId, uint32_t stage_count, const ECGPUShaderStageFlags* stages, const CGPUCompiledShaderId* shaders);
 CGPU_API void cgpu_shader_state_encoder_bind_linked_shader(CGPUShaderStateEncoderId, CGPULinkedShaderId linked);
 typedef void (*CGPUProcShaderStateEncoderBindLinkedShader)(CGPUShaderStateEncoderId, CGPULinkedShaderId linked);
 CGPU_API void cgpu_close_shader_state_encoder(CGPUShaderStateEncoderId encoder);
@@ -796,7 +776,7 @@ typedef struct CGPUAdapterDetail {
     bool support_shading_rate : 1;
     bool support_shading_rate_mask : 1;
     bool support_shading_rate_sv : 1;
-    CGPUFormatSupport format_supports[CGPU_FORMAT_COUNT];
+    CGPUFormatSupport format_supports[CGPU_TEXTURE_FORMAT_COUNT];
     CGPUVendorPreset vendor_preset;
 } CGPUAdapterDetail;
 
@@ -838,8 +818,6 @@ typedef struct CGPUInstance {
     // Some Cached Data
     struct CGPURuntimeTable* runtime_table;
     ECGPUBackend backend;
-    ECGPUNvAPI_Status nvapi_status;
-    ECGPUAGSReturnCode ags_status;
     bool enable_set_name;
     CGPULogger logger;
     CGPUAllocator allocator;
@@ -910,24 +888,24 @@ typedef struct CGPURenderPassEncoder {
 typedef struct CGPUShaderResource {
     const char8_t* name;
     uint64_t name_hash;
-    ECGPUResourceType type;
+    ECGPUResourceTypeFlags type;
     ECGPUTextureDimension dim;
     uint32_t set;
     uint32_t binding;
     uint32_t size;
     uint32_t offset;
-    CGPUShaderStages stages;
+    ECGPUShaderStageFlags stages;
 } CGPUShaderResource;
 
 typedef struct CGPUVertexInput {
     const char8_t* name;
     const char8_t* semantics;
-    ECGPUFormat format;
+    ECGPUVertexFormat format;
 } CGPUVertexInput;
 
 typedef struct CGPUShaderReflection {
     const char8_t* entry_name;
-    ECGPUShaderStage stage;
+    ECGPUShaderStageFlags stage;
     CGPUVertexInput* vertex_inputs;
     CGPUShaderResource* shader_resources;
     uint32_t vertex_inputs_count;
@@ -954,7 +932,7 @@ typedef struct CGPUDescriptorData {
     const char8_t* name;
     // Update Via Binding Slot.
     uint32_t binding;
-    ECGPUResourceType binding_type;
+    ECGPUResourceTypeFlags binding_type;
     union
     {
         struct
@@ -969,7 +947,7 @@ typedef struct CGPUDescriptorData {
         //{
         //    struct CGPUShaderEntryDescriptor* shader;
         //    uint32_t buffer_index;
-        //    ECGPUShaderStage shader_stage;
+        //    ECGPUShaderStageFlags shader_stage;
         //} extraction_params;
         struct
         {
@@ -1065,7 +1043,7 @@ typedef struct CGPUQueryPoolDescriptor {
 
 typedef struct CGPUQueryDescriptor {
     uint32_t index;
-    ECGPUShaderStage stage;
+    ECGPUShaderStageFlags stage;
 } CGPUQueryDescriptor;
 
 typedef struct CGPUAcquireNextDescriptor {
@@ -1074,7 +1052,7 @@ typedef struct CGPUAcquireNextDescriptor {
 } CGPUAcquireNextDescriptor;
 
 typedef struct CGPUTextureSubresource {
-    CGPUTextureViewAspects aspects;
+    ECGPUTextureViewAspectFlags aspects;
     uint32_t mip_level;
     uint32_t base_array_layer;
     uint32_t layer_count;
@@ -1145,8 +1123,8 @@ typedef struct CGPUBufferToTextureTransfer {
 
 typedef struct CGPUBufferBarrier {
     CGPUBufferId buffer;
-    ECGPUResourceState src_state;
-    ECGPUResourceState dst_state;
+    ECGPUResourceStateFlags src_state;
+    ECGPUResourceStateFlags dst_state;
     uint8_t queue_acquire;
     uint8_t queue_release;
     ECGPUQueueType queue_type;
@@ -1156,8 +1134,8 @@ typedef struct CGPUBufferBarrier {
 
 typedef struct CGPUTextureBarrier {
     CGPUTextureId texture;
-    ECGPUResourceState src_state;
-    ECGPUResourceState dst_state;
+    ECGPUResourceStateFlags src_state;
+    ECGPUResourceStateFlags dst_state;
     uint8_t queue_acquire;
     uint8_t queue_release;
     ECGPUQueueType queue_type;
@@ -1197,7 +1175,7 @@ typedef struct CGPUCommandBufferDescriptor {
 typedef struct CGPUShaderEntryDescriptor {
     CGPUShaderLibraryId library;
     const char8_t* entry;
-    ECGPUShaderStage stage;
+    ECGPUShaderStageFlags stage;
     // ++ constant_specialization
     const CGPUConstantSpecialization* constants;
     uint32_t num_constants;
@@ -1222,7 +1200,7 @@ typedef struct CGPUSwapChainDescriptor {
     /// We can toggle to using FLIP model if app desires
     bool use_flip_swap_effect;
     /// format
-    ECGPUFormat format;
+    ECGPUTextureFormat format;
 } CGPUSwapChainDescriptor;
 
 typedef struct CGPUComputePassDescriptor {
@@ -1231,14 +1209,14 @@ typedef struct CGPUComputePassDescriptor {
 
 // caution: this must be a restrict flatten-POD struct (no array pointer, no c-str, ...) cause we directly hash it in cgpux.hpp
 typedef struct CGPUColorAttachment {
-    ECGPUFormat format;
+    ECGPUTextureFormat format;
     ECGPULoadAction load_action;
     ECGPUStoreAction store_action;
 } CGPUColorAttachment;
 
 // caution: this must be a restrict flatten-POD struct (no array pointer, no c-str, ...) cause we directly hash it in cgpux.hpp
 typedef struct CGPUDepthStencilAttachment {
-    ECGPUFormat format;
+    ECGPUTextureFormat format;
     ECGPULoadAction depth_load_action;
     ECGPUStoreAction depth_store_action;
     ECGPULoadAction stencil_load_action;
@@ -1247,7 +1225,7 @@ typedef struct CGPUDepthStencilAttachment {
 
 typedef struct CGPURenderPassDescriptor {
     // TODO: support multi-target & remove this
-    ECGPUSampleCount sample_count;
+    ECGPUSampleCountFlags sample_count;
     CGPUColorAttachment color_attachments[CGPU_MAX_MRT_COUNT];
     CGPUDepthStencilAttachment depth_stencil;
 } CGPURenderPassDescriptor;
@@ -1312,17 +1290,17 @@ typedef struct CGPUComputePipelineDescriptor {
 // caution: this must be a restrict flatten-POD struct (no array pointer, no c-str, ...) cause we directly hash it in cgpux.hpp
 typedef struct CGPUBlendStateDescriptor {
     /// Source blend factor per render target.
-    ECGPUBlendConstant src_factors[CGPU_MAX_MRT_COUNT];
+    ECGPUBlendFactor src_factors[CGPU_MAX_MRT_COUNT];
     /// Destination blend factor per render target.
-    ECGPUBlendConstant dst_factors[CGPU_MAX_MRT_COUNT];
+    ECGPUBlendFactor dst_factors[CGPU_MAX_MRT_COUNT];
     /// Source alpha blend factor per render target.
-    ECGPUBlendConstant src_alpha_factors[CGPU_MAX_MRT_COUNT];
+    ECGPUBlendFactor src_alpha_factors[CGPU_MAX_MRT_COUNT];
     /// Destination alpha blend factor per render target.
-    ECGPUBlendConstant dst_alpha_factors[CGPU_MAX_MRT_COUNT];
+    ECGPUBlendFactor dst_alpha_factors[CGPU_MAX_MRT_COUNT];
     /// Blend mode per render target.
-    ECGPUBlendMode blend_modes[CGPU_MAX_MRT_COUNT];
+    ECGPUBlendOp blend_modes[CGPU_MAX_MRT_COUNT];
     /// Alpha blend mode per render target.
-    ECGPUBlendMode blend_alpha_modes[CGPU_MAX_MRT_COUNT];
+    ECGPUBlendOp blend_alpha_modes[CGPU_MAX_MRT_COUNT];
     /// Write mask per render target.
     int32_t masks[CGPU_MAX_MRT_COUNT];
     /// Set whether alpha to coverage should be enabled.
@@ -1335,15 +1313,15 @@ typedef struct CGPUBlendStateDescriptor {
 typedef struct CGPUDepthStateDesc {
     bool depth_test;
     bool depth_write;
-    ECGPUCompareMode depth_func;
+    ECGPUCompareOp depth_func;
     bool stencil_test;
     uint8_t stencil_read_mask;
     uint8_t stencil_write_mask;
-    ECGPUCompareMode stencil_front_func;
+    ECGPUCompareOp stencil_front_func;
     ECGPUStencilOp stencil_front_fail;
     ECGPUStencilOp depth_front_fail;
     ECGPUStencilOp stencil_front_pass;
-    ECGPUCompareMode stencil_back_func;
+    ECGPUCompareOp stencil_back_func;
     ECGPUStencilOp stencil_back_fail;
     ECGPUStencilOp depth_back_fail;
     ECGPUStencilOp stencil_back_pass;
@@ -1351,7 +1329,7 @@ typedef struct CGPUDepthStateDesc {
 
 // caution: this must be a restrict flatten-POD struct (no array pointer, no c-str, ...) cause we directly hash it in cgpux.hpp
 typedef struct CGPURasterizerStateDescriptor {
-    ECGPUCullMode cull_mode;
+    ECGPUCullModeFlags cull_mode;
     int32_t depth_bias;
     float slope_scaled_depth_bias;
     ECGPUFillMode fill_mode;
@@ -1366,7 +1344,7 @@ typedef struct CGPUVertexAttribute {
     // TODO: handle this in a better way
     char8_t semantic_name[64];
     uint32_t array_size;
-    ECGPUFormat format;
+    ECGPUVertexFormat format;
     uint32_t binding;
     uint32_t offset;
     uint32_t elem_stride;
@@ -1396,7 +1374,7 @@ typedef struct CGPURenderPipelineDescriptor {
     CGPURenderPassId render_pass;
     uint32_t subpass;
     uint32_t render_target_count;
-    ECGPUSampleCount sample_count;
+    ECGPUSampleCountFlags sample_count;
     ECGPUPrimitiveTopology prim_topology;
 } CGPURenderPipelineDescriptor;
 
@@ -1491,7 +1469,7 @@ typedef struct CGPUShaderLibraryDescriptor {
     const char8_t* name;
     const uint32_t* code;
     uint32_t code_size;
-    ECGPUShaderStage stage;
+    ECGPUShaderStageFlags stage;
     bool reflection_only;
 } CGPUShaderLibraryDescriptor;
 
@@ -1503,14 +1481,14 @@ typedef struct CGPUBufferDescriptor {
     /// Debug name used in gpu profile
     const char8_t* name;
     /// Flags specifying the suitable usage of this buffer (Uniform buffer, Vertex Buffer, Index Buffer,...)
-    CGPUResourceTypes descriptors;
+    ECGPUResourceTypeFlags descriptors;
     /// Memory usage
     /// Decides which memory heap buffer will use (default, upload, readback)
     ECGPUMemoryUsage memory_usage;
     /// Image format
-    ECGPUFormat format;
+    ECGPUTextureFormat format;
     /// Creation flags
-    CGPUBufferCreationFlags flags;
+    ECGPUBufferCreationUsageFlags flags;
     /// Index of the first element accessible by the SRV/UAV (applicable to BUFFER_USAGE_STORAGE_SRV, BUFFER_USAGE_STORAGE_UAV)
     uint64_t first_element;
     /// Number of elements in the buffer (applicable to BUFFER_USAGE_STORAGE_SRV, BUFFER_USAGE_STORAGE_UAV)
@@ -1520,7 +1498,7 @@ typedef struct CGPUBufferDescriptor {
     /// Owner queue of the resource at creation
     CGPUQueueId owner_queue;
     /// What state will the buffer get created in
-    ECGPUResourceState start_state;
+    ECGPUResourceStateFlags start_state;
     /// Preferred actual location
     /// Only available when memory_usage is CPU_TO_GPU or GPU_TO_CPU
     bool prefer_on_device;
@@ -1546,7 +1524,7 @@ typedef struct CGPUTextureDescriptor {
     const char8_t* name;
     const void* native_handle;
     /// Texture creation flags (decides memory allocation strategy, sharing access,...)
-    CGPUTextureCreationFlags flags;
+    ECGPUTextureCreationUsageFlags flags;
     /// Width
     uint64_t width;
     /// Height
@@ -1556,19 +1534,19 @@ typedef struct CGPUTextureDescriptor {
     /// Texture array size (Should be 1 if texture is not a texture array or cubemap)
     uint32_t array_size;
     ///  image format
-    ECGPUFormat format;
+    ECGPUTextureFormat format;
     /// Number of mip levels
     uint32_t mip_levels;
     /// Number of multisamples per pixel (currently Textures created with mUsage TEXTURE_USAGE_SAMPLED_IMAGE only support CGPU_SAMPLE_COUNT_1)
-    ECGPUSampleCount sample_count;
+    ECGPUSampleCountFlags sample_count;
     /// The image quality level. The higher the quality, the lower the performance. The valid range is between zero and the value appropriate for mSampleCount
     uint32_t sample_quality;
     /// Owner queue of the resource at creation
     CGPUQueueId owner_queue;
     /// What state will the texture get created in
-    ECGPUResourceState start_state;
+    ECGPUResourceStateFlags start_state;
     /// Descriptor creation
-    CGPUResourceTypes descriptors;
+    ECGPUResourceTypeFlags descriptors;
     /// Memory Aliasing
     uint32_t is_restrict_dedicated;
 } CGPUTextureDescriptor;
@@ -1584,7 +1562,7 @@ typedef struct CGPUImportTextureDescriptor {
     uint64_t height;
     uint64_t depth;
     uint64_t size_in_bytes;
-    ECGPUFormat format;
+    ECGPUTextureFormat format;
     uint32_t mip_levels;
 } CGPUImportTextureDescriptor;
 
@@ -1592,9 +1570,9 @@ typedef struct CGPUTextureViewDescriptor {
     /// Debug name used in gpu profile
     const char8_t* name;
     CGPUTextureId texture;
-    ECGPUFormat format;
-    CGPUTexutreViewUsages usages : 8;
-    CGPUTextureViewAspects aspects : 8;
+    ECGPUTextureFormat format;
+    ECGPUTextureViewUsageFlags usages : 8;
+    ECGPUTextureViewAspectFlags aspects : 8;
     ECGPUTextureDimension dims : 8;
     uint32_t base_array_layer : 8;
     uint32_t array_layer_count : 8;
@@ -1614,8 +1592,8 @@ typedef struct CGPUTextureInfo {
     uint32_t mip_levels;
     uint32_t array_size_minus_one;
     uint64_t size_in_bytes;
-    ECGPUFormat format;
-    ECGPUSampleCount sample_count;
+    ECGPUTextureFormat format;
+    ECGPUSampleCountFlags sample_count;
     uint64_t unique_id;
     uint32_t aspect_mask;
     uint32_t node_index;
@@ -1675,7 +1653,7 @@ typedef struct CGPUSamplerDescriptor {
     ECGPUAddressMode address_w;
     float mip_lod_bias;
     float max_anisotropy;
-    ECGPUCompareMode compare_func;
+    ECGPUCompareOp compare_func;
 } CGPUSamplerDescriptor;
 
 typedef struct CGPUSampler {

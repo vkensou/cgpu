@@ -726,7 +726,7 @@ typedef enum $NAME
 function codegen.gen_enum_cdefine(enum)
 	assert(type(enum.enum) == "table", "Not an enum")
 	local cname = enum.cname
-	local uname = ("cgpu_" .. camelcase_to_underscorecase(enum.name)):upper()
+	local uname = ("cgpu_" .. camelcase_to_underscorecase(enum.name:match("(.-)::Enum$"))):upper()
 	local items = {}
 	for index , item in ipairs(enum.enum) do
 		local comment = ""

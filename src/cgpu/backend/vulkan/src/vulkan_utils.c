@@ -29,8 +29,6 @@ bool VkUtil_InitializeEnvironment(struct CGPUInstance* Inst)
 
 void VkUtil_DeInitializeEnvironment(struct CGPUInstance* Inst)
 {
-    Inst->ags_status = CGPU_AGS_NONE;
-    Inst->nvapi_status = CGPU_NVAPI_NONE;
 }
 
 typedef struct VkUtil_MessageToSkip {
@@ -311,7 +309,7 @@ void VkUtil_CreatePipelineCache(CGPUDevice_Vulkan* D)
 }
 
 // Shader Reflection
-static const ECGPUResourceType RTLut[] = {
+static const ECGPUResourceTypeFlags RTLut[] = {
     CGPU_RESOURCE_TYPE_SAMPLER,                // SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER
     CGPU_RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER, // SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     CGPU_RESOURCE_TYPE_TEXTURE,                // SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE
@@ -326,22 +324,22 @@ static const ECGPUResourceType RTLut[] = {
     CGPU_RESOURCE_TYPE_RAY_TRACING             // SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR
 };
 static ECGPUTextureDimension DIMLut[SpvDimSubpassData + 1] = {
-    CGPU_TEX_DIMENSION_1D,        // SpvDim1D
-    CGPU_TEX_DIMENSION_2D,        // SpvDim2D
-    CGPU_TEX_DIMENSION_3D,        // SpvDim3D
-    CGPU_TEX_DIMENSION_CUBE,      // SpvDimCube
-    CGPU_TEX_DIMENSION_UNDEFINED, // SpvDimRect
-    CGPU_TEX_DIMENSION_UNDEFINED, // SpvDimBuffer
-    CGPU_TEX_DIMENSION_UNDEFINED  // SpvDimSubpassData
+    CGPU_TEXTURE_DIMENSION_1D,        // SpvDim1D
+    CGPU_TEXTURE_DIMENSION_2D,        // SpvDim2D
+    CGPU_TEXTURE_DIMENSION_3D,        // SpvDim3D
+    CGPU_TEXTURE_DIMENSION_CUBE,      // SpvDimCube
+    CGPU_TEXTURE_DIMENSION_UNDEFINED, // SpvDimRect
+    CGPU_TEXTURE_DIMENSION_UNDEFINED, // SpvDimBuffer
+    CGPU_TEXTURE_DIMENSION_UNDEFINED  // SpvDimSubpassData
 };
 static ECGPUTextureDimension ArrDIMLut[SpvDimSubpassData + 1] = {
-    CGPU_TEX_DIMENSION_1D_ARRAY,   // SpvDim1D
-    CGPU_TEX_DIMENSION_2D_ARRAY,   // SpvDim2D
-    CGPU_TEX_DIMENSION_UNDEFINED,  // SpvDim3D
-    CGPU_TEX_DIMENSION_CUBE_ARRAY, // SpvDimCube
-    CGPU_TEX_DIMENSION_UNDEFINED,  // SpvDimRect
-    CGPU_TEX_DIMENSION_UNDEFINED,  // SpvDimBuffer
-    CGPU_TEX_DIMENSION_UNDEFINED   // SpvDimSubpassData
+    CGPU_TEXTURE_DIMENSION_1DARRAY,   // SpvDim1D
+    CGPU_TEXTURE_DIMENSION_2DARRAY,   // SpvDim2D
+    CGPU_TEXTURE_DIMENSION_UNDEFINED,  // SpvDim3D
+    CGPU_TEXTURE_DIMENSION_CUBE_ARRAY, // SpvDimCube
+    CGPU_TEXTURE_DIMENSION_UNDEFINED,  // SpvDimRect
+    CGPU_TEXTURE_DIMENSION_UNDEFINED,  // SpvDimBuffer
+    CGPU_TEXTURE_DIMENSION_UNDEFINED   // SpvDimSubpassData
 };
 const char8_t* push_constants_name = u8"push_constants";
 void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vulkan* S, const struct CGPUShaderLibraryDescriptor* desc)
@@ -361,7 +359,7 @@ void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vu
         // ATTENTION: We have only one entry point now
         const SpvReflectEntryPoint* entry = spvReflectGetEntryPoint(S->pReflect, S->pReflect->entry_points[i].name);
         reflection->entry_name = (const char8_t*)entry->name;
-        reflection->stage = (ECGPUShaderStage)entry->shader_stage;
+        reflection->stage = (ECGPUShaderStageFlags)entry->shader_stage;
         if (reflection->stage == CGPU_SHADER_STAGE_COMPUTE)
         {
             reflection->thread_group_sizes[0] = entry->local_size.x;
@@ -438,8 +436,8 @@ void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vu
                             current_res->dim = DIMLut[current_binding->image.dim];
                         if (current_binding->image.ms)
                         {
-                            current_res->dim = current_res->dim & CGPU_TEX_DIMENSION_2D ? CGPU_TEX_DIMENSION_2DMS : current_res->dim;
-                            current_res->dim = current_res->dim & CGPU_TEX_DIMENSION_2D_ARRAY ? CGPU_TEX_DIMENSION_2DMS_ARRAY : current_res->dim;
+                            current_res->dim = current_res->dim & CGPU_TEXTURE_DIMENSION_2D ? CGPU_TEXTURE_DIMENSION_2DMS : current_res->dim;
+                            current_res->dim = current_res->dim & CGPU_TEXTURE_DIMENSION_2DARRAY ? CGPU_TEXTURE_DIMENSION_2DMSARRAY : current_res->dim;
                         }
                     }
                 }
@@ -925,7 +923,7 @@ void VkUtil_SelectQueueIndices(CGPUAdapter_Vulkan* VkAdapter, const CGPUAllocato
 
 CGPU_FORCEINLINE void VkUtil_CheckFormatSupport(CGPUAdapter_Vulkan* VkAdapter, CGPUAdapterDetail* adapter_detail, uint32_t i)
 {
-	VkFormat fmt = (VkFormat)VkUtil_FormatTranslateToVk((ECGPUFormat)i);
+	VkFormat fmt = (VkFormat)VkUtil_FormatTranslateToVk((ECGPUTextureFormat)i);
 	if (fmt == VK_FORMAT_UNDEFINED) return;
 
 	VkFormatProperties formatSupport;
@@ -946,40 +944,27 @@ void VkUtil_EnumFormatSupports(CGPUAdapter_Vulkan* VkAdapter)
 
     CGPUAdapterDetail* adapter_detail = (CGPUAdapterDetail*)&VkAdapter->adapter_detail;
 
-    for (uint32_t i = 0; i < CGPU_FORMAT_COUNT; ++i)
+    for (uint32_t i = 0; i < CGPU_TEXTURE_FORMAT_COUNT; ++i)
     {
         adapter_detail->format_supports[i].shader_read = 0;
         adapter_detail->format_supports[i].shader_write = 0;
         adapter_detail->format_supports[i].render_target_write = 0;
     }
 
-    for (uint32_t i = 0; i < CGPU_FORMAT_PVRTC1_2BPP_UNORM; ++i)
+    for (uint32_t i = 0; i < CGPU_TEXTURE_FORMAT_PVRTC1_2BPP_UNORM_BLOCK; ++i)
     {
         VkUtil_CheckFormatSupport(VkAdapter, adapter_detail, i);
     }
 
     if (supportPVRTC)
     {
-        for (uint32_t i = CGPU_FORMAT_PVRTC1_2BPP_UNORM; i < CGPU_FORMAT_ETC2_R8G8B8_UNORM; ++i)
+        for (uint32_t i = CGPU_TEXTURE_FORMAT_PVRTC1_2BPP_UNORM_BLOCK; i < CGPU_TEXTURE_FORMAT_ETC2_R8G8B8_UNORM_BLOCK; ++i)
         {
             VkUtil_CheckFormatSupport(VkAdapter, adapter_detail, i);
         }
     }
 
-    for (uint32_t i = CGPU_FORMAT_ETC2_R8G8B8_UNORM; i < CGPU_FORMAT_G16B16G16R16_422_UNORM; ++i)
-    {
-        VkUtil_CheckFormatSupport(VkAdapter, adapter_detail, i);
-    }
-
-    if (supportYCbCr)
-    {
-        for (uint32_t i = CGPU_FORMAT_G16B16G16R16_422_UNORM; i < CGPU_FORMAT_G16_B16R16_2PLANE_422_UNORM + 1; ++i)
-        {
-            VkUtil_CheckFormatSupport(VkAdapter, adapter_detail, i);
-        }
-    }
-
-    for (uint32_t i = CGPU_FORMAT_G16_B16R16_2PLANE_422_UNORM + 1; i < CGPU_FORMAT_COUNT; ++i)
+    for (uint32_t i = CGPU_TEXTURE_FORMAT_ETC2_R8G8B8_UNORM_BLOCK; i < CGPU_TEXTURE_FORMAT_COUNT; ++i)
     {
         VkUtil_CheckFormatSupport(VkAdapter, adapter_detail, i);
     }
@@ -1174,16 +1159,16 @@ VkUtil_DebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity
     switch (messageSeverity)
     {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_TRACE, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_TRACE, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_INFO, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_INFO, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_WARNING, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_WARNING, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_ERROR, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_ERROR, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
             break;
     }
     return VK_FALSE;
@@ -1203,19 +1188,19 @@ VkUtil_DebugReportCallback(
     switch (flags)
     {
         case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_INFO, "Vulkan validation layer: %s\n", pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_INFO, "Vulkan validation layer: %s\n", pMessage);
             break;
         case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_WARNING, "Vulkan validation layer: %s\n", pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_WARNING, "Vulkan validation layer: %s\n", pMessage);
             break;
         case VK_DEBUG_REPORT_WARNING_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_WARNING, "Vulkan validation layer: %s\n", pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_WARNING, "Vulkan validation layer: %s\n", pMessage);
             break;
         case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_DEBUG, "Vulkan validation layer: %s\n", pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_DEBUG, "Vulkan validation layer: %s\n", pMessage);
             break;
         case VK_DEBUG_REPORT_ERROR_BIT_EXT:
-            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_ERROR, "Vulkan validation layer: %s\n", pMessage);
+            I->super.logger.log_callback(I->super.logger.log_callback_user_data, CGPU_LOG_SEVERITY_ERROR, "Vulkan validation layer: %s\n", pMessage);
             break;
     }
     return VK_FALSE;
