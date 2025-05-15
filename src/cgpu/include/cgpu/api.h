@@ -33,11 +33,7 @@ DEFINE_CGPU_OBJECT(CGPUSampler)
 DEFINE_CGPU_OBJECT(CGPUTextureView)
 DEFINE_CGPU_OBJECT(CGPURenderPipeline)
 DEFINE_CGPU_OBJECT(CGPUComputePipeline)
-DEFINE_CGPU_OBJECT(CGPUShaderReflection)
 DEFINE_CGPU_OBJECT(CGPUPipelineReflection)
-
-DEFINE_CGPU_OBJECT(CGPUCompiledShader)
-DEFINE_CGPU_OBJECT(CGPULinkedShader)
 
 struct CGPUExportTextureDescriptor;
 struct CGPUImportTextureDescriptor;
@@ -1066,16 +1062,6 @@ typedef struct CGPURenderPipeline {
     CGPUDeviceId device;
     CGPURootSignatureId root_signature;
 } CGPURenderPipeline;
-
-typedef struct CGPUCompiledShader {
-    CGPUDeviceId device;
-    CGPURootSignatureId root_signature;
-} CGPUCompiledShader;
-
-typedef struct CGPULinkedShader {
-    CGPUDeviceId device;
-    CGPURootSignatureId root_signature;
-} CGPULinkedShader;
 
 // Resources
 typedef struct CGPUShaderLibraryDescriptor {

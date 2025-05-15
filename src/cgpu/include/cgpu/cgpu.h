@@ -804,6 +804,12 @@ DEFINE_CGPU_OBJECT(CGPURootSignaturePool)
 
 DEFINE_CGPU_OBJECT(CGPURootSignature)
 
+DEFINE_CGPU_OBJECT(CGPUShaderReflection)
+
+DEFINE_CGPU_OBJECT(CGPUCompiledShader)
+
+DEFINE_CGPU_OBJECT(CGPULinkedShader)
+
 
 typedef struct CGPUInstanceDescriptor CGPUInstanceDescriptor;
 typedef struct CGPUInstanceFeatures CGPUInstanceFeatures;
@@ -838,6 +844,10 @@ typedef ECGPUFenceStatus (*CGPUProcQueryFenceStatus)(CGPUFenceId fence);
 typedef void (*CGPUProcFreeFence)(CGPUFenceId fence);
 typedef CGPUSemaphoreId (*CGPUProcCreateSemaphore)(CGPUDeviceId device);
 typedef void (*CGPUProcFreeSemaphore)(CGPUSemaphoreId semaphore);
+typedef CGPURootSignaturePoolId (*CGPUProcCreateRootSignaturePool)(CGPUDeviceId device, const CGPURootSignaturePoolDescriptor* desc);
+typedef void (*CGPUProcFreeRootSignaturePool)(CGPURootSignaturePoolId pool);
+typedef CGPURootSignatureId (*CGPUProcCreateRootSignature)(CGPUDeviceId device, const CGPURootSignatureDescriptor* desc);
+typedef void (*CGPUProcFreeRootSignature)(CGPURootSignatureId signature);
 
 typedef struct CGPULogger
 {
@@ -1125,6 +1135,43 @@ typedef struct CGPUShaderLibrary
 
 } CGPUShaderLibrary;
 
+typedef struct CGPUConstantSpecializationImpl
+{
+    uint64_t             u;
+    int64_t              i;
+    double               f;
+
+} CGPUConstantSpecializationImpl;
+
+typedef struct CGPUConstantSpecialization
+{
+    uint32_t             constant_id;
+    CGPUConstantSpecializationImpl spec;
+
+} CGPUConstantSpecialization;
+
+typedef struct CGPUShaderEntryDescriptor
+{
+    CGPUShaderLibraryId  library;
+    const char*          entry;
+    ECGPUShaderStageFlags stage;
+    const CGPUConstantSpecialization* constants;
+    uint32_t             num_constants;
+
+} CGPUShaderEntryDescriptor;
+
+typedef struct CGPURootSignatureDescriptor
+{
+    CGPUShaderEntryDescriptor* shaders;
+    uint32_t             shader_count;
+    const char*          static_sampler_names;
+    uint32_t             static_sampler_count;
+    const char*          push_constant_names;
+    uint32_t             push_constant_count;
+    CGPURootSignaturePoolId pool;
+
+} CGPURootSignatureDescriptor;
+
 typedef struct CGPUParameterTable
 {
     CGPUShaderResource*  resources;
@@ -1147,6 +1194,20 @@ typedef struct CGPURootSignature
     CGPURootSignatureId  pool_sig;
 
 } CGPURootSignature;
+
+typedef struct CGPUCompiledShader
+{
+    CGPUDeviceId         device;
+    CGPURootSignatureId  root_signature;
+
+} CGPUCompiledShader;
+
+typedef struct CGPULinkedShader
+{
+    CGPUDeviceId         device;
+    CGPURootSignatureId  root_signature;
+
+} CGPULinkedShader;
 
 typedef struct CGPUBufferRange
 {
@@ -1173,5 +1234,12 @@ CGPU_API ECGPUFenceStatus cgpu_query_fence_status(CGPUFenceId fence);
 CGPU_API void cgpu_free_fence(CGPUFenceId fence);
 CGPU_API CGPUSemaphoreId cgpu_create_semaphore(CGPUDeviceId _this);
 CGPU_API void cgpu_free_semaphore(CGPUSemaphoreId semaphore);
+CGPU_API CGPUSemaphoreId cgpu_create_semaphore(CGPUDeviceId _this);
+CGPU_API void cgpu_free_semaphore(CGPUSemaphoreId semaphore);
+CGPU_API CGPUSemaphoreId cgpu_create_semaphore(CGPUDeviceId _this);
+CGPU_API CGPURootSignaturePoolId cgpu_create_root_signature_pool(CGPUDeviceId device, const CGPURootSignaturePoolDescriptor* desc);
+CGPU_API void cgpu_free_root_signature_pool(CGPURootSignaturePoolId pool);
+CGPU_API CGPURootSignatureId cgpu_create_root_signature(CGPUDeviceId device, const CGPURootSignatureDescriptor* desc);
+CGPU_API void cgpu_free_root_signature(CGPURootSignatureId signature);
 
 #endif // CGPU_C99_H_HEADER_GUARD

@@ -3,6 +3,7 @@ version(1)
 typedef "bool"
 typedef "char"
 typedef "float"
+typedef "double"
 typedef "int8_t"
 typedef "int32_t"
 typedef "int64_t"
@@ -758,6 +759,24 @@ funcptr.FreeSemaphore
     "void"
     .semaphore      "SemaphoreId"
 
+funcptr.CreateRootSignaturePool
+    "RootSignaturePoolId"
+    .device         "DeviceId"
+    .desc           "const RootSignaturePoolDescriptor*"
+
+funcptr.FreeRootSignaturePool
+    "void"
+    .pool           "RootSignaturePoolId"
+
+funcptr.CreateRootSignature
+    "RootSignatureId"
+    .device         "DeviceId"
+    .desc           "const RootSignatureDescriptor*"
+
+funcptr.FreeRootSignature
+    "void"
+    .signature      "RootSignatureId"
+
 id "InstanceId"
 id "AdapterId"
 id "DeviceId"
@@ -779,6 +798,9 @@ id "BinderId"
 id "ShaderLibraryId"
 id "RootSignaturePoolId"
 id "RootSignatureId"
+id "ShaderReflectionId"
+id "CompiledShaderId"
+id "LinkedShaderId"
 
 struct.Logger
     .logCallback "LogCallback"
@@ -968,6 +990,31 @@ struct.ShaderLibrary
     .entryReflections   "ShaderReflection*"
     .entrysCount        "uint32_t"
 
+struct.ConstantSpecializationImpl
+    .u                  "uint64_t"
+    .i                  "int64_t"
+    .f                  "double"
+
+struct.ConstantSpecialization
+    .constantID         "uint32_t"
+    .spec               "ConstantSpecializationImpl"
+
+struct.ShaderEntryDescriptor
+    .library            "ShaderLibraryId"
+    .entry              "const char*"
+    .stage              "ShaderStage"
+    .constants          "const ConstantSpecialization*"
+    .numConstants       "uint32_t"
+
+struct.RootSignatureDescriptor
+    .shaders            "ShaderEntryDescriptor*"
+    .shaderCount        "uint32_t"
+    .staticSamplerNames "const char*"
+    .staticSamplerCount "uint32_t"
+    .pushConstantNames  "const char*"
+    .pushConstantCount  "uint32_t"
+    .pool               "RootSignaturePoolId"
+
 struct.ParameterTable
     .resources          "ShaderResource*"
     .resourcesCount     "uint32_t"
@@ -984,6 +1031,14 @@ struct.RootSignature
     .pipelineType       "PipelineType::Enum"
     .pool               "RootSignaturePoolId"
     .poolSig            "RootSignatureId"
+
+struct.CompiledShader
+    .device             "DeviceId"
+    .rootSignature      "RootSignatureId"
+
+struct.LinkedShader
+    .device             "DeviceId"
+    .rootSignature      "RootSignatureId"
 
 struct.BufferRange
     .offset             "uint64_t"
@@ -1056,3 +1111,31 @@ func.Device.createSemaphore
 func.freeSemaphore
     "void"
     .semaphore      "SemaphoreId"
+
+func.Device.createSemaphore
+    "SemaphoreId"
+
+func.freeSemaphore
+    "void"
+    .semaphore      "SemaphoreId"
+
+func.Device.createSemaphore
+    "SemaphoreId"
+
+func.CreateRootSignaturePool
+    "RootSignaturePoolId"
+    .device         "DeviceId"
+    .desc           "const RootSignaturePoolDescriptor*"
+
+func.FreeRootSignaturePool
+    "void"
+    .pool           "RootSignaturePoolId"
+
+func.CreateRootSignature
+    "RootSignatureId"
+    .device         "DeviceId"
+    .desc           "const RootSignatureDescriptor*"
+
+func.FreeRootSignature
+    "void"
+    .signature      "RootSignatureId"
