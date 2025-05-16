@@ -254,6 +254,7 @@ idl.UINT16_MAX = "UINT16_MAX"
 idl.INT32_MAX  = "INT32_MAX"
 idl.UINT32_MAX = "UINT32_MAX"
 idl.UINT8_MAX  = "UINT8_MAX"
+idl.union      = "union"
 
 return setmetatable(idl , { __index = function (_, keyword)
 	error (tostring(keyword) .. " is invalid")

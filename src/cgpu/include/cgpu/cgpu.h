@@ -810,6 +810,8 @@ DEFINE_CGPU_OBJECT(CGPUCompiledShader)
 
 DEFINE_CGPU_OBJECT(CGPULinkedShader)
 
+DEFINE_CGPU_OBJECT(CGPUSampler)
+
 
 typedef struct CGPUInstanceDescriptor CGPUInstanceDescriptor;
 typedef struct CGPUInstanceFeatures CGPUInstanceFeatures;
@@ -818,6 +820,8 @@ typedef struct CGPUSurfacesProcTable CGPUSurfacesProcTable;
 typedef struct CGPURuntimeTable CGPURuntimeTable;
 typedef struct CGPUAdapterDetail CGPUAdapterDetail;
 typedef struct CGPUDeviceDescriptor CGPUDeviceDescriptor;
+typedef struct CGPURootSignaturePoolDescriptor CGPURootSignaturePoolDescriptor;
+typedef struct CGPURootSignatureDescriptor CGPURootSignatureDescriptor;
 
 typedef void (*CGPUProcLogCallback)(void* user_data, ECGPULogSeverity severity, const char* fmt, ... );
 typedef void* (*CGPUProcMalloc)(void* user_data, size_t size, const void* pool);
@@ -1135,7 +1139,7 @@ typedef struct CGPUShaderLibrary
 
 } CGPUShaderLibrary;
 
-typedef struct CGPUConstantSpecializationImpl
+typedef union CGPUConstantSpecializationImpl
 {
     uint64_t             u;
     int64_t              i;
@@ -1165,6 +1169,7 @@ typedef struct CGPURootSignatureDescriptor
     CGPUShaderEntryDescriptor* shaders;
     uint32_t             shader_count;
     const char*          static_sampler_names;
+    const CGPUSamplerId* static_samplers;
     uint32_t             static_sampler_count;
     const char*          push_constant_names;
     uint32_t             push_constant_count;
@@ -1208,6 +1213,12 @@ typedef struct CGPULinkedShader
     CGPURootSignatureId  root_signature;
 
 } CGPULinkedShader;
+
+typedef struct CGPUSampler
+{
+    CGPUDeviceId         device;
+
+} CGPUSampler;
 
 typedef struct CGPUBufferRange
 {

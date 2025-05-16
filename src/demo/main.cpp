@@ -360,10 +360,10 @@ std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGP
 	CGPUShaderLibraryId fragment_shader = cgpu_create_shader_library(device, &ps_desc);
 	CGPUShaderEntryDescriptor ppl_shaders[2];
 	ppl_shaders[0].stage = CGPU_SHADER_STAGE_VERTEX;
-	ppl_shaders[0].entry = u8"main";
+	ppl_shaders[0].entry = "main";
 	ppl_shaders[0].library = vertex_shader;
 	ppl_shaders[1].stage = CGPU_SHADER_STAGE_FRAGMENT;
-	ppl_shaders[1].entry = u8"main";
+	ppl_shaders[1].entry = "main";
 	ppl_shaders[1].library = fragment_shader;
 	CGPURootSignatureDescriptor rs_desc = {
 		.shaders = ppl_shaders,

@@ -986,6 +986,13 @@ typedef struct $NAME
 
 } $NAME;
 ]]
+local cunion_temp = [[
+typedef union $NAME
+{
+	$ITEMS
+
+} $NAME;
+]]
 local cstruct_empty_temp = [[
 struct $NAME_s;
 typedef struct $NAME_s $NAME_t;
@@ -1001,7 +1008,12 @@ function codegen.gen_struct_cdefine(struct)
 		NAME = cname,
 		ITEMS = table.concat(items, "\n\t"),
 	}
-	local codetemp = #struct.struct == 0 and cstruct_empty_temp or cstruct_temp
+	local codetemp
+	if struct.union then
+		codetemp = cunion_temp
+	else
+		codetemp = #struct.struct == 0 and cstruct_empty_temp or cstruct_temp
+	end
 	return (codetemp:gsub("$(%u+)", temp))
 end
 

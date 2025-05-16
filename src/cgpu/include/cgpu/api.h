@@ -29,7 +29,6 @@ DEFINE_CGPU_OBJECT(CGPUDescriptorSet)
 DEFINE_CGPU_OBJECT(CGPUMemoryPool)
 DEFINE_CGPU_OBJECT(CGPUBuffer)
 DEFINE_CGPU_OBJECT(CGPUTexture)
-DEFINE_CGPU_OBJECT(CGPUSampler)
 DEFINE_CGPU_OBJECT(CGPUTextureView)
 DEFINE_CGPU_OBJECT(CGPURenderPipeline)
 DEFINE_CGPU_OBJECT(CGPUComputePipeline)
@@ -69,16 +68,6 @@ static const char* gCGPUBackendNames[CGPU_BACKEND_COUNT] = {
     "d3d12",
     "metal",
 };
-
-typedef struct CGPUConstantSpecialization {
-    uint32_t constantID;
-    union
-    {
-        uint64_t u;
-        int64_t i;
-        double f;
-    };
-} CGPUConstantSpecialization;
 
 // Above APIs
 
@@ -846,16 +835,6 @@ typedef struct CGPUCommandBufferDescriptor {
     bool is_secondary : 1;
 } CGPUCommandBufferDescriptor;
 
-typedef struct CGPUShaderEntryDescriptor {
-    CGPUShaderLibraryId library;
-    const char8_t* entry;
-    ECGPUShaderStageFlags stage;
-    // ++ constant_specialization
-    const CGPUConstantSpecialization* constants;
-    uint32_t num_constants;
-    // -- constant_specialization
-} CGPUShaderEntryDescriptor;
-
 typedef struct CGPUSwapChainDescriptor {
     /// Present Queues
     CGPUQueueId* present_queues;
@@ -912,17 +891,6 @@ typedef struct CGPUFramebufferDescriptor {
     uint32_t height;
     uint32_t layers;
 } CGPUFramebufferDescriptor;
-
-typedef struct CGPURootSignatureDescriptor {
-    struct CGPUShaderEntryDescriptor* shaders;
-    uint32_t shader_count;
-    const CGPUSamplerId* static_samplers;
-    const char8_t* const* static_sampler_names;
-    uint32_t static_sampler_count;
-    const char8_t* const* push_constant_names;
-    uint32_t push_constant_count;
-    CGPURootSignaturePoolId pool;
-} CGPURootSignatureDescriptor;
 
 typedef struct CGPUCompiledShaderDescriptor {
     CGPUShaderEntryDescriptor entry;
@@ -1254,10 +1222,6 @@ typedef struct CGPUSamplerDescriptor {
     float max_anisotropy;
     ECGPUCompareOp compare_func;
 } CGPUSamplerDescriptor;
-
-typedef struct CGPUSampler {
-    CGPUDeviceId device;
-} CGPUSampler;
 
 #pragma endregion DESCRIPTORS
 

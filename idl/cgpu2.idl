@@ -801,6 +801,7 @@ id "RootSignatureId"
 id "ShaderReflectionId"
 id "CompiledShaderId"
 id "LinkedShaderId"
+id "SamplerId"
 
 struct.Logger
     .logCallback "LogCallback"
@@ -990,7 +991,7 @@ struct.ShaderLibrary
     .entryReflections   "ShaderReflection*"
     .entrysCount        "uint32_t"
 
-struct.ConstantSpecializationImpl
+struct.ConstantSpecializationImpl { union }
     .u                  "uint64_t"
     .i                  "int64_t"
     .f                  "double"
@@ -1010,6 +1011,7 @@ struct.RootSignatureDescriptor
     .shaders            "ShaderEntryDescriptor*"
     .shaderCount        "uint32_t"
     .staticSamplerNames "const char*"
+    .staticSamplers     "const SamplerId*"
     .staticSamplerCount "uint32_t"
     .pushConstantNames  "const char*"
     .pushConstantCount  "uint32_t"
@@ -1039,6 +1041,9 @@ struct.CompiledShader
 struct.LinkedShader
     .device             "DeviceId"
     .rootSignature      "RootSignatureId"
+
+struct.Sampler
+    .device             "DeviceId"
 
 struct.BufferRange
     .offset             "uint64_t"

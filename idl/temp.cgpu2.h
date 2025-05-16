@@ -24,6 +24,8 @@ typedef struct CGPUSurfacesProcTable CGPUSurfacesProcTable;
 typedef struct CGPURuntimeTable CGPURuntimeTable;
 typedef struct CGPUAdapterDetail CGPUAdapterDetail;
 typedef struct CGPUDeviceDescriptor CGPUDeviceDescriptor;
+typedef struct CGPURootSignaturePoolDescriptor CGPURootSignaturePoolDescriptor;
+typedef struct CGPURootSignatureDescriptor CGPURootSignatureDescriptor;
 
 $cfuncptrs
 
