@@ -777,6 +777,21 @@ funcptr.FreeRootSignature
     "void"
     .signature      "RootSignatureId"
 
+funcptr.CreateDescriptorSet
+    "DescriptorSetId"
+    .device         "DeviceId"
+    .desc           "const DescriptorSetDescriptor*"
+
+funcptr.UpdateDescriptorSet
+    "void"
+    .set            "DescriptorSetId"
+    .datas          "const DescriptorData*"
+    .count          "uint32_t"
+
+funcptr.FreeDescriptorSet
+    "DescriptorSetId"
+    .set            "DescriptorSetId"
+
 id "InstanceId"
 id "AdapterId"
 id "DeviceId"
@@ -798,6 +813,7 @@ id "BinderId"
 id "ShaderLibraryId"
 id "RootSignaturePoolId"
 id "RootSignatureId"
+id "DescriptorSetId"
 id "ShaderReflectionId"
 id "CompiledShaderId"
 id "LinkedShaderId"
@@ -1042,6 +1058,25 @@ struct.LinkedShader
     .device             "DeviceId"
     .rootSignature      "RootSignatureId"
 
+struct.DescriptorSetDescriptor
+    .rootSignature      "RootSignatureId"
+    .setIndex           "uint32_t"
+
+struct.BufferParams
+    .offsets            "const uint64_t*"
+    .sizes              "const uint64_t*"
+
+struct.OffsetUnion { union }
+    .bufferParams       ""
+    .uavParams          ""
+    .enableStencilResource  "bool"
+
+struct.DescriptorData
+    .name               "const char*"
+    .binding            "uint32_t"
+    .bindingType        "ResourceType"
+    .count              "uint32_t"
+
 struct.Sampler
     .device             "DeviceId"
 
@@ -1144,3 +1179,18 @@ func.CreateRootSignature
 func.FreeRootSignature
     "void"
     .signature      "RootSignatureId"
+
+func.CreateDescriptorSet
+    "DescriptorSetId"
+    .device         "DeviceId"
+    .desc           "const DescriptorSetDescriptor*"
+
+func.UpdateDescriptorSet
+    "void"
+    .set            "DescriptorSetId"
+    .datas          "const DescriptorData*"
+    .count          "uint32_t"
+
+func.FreeDescriptorSet
+    "DescriptorSetId"
+    .set            "DescriptorSetId"

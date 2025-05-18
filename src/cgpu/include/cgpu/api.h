@@ -78,14 +78,6 @@ static const char* gCGPUBackendNames[CGPU_BACKEND_COUNT] = {
 // Device APIs
 
 // API Objects APIs
-CGPU_API CGPURootSignaturePoolId cgpu_create_root_signature_pool(CGPUDeviceId device, const struct CGPURootSignaturePoolDescriptor* desc);
-typedef CGPURootSignaturePoolId (*CGPUProcCreateRootSignaturePool)(CGPUDeviceId device, const struct CGPURootSignaturePoolDescriptor* desc);
-CGPU_API void cgpu_free_root_signature_pool(CGPURootSignaturePoolId pool);
-typedef void (*CGPUProcFreeRootSignaturePool)(CGPURootSignaturePoolId pool);
-CGPU_API CGPURootSignatureId cgpu_create_root_signature(CGPUDeviceId device, const struct CGPURootSignatureDescriptor* desc);
-typedef CGPURootSignatureId (*CGPUProcCreateRootSignature)(CGPUDeviceId device, const struct CGPURootSignatureDescriptor* desc);
-CGPU_API void cgpu_free_root_signature(CGPURootSignatureId signature);
-typedef void (*CGPUProcFreeRootSignature)(CGPURootSignatureId signature);
 CGPU_API CGPUDescriptorSetId cgpu_create_descriptor_set(CGPUDeviceId device, const struct CGPUDescriptorSetDescriptor* desc);
 typedef CGPUDescriptorSetId (*CGPUProcCreateDescriptorSet)(CGPUDeviceId device, const struct CGPUDescriptorSetDescriptor* desc);
 CGPU_API void cgpu_update_descriptor_set(CGPUDescriptorSetId set, const struct CGPUDescriptorData* datas, uint32_t count);
