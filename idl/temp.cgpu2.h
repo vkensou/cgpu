@@ -26,6 +26,8 @@ typedef struct CGPUAdapterDetail CGPUAdapterDetail;
 typedef struct CGPUDeviceDescriptor CGPUDeviceDescriptor;
 typedef struct CGPURootSignaturePoolDescriptor CGPURootSignaturePoolDescriptor;
 typedef struct CGPURootSignatureDescriptor CGPURootSignatureDescriptor;
+typedef struct CGPUDescriptorSetDescriptor CGPUDescriptorSetDescriptor;
+typedef struct CGPUDescriptorData CGPUDescriptorData;
 
 $cfuncptrs
 

@@ -392,14 +392,14 @@ bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId ro
         //.name = u8"fontTexture",
         .binding = 0,
         .binding_type = CGPU_RESOURCE_TYPE_TEXTURE,
-        .textures = &bd->FontView,
+        .resources = { .textures = &bd->FontView },
         .count = 1,
     };
     datas[1] = {
         //.name = u8"fontSampler",
         .binding = 1,
         .binding_type = CGPU_RESOURCE_TYPE_SAMPLER,
-        .samplers = &bd->FontSampler,
+        .resources = { .samplers = &bd->FontSampler },
         .count = 1,
     };
 

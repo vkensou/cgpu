@@ -550,12 +550,12 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
             {
             case CGPU_RESOURCE_TYPE_RW_TEXTURE:
             case CGPU_RESOURCE_TYPE_TEXTURE: {
-                cgpu_assert(pParam->textures && "cgpu_assert: Binding NULL texture(s)");
-                CGPUTextureView_Vulkan** TextureViews = (CGPUTextureView_Vulkan**)pParam->textures;
+                cgpu_assert(pParam->resources.textures && "cgpu_assert: Binding NULL texture(s)");
+                CGPUTextureView_Vulkan** TextureViews = (CGPUTextureView_Vulkan**)pParam->resources.textures;
                 for (uint32_t arr = 0; arr < arrayCount; ++arr)
                 {
                     // TODO: Stencil support
-                    cgpu_assert(pParam->textures[arr] && "cgpu_assert: Binding NULL texture!");
+                    cgpu_assert(pParam->resources.textures[arr] && "cgpu_assert: Binding NULL texture!");
                     VkDescriptorUpdateData* Data = &pUpdateData[ResData->binding + arr];
                     Data->mImageInfo.imageView =
                         ResData->type == CGPU_RESOURCE_TYPE_RW_TEXTURE ?
@@ -571,11 +571,11 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
                 break;
             }
             case CGPU_RESOURCE_TYPE_SAMPLER: {
-                cgpu_assert(pParam->samplers && "cgpu_assert: Binding NULL Sampler(s)");
-                CGPUSampler_Vulkan** Samplers = (CGPUSampler_Vulkan**)pParam->samplers;
+                cgpu_assert(pParam->resources.samplers && "cgpu_assert: Binding NULL Sampler(s)");
+                CGPUSampler_Vulkan** Samplers = (CGPUSampler_Vulkan**)pParam->resources.samplers;
                 for (uint32_t arr = 0; arr < arrayCount; ++arr)
                 {
-                    cgpu_assert(pParam->samplers[arr] && "cgpu_assert: Binding NULL Sampler!");
+                    cgpu_assert(pParam->resources.samplers[arr] && "cgpu_assert: Binding NULL Sampler!");
                     VkDescriptorUpdateData* Data = &pUpdateData[ResData->binding + arr];
                     Data->mImageInfo.sampler = Samplers[arr]->pVkSampler;
                     dirty = true;
@@ -587,19 +587,19 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
             case CGPU_RESOURCE_TYPE_BUFFER_RAW:
             case CGPU_RESOURCE_TYPE_RW_BUFFER:
             case CGPU_RESOURCE_TYPE_RW_BUFFER_RAW: {
-                cgpu_assert(pParam->buffers && "cgpu_assert: Binding NULL Buffer(s)!");
-                CGPUBuffer_Vulkan** Buffers = (CGPUBuffer_Vulkan**)pParam->buffers;
+                cgpu_assert(pParam->resources.buffers && "cgpu_assert: Binding NULL Buffer(s)!");
+                CGPUBuffer_Vulkan** Buffers = (CGPUBuffer_Vulkan**)pParam->resources.buffers;
                 for (uint32_t arr = 0; arr < arrayCount; ++arr)
                 {
-                    cgpu_assert(pParam->buffers[arr] && "cgpu_assert: Binding NULL Buffer!");
+                    cgpu_assert(pParam->resources.buffers[arr] && "cgpu_assert: Binding NULL Buffer!");
                     VkDescriptorUpdateData* Data = &pUpdateData[ResData->binding + arr];
                     Data->mBufferInfo.buffer = Buffers[arr]->pVkBuffer;
                     Data->mBufferInfo.offset = Buffers[arr]->mOffset;
                     Data->mBufferInfo.range = VK_WHOLE_SIZE;
-                    if (pParam->buffers_params.offsets)
+                    if (pParam->params.buffers_params.offsets)
                     {
-                        Data->mBufferInfo.offset = pParam->buffers_params.offsets[arr];
-                        Data->mBufferInfo.range = pParam->buffers_params.sizes[arr];
+                        Data->mBufferInfo.offset = pParam->params.buffers_params.offsets[arr];
+                        Data->mBufferInfo.range = pParam->params.buffers_params.sizes[arr];
                     }
                     dirty = true;
                 }
@@ -636,11 +636,11 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
             {
             case CGPU_RESOURCE_TYPE_RW_TEXTURE:
             case CGPU_RESOURCE_TYPE_TEXTURE: {
-                cgpu_assert(pParam->textures && "cgpu_assert: Binding NULL texture(s)");
-                CGPUTextureView_Vulkan** TextureViews = (CGPUTextureView_Vulkan**)pParam->textures;
+                cgpu_assert(pParam->resources.textures && "cgpu_assert: Binding NULL texture(s)");
+                CGPUTextureView_Vulkan** TextureViews = (CGPUTextureView_Vulkan**)pParam->resources.textures;
                 for (uint32_t arr = 0; arr < arrayCount; ++arr)
                 {
-                    cgpu_assert(pParam->textures[arr] && "cgpu_assert: Binding NULL texture!");
+                    cgpu_assert(pParam->resources.textures[arr] && "cgpu_assert: Binding NULL texture!");
                     VkDescriptorImageInfo* imageInfo = m_descriptorSamplers + textureCount;
                     imageInfo->imageLayout =
                         resourceType == CGPU_RESOURCE_TYPE_RW_TEXTURE
@@ -671,11 +671,11 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
                 break;
             }
             case CGPU_RESOURCE_TYPE_SAMPLER: {
-                cgpu_assert(pParam->samplers && "cgpu_assert: Binding NULL Sampler(s)");
-                CGPUSampler_Vulkan** Samplers = (CGPUSampler_Vulkan**)pParam->samplers;
+                cgpu_assert(pParam->resources.samplers && "cgpu_assert: Binding NULL Sampler(s)");
+                CGPUSampler_Vulkan** Samplers = (CGPUSampler_Vulkan**)pParam->resources.samplers;
                 for (uint32_t arr = 0; arr < arrayCount; ++arr)
                 {
-                    cgpu_assert(pParam->samplers[arr] && "cgpu_assert: Binding NULL Sampler!");
+                    cgpu_assert(pParam->resources.samplers[arr] && "cgpu_assert: Binding NULL Sampler!");
                     VkDescriptorImageInfo* imageInfo = m_descriptorSamplers + textureCount;
                     imageInfo->imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                     imageInfo->imageView = VK_NULL_HANDLE;
@@ -704,19 +704,19 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
             case CGPU_RESOURCE_TYPE_BUFFER_RAW:
             case CGPU_RESOURCE_TYPE_RW_BUFFER:
             case CGPU_RESOURCE_TYPE_RW_BUFFER_RAW: {
-                cgpu_assert(pParam->buffers && "cgpu_assert: Binding NULL Buffer(s)!");
-                CGPUBuffer_Vulkan** Buffers = (CGPUBuffer_Vulkan**)pParam->buffers;
+                cgpu_assert(pParam->resources.buffers && "cgpu_assert: Binding NULL Buffer(s)!");
+                CGPUBuffer_Vulkan** Buffers = (CGPUBuffer_Vulkan**)pParam->resources.buffers;
                 for (uint32_t arr = 0; arr < arrayCount; ++arr)
                 {
-                    cgpu_assert(pParam->buffers[arr] && "cgpu_assert: Binding NULL Buffer!");
+                    cgpu_assert(pParam->resources.buffers[arr] && "cgpu_assert: Binding NULL Buffer!");
                     VkDescriptorBufferInfo* bufferInfo = m_descriptorBuffers + bufferCount;
                     bufferInfo->buffer = Buffers[arr]->pVkBuffer;
                     bufferInfo->offset = Buffers[arr]->mOffset;
                     bufferInfo->range = VK_WHOLE_SIZE;
-                    if (pParam->buffers_params.offsets)
+                    if (pParam->params.buffers_params.offsets)
                     {
-                        bufferInfo->offset = pParam->buffers_params.offsets[arr];
-                        bufferInfo->range = pParam->buffers_params.sizes[arr];
+                        bufferInfo->offset = pParam->params.buffers_params.offsets[arr];
+                        bufferInfo->range = pParam->params.buffers_params.sizes[arr];
                     }
                     ++bufferCount;
 

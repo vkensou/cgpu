@@ -25,13 +25,7 @@ typedef uint32_t CGPUQueueIndex;
 
 DEFINE_CGPU_OBJECT(CGPUSurface)
 DEFINE_CGPU_OBJECT(CGPUSwapChain)
-DEFINE_CGPU_OBJECT(CGPUDescriptorSet)
 DEFINE_CGPU_OBJECT(CGPUMemoryPool)
-DEFINE_CGPU_OBJECT(CGPUBuffer)
-DEFINE_CGPU_OBJECT(CGPUTexture)
-DEFINE_CGPU_OBJECT(CGPUTextureView)
-DEFINE_CGPU_OBJECT(CGPURenderPipeline)
-DEFINE_CGPU_OBJECT(CGPUComputePipeline)
 DEFINE_CGPU_OBJECT(CGPUPipelineReflection)
 
 struct CGPUExportTextureDescriptor;
@@ -78,12 +72,6 @@ static const char* gCGPUBackendNames[CGPU_BACKEND_COUNT] = {
 // Device APIs
 
 // API Objects APIs
-CGPU_API CGPUDescriptorSetId cgpu_create_descriptor_set(CGPUDeviceId device, const struct CGPUDescriptorSetDescriptor* desc);
-typedef CGPUDescriptorSetId (*CGPUProcCreateDescriptorSet)(CGPUDeviceId device, const struct CGPUDescriptorSetDescriptor* desc);
-CGPU_API void cgpu_update_descriptor_set(CGPUDescriptorSetId set, const struct CGPUDescriptorData* datas, uint32_t count);
-typedef void (*CGPUProcUpdateDescriptorSet)(CGPUDescriptorSetId set, const struct CGPUDescriptorData* datas, uint32_t count);
-CGPU_API void cgpu_free_descriptor_set(CGPUDescriptorSetId set);
-typedef void (*CGPUProcFreeDescriptorSet)(CGPUDescriptorSetId set);
 CGPU_API CGPUComputePipelineId cgpu_create_compute_pipeline(CGPUDeviceId device, const struct CGPUComputePipelineDescriptor* desc);
 typedef CGPUComputePipelineId (*CGPUProcCreateComputePipeline)(CGPUDeviceId device, const struct CGPUComputePipelineDescriptor* desc);
 CGPU_API void cgpu_free_compute_pipeline(CGPUComputePipelineId pipeline);
@@ -603,59 +591,6 @@ typedef struct CGPUPipelineReflection {
     uint32_t shader_resources_count;
 } CGPUPipelineReflection;
 
-typedef struct CGPUDescriptorData {
-    // Update Via Shader Reflection.
-    const char8_t* name;
-    // Update Via Binding Slot.
-    uint32_t binding;
-    ECGPUResourceTypeFlags binding_type;
-    union
-    {
-        struct
-        {
-            /// Offset to bind the buffer descriptor
-            const uint64_t* offsets;
-            const uint64_t* sizes;
-        } buffers_params;
-        // Descriptor set buffer extraction options
-        // TODO: Support descriptor buffer extraction
-        //struct
-        //{
-        //    struct CGPUShaderEntryDescriptor* shader;
-        //    uint32_t buffer_index;
-        //    ECGPUShaderStageFlags shader_stage;
-        //} extraction_params;
-        struct
-        {
-            uint32_t uav_mip_slice;
-            bool blend_mip_chain;
-        } uav_params;
-        bool enable_stencil_resource;
-    };
-    union
-    {
-        const void** ptrs;
-        /// Array of texture descriptors (srv and uav textures)
-        CGPUTextureViewId* textures;
-        /// Array of sampler descriptors
-        CGPUSamplerId* samplers;
-        /// Array of buffer descriptors (srv, uav and cbv buffers)
-        CGPUBufferId* buffers;
-        /// Array of pipeline descriptors
-        CGPURenderPipelineId* render_pipelines;
-        /// Array of pipeline descriptors
-        CGPUComputePipelineId* compute_pipelines;
-        /// DescriptorSet buffer extraction
-        CGPUDescriptorSetId* descriptor_sets;
-        /// Custom binding (raytracing acceleration structure ...)
-        // CGPUAccelerationStructureId* acceleration_structures;
-    };
-    uint32_t count;
-#if CGPU_PTR_SIZE == 8
-    uint32_t padding;
-#endif
-} CGPUDescriptorData;
-
 typedef struct CGPUClearValue
 {
     float color[4];
@@ -890,14 +825,6 @@ typedef struct CGPUCompiledShaderDescriptor {
     uint64_t code_size;
 } CGPUCompiledShaderDescriptor;
 
-typedef struct CGPUDescriptorSetDescriptor {
-    CGPURootSignatureId root_signature;
-    uint32_t set_index;
-#if CGPU_PTR_SIZE == 8
-    uint32_t padding;
-#endif
-} CGPUDescriptorSetDescriptor;
-
 typedef struct CGPUComputePipelineDescriptor {
     CGPURootSignatureId root_signature;
     CGPUShaderEntryDescriptor* compute_shader;
@@ -1008,21 +935,6 @@ typedef struct CGPUMemoryPool {
     ECGPUMemoryPoolType type;
 } CGPUMemoryPool;
 
-typedef struct CGPUDescriptorSet {
-    CGPURootSignatureId root_signature;
-    uint32_t index;
-} CGPUDescriptorSet;
-
-typedef struct CGPUComputePipeline {
-    CGPUDeviceId device;
-    CGPURootSignatureId root_signature;
-} CGPUComputePipeline;
-
-typedef struct CGPURenderPipeline {
-    CGPUDeviceId device;
-    CGPURootSignatureId root_signature;
-} CGPURenderPipeline;
-
 // Resources
 typedef struct CGPUShaderLibraryDescriptor {
     const char8_t* name;
@@ -1065,18 +977,6 @@ typedef struct CGPUBufferDescriptor {
     /// Only available when memory_usage is CPU_TO_GPU or GPU_TO_CPU
     bool prefer_on_host;
 } CGPUBufferDescriptor;
-
-typedef struct CGPUBufferInfo {
-    uint64_t size;
-    void* cpu_mapped_address;
-    uint32_t descriptors;
-    uint32_t memory_usage;
-} CGPUBufferInfo;
-
-typedef struct CGPUBuffer {
-    CGPUDeviceId device;
-    const struct CGPUBufferInfo* info;
-} CGPUBuffer;
 
 typedef struct CGPUTextureDescriptor {
     /// Debug name used in gpu profile
@@ -1125,83 +1025,10 @@ typedef struct CGPUImportTextureDescriptor {
     uint32_t mip_levels;
 } CGPUImportTextureDescriptor;
 
-typedef struct CGPUTextureViewDescriptor {
-    /// Debug name used in gpu profile
-    const char8_t* name;
-    CGPUTextureId texture;
-    ECGPUTextureFormat format;
-    ECGPUTextureViewUsageFlags usages : 8;
-    ECGPUTextureViewAspectFlags aspects : 8;
-    ECGPUTextureDimension dims : 8;
-    uint32_t base_array_layer : 8;
-    uint32_t array_layer_count : 8;
-    uint32_t base_mip_level : 8;
-    uint32_t mip_level_count : 8;
-} CGPUTextureViewDescriptor;
-
 typedef struct CGPUTextureAliasingBindDescriptor {
     CGPUTextureId aliased;
     CGPUTextureId aliasing;
 } CGPUTextureAliasingBindDescriptor;
-
-typedef struct CGPUTextureInfo {
-    uint64_t width;
-    uint64_t height;
-    uint64_t depth;
-    uint32_t mip_levels;
-    uint32_t array_size_minus_one;
-    uint64_t size_in_bytes;
-    ECGPUTextureFormat format;
-    ECGPUSampleCountFlags sample_count;
-    uint64_t unique_id;
-    uint32_t aspect_mask;
-    uint32_t node_index;
-    uint8_t owns_image;
-    uint8_t is_cube;
-    uint8_t is_allocation_dedicated;
-    uint8_t is_restrict_dedicated;
-    uint8_t is_aliasing;
-    uint8_t is_tiled;
-    uint8_t is_imported;
-    uint8_t can_alias;
-    uint8_t can_export;
-} CGPUTextureInfo;
-
-typedef struct CGPUTiledSubresourceInfo {
-    uint16_t layer;
-    uint16_t mip_level;
-    uint32_t width_in_tiles;
-    uint16_t height_in_tiles;
-    uint16_t depth_in_tiles;
-} CGPUTiledSubresourceInfo;
-
-typedef struct CGPUTiledTextureInfo {
-    uint64_t tile_size;
-    uint64_t total_tiles_count;
-    volatile uint64_t alive_tiles_count;
-
-    uint32_t tile_width_in_texels;
-    uint32_t tile_height_in_texels;
-    uint32_t tile_depth_in_texels;
-    const CGPUTiledSubresourceInfo* subresources;
-
-    uint32_t packed_mip_start;
-    uint32_t packed_mip_count;
-    volatile uint64_t alive_pack_count;
-
-    bool pack_unaligned;
-} CGPUTiledTextureInfo;
-
-typedef struct CGPUTexture {
-    CGPUDeviceId device;
-    const CGPUTextureInfo* info;
-    const CGPUTiledTextureInfo* tiled_resource;
-} CGPUTexture;
-
-typedef struct CGPUTextureView {
-    CGPUDeviceId device;
-    CGPUTextureViewDescriptor info;
-} CGPUTextureView;
 
 typedef struct CGPUSamplerDescriptor {
     ECGPUFilterType min_filter;

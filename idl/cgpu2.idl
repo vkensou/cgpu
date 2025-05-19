@@ -789,7 +789,7 @@ funcptr.UpdateDescriptorSet
     .count          "uint32_t"
 
 funcptr.FreeDescriptorSet
-    "DescriptorSetId"
+    "void"
     .set            "DescriptorSetId"
 
 id "InstanceId"
@@ -817,7 +817,12 @@ id "DescriptorSetId"
 id "ShaderReflectionId"
 id "CompiledShaderId"
 id "LinkedShaderId"
+id "BufferId"
+id "TextureId"
+id "TextureViewId"
 id "SamplerId"
+id "RenderPipelineId"
+id "ComputePipelineId"
 
 struct.Logger
     .logCallback "LogCallback"
@@ -1050,6 +1055,18 @@ struct.RootSignature
     .pool               "RootSignaturePoolId"
     .poolSig            "RootSignatureId"
 
+struct.DescriptorSet
+    .rootSignature      "RootSignatureId"
+    .index              "uint32_t"
+
+struct.RenderPipeline
+    .device             "DeviceId"
+    .rootSignature      "RootSignatureId"
+
+struct.ComputePipeline
+    .device             "DeviceId"
+    .rootSignature      "RootSignatureId"
+
 struct.CompiledShader
     .device             "DeviceId"
     .rootSignature      "RootSignatureId"
@@ -1066,16 +1083,104 @@ struct.BufferParams
     .offsets            "const uint64_t*"
     .sizes              "const uint64_t*"
 
-struct.OffsetUnion { union }
-    .bufferParams       ""
-    .uavParams          ""
+struct.UavParams
+    .uavMipSlice        "uint32_t"
+    .blendMipChain      "bool"
+
+struct.DescriptorDataParams { union }
+    .buffersParams       "BufferParams"
+    .uavParams          "UavParams"
     .enableStencilResource  "bool"
+
+struct.DescriptorDataResource { union }
+    .ptrs               "const void**"
+    .textures           "TextureViewId*"
+    .samplers           "SamplerId*"
+    .buffers            "BufferId*"
+    .renderPipelines    "RenderPipelineId*"
+    .computePipelines   "ComputePipelineId*"
+    .descriptorSets     "DescriptorSetId*"
 
 struct.DescriptorData
     .name               "const char*"
     .binding            "uint32_t"
     .bindingType        "ResourceType"
+    .params             "DescriptorDataParams"
+    .resources          "DescriptorDataResource"
     .count              "uint32_t"
+
+struct.BufferInfo
+    .size               "uint64_t"
+    .cpuMappedAddress   "void*"
+    .descriptors        "uint32_t"
+    .memoryUsage        "uint32_t"
+
+struct.Buffer
+    .device             "DeviceId"
+    .info               "const BufferInfo*"
+
+struct.TextureInfo
+    .width              "uint64_t"
+    .height             "uint64_t"
+    .depth              "uint64_t"
+    .mipLevels          "uint32_t"
+    .arraySizeMinusOne  "uint32_t"
+    .sizeInBytes        "uint64_t"
+    .format             "TextureFormat::Enum"
+    .sampleCount        "SampleCount"
+    .uniqueId           "uint64_t"
+    .aspectMask         "uint32_t"
+    .nodeIndex          "uint32_t"
+    .ownsImage          "uint8_t"
+    .isCube             "uint8_t"
+    .isAllocationDedicated  "uint8_t"
+    .isRestrictDedicated    "uint8_t"
+    .isAliasing         "uint8_t"
+    .isTiled            "uint8_t"
+    .isImported         "uint8_t"
+    .canAlias           "uint8_t"
+    .canExport          "uint8_t"
+
+struct.TiledSubresourceInfo
+    .layer              "uint16_t"
+    .mipLevel           "uint16_t"
+    .widthInTiles       "uint32_t"
+    .heightInTiles      "uint16_t"
+    .depthInTiles       "uint16_t"
+
+struct.TiledTextureInfo
+    .tileSize           "uint64_t"
+    .totalTilesCount    "uint64_t"
+    .aliveTilesCount    "uint64_t"
+    .tileWidthInTexels  "uint32_t"
+    .tileHeightInTexels "uint32_t"
+    .tileDepthInTexels  "uint32_t"
+    .subresources       "const TiledSubresourceInfo*"
+    .packedMipStart     "uint32_t"
+    .packedMipCount     "uint32_t"
+    .alivePackCount     "uint64_t"
+    .packUnaligned      "bool"
+
+struct.Texture
+    .device             "DeviceId"
+    .info               "const TextureInfo*"
+    .tiledResource      "const TiledTextureInfo*"
+
+struct.TextureViewDescriptor
+    .name               "const char*"
+    .texture            "TextureId"
+    .format             "TextureFormat::Enum"
+    .usages             "TextureViewUsage"
+    .aspects            "TextureViewAspect"
+    .dims               "TextureDimension::Enum"
+    .baseArrayLayer     "uint8_t"
+    .arrayLayerCount    "uint8_t"
+    .baseMipLevel       "uint8_t"
+    .MipLevelCount      "uint8_t"
+    
+struct.TextureView
+    .device             "DeviceId"
+    .info               "TextureViewDescriptor"
 
 struct.Sampler
     .device             "DeviceId"
@@ -1192,5 +1297,5 @@ func.UpdateDescriptorSet
     .count          "uint32_t"
 
 func.FreeDescriptorSet
-    "DescriptorSetId"
+    "void"
     .set            "DescriptorSetId"

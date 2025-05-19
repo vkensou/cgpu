@@ -75,7 +75,7 @@ CGPU_API CGPUInstanceId cgpu_create_instance(const CGPUInstanceDescriptor* desc)
     return instance;
 }
 
-CGPU_API ECGPUBackend cgpu_instance_get_backend(CGPUInstanceId instance)
+CGPU_API ECGPUBackend cgpu_get_backend(CGPUInstanceId instance)
 {
     return instance->backend;
 }

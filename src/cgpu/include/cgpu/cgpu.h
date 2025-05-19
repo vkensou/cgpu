@@ -804,13 +804,25 @@ DEFINE_CGPU_OBJECT(CGPURootSignaturePool)
 
 DEFINE_CGPU_OBJECT(CGPURootSignature)
 
+DEFINE_CGPU_OBJECT(CGPUDescriptorSet)
+
 DEFINE_CGPU_OBJECT(CGPUShaderReflection)
 
 DEFINE_CGPU_OBJECT(CGPUCompiledShader)
 
 DEFINE_CGPU_OBJECT(CGPULinkedShader)
 
+DEFINE_CGPU_OBJECT(CGPUBuffer)
+
+DEFINE_CGPU_OBJECT(CGPUTexture)
+
+DEFINE_CGPU_OBJECT(CGPUTextureView)
+
 DEFINE_CGPU_OBJECT(CGPUSampler)
+
+DEFINE_CGPU_OBJECT(CGPURenderPipeline)
+
+DEFINE_CGPU_OBJECT(CGPUComputePipeline)
 
 
 typedef struct CGPUInstanceDescriptor CGPUInstanceDescriptor;
@@ -822,6 +834,8 @@ typedef struct CGPUAdapterDetail CGPUAdapterDetail;
 typedef struct CGPUDeviceDescriptor CGPUDeviceDescriptor;
 typedef struct CGPURootSignaturePoolDescriptor CGPURootSignaturePoolDescriptor;
 typedef struct CGPURootSignatureDescriptor CGPURootSignatureDescriptor;
+typedef struct CGPUDescriptorSetDescriptor CGPUDescriptorSetDescriptor;
+typedef struct CGPUDescriptorData CGPUDescriptorData;
 
 typedef void (*CGPUProcLogCallback)(void* user_data, ECGPULogSeverity severity, const char* fmt, ... );
 typedef void* (*CGPUProcMalloc)(void* user_data, size_t size, const void* pool);
@@ -852,6 +866,9 @@ typedef CGPURootSignaturePoolId (*CGPUProcCreateRootSignaturePool)(CGPUDeviceId 
 typedef void (*CGPUProcFreeRootSignaturePool)(CGPURootSignaturePoolId pool);
 typedef CGPURootSignatureId (*CGPUProcCreateRootSignature)(CGPUDeviceId device, const CGPURootSignatureDescriptor* desc);
 typedef void (*CGPUProcFreeRootSignature)(CGPURootSignatureId signature);
+typedef CGPUDescriptorSetId (*CGPUProcCreateDescriptorSet)(CGPUDeviceId device, const CGPUDescriptorSetDescriptor* desc);
+typedef void (*CGPUProcUpdateDescriptorSet)(CGPUDescriptorSetId set, const CGPUDescriptorData* datas, uint32_t count);
+typedef void (*CGPUProcFreeDescriptorSet)(CGPUDescriptorSetId set);
 
 typedef struct CGPULogger
 {
@@ -1200,6 +1217,27 @@ typedef struct CGPURootSignature
 
 } CGPURootSignature;
 
+typedef struct CGPUDescriptorSet
+{
+    CGPURootSignatureId  root_signature;
+    uint32_t             index;
+
+} CGPUDescriptorSet;
+
+typedef struct CGPURenderPipeline
+{
+    CGPUDeviceId         device;
+    CGPURootSignatureId  root_signature;
+
+} CGPURenderPipeline;
+
+typedef struct CGPUComputePipeline
+{
+    CGPUDeviceId         device;
+    CGPURootSignatureId  root_signature;
+
+} CGPUComputePipeline;
+
 typedef struct CGPUCompiledShader
 {
     CGPUDeviceId         device;
@@ -1213,6 +1251,155 @@ typedef struct CGPULinkedShader
     CGPURootSignatureId  root_signature;
 
 } CGPULinkedShader;
+
+typedef struct CGPUDescriptorSetDescriptor
+{
+    CGPURootSignatureId  root_signature;
+    uint32_t             set_index;
+
+} CGPUDescriptorSetDescriptor;
+
+typedef struct CGPUBufferParams
+{
+    const uint64_t*      offsets;
+    const uint64_t*      sizes;
+
+} CGPUBufferParams;
+
+typedef struct CGPUUavParams
+{
+    uint32_t             uav_mip_slice;
+    bool                 blend_mip_chain;
+
+} CGPUUavParams;
+
+typedef union CGPUDescriptorDataParams
+{
+    CGPUBufferParams     buffers_params;
+    CGPUUavParams        uav_params;
+    bool                 enable_stencil_resource;
+
+} CGPUDescriptorDataParams;
+
+typedef union CGPUDescriptorDataResource
+{
+    const void**         ptrs;
+    CGPUTextureViewId*   textures;
+    CGPUSamplerId*       samplers;
+    CGPUBufferId*        buffers;
+    CGPURenderPipelineId* render_pipelines;
+    CGPUComputePipelineId* compute_pipelines;
+    CGPUDescriptorSetId* descriptor_sets;
+
+} CGPUDescriptorDataResource;
+
+typedef struct CGPUDescriptorData
+{
+    const char*          name;
+    uint32_t             binding;
+    ECGPUResourceTypeFlags binding_type;
+    CGPUDescriptorDataParams params;
+    CGPUDescriptorDataResource resources;
+    uint32_t             count;
+
+} CGPUDescriptorData;
+
+typedef struct CGPUBufferInfo
+{
+    uint64_t             size;
+    void*                cpu_mapped_address;
+    uint32_t             descriptors;
+    uint32_t             memory_usage;
+
+} CGPUBufferInfo;
+
+typedef struct CGPUBuffer
+{
+    CGPUDeviceId         device;
+    const CGPUBufferInfo* info;
+
+} CGPUBuffer;
+
+typedef struct CGPUTextureInfo
+{
+    uint64_t             width;
+    uint64_t             height;
+    uint64_t             depth;
+    uint32_t             mip_levels;
+    uint32_t             array_size_minus_one;
+    uint64_t             size_in_bytes;
+    ECGPUTextureFormat   format;
+    ECGPUSampleCountFlags sample_count;
+    uint64_t             unique_id;
+    uint32_t             aspect_mask;
+    uint32_t             node_index;
+    uint8_t              owns_image;
+    uint8_t              is_cube;
+    uint8_t              is_allocation_dedicated;
+    uint8_t              is_restrict_dedicated;
+    uint8_t              is_aliasing;
+    uint8_t              is_tiled;
+    uint8_t              is_imported;
+    uint8_t              can_alias;
+    uint8_t              can_export;
+
+} CGPUTextureInfo;
+
+typedef struct CGPUTiledSubresourceInfo
+{
+    uint16_t             layer;
+    uint16_t             mip_level;
+    uint32_t             width_in_tiles;
+    uint16_t             height_in_tiles;
+    uint16_t             depth_in_tiles;
+
+} CGPUTiledSubresourceInfo;
+
+typedef struct CGPUTiledTextureInfo
+{
+    uint64_t             tile_size;
+    uint64_t             total_tiles_count;
+    uint64_t             alive_tiles_count;
+    uint32_t             tile_width_in_texels;
+    uint32_t             tile_height_in_texels;
+    uint32_t             tile_depth_in_texels;
+    const CGPUTiledSubresourceInfo* subresources;
+    uint32_t             packed_mip_start;
+    uint32_t             packed_mip_count;
+    uint64_t             alive_pack_count;
+    bool                 pack_unaligned;
+
+} CGPUTiledTextureInfo;
+
+typedef struct CGPUTexture
+{
+    CGPUDeviceId         device;
+    const CGPUTextureInfo* info;
+    const CGPUTiledTextureInfo* tiled_resource;
+
+} CGPUTexture;
+
+typedef struct CGPUTextureViewDescriptor
+{
+    const char*          name;
+    CGPUTextureId        texture;
+    ECGPUTextureFormat   format;
+    ECGPUTextureViewUsageFlags usages;
+    ECGPUTextureViewAspectFlags aspects;
+    ECGPUTextureDimension dims;
+    uint8_t              base_array_layer;
+    uint8_t              array_layer_count;
+    uint8_t              base_mip_level;
+    uint8_t              mip_level_count;
+
+} CGPUTextureViewDescriptor;
+
+typedef struct CGPUTextureView
+{
+    CGPUDeviceId         device;
+    CGPUTextureViewDescriptor info;
+
+} CGPUTextureView;
 
 typedef struct CGPUSampler
 {
@@ -1252,5 +1439,8 @@ CGPU_API CGPURootSignaturePoolId cgpu_create_root_signature_pool(CGPUDeviceId de
 CGPU_API void cgpu_free_root_signature_pool(CGPURootSignaturePoolId pool);
 CGPU_API CGPURootSignatureId cgpu_create_root_signature(CGPUDeviceId device, const CGPURootSignatureDescriptor* desc);
 CGPU_API void cgpu_free_root_signature(CGPURootSignatureId signature);
+CGPU_API CGPUDescriptorSetId cgpu_create_descriptor_set(CGPUDeviceId device, const CGPUDescriptorSetDescriptor* desc);
+CGPU_API void cgpu_update_descriptor_set(CGPUDescriptorSetId set, const CGPUDescriptorData* datas, uint32_t count);
+CGPU_API void cgpu_free_descriptor_set(CGPUDescriptorSetId set);
 
 #endif // CGPU_C99_H_HEADER_GUARD
