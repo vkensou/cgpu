@@ -340,7 +340,7 @@ std::vector<char> readFile(const std::string& filename)
 	return buffer;
 }
 
-std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGPUDeviceId device, ECGPUTextureFormat format, const std::string& vertPath, const std::string& fragPath, const CGPUVertexLayout* vertex_layout, CGPUBlendStateDescriptor* blend_state, CGPUDepthStateDesc* depth_state, CGPURasterizerStateDescriptor* rasterizer_state, CGPURenderPassId render_pass, uint32_t subpass)
+std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGPUDeviceId device, ECGPUTextureFormat format, const std::string& vertPath, const std::string& fragPath, const CGPUVertexLayout* vertex_layout, CGPUBlendStateDescriptor* blend_state, CGPUDepthStateDescriptor* depth_state, CGPURasterizerStateDescriptor* rasterizer_state, CGPURenderPassId render_pass, uint32_t subpass)
 {
 	auto vertShaderCode = readFile(vertPath);
 	auto fragShaderCode = readFile(fragPath);
@@ -575,9 +575,9 @@ int main(int argc, char** argv)
 			CGPUVertexLayout imgui_vertex_layout = {
 				.attribute_count = 3,
 				.attributes = {
-					{ u8"POSITION", 1, CGPU_VERTEX_FORMAT_FLOAT32X2, 0, 0, sizeof(float) * 2, CGPU_VERTEX_INPUT_RATE_VERTEX },
-					{ u8"TEXCOORD", 1, CGPU_VERTEX_FORMAT_FLOAT32X2, 0, sizeof(float) * 2, sizeof(float) * 2, CGPU_VERTEX_INPUT_RATE_VERTEX },
-					{ u8"COLOR", 1, CGPU_VERTEX_FORMAT_UNORM8X4, 0, sizeof(float) * 4, sizeof(uint32_t), CGPU_VERTEX_INPUT_RATE_VERTEX },
+					{ "POSITION", 1, CGPU_VERTEX_FORMAT_FLOAT32X2, 0, 0, sizeof(float) * 2, CGPU_VERTEX_INPUT_RATE_VERTEX },
+					{ "TEXCOORD", 1, CGPU_VERTEX_FORMAT_FLOAT32X2, 0, sizeof(float) * 2, sizeof(float) * 2, CGPU_VERTEX_INPUT_RATE_VERTEX },
+					{ "COLOR", 1, CGPU_VERTEX_FORMAT_UNORM8X4, 0, sizeof(float) * 4, sizeof(uint32_t), CGPU_VERTEX_INPUT_RATE_VERTEX },
 				}
 			};
 			CGPUBlendStateDescriptor imgui_blend_desc = {
@@ -591,7 +591,7 @@ int main(int argc, char** argv)
 				.alpha_to_coverage = false,
 				.independent_blend = false,
 			};
-			CGPUDepthStateDesc imgui_depth_desc = {
+			CGPUDepthStateDescriptor imgui_depth_desc = {
 				.depth_test = false,
 				.depth_write = false,
 				.stencil_test = false,
@@ -620,7 +620,7 @@ int main(int argc, char** argv)
 				.alpha_to_coverage = false,
 				.independent_blend = false,
 			};
-			CGPUDepthStateDesc depth_desc = {
+			CGPUDepthStateDescriptor depth_desc = {
 				.depth_test = false,
 				.depth_write = false,
 				.stencil_test = false,

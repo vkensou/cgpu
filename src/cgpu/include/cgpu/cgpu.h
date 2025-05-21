@@ -836,6 +836,8 @@ typedef struct CGPURootSignaturePoolDescriptor CGPURootSignaturePoolDescriptor;
 typedef struct CGPURootSignatureDescriptor CGPURootSignatureDescriptor;
 typedef struct CGPUDescriptorSetDescriptor CGPUDescriptorSetDescriptor;
 typedef struct CGPUDescriptorData CGPUDescriptorData;
+typedef struct CGPUComputePipelineDescriptor CGPUComputePipelineDescriptor;
+typedef struct CGPURenderPipelineDescriptor CGPURenderPipelineDescriptor;
 
 typedef void (*CGPUProcLogCallback)(void* user_data, ECGPULogSeverity severity, const char* fmt, ... );
 typedef void* (*CGPUProcMalloc)(void* user_data, size_t size, const void* pool);
@@ -869,6 +871,10 @@ typedef void (*CGPUProcFreeRootSignature)(CGPURootSignatureId signature);
 typedef CGPUDescriptorSetId (*CGPUProcCreateDescriptorSet)(CGPUDeviceId device, const CGPUDescriptorSetDescriptor* desc);
 typedef void (*CGPUProcUpdateDescriptorSet)(CGPUDescriptorSetId set, const CGPUDescriptorData* datas, uint32_t count);
 typedef void (*CGPUProcFreeDescriptorSet)(CGPUDescriptorSetId set);
+typedef CGPUComputePipelineId (*CGPUProcCreateComputePipeline)(CGPUDeviceId device, const struct CGPUComputePipelineDescriptor* desc);
+typedef void (*CGPUProcFreeComputePipeline)(CGPUComputePipelineId pipeline);
+typedef CGPURenderPipelineId (*CGPUProcCreateRenderPipeline)(CGPUDeviceId device, const CGPURenderPipelineDescriptor* desc);
+typedef void (*CGPUProcFreeRenderPipeline)(CGPURenderPipelineId pipeline);
 
 typedef struct CGPULogger
 {
@@ -1224,12 +1230,105 @@ typedef struct CGPUDescriptorSet
 
 } CGPUDescriptorSet;
 
+typedef struct CGPUVertexAttribute
+{
+    char                 semantic_name[64];
+    uint32_t             array_size;
+    ECGPUVertexFormat    format;
+    uint32_t             binding;
+    uint32_t             offset;
+    uint32_t             elem_stride;
+    ECGPUVertexInputRate rate;
+
+} CGPUVertexAttribute;
+
+typedef struct CGPUVertexLayout
+{
+    uint32_t             attribute_count;
+    CGPUVertexAttribute  attributes[15];
+
+} CGPUVertexLayout;
+
+typedef struct CGPUBlendStateDescriptor
+{
+    ECGPUBlendFactor     src_factors[8];
+    ECGPUBlendFactor     dst_factors[8];
+    ECGPUBlendFactor     src_alpha_factors[8];
+    ECGPUBlendFactor     dst_alpha_factors[8];
+    ECGPUBlendOp         blend_modes[8];
+    ECGPUBlendOp         blend_alpha_modes[8];
+    int32_t              masks[8];
+    bool                 alpha_to_coverage;
+    bool                 independent_blend;
+
+} CGPUBlendStateDescriptor;
+
+typedef struct CGPUDepthStateDescriptor
+{
+    bool                 depth_test;
+    bool                 depth_write;
+    ECGPUCompareOp       depth_func;
+    bool                 stencil_test;
+    uint8_t              stencil_read_mask;
+    uint8_t              stencil_write_mask;
+    ECGPUCompareOp       stencil_front_func;
+    ECGPUStencilOp       stencil_front_fail;
+    ECGPUStencilOp       depth_front_fail;
+    ECGPUStencilOp       stencil_front_pass;
+    ECGPUCompareOp       stencil_back_func;
+    ECGPUStencilOp       stencil_back_fail;
+    ECGPUStencilOp       depth_back_fail;
+    ECGPUStencilOp       stencil_back_pass;
+
+} CGPUDepthStateDescriptor;
+
+typedef struct CGPURasterizerStateDescriptor
+{
+    ECGPUCullModeFlags   cull_mode;
+    int32_t              depth_bias;
+    float                slope_scaled_depth_bias;
+    ECGPUFillMode        fill_mode;
+    ECGPUFrontFace       front_face;
+    bool                 enable_multi_sample;
+    bool                 enable_scissor;
+    bool                 enable_depth_clamp;
+
+} CGPURasterizerStateDescriptor;
+
+typedef struct CGPURenderPipelineDescriptor
+{
+    uint64_t             dynamic_state;
+    CGPURootSignatureId  root_signature;
+    const CGPUShaderEntryDescriptor* vertex_shader;
+    const CGPUShaderEntryDescriptor* tesc_shader;
+    const CGPUShaderEntryDescriptor* tese_shader;
+    const CGPUShaderEntryDescriptor* geom_shader;
+    const CGPUShaderEntryDescriptor* fragment_shader;
+    const CGPUVertexLayout* vertex_layout;
+    const CGPUBlendStateDescriptor* blend_state;
+    const CGPUDepthStateDescriptor* depth_state;
+    const CGPURasterizerStateDescriptor* rasterizer_state;
+    CGPURenderPassId     render_pass;
+    uint32_t             subpass;
+    uint32_t             render_target_count;
+    ECGPUSampleCountFlags sample_count;
+    ECGPUPrimitiveTopology prim_topology;
+
+} CGPURenderPipelineDescriptor;
+
 typedef struct CGPURenderPipeline
 {
     CGPUDeviceId         device;
     CGPURootSignatureId  root_signature;
 
 } CGPURenderPipeline;
+
+typedef struct CGPUComputePipelineDescriptor
+{
+    CGPURootSignatureId  root_signature;
+    const CGPUShaderEntryDescriptor* compute_shader;
+
+} CGPUComputePipelineDescriptor;
 
 typedef struct CGPUComputePipeline
 {
@@ -1442,5 +1541,9 @@ CGPU_API void cgpu_free_root_signature(CGPURootSignatureId signature);
 CGPU_API CGPUDescriptorSetId cgpu_create_descriptor_set(CGPUDeviceId device, const CGPUDescriptorSetDescriptor* desc);
 CGPU_API void cgpu_update_descriptor_set(CGPUDescriptorSetId set, const CGPUDescriptorData* datas, uint32_t count);
 CGPU_API void cgpu_free_descriptor_set(CGPUDescriptorSetId set);
+CGPU_API CGPUComputePipelineId cgpu_create_compute_pipeline(CGPUDeviceId device, const struct CGPUComputePipelineDescriptor* desc);
+CGPU_API void cgpu_free_compute_pipeline(CGPUComputePipelineId pipeline);
+CGPU_API CGPURenderPipelineId cgpu_create_render_pipeline(CGPUDeviceId device, const CGPURenderPipelineDescriptor* desc);
+CGPU_API void cgpu_free_render_pipeline(CGPURenderPipelineId pipeline);
 
 #endif // CGPU_C99_H_HEADER_GUARD

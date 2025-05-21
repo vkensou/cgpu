@@ -28,6 +28,8 @@ typedef struct CGPURootSignaturePoolDescriptor CGPURootSignaturePoolDescriptor;
 typedef struct CGPURootSignatureDescriptor CGPURootSignatureDescriptor;
 typedef struct CGPUDescriptorSetDescriptor CGPUDescriptorSetDescriptor;
 typedef struct CGPUDescriptorData CGPUDescriptorData;
+typedef struct CGPUComputePipelineDescriptor CGPUComputePipelineDescriptor;
+typedef struct CGPURenderPipelineDescriptor CGPURenderPipelineDescriptor;
 
 $cfuncptrs
 

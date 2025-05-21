@@ -792,6 +792,24 @@ funcptr.FreeDescriptorSet
     "void"
     .set            "DescriptorSetId"
 
+funcptr.CreateComputePipeline
+    "ComputePipelineId"
+    .device         "DeviceId"
+    .desc           "const struct ComputePipelineDescriptor*"
+
+funcptr.FreeComputePipeline
+    "void"
+    .pipeline       "ComputePipelineId"
+
+funcptr.CreateRenderPipeline
+    "RenderPipelineId"
+    .device         "DeviceId"
+    .desc           "const RenderPipelineDescriptor*"
+
+funcptr.FreeRenderPipeline
+    "void"
+    .pipeline       "RenderPipelineId"
+
 id "InstanceId"
 id "AdapterId"
 id "DeviceId"
@@ -1059,9 +1077,81 @@ struct.DescriptorSet
     .rootSignature      "RootSignatureId"
     .index              "uint32_t"
 
+struct.VertexAttribute
+    .semanticName       "char[64]"
+    .arraySize          "uint32_t"
+    .format             "VertexFormat::Enum"
+    .binding            "uint32_t"
+    .offset             "uint32_t"
+    .elemStride         "uint32_t"
+    .rate               "VertexInputRate::Enum"
+
+struct.VertexLayout
+    .attributeCount     "uint32_t"
+    .attributes         "VertexAttribute[15]"
+
+struct.BlendStateDescriptor
+    .srcFactors         "BlendFactor::Enum[8]"
+    .dstFactors         "BlendFactor::Enum[8]"
+    .srcAlphaFactors    "BlendFactor::Enum[8]"
+    .dstAlphaFactors    "BlendFactor::Enum[8]"
+    .blendModes         "BlendOp::Enum[8]"
+    .blendAlphaModes    "BlendOp::Enum[8]"
+    .masks              "int32_t[8]"
+    .alphaToCoverage    "bool"
+    .independentBlend   "bool"
+
+struct.DepthStateDescriptor
+    .depthTest          "bool"
+    .depthWrite         "bool"
+    .depthFunc          "CompareOp::Enum"
+    .stencilTest        "bool"
+    .stencilReadMask    "uint8_t"
+    .stencilWriteMask   "uint8_t"
+    .stencilFrontFunc   "CompareOp::Enum"
+    .stencilFrontFail   "StencilOp::Enum"
+    .depthFrontFail     "StencilOp::Enum"
+    .stencilFrontPass   "StencilOp::Enum"
+    .stencilBackFunc    "CompareOp::Enum"
+    .stencilBackFail    "StencilOp::Enum"
+    .depthBackFail      "StencilOp::Enum"
+    .stencilBackPass    "StencilOp::Enum"
+
+struct.RasterizerStateDescriptor
+    .cullMode           "CullMode"
+    .depthBias          "int32_t"
+    .slopeScaledDepthBias   "float"
+    .fillMode           "FillMode::Enum"
+    .frontFace          "FrontFace::Enum"
+    .enableMultiSample  "bool"
+    .enableScissor      "bool"
+    .enableDepthClamp   "bool"
+
+struct.RenderPipelineDescriptor
+    .dynamicState       "uint64_t"
+    .rootSignature      "RootSignatureId"
+    .vertexShader       "const ShaderEntryDescriptor*"
+    .tescShader         "const ShaderEntryDescriptor*"
+    .teseShader         "const ShaderEntryDescriptor*"
+    .geomShader         "const ShaderEntryDescriptor*"
+    .fragmentShader     "const ShaderEntryDescriptor*"
+    .vertexLayout       "const VertexLayout*"
+    .blendState         "const BlendStateDescriptor*"
+    .depthState         "const DepthStateDescriptor*"
+    .rasterizerState    "const RasterizerStateDescriptor*"
+    .renderPass         "RenderPassId"
+    .subpass            "uint32_t"
+    .renderTargetCount  "uint32_t"
+    .sampleCount        "SampleCount"
+    .primTopology       "PrimitiveTopology::Enum"
+
 struct.RenderPipeline
     .device             "DeviceId"
     .rootSignature      "RootSignatureId"
+
+struct.ComputePipelineDescriptor
+    .rootSignature      "RootSignatureId"
+    .computeShader      "const ShaderEntryDescriptor*"
 
 struct.ComputePipeline
     .device             "DeviceId"
@@ -1299,3 +1389,21 @@ func.UpdateDescriptorSet
 func.FreeDescriptorSet
     "void"
     .set            "DescriptorSetId"
+
+func.CreateComputePipeline
+    "ComputePipelineId"
+    .device         "DeviceId"
+    .desc           "const struct ComputePipelineDescriptor*"
+
+func.FreeComputePipeline
+    "void"
+    .pipeline       "ComputePipelineId"
+
+func.CreateRenderPipeline
+    "RenderPipelineId"
+    .device         "DeviceId"
+    .desc           "const RenderPipelineDescriptor*"
+
+func.FreeRenderPipeline
+    "void"
+    .pipeline       "RenderPipelineId"

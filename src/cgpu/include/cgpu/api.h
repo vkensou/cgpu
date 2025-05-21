@@ -72,14 +72,6 @@ static const char* gCGPUBackendNames[CGPU_BACKEND_COUNT] = {
 // Device APIs
 
 // API Objects APIs
-CGPU_API CGPUComputePipelineId cgpu_create_compute_pipeline(CGPUDeviceId device, const struct CGPUComputePipelineDescriptor* desc);
-typedef CGPUComputePipelineId (*CGPUProcCreateComputePipeline)(CGPUDeviceId device, const struct CGPUComputePipelineDescriptor* desc);
-CGPU_API void cgpu_free_compute_pipeline(CGPUComputePipelineId pipeline);
-typedef void (*CGPUProcFreeComputePipeline)(CGPUComputePipelineId pipeline);
-CGPU_API CGPURenderPipelineId cgpu_create_render_pipeline(CGPUDeviceId device, const struct CGPURenderPipelineDescriptor* desc);
-typedef CGPURenderPipelineId (*CGPUProcCreateRenderPipeline)(CGPUDeviceId device, const struct CGPURenderPipelineDescriptor* desc);
-CGPU_API void cgpu_free_render_pipeline(CGPURenderPipelineId pipeline);
-typedef void (*CGPUProcFreeRenderPipeline)(CGPURenderPipelineId pipeline);
 CGPU_API CGPUQueryPoolId cgpu_create_query_pool(CGPUDeviceId, const struct CGPUQueryPoolDescriptor* desc);
 typedef CGPUQueryPoolId (*CGPUProcCreateQueryPool)(CGPUDeviceId, const struct CGPUQueryPoolDescriptor* desc);
 CGPU_API void cgpu_free_query_pool(CGPUQueryPoolId);
@@ -824,102 +816,6 @@ typedef struct CGPUCompiledShaderDescriptor {
     void* shader_code;
     uint64_t code_size;
 } CGPUCompiledShaderDescriptor;
-
-typedef struct CGPUComputePipelineDescriptor {
-    CGPURootSignatureId root_signature;
-    CGPUShaderEntryDescriptor* compute_shader;
-} CGPUComputePipelineDescriptor;
-
-// caution: this must be a restrict flatten-POD struct (no array pointer, no c-str, ...) cause we directly hash it in cgpux.hpp
-typedef struct CGPUBlendStateDescriptor {
-    /// Source blend factor per render target.
-    ECGPUBlendFactor src_factors[CGPU_MAX_MRT_COUNT];
-    /// Destination blend factor per render target.
-    ECGPUBlendFactor dst_factors[CGPU_MAX_MRT_COUNT];
-    /// Source alpha blend factor per render target.
-    ECGPUBlendFactor src_alpha_factors[CGPU_MAX_MRT_COUNT];
-    /// Destination alpha blend factor per render target.
-    ECGPUBlendFactor dst_alpha_factors[CGPU_MAX_MRT_COUNT];
-    /// Blend mode per render target.
-    ECGPUBlendOp blend_modes[CGPU_MAX_MRT_COUNT];
-    /// Alpha blend mode per render target.
-    ECGPUBlendOp blend_alpha_modes[CGPU_MAX_MRT_COUNT];
-    /// Write mask per render target.
-    int32_t masks[CGPU_MAX_MRT_COUNT];
-    /// Set whether alpha to coverage should be enabled.
-    bool alpha_to_coverage;
-    /// Set whether each render target has an unique blend function. When false the blend function in slot 0 will be used for all render targets.
-    bool independent_blend;
-} CGPUBlendStateDescriptor;
-
-// caution: this must be a restrict flatten-POD struct (no array pointer, no c-str, ...) cause we directly hash it in cgpux.hpp
-typedef struct CGPUDepthStateDesc {
-    bool depth_test;
-    bool depth_write;
-    ECGPUCompareOp depth_func;
-    bool stencil_test;
-    uint8_t stencil_read_mask;
-    uint8_t stencil_write_mask;
-    ECGPUCompareOp stencil_front_func;
-    ECGPUStencilOp stencil_front_fail;
-    ECGPUStencilOp depth_front_fail;
-    ECGPUStencilOp stencil_front_pass;
-    ECGPUCompareOp stencil_back_func;
-    ECGPUStencilOp stencil_back_fail;
-    ECGPUStencilOp depth_back_fail;
-    ECGPUStencilOp stencil_back_pass;
-} CGPUDepthStateDescriptor;
-
-// caution: this must be a restrict flatten-POD struct (no array pointer, no c-str, ...) cause we directly hash it in cgpux.hpp
-typedef struct CGPURasterizerStateDescriptor {
-    ECGPUCullModeFlags cull_mode;
-    int32_t depth_bias;
-    float slope_scaled_depth_bias;
-    ECGPUFillMode fill_mode;
-    ECGPUFrontFace front_face;
-    bool enable_multi_sample;
-    bool enable_scissor;
-    bool enable_depth_clamp;
-} CGPURasterizerStateDescriptor;
-
-// caution: this must be a restrict flatten-POD struct (no array pointer, no c-str, ...) cause we directly hash it in cgpux.hpp
-typedef struct CGPUVertexAttribute {
-    // TODO: handle this in a better way
-    char8_t semantic_name[64];
-    uint32_t array_size;
-    ECGPUVertexFormat format;
-    uint32_t binding;
-    uint32_t offset;
-    uint32_t elem_stride;
-    ECGPUVertexInputRate rate;
-} CGPUVertexAttribute;
-
-// caution: this must be a restrict flatten-POD struct (no array pointer, no c-str, ...) cause we directly hash it in cgpux.hpp
-typedef struct CGPUVertexLayout {
-    uint32_t attribute_count;
-    CGPUVertexAttribute attributes[CGPU_MAX_VERTEX_ATTRIBS];
-} CGPUVertexLayout;
-
-typedef struct CGPURenderPipelineDescriptor {
-    uint64_t dynamic_state;
-    CGPURootSignatureId root_signature;
-    const CGPUShaderEntryDescriptor* vertex_shader;
-    const CGPUShaderEntryDescriptor* tesc_shader;
-    const CGPUShaderEntryDescriptor* tese_shader;
-    const CGPUShaderEntryDescriptor* geom_shader;
-    const CGPUShaderEntryDescriptor* fragment_shader;
-    const CGPUVertexLayout* vertex_layout;
-    const CGPUBlendStateDescriptor* blend_state;
-    const CGPUDepthStateDescriptor* depth_state;
-    const CGPURasterizerStateDescriptor* rasterizer_state;
-    // caution: if any of these platten parameters have been changed, the hasher in cgpux.hpp must be updated
-
-    CGPURenderPassId render_pass;
-    uint32_t subpass;
-    uint32_t render_target_count;
-    ECGPUSampleCountFlags sample_count;
-    ECGPUPrimitiveTopology prim_topology;
-} CGPURenderPipelineDescriptor;
 
 typedef struct CGPUMemoryPoolDescriptor {
     ECGPUMemoryPoolType type;
