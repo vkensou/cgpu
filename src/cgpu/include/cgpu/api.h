@@ -24,8 +24,6 @@ CGPU_EXTERN_C_BEGIN
 typedef uint32_t CGPUQueueIndex;
 
 DEFINE_CGPU_OBJECT(CGPUSurface)
-DEFINE_CGPU_OBJECT(CGPUSwapChain)
-DEFINE_CGPU_OBJECT(CGPUMemoryPool)
 DEFINE_CGPU_OBJECT(CGPUPipelineReflection)
 
 struct CGPUExportTextureDescriptor;
@@ -72,37 +70,8 @@ static const char* gCGPUBackendNames[CGPU_BACKEND_COUNT] = {
 // Device APIs
 
 // API Objects APIs
-CGPU_API CGPUQueryPoolId cgpu_create_query_pool(CGPUDeviceId, const struct CGPUQueryPoolDescriptor* desc);
-typedef CGPUQueryPoolId (*CGPUProcCreateQueryPool)(CGPUDeviceId, const struct CGPUQueryPoolDescriptor* desc);
-CGPU_API void cgpu_free_query_pool(CGPUQueryPoolId);
-typedef void (*CGPUProcFreeQueryPool)(CGPUQueryPoolId);
-CGPU_API CGPUMemoryPoolId cgpu_create_memory_pool(CGPUDeviceId, const struct CGPUMemoryPoolDescriptor* desc);
-typedef CGPUMemoryPoolId (*CGPUProcCreateMemoryPool)(CGPUDeviceId, const struct CGPUMemoryPoolDescriptor* desc);
-CGPU_API void cgpu_free_memory_pool(CGPUMemoryPoolId pool);
-typedef void (*CGPUProcFreeMemoryPool)(CGPUMemoryPoolId pool);
 
 // Queue APIs
-// Warn: If you get a queue at an index with a specific type, you must hold the handle and reuses it.
-CGPU_API CGPUQueueId cgpu_get_queue(CGPUDeviceId device, ECGPUQueueType type, uint32_t index);
-typedef CGPUQueueId (*CGPUProcGetQueue)(CGPUDeviceId device, ECGPUQueueType type, uint32_t index);
-CGPU_API void cgpu_submit_queue(CGPUQueueId queue, const struct CGPUQueueSubmitDescriptor* desc);
-typedef void (*CGPUProcSubmitQueue)(CGPUQueueId queue, const struct CGPUQueueSubmitDescriptor* desc);
-CGPU_API void cgpu_queue_present(CGPUQueueId queue, const struct CGPUQueuePresentDescriptor* desc);
-typedef void (*CGPUProcQueuePresent)(CGPUQueueId queue, const struct CGPUQueuePresentDescriptor* desc);
-CGPU_API void cgpu_wait_queue_idle(CGPUQueueId queue);
-typedef void (*CGPUProcWaitQueueIdle)(CGPUQueueId queue);
-CGPU_API float cgpu_queue_get_timestamp_period_ns(CGPUQueueId queue);
-typedef float (*CGPUProcQueueGetTimestampPeriodNS)(CGPUQueueId queue);
-CGPU_API void cgpu_queue_map_tiled_texture(CGPUQueueId queue, const struct CGPUTiledTextureRegions* desc);
-typedef void (*CGPUProcQueueMapTiledTexture)(CGPUQueueId queue, const struct CGPUTiledTextureRegions* desc);
-CGPU_API void cgpu_queue_unmap_tiled_texture(CGPUQueueId queue, const struct CGPUTiledTextureRegions* desc);
-typedef void (*CGPUProcQueueUnmapTiledTexture)(CGPUQueueId queue, const struct CGPUTiledTextureRegions* desc);
-CGPU_API void cgpu_queue_map_packed_mips(CGPUQueueId queue, const struct CGPUTiledTexturePackedMips* regions);
-typedef void (*CGPUProcQueueMapPackedMips)(CGPUQueueId queue, const struct CGPUTiledTexturePackedMips* regions);
-CGPU_API void cgpu_queue_unmap_packed_mips(CGPUQueueId queue, const struct CGPUTiledTexturePackedMips* regions);
-typedef void (*CGPUProcQueueUnmapPackedMips)(CGPUQueueId queue, const struct CGPUTiledTexturePackedMips* regions);
-CGPU_API void cgpu_free_queue(CGPUQueueId queue);
-typedef void (*CGPUProcFreeQueue)(CGPUQueueId queue);
 
 // RenderPass APIs
 CGPU_API CGPURenderPassId cgpu_create_render_pass(CGPUDeviceId device, const struct CGPURenderPassDescriptor* desc);
@@ -591,12 +560,6 @@ typedef struct CGPUClearValue
     bool is_color;
 } CGPUClearValue;
 
-typedef struct CGPUSwapChain {
-    CGPUDeviceId device;
-    const CGPUTextureId* back_buffers;
-    uint32_t buffer_count;
-} CGPUSwapChain;
-
 // Descriptors (on Stack)
 #pragma region DESCRIPTORS
 
@@ -607,28 +570,6 @@ typedef struct CGPUChainedDescriptor {
 } CGPUChainedDescriptor;
 
 // Device & Pipeline
-typedef struct CGPUQueueSubmitDescriptor {
-    CGPUCommandBufferId* cmds;
-    CGPUFenceId signal_fence;
-    CGPUSemaphoreId* wait_semaphores;
-    CGPUSemaphoreId* signal_semaphores;
-    uint32_t cmds_count;
-    uint32_t wait_semaphore_count;
-    uint32_t signal_semaphore_count;
-} CGPUQueueSubmitDescriptor;
-
-typedef struct CGPUQueuePresentDescriptor {
-    CGPUSwapChainId swapchain;
-    const CGPUSemaphoreId* wait_semaphores;
-    uint32_t wait_semaphore_count;
-    uint8_t index;
-} CGPUQueuePresentDescriptor;
-
-typedef struct CGPUQueryPoolDescriptor {
-    ECGPUQueryType type;
-    uint32_t query_count;
-} CGPUQueryPoolDescriptor;
-
 typedef struct CGPUQueryDescriptor {
     uint32_t index;
     ECGPUShaderStageFlags stage;
@@ -645,40 +586,6 @@ typedef struct CGPUTextureSubresource {
     uint32_t base_array_layer;
     uint32_t layer_count;
 } CGPUTextureSubresource;
-
-typedef struct CGPUCoordinate {
-    uint32_t x;
-    uint32_t y;
-    uint32_t z;
-} CGPUCoordinate;
-
-typedef struct CGPUCoordinateRegion {
-    CGPUCoordinate start;
-    CGPUCoordinate end;
-} CGPUCoordinateRegion;
-
-typedef struct CGPUTextureCoordinateRegion {
-    CGPUCoordinate start;
-    CGPUCoordinate end;
-    uint32_t mip_level;
-    uint32_t layer;
-} CGPUTextureCoordinateRegion;
-
-typedef struct CGPUTiledTextureRegions {
-    CGPUTextureId texture;
-    struct CGPUTextureCoordinateRegion* regions;
-    uint32_t region_count;
-} CGPUTiledTextureRegions;
-
-typedef struct CGPUTiledTexturePackedMip {
-    CGPUTextureId texture;
-    uint32_t layer;
-} CGPUTiledTexturePackedMip;
-
-typedef struct CGPUTiledTexturePackedMips {
-    struct CGPUTiledTexturePackedMip* packed_mips;
-    uint32_t packed_mip_count;
-} CGPUTiledTexturePackedMips;
 
 typedef struct CGPUBufferToBufferTransfer {
     CGPUBufferId dst;
@@ -816,20 +723,6 @@ typedef struct CGPUCompiledShaderDescriptor {
     void* shader_code;
     uint64_t code_size;
 } CGPUCompiledShaderDescriptor;
-
-typedef struct CGPUMemoryPoolDescriptor {
-    ECGPUMemoryPoolType type;
-    ECGPUMemoryUsage memory_usage;
-    uint64_t block_size;
-    uint32_t min_block_count;
-    uint32_t max_block_count;
-    uint64_t min_alloc_alignment;
-} CGPUMemoryPoolDescriptor;
-
-typedef struct CGPUMemoryPool {
-    CGPUDeviceId device;
-    ECGPUMemoryPoolType type;
-} CGPUMemoryPool;
 
 // Resources
 typedef struct CGPUShaderLibraryDescriptor {

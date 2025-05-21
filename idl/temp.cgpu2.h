@@ -30,6 +30,12 @@ typedef struct CGPUDescriptorSetDescriptor CGPUDescriptorSetDescriptor;
 typedef struct CGPUDescriptorData CGPUDescriptorData;
 typedef struct CGPUComputePipelineDescriptor CGPUComputePipelineDescriptor;
 typedef struct CGPURenderPipelineDescriptor CGPURenderPipelineDescriptor;
+typedef struct CGPUQueryPoolDescriptor CGPUQueryPoolDescriptor;
+typedef struct CGPUMemoryPoolDescriptor CGPUMemoryPoolDescriptor;
+typedef struct CGPUQueueSubmitDescriptor CGPUQueueSubmitDescriptor;
+typedef struct CGPUQueuePresentDescriptor CGPUQueuePresentDescriptor;
+typedef struct CGPUTiledTextureRegions CGPUTiledTextureRegions;
+typedef struct CGPUTiledTexturePackedMips CGPUTiledTexturePackedMips;
 
 $cfuncptrs
 

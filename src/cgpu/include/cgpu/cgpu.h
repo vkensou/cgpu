@@ -824,6 +824,10 @@ DEFINE_CGPU_OBJECT(CGPURenderPipeline)
 
 DEFINE_CGPU_OBJECT(CGPUComputePipeline)
 
+DEFINE_CGPU_OBJECT(CGPUMemoryPool)
+
+DEFINE_CGPU_OBJECT(CGPUSwapChain)
+
 
 typedef struct CGPUInstanceDescriptor CGPUInstanceDescriptor;
 typedef struct CGPUInstanceFeatures CGPUInstanceFeatures;
@@ -838,6 +842,12 @@ typedef struct CGPUDescriptorSetDescriptor CGPUDescriptorSetDescriptor;
 typedef struct CGPUDescriptorData CGPUDescriptorData;
 typedef struct CGPUComputePipelineDescriptor CGPUComputePipelineDescriptor;
 typedef struct CGPURenderPipelineDescriptor CGPURenderPipelineDescriptor;
+typedef struct CGPUQueryPoolDescriptor CGPUQueryPoolDescriptor;
+typedef struct CGPUMemoryPoolDescriptor CGPUMemoryPoolDescriptor;
+typedef struct CGPUQueueSubmitDescriptor CGPUQueueSubmitDescriptor;
+typedef struct CGPUQueuePresentDescriptor CGPUQueuePresentDescriptor;
+typedef struct CGPUTiledTextureRegions CGPUTiledTextureRegions;
+typedef struct CGPUTiledTexturePackedMips CGPUTiledTexturePackedMips;
 
 typedef void (*CGPUProcLogCallback)(void* user_data, ECGPULogSeverity severity, const char* fmt, ... );
 typedef void* (*CGPUProcMalloc)(void* user_data, size_t size, const void* pool);
@@ -871,10 +881,24 @@ typedef void (*CGPUProcFreeRootSignature)(CGPURootSignatureId signature);
 typedef CGPUDescriptorSetId (*CGPUProcCreateDescriptorSet)(CGPUDeviceId device, const CGPUDescriptorSetDescriptor* desc);
 typedef void (*CGPUProcUpdateDescriptorSet)(CGPUDescriptorSetId set, const CGPUDescriptorData* datas, uint32_t count);
 typedef void (*CGPUProcFreeDescriptorSet)(CGPUDescriptorSetId set);
-typedef CGPUComputePipelineId (*CGPUProcCreateComputePipeline)(CGPUDeviceId device, const struct CGPUComputePipelineDescriptor* desc);
+typedef CGPUComputePipelineId (*CGPUProcCreateComputePipeline)(CGPUDeviceId device, const CGPUComputePipelineDescriptor* desc);
 typedef void (*CGPUProcFreeComputePipeline)(CGPUComputePipelineId pipeline);
 typedef CGPURenderPipelineId (*CGPUProcCreateRenderPipeline)(CGPUDeviceId device, const CGPURenderPipelineDescriptor* desc);
 typedef void (*CGPUProcFreeRenderPipeline)(CGPURenderPipelineId pipeline);
+typedef CGPUQueryPoolId (*CGPUProcCreateQueryPool)(CGPUDeviceId device, const CGPUQueryPoolDescriptor* desc);
+typedef void (*CGPUProcFreeQueryPool)(CGPUQueryPoolId pool);
+typedef CGPUMemoryPoolId (*CGPUProcCreateMemoryPool)(CGPUDeviceId device, const CGPUMemoryPoolDescriptor* desc);
+typedef void (*CGPUProcFreeMemoryPool)(CGPUMemoryPoolId pool);
+typedef CGPUQueueId (*CGPUProcGetQueue)(CGPUDeviceId device, ECGPUQueueType type, uint32_t index);
+typedef void (*CGPUProcSubmitQueue)(CGPUQueueId queue, const CGPUQueueSubmitDescriptor* desc);
+typedef void (*CGPUProcQueuePresent)(CGPUQueueId queue, const CGPUQueuePresentDescriptor* desc);
+typedef void (*CGPUProcWaitQueueIdle)(CGPUQueueId queue);
+typedef float (*CGPUProcQueueGetTimestampPeriodNS)(CGPUQueueId queue);
+typedef void (*CGPUProcQueueMapTiledTexture)(CGPUQueueId queue, const CGPUTiledTextureRegions* desc);
+typedef void (*CGPUProcQueueUnmapTiledTexture)(CGPUQueueId queue, const CGPUTiledTextureRegions* desc);
+typedef void (*CGPUProcQueueMapPackedMips)(CGPUQueueId queue, const CGPUTiledTexturePackedMips* desc);
+typedef void (*CGPUProcQueueUnmapPackedMips)(CGPUQueueId queue, const CGPUTiledTexturePackedMips* desc);
+typedef void (*CGPUProcFreeQueue)(CGPUQueueId queue);
 
 typedef struct CGPULogger
 {
@@ -1493,6 +1517,13 @@ typedef struct CGPUTextureViewDescriptor
 
 } CGPUTextureViewDescriptor;
 
+typedef struct CGPUQueryPoolDescriptor
+{
+    ECGPUQueryType       type;
+    uint32_t             query_count;
+
+} CGPUQueryPoolDescriptor;
+
 typedef struct CGPUTextureView
 {
     CGPUDeviceId         device;
@@ -1506,12 +1537,105 @@ typedef struct CGPUSampler
 
 } CGPUSampler;
 
+typedef struct CGPUSwapChain
+{
+    CGPUDeviceId         device;
+    const CGPUTextureId* back_buffers;
+    uint32_t             buffer_count;
+
+} CGPUSwapChain;
+
 typedef struct CGPUBufferRange
 {
     uint64_t             offset;
     uint64_t             size;
 
 } CGPUBufferRange;
+
+typedef struct CGPUMemoryPoolDescriptor
+{
+    ECGPUMemoryPoolType  type;
+    ECGPUMemoryUsage     memory_usage;
+    uint64_t             block_size;
+    uint32_t             min_block_count;
+    uint32_t             max_block_count;
+    uint64_t             min_alloc_alignment;
+
+} CGPUMemoryPoolDescriptor;
+
+typedef struct CGPUMemoryPool
+{
+    CGPUDeviceId         device;
+    ECGPUMemoryPoolType  type;
+
+} CGPUMemoryPool;
+
+typedef struct CGPUQueueSubmitDescriptor
+{
+    CGPUCommandBufferId* cmds;
+    CGPUFenceId          signal_fence;
+    CGPUSemaphoreId*     wait_semaphores;
+    CGPUSemaphoreId*     signal_semaphores;
+    uint32_t             cmds_count;
+    uint32_t             wait_semaphore_count;
+    uint32_t             signal_semaphore_count;
+
+} CGPUQueueSubmitDescriptor;
+
+typedef struct CGPUQueuePresentDescriptor
+{
+    CGPUSwapChainId      swapchain;
+    CGPUSemaphoreId*     wait_semaphores;
+    uint32_t             wait_semaphore_count;
+    uint8_t              index;
+
+} CGPUQueuePresentDescriptor;
+
+typedef struct CGPUCoordinate
+{
+    uint32_t             x;
+    uint32_t             y;
+    uint32_t             z;
+
+} CGPUCoordinate;
+
+typedef struct CGPUCoordinateRegion
+{
+    CGPUCoordinate       start;
+    CGPUCoordinate       end;
+
+} CGPUCoordinateRegion;
+
+typedef struct CGPUTextureCoordinateRegion
+{
+    CGPUCoordinate       start;
+    CGPUCoordinate       end;
+    uint32_t             mip_level;
+    uint32_t             layer;
+
+} CGPUTextureCoordinateRegion;
+
+typedef struct CGPUTiledTextureRegions
+{
+    CGPUTextureId        texture;
+    CGPUTextureCoordinateRegion* regions;
+    uint32_t             region_count;
+
+} CGPUTiledTextureRegions;
+
+typedef struct CGPUTiledTexturePackedMip
+{
+    CGPUTextureId        texture;
+    uint32_t             layer;
+
+} CGPUTiledTexturePackedMip;
+
+typedef struct CGPUTiledTexturePackedMips
+{
+    CGPUTiledTexturePackedMip* packed_mips;
+    uint32_t             packed_mip_count;
+
+} CGPUTiledTexturePackedMips;
 
 
 CGPU_API CGPUInstanceId cgpu_create_instance(const CGPUInstanceDescriptor* desc);
@@ -1541,9 +1665,23 @@ CGPU_API void cgpu_free_root_signature(CGPURootSignatureId signature);
 CGPU_API CGPUDescriptorSetId cgpu_create_descriptor_set(CGPUDeviceId device, const CGPUDescriptorSetDescriptor* desc);
 CGPU_API void cgpu_update_descriptor_set(CGPUDescriptorSetId set, const CGPUDescriptorData* datas, uint32_t count);
 CGPU_API void cgpu_free_descriptor_set(CGPUDescriptorSetId set);
-CGPU_API CGPUComputePipelineId cgpu_create_compute_pipeline(CGPUDeviceId device, const struct CGPUComputePipelineDescriptor* desc);
+CGPU_API CGPUComputePipelineId cgpu_create_compute_pipeline(CGPUDeviceId device, const CGPUComputePipelineDescriptor* desc);
 CGPU_API void cgpu_free_compute_pipeline(CGPUComputePipelineId pipeline);
 CGPU_API CGPURenderPipelineId cgpu_create_render_pipeline(CGPUDeviceId device, const CGPURenderPipelineDescriptor* desc);
 CGPU_API void cgpu_free_render_pipeline(CGPURenderPipelineId pipeline);
+CGPU_API CGPUQueryPoolId cgpu_create_query_pool(CGPUDeviceId device, const CGPUQueryPoolDescriptor* desc);
+CGPU_API void cgpu_free_query_pool(CGPUQueryPoolId pool);
+CGPU_API CGPUMemoryPoolId cgpu_create_memory_pool(CGPUDeviceId device, const CGPUMemoryPoolDescriptor* desc);
+CGPU_API void cgpu_free_memory_pool(CGPUMemoryPoolId pool);
+CGPU_API CGPUQueueId cgpu_get_queue(CGPUDeviceId device, ECGPUQueueType type, uint32_t index);
+CGPU_API void cgpu_submit_queue(CGPUQueueId queue, const CGPUQueueSubmitDescriptor* desc);
+CGPU_API void cgpu_queue_present(CGPUQueueId queue, const CGPUQueuePresentDescriptor* desc);
+CGPU_API void cgpu_wait_queue_idle(CGPUQueueId queue);
+CGPU_API float cgpu_queue_get_timestamp_period_ns(CGPUQueueId queue);
+CGPU_API void cgpu_queue_map_tiled_texture(CGPUQueueId queue, const CGPUTiledTextureRegions* desc);
+CGPU_API void cgpu_queue_unmap_tiled_texture(CGPUQueueId queue, const CGPUTiledTextureRegions* desc);
+CGPU_API void cgpu_queue_map_packed_mips(CGPUQueueId queue, const CGPUTiledTexturePackedMips* desc);
+CGPU_API void cgpu_queue_unmap_packed_mips(CGPUQueueId queue, const CGPUTiledTexturePackedMips* desc);
+CGPU_API void cgpu_free_queue(CGPUQueueId queue);
 
 #endif // CGPU_C99_H_HEADER_GUARD

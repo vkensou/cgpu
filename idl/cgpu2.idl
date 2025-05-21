@@ -795,7 +795,7 @@ funcptr.FreeDescriptorSet
 funcptr.CreateComputePipeline
     "ComputePipelineId"
     .device         "DeviceId"
-    .desc           "const struct ComputePipelineDescriptor*"
+    .desc           "const ComputePipelineDescriptor*"
 
 funcptr.FreeComputePipeline
     "void"
@@ -809,6 +809,72 @@ funcptr.CreateRenderPipeline
 funcptr.FreeRenderPipeline
     "void"
     .pipeline       "RenderPipelineId"
+
+funcptr.CreateQueryPool
+    "QueryPoolId"
+    .device         "DeviceId"
+    .desc           "const QueryPoolDescriptor*"
+
+funcptr.FreeQueryPool
+    "void"
+    .pool           "QueryPoolId"
+
+funcptr.CreateMemoryPool
+    "MemoryPoolId"
+    .device         "DeviceId"
+    .desc           "const MemoryPoolDescriptor*"
+
+funcptr.FreeMemoryPool
+    "void"
+    .pool           "MemoryPoolId"
+
+funcptr.GetQueue
+    "QueueId"
+    .device         "DeviceId"
+    .type           "QueueType::Enum"
+    .index          "uint32_t"
+
+funcptr.SubmitQueue
+    "void"
+    .queue          "QueueId"
+    .desc           "const QueueSubmitDescriptor*"
+
+funcptr.QueuePresent
+    "void"
+    .queue          "QueueId"
+    .desc           "const QueuePresentDescriptor*"
+
+funcptr.WaitQueueIdle
+    "void"
+    .queue          "QueueId"
+
+funcptr.QueueGetTimestampPeriodNS
+    "float"
+    .queue          "QueueId"
+
+funcptr.QueueMapTiledTexture
+    "void"
+    .queue          "QueueId"
+    .desc           "const TiledTextureRegions*"
+
+funcptr.QueueUnmapTiledTexture
+    "void"
+    .queue          "QueueId"
+    .desc           "const TiledTextureRegions*"
+
+funcptr.QueueMapPackedMips
+    "void"
+    .queue          "QueueId"
+    .desc           "const TiledTexturePackedMips*"
+
+funcptr.QueueUnmapPackedMips
+    "void"
+    .queue          "QueueId"
+    .desc           "const TiledTexturePackedMips*"
+
+funcptr.FreeQueue
+    "void"
+    .queue          "QueueId"
 
 id "InstanceId"
 id "AdapterId"
@@ -841,6 +907,8 @@ id "TextureViewId"
 id "SamplerId"
 id "RenderPipelineId"
 id "ComputePipelineId"
+id "MemoryPoolId"
+id "SwapChainId"
 
 struct.Logger
     .logCallback "LogCallback"
@@ -1268,6 +1336,10 @@ struct.TextureViewDescriptor
     .baseMipLevel       "uint8_t"
     .MipLevelCount      "uint8_t"
     
+struct.QueryPoolDescriptor
+    .type               "QueryType::Enum"
+    .queryCount         "uint32_t"
+
 struct.TextureView
     .device             "DeviceId"
     .info               "TextureViewDescriptor"
@@ -1275,9 +1347,69 @@ struct.TextureView
 struct.Sampler
     .device             "DeviceId"
 
+struct.SwapChain
+    .device             "DeviceId"
+    .backBuffers        "const TextureId*"
+    .bufferCount        "uint32_t"
+
 struct.BufferRange
     .offset             "uint64_t"
     .size               "uint64_t"
+
+struct.MemoryPoolDescriptor
+    .type               "MemoryPoolType::Enum"
+    .memoryUsage        "MemoryUsage::Enum"
+    .blockSize          "uint64_t"
+    .minBlockCount      "uint32_t"
+    .maxBlockCount      "uint32_t"
+    .minAllocAlignment  "uint64_t"
+
+struct.MemoryPool
+    .device             "DeviceId"
+    .type               "MemoryPoolType::Enum"
+
+struct.QueueSubmitDescriptor
+    .cmds               "CommandBufferId*"
+    .signalFence        "FenceId"
+    .waitSemaphores     "SemaphoreId*"
+    .signalSemaphores   "SemaphoreId*"
+    .cmdsCount          "uint32_t"
+    .waitSemaphoreCount "uint32_t"
+    .signalSemaphoreCount   "uint32_t"
+
+struct.QueuePresentDescriptor
+    .swapchain          "SwapChainId"
+    .waitSemaphores     "SemaphoreId*"
+    .waitSemaphoreCount "uint32_t"
+    .index              "uint8_t"
+
+struct.Coordinate
+    .x                  "uint32_t"
+    .y                  "uint32_t"
+    .z                  "uint32_t"
+
+struct.CoordinateRegion
+    .start              "Coordinate"
+    ["end"]             "Coordinate"
+
+struct.TextureCoordinateRegion
+    .start              "Coordinate"
+    ["end"]             "Coordinate"
+    .mipLevel           "uint32_t"
+    .layer              "uint32_t"
+
+struct.TiledTextureRegions
+    .texture            "TextureId"
+    .regions            "TextureCoordinateRegion*"
+    .regionCount        "uint32_t"
+
+struct.TiledTexturePackedMip
+    .texture            "TextureId"
+    .layer              "uint32_t"
+
+struct.TiledTexturePackedMips
+    .packedMips         "TiledTexturePackedMip*"
+    .packedMipCount     "uint32_t"
 
 func.createInstance { cfunc }
     "InstanceId"
@@ -1393,7 +1525,7 @@ func.FreeDescriptorSet
 func.CreateComputePipeline
     "ComputePipelineId"
     .device         "DeviceId"
-    .desc           "const struct ComputePipelineDescriptor*"
+    .desc           "const ComputePipelineDescriptor*"
 
 func.FreeComputePipeline
     "void"
@@ -1407,3 +1539,69 @@ func.CreateRenderPipeline
 func.FreeRenderPipeline
     "void"
     .pipeline       "RenderPipelineId"
+
+func.CreateQueryPool
+    "QueryPoolId"
+    .device         "DeviceId"
+    .desc           "const QueryPoolDescriptor*"
+
+func.FreeQueryPool
+    "void"
+    .pool           "QueryPoolId"
+
+func.CreateMemoryPool
+    "MemoryPoolId"
+    .device         "DeviceId"
+    .desc           "const MemoryPoolDescriptor*"
+
+func.FreeMemoryPool
+    "void"
+    .pool           "MemoryPoolId"
+
+func.GetQueue
+    "QueueId"
+    .device         "DeviceId"
+    .type           "QueueType::Enum"
+    .index          "uint32_t"
+
+func.SubmitQueue
+    "void"
+    .queue          "QueueId"
+    .desc           "const QueueSubmitDescriptor*"
+
+func.QueuePresent
+    "void"
+    .queue          "QueueId"
+    .desc           "const QueuePresentDescriptor*"
+
+func.WaitQueueIdle
+    "void"
+    .queue          "QueueId"
+
+func.QueueGetTimestampPeriodNS
+    "float"
+    .queue          "QueueId"
+
+func.QueueMapTiledTexture
+    "void"
+    .queue          "QueueId"
+    .desc           "const TiledTextureRegions*"
+
+func.QueueUnmapTiledTexture
+    "void"
+    .queue          "QueueId"
+    .desc           "const TiledTextureRegions*"
+
+func.QueueMapPackedMips
+    "void"
+    .queue          "QueueId"
+    .desc           "const TiledTexturePackedMips*"
+
+func.QueueUnmapPackedMips
+    "void"
+    .queue          "QueueId"
+    .desc           "const TiledTexturePackedMips*"
+
+func.FreeQueue
+    "void"
+    .queue          "QueueId"
