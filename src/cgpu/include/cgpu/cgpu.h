@@ -6,6 +6,11 @@
 #include <stdint.h>  // uint32_t
 #include <stdlib.h>  // size_t
 
+#define CGPU_MAX_MRT_COUNT 8u
+#define CGPU_MAX_ATTACHMENT_COUNT 9u
+#define CGPU_MAX_VERTEX_ATTRIBS 15
+#define CGPU_SHADER_STAGE_COUNT 6
+
 #define DEFINE_CGPU_OBJECT(name) typedef const struct name* name##Id;
 
 typedef uint32_t ECGPUFlags;
@@ -1399,13 +1404,13 @@ typedef struct CGPUVertexLayout
 
 typedef struct CGPUBlendStateDescriptor
 {
-    ECGPUBlendFactor     src_factors[8];
-    ECGPUBlendFactor     dst_factors[8];
-    ECGPUBlendFactor     src_alpha_factors[8];
-    ECGPUBlendFactor     dst_alpha_factors[8];
-    ECGPUBlendOp         blend_modes[8];
-    ECGPUBlendOp         blend_alpha_modes[8];
-    int32_t              masks[8];
+    ECGPUBlendFactor     src_factors[CGPU_MAX_MRT_COUNT];
+    ECGPUBlendFactor     dst_factors[CGPU_MAX_MRT_COUNT];
+    ECGPUBlendFactor     src_alpha_factors[CGPU_MAX_MRT_COUNT];
+    ECGPUBlendFactor     dst_alpha_factors[CGPU_MAX_MRT_COUNT];
+    ECGPUBlendOp         blend_modes[CGPU_MAX_MRT_COUNT];
+    ECGPUBlendOp         blend_alpha_modes[CGPU_MAX_MRT_COUNT];
+    int32_t              masks[CGPU_MAX_MRT_COUNT];
     bool                 alpha_to_coverage;
     bool                 independent_blend;
 
@@ -1784,7 +1789,7 @@ typedef struct CGPUDepthStencilAttachment
 typedef struct CGPURenderPassDescriptor
 {
     ECGPUSampleCountFlags sample_count;
-    CGPUColorAttachment  color_attachments[8];
+    CGPUColorAttachment  color_attachments[CGPU_MAX_MRT_COUNT];
     CGPUDepthStencilAttachment depth_stencil;
 
 } CGPURenderPassDescriptor;
@@ -1793,7 +1798,7 @@ typedef struct CGPUFramebufferDescriptor
 {
     CGPURenderPassId     renderpass;
     uint32_t             attachment_count;
-    CGPUTextureViewId    attachments[9];
+    CGPUTextureViewId    attachments[CGPU_MAX_ATTACHMENT_COUNT];
     uint32_t             width;
     uint32_t             height;
     uint32_t             layers;
@@ -1802,7 +1807,7 @@ typedef struct CGPUFramebufferDescriptor
 
 typedef struct CGPUPipelineReflection
 {
-    CGPUShaderReflection* stages[6];
+    CGPUShaderReflection* stages[CGPU_SHADER_STAGE_COUNT];
     CGPUShaderResource*  shader_resources;
     uint32_t             shader_resources_count;
 

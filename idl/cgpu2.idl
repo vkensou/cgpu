@@ -1667,13 +1667,13 @@ struct.VertexLayout
     .attributes         "VertexAttribute[15]"
 
 struct.BlendStateDescriptor
-    .srcFactors         "BlendFactor::Enum[8]"
-    .dstFactors         "BlendFactor::Enum[8]"
-    .srcAlphaFactors    "BlendFactor::Enum[8]"
-    .dstAlphaFactors    "BlendFactor::Enum[8]"
-    .blendModes         "BlendOp::Enum[8]"
-    .blendAlphaModes    "BlendOp::Enum[8]"
-    .masks              "int32_t[8]"
+    .srcFactors         "BlendFactor::Enum[CGPU_MAX_MRT_COUNT]"
+    .dstFactors         "BlendFactor::Enum[CGPU_MAX_MRT_COUNT]"
+    .srcAlphaFactors    "BlendFactor::Enum[CGPU_MAX_MRT_COUNT]"
+    .dstAlphaFactors    "BlendFactor::Enum[CGPU_MAX_MRT_COUNT]"
+    .blendModes         "BlendOp::Enum[CGPU_MAX_MRT_COUNT]"
+    .blendAlphaModes    "BlendOp::Enum[CGPU_MAX_MRT_COUNT]"
+    .masks              "int32_t[CGPU_MAX_MRT_COUNT]"
     .alphaToCoverage    "bool"
     .independentBlend   "bool"
 
@@ -1934,19 +1934,19 @@ struct.DepthStencilAttachment
 
 struct.RenderPassDescriptor
     .sampleCount       "SampleCount"
-    .colorAttachments  "ColorAttachment[8]"
+    .colorAttachments  "ColorAttachment[CGPU_MAX_MRT_COUNT]"
     .depthStencil      "DepthStencilAttachment" 
 
 struct.FramebufferDescriptor
     .renderpass         "RenderPassId" 
     .attachmentCount   "uint32_t" 
-    .attachments        "TextureViewId[9]"
+    .attachments        "TextureViewId[CGPU_MAX_ATTACHMENT_COUNT]"
     .width              "uint32_t" 
     .height             "uint32_t" 
     .layers             "uint32_t" 
 
 struct.PipelineReflection 
-    .stages             "ShaderReflection*[6]" 
+    .stages             "ShaderReflection*[CGPU_SHADER_STAGE_COUNT]" 
     .shaderResources    "ShaderResource*" 
     .shaderResourcesCount   "uint32_t"
 

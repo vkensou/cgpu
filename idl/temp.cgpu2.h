@@ -6,6 +6,11 @@
 #include <stdint.h>  // uint32_t
 #include <stdlib.h>  // size_t
 
+#define CGPU_MAX_MRT_COUNT 8u
+#define CGPU_MAX_ATTACHMENT_COUNT 9u
+#define CGPU_MAX_VERTEX_ATTRIBS 15
+#define CGPU_SHADER_STAGE_COUNT 6
+
 #define DEFINE_CGPU_OBJECT(name) typedef const struct name* name##Id;
 
 typedef uint32_t ECGPUFlags;

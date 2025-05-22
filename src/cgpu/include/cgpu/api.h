@@ -7,18 +7,11 @@ CGPU_EXTERN_C_BEGIN
 
 #include "flags.h"
 
-#define CGPU_MAX_MRT_COUNT 8u
-#define CGPU_MAX_VERTEX_ATTRIBS 15
-#define CGPU_SHADER_STAGE_COUNT 6
-
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-const-variable"
 #pragma clang diagnostic ignored "-Wunused-variable"
 #endif
-
-CGPU_UNUSED static const CGPUBufferId CGPU_BUFFER_OUT_OF_HOST_MEMORY = (CGPUBufferId)1;
-CGPU_UNUSED static const CGPUBufferId CGPU_BUFFER_OUT_OF_DEVICE_MEMORY = (CGPUBufferId)3;
 
 static const char* gCGPUBackendNames[CGPU_BACKEND_COUNT] = {
     "vulkan",

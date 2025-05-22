@@ -143,11 +143,11 @@ CGPUBufferId cgpu_create_buffer_vulkan(CGPUDeviceId device, const struct CGPUBuf
     VkResult bufferResult = vmaCreateBuffer(D->pVmaAllocator, &add_info, &vma_mem_reqs, &pVkBuffer, &mVmaAllocation, &alloc_info);
     if (bufferResult == VK_ERROR_OUT_OF_DEVICE_MEMORY)
     {
-        return CGPU_BUFFER_OUT_OF_DEVICE_MEMORY;
+        return CGPU_NULLPTR;
     }
     else if (bufferResult == VK_ERROR_OUT_OF_HOST_MEMORY)
     {
-        return CGPU_BUFFER_OUT_OF_HOST_MEMORY;
+        return CGPU_NULLPTR;
     }
     else if (bufferResult != VK_SUCCESS)
     {
