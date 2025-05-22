@@ -9,7 +9,7 @@ struct VkDebugReportCallbackCreateInfoEXT;
 // end forward declaration for vulkan_core.h
 
 typedef struct CGPUVulkanInstanceDescriptor {
-    CGPU_CHAINED_DESCRIPTOR_HEADER
+    ECGPUBackend backend;
     // Additional Instance Layers
     const char** ppInstanceLayers;
     // Count of Additional Instance Layers

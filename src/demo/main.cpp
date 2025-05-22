@@ -154,7 +154,7 @@ struct RenderWindow
 			cgpu_free_framebuffer(swapchain_framebuffer[i]);
 			swapchain_framebuffer[i] = CGPU_NULLPTR;
 		}
-		cgpu_free_swapchain(swapchain);
+		cgpu_free_swap_chain(swapchain);
 		swapchain = CGPU_NULLPTR;
 		cgpu_free_surface(device, surface);
 		surface = CGPU_NULLPTR;
@@ -187,7 +187,7 @@ struct RenderWindow
 			.enable_vsync = true,
 			.format = CGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM,
 		};
-		swapchain = cgpu_create_swapchain(device, &descriptor);
+		swapchain = cgpu_create_swap_chain(device, &descriptor);
 
 		for (uint32_t i = 0; i < swapchain->buffer_count; i++)
 		{
@@ -345,13 +345,13 @@ std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGP
 	auto vertShaderCode = readFile(vertPath);
 	auto fragShaderCode = readFile(fragPath);
 	CGPUShaderLibraryDescriptor vs_desc = {
-		.name = u8"VertexShaderLibrary",
+		.name = "VertexShaderLibrary",
 		.code = reinterpret_cast<const uint32_t*>(vertShaderCode.data()),
 		.code_size = (uint32_t)vertShaderCode.size(),
 		.stage = CGPU_SHADER_STAGE_VERTEX,
 	};
 	CGPUShaderLibraryDescriptor ps_desc = {
-		.name = u8"FragmentShaderLibrary",
+		.name = "FragmentShaderLibrary",
 		.code = reinterpret_cast<const uint32_t*>(fragShaderCode.data()),
 		.code_size = (uint32_t)fragShaderCode.size(),
 		.stage = CGPU_SHADER_STAGE_FRAGMENT,

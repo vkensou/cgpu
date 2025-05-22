@@ -896,7 +896,7 @@ const CGPUBufferId* buffers, const uint32_t* strides, const uint32_t* offsets)
     cgpu_assert(buffers != CGPU_NULLPTR && "fatal: call on NULL buffers!");
     CGPUDeviceId device = encoder->device;
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
-    const CGPUProcRendeEncoderBindVertexBuffers fn_bind_vertex_buffers = device->proc_table_cache->render_encoder_bind_vertex_buffers;
+    const CGPUProcRenderEncoderBindVertexBuffers fn_bind_vertex_buffers = device->proc_table_cache->render_encoder_bind_vertex_buffers;
     cgpu_assert(fn_bind_vertex_buffers && "render_encoder_bind_vertex_buffers Proc Missing!");
     fn_bind_vertex_buffers(encoder, buffer_count, buffers, strides, offsets);
 }
@@ -907,7 +907,7 @@ CGPU_API void cgpu_render_encoder_bind_index_buffer(CGPURenderPassEncoderId enco
     cgpu_assert(buffer != CGPU_NULLPTR && "fatal: call on NULL buffer!");
     CGPUDeviceId device = encoder->device;
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
-    const CGPUProcRendeEncoderBindIndexBuffer fn_bind_index_buffer = device->proc_table_cache->render_encoder_bind_index_buffer;
+    const CGPUProcRenderEncoderBindIndexBuffer fn_bind_index_buffer = device->proc_table_cache->render_encoder_bind_index_buffer;
     cgpu_assert(fn_bind_index_buffer && "render_encoder_bind_index_buffer Proc Missing!");
     fn_bind_index_buffer(encoder, buffer, index_stride, offset);
 }
@@ -1257,7 +1257,7 @@ CGPUTextureId cgpu_import_shared_texture_handle(CGPUDeviceId device, const struc
 }
 
 // SwapChain APIs
-CGPUSwapChainId cgpu_create_swapchain(CGPUDeviceId device, const CGPUSwapChainDescriptor* desc)
+CGPUSwapChainId cgpu_create_swap_chain(CGPUDeviceId device, const CGPUSwapChainDescriptor* desc)
 {
     // SkrCZoneN(zz, "CGPUCreateSwapchain", 1);
 
@@ -1306,7 +1306,7 @@ uint32_t cgpu_acquire_next_image(CGPUSwapChainId swapchain, const struct CGPUAcq
     return swapchain->device->proc_table_cache->acquire_next_image(swapchain, desc);
 }
 
-void cgpu_free_swapchain(CGPUSwapChainId swapchain)
+void cgpu_free_swap_chain(CGPUSwapChainId swapchain)
 {
     // SkrCZoneN(zz, "CGPUFreeSwapchain", 1);
 

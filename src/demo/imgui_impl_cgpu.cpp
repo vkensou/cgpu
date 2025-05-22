@@ -97,7 +97,7 @@ static void CreateOrResizeBuffer(CGPUBufferId& buffer, size_t& p_buffer_size, si
 
     CGPUBufferDescriptor buffer_desc = {
         .size = new_size,
-        .name = u8"DataBuffer",
+        .name = "DataBuffer",
         .descriptors = resourceType,
         .memory_usage = CGPU_MEMORY_USAGE_GPU_ONLY,
         .flags = CGPU_BUFFER_CREATION_USAGE_HOST_VISIBLE,
@@ -152,7 +152,7 @@ static void ImGui_ImplCGPU_SetupRenderState(ImDrawData* draw_data, CGPURenderPip
             .scale = { scale[0], scale[1] },
             .translate = { translate[0], translate[1] },
         };
-        cgpu_render_encoder_push_constants(rp_encoder, root_sig, u8"pc", &data);
+        cgpu_render_encoder_push_constants(rp_encoder, root_sig, "pc", &data);
     }
 }
 
@@ -305,7 +305,7 @@ bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId ro
 
     CGPUTextureDescriptor font_texture_desc = 
     {
-        .name = u8"ImGui Default Font Texture",
+        .name = "ImGui Default Font Texture",
         .width = (uint64_t)width,
         .height = (uint64_t)height,
         .depth = 1,
@@ -322,7 +322,7 @@ bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId ro
     CGPUCommandPoolDescriptor cmd_pool_desc = {};
     CGPUCommandBufferDescriptor cmd_desc = {};
     CGPUBufferDescriptor upload_buffer_desc = {};
-    upload_buffer_desc.name = u8"IMGUI_FontUploadBuffer";
+    upload_buffer_desc.name = "IMGUI_FontUploadBuffer";
     upload_buffer_desc.flags = CGPU_BUFFER_CREATION_USAGE_PERSISTENT_MAP;
     upload_buffer_desc.descriptors = CGPU_RESOURCE_TYPE_NONE;
     upload_buffer_desc.memory_usage = CGPU_MEMORY_USAGE_CPU_ONLY;
@@ -532,7 +532,7 @@ static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQue
         .enable_vsync = true,
         .format = CGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM,
     };
-    wd->Swapchain = cgpu_create_swapchain(device, &descriptor);
+    wd->Swapchain = cgpu_create_swap_chain(device, &descriptor);
     wd->Width = width;
     wd->Height = height;
     wd->ImageCount = wd->Swapchain->buffer_count;
@@ -585,7 +585,7 @@ static void FreeWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device)
         IM_FREE(wd->Framebuffers);
         wd->Framebuffers = nullptr;
     }
-    if (wd->Swapchain) { cgpu_free_swapchain(wd->Swapchain); wd->Swapchain = nullptr; }
+    if (wd->Swapchain) { cgpu_free_swap_chain(wd->Swapchain); wd->Swapchain = nullptr; }
     if (wd->Surface) { cgpu_free_surface(device, wd->Surface); wd->Surface = nullptr; }
     if (wd->Fence) { cgpu_free_fence(wd->Fence); wd->Fence = nullptr; }
 }

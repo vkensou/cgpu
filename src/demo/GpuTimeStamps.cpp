@@ -13,7 +13,7 @@ GpuTimeStamps::GpuTimeStamps(CGPUDeviceId device, uint32_t frame_count)
 
 		CGPUBufferDescriptor query_buffer_desc = {
 		   .size = sizeof(uint64_t) * MaxValuesPerFrame,
-		   .name = u8"QueryBuffer",
+		   .name = "QueryBuffer",
 		   .descriptors = CGPU_RESOURCE_TYPE_NONE,
 		   .memory_usage = CGPU_MEMORY_USAGE_GPU_TO_CPU,
 		   .flags = CGPU_BUFFER_CREATION_USAGE_PERSISTENT_MAP,
