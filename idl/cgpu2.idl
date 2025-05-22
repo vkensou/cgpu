@@ -1796,7 +1796,6 @@ struct.TextureInfo
     .sampleCount        "SampleCount"
     .uniqueId           "uint64_t"
     .aspectMask         "uint32_t"
-    .nodeIndex          "uint32_t"
     .ownsImage          "uint8_t"
     .isCube             "uint8_t"
     .isAllocationDedicated  "uint8_t"

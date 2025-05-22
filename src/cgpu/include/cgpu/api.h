@@ -7,19 +7,9 @@ CGPU_EXTERN_C_BEGIN
 
 #include "flags.h"
 
-#define CGPU_ARRAY_LEN(array) ((sizeof(array) / sizeof(array[0])))
 #define CGPU_MAX_MRT_COUNT 8u
 #define CGPU_MAX_VERTEX_ATTRIBS 15
-#define CGPU_MAX_VERTEX_BINDINGS 15
-#define CGPU_COLOR_MASK_RED 0x1
-#define CGPU_COLOR_MASK_GREEN 0x2
-#define CGPU_COLOR_MASK_BLUE 0x4
-#define CGPU_COLOR_MASK_ALPHA 0x8
-#define CGPU_COLOR_MASK_ALL CGPU_COLOR_MASK_RED | CGPU_COLOR_MASK_GREEN | CGPU_COLOR_MASK_BLUE | CGPU_COLOR_MASK_ALPHA
-#define CGPU_COLOR_MASK_NONE 0
 #define CGPU_SHADER_STAGE_COUNT 6
-#define CGPU_CULL_MODE_COUNT 3
-#define CGPU_COMPARE_OP_COUNT 8
 
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -126,10 +116,6 @@ typedef struct CGPUSurfacesProcTable {
 // Shaders
 
 // Descriptors (on Stack)
-
-#define CGPU_SINGLE_GPU_NODE_COUNT 1
-#define CGPU_SINGLE_GPU_NODE_MASK 1
-#define CGPU_SINGLE_GPU_NODE_INDEX 0
 
 #ifdef __cplusplus
 CGPU_EXTERN_C_END

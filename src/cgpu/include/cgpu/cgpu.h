@@ -1579,7 +1579,6 @@ typedef struct CGPUTextureInfo
     ECGPUSampleCountFlags sample_count;
     uint64_t             unique_id;
     uint32_t             aspect_mask;
-    uint32_t             node_index;
     uint8_t              owns_image;
     uint8_t              is_cube;
     uint8_t              is_allocation_dedicated;

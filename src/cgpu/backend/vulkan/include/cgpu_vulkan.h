@@ -133,7 +133,7 @@ CGPU_API void cgpu_cmd_end_event_vulkan(CGPUCommandBufferId cmd);
 // Compute CMDs
 CGPU_API CGPUComputePassEncoderId cgpu_cmd_begin_compute_pass_vulkan(CGPUCommandBufferId cmd, const struct CGPUComputePassDescriptor* desc);
 CGPU_API void cgpu_compute_encoder_bind_descriptor_set_vulkan(CGPUComputePassEncoderId encoder, CGPUDescriptorSetId descriptor);
-CGPU_API void cgpu_compute_encoder_push_constants_vulkan(CGPUComputePassEncoderId encoder, CGPURootSignatureId rs, const char8_t* name, const void* data);
+CGPU_API void cgpu_compute_encoder_push_constants_vulkan(CGPUComputePassEncoderId encoder, CGPURootSignatureId rs, const char* name, const void* data);
 CGPU_API void cgpu_compute_encoder_bind_pipeline_vulkan(CGPUComputePassEncoderId encoder, CGPUComputePipelineId pipeline);
 CGPU_API void cgpu_compute_encoder_dispatch_vulkan(CGPUComputePassEncoderId encoder, uint32_t X, uint32_t Y, uint32_t Z);
 CGPU_API void cgpu_cmd_end_compute_pass_vulkan(CGPUCommandBufferId cmd, CGPUComputePassEncoderId encoder);
@@ -148,7 +148,7 @@ CGPU_API void cgpu_render_encoder_bind_pipeline_vulkan(CGPURenderPassEncoderId e
 CGPU_API void cgpu_render_encoder_bind_vertex_buffers_vulkan(CGPURenderPassEncoderId encoder, uint32_t buffer_count,
 const CGPUBufferId* buffers, const uint32_t* strides, const uint32_t* offsets);
 CGPU_API void cgpu_render_encoder_bind_index_buffer_vulkan(CGPURenderPassEncoderId encoder, CGPUBufferId buffer, uint32_t index_stride, uint64_t offset);
-CGPU_API void cgpu_render_encoder_push_constants_vulkan(CGPURenderPassEncoderId encoder, CGPURootSignatureId rs, const char8_t* name, const void* data);
+CGPU_API void cgpu_render_encoder_push_constants_vulkan(CGPURenderPassEncoderId encoder, CGPURootSignatureId rs, const char* name, const void* data);
 CGPU_API void cgpu_render_encoder_draw_vulkan(CGPURenderPassEncoderId encoder, uint32_t vertex_count, uint32_t first_vertex);
 CGPU_API void cgpu_render_encoder_draw_instanced_vulkan(CGPURenderPassEncoderId encoder, uint32_t vertex_count, uint32_t first_vertex, uint32_t instance_count, uint32_t first_instance);
 CGPU_API void cgpu_render_encoder_draw_indexed_vulkan(CGPURenderPassEncoderId encoder, uint32_t index_count, uint32_t first_index, uint32_t first_vertex);
@@ -325,7 +325,6 @@ typedef struct CGPUCommandBuffer_Vulkan {
     VkCommandBuffer pVkCmdBuf;
     VkPipelineLayout pBoundPipelineLayout;
     VkRenderPass pRenderPass;
-    uint32_t mNodeIndex : 4;
     uint32_t mType : 3;
 } CGPUCommandBuffer_Vulkan;
 

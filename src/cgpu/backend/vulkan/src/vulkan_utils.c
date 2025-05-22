@@ -341,7 +341,7 @@ static ECGPUTextureDimension ArrDIMLut[SpvDimSubpassData + 1] = {
     CGPU_TEXTURE_DIMENSION_UNDEFINED,  // SpvDimBuffer
     CGPU_TEXTURE_DIMENSION_UNDEFINED   // SpvDimSubpassData
 };
-const char8_t* push_constants_name = u8"push_constants";
+const char* push_constants_name = u8"push_constants";
 void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vulkan* S, const struct CGPUShaderLibraryDescriptor* desc)
 {
     const CGPUAllocator* allocator = &device->adapter->instance->allocator;
@@ -358,7 +358,7 @@ void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vu
         CGPUShaderReflection* reflection = &S->super.entry_reflections[i];
         // ATTENTION: We have only one entry point now
         const SpvReflectEntryPoint* entry = spvReflectGetEntryPoint(S->pReflect, S->pReflect->entry_points[i].name);
-        reflection->entry_name = (const char8_t*)entry->name;
+        reflection->entry_name = (const char*)entry->name;
         reflection->stage = (ECGPUShaderStageFlags)entry->shader_stage;
         if (reflection->stage == CGPU_SHADER_STAGE_COMPUTE)
         {
@@ -383,7 +383,7 @@ void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vu
                 for (uint32_t i = 0; i < icount; i++)
                 {
                     // We use semantic for HLSL sources because DXC is a piece of shit.
-                    reflection->vertex_inputs[i].name = (const char8_t*)
+                    reflection->vertex_inputs[i].name = (const char*)
                         (bHLSL ? input_vars[i]->semantic : input_vars[i]->name);
                     reflection->vertex_inputs[i].format =
                         VkUtil_FormatTranslateToCGPU((VkFormat)input_vars[i]->format);
@@ -422,7 +422,7 @@ void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vu
                     current_res->binding = current_binding->binding;
                     current_res->stages = S->pReflect->shader_stage;
                     current_res->type = RTLut[current_binding->descriptor_type];
-                    current_res->name = (const char8_t*)current_binding->name;
+                    current_res->name = (const char*)current_binding->name;
                     current_res->name_hash =
                         cgpu_name_hash(current_binding->name, strlen(current_binding->name));
                     current_res->size = current_binding->count;

@@ -488,7 +488,7 @@ CGPUDescriptorSetId cgpu_create_descriptor_set_vulkan(CGPUDeviceId device, const
     const size_t UpdateTemplateSize = RS->super.tables[table_index].resources_count * sizeof(VkDescriptorUpdateData);
     totalSize += UpdateTemplateSize;
     CGPUDescriptorSet_Vulkan* Set = cgpu_calloc_aligned(allocator, 1, totalSize, _Alignof(CGPUDescriptorSet_Vulkan));
-    char8_t* pMem = (char8_t*)(Set + 1);
+    char* pMem = (char*)(Set + 1);
     // Allocate Descriptor Set
     VkUtil_ConsumeDescriptorSets(D->pDescriptorPool, &SetLayout->layout, &Set->pVkDescriptorSet, 1);
     // Fill Update Template Data
@@ -1600,7 +1600,6 @@ CGPUCommandBufferId cgpu_create_command_buffer_vulkan(CGPUCommandPoolId pool, co
     cgpu_assert(Cmd);
 
     Cmd->mType = Q->super.type;
-    Cmd->mNodeIndex = CGPU_SINGLE_GPU_NODE_MASK;
 
     VkCommandBufferAllocateInfo alloc_info = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -2007,7 +2006,7 @@ void cgpu_render_encoder_bind_descriptor_set_vulkan(CGPURenderPassEncoderId enco
     0, NULL);
 }
 
-void cgpu_compute_encoder_push_constants_vulkan(CGPUComputePassEncoderId encoder, CGPURootSignatureId rs, const char8_t* name, const void* data)
+void cgpu_compute_encoder_push_constants_vulkan(CGPUComputePassEncoderId encoder, CGPURootSignatureId rs, const char* name, const void* data)
 {
     CGPUCommandBuffer_Vulkan* Cmd = (CGPUCommandBuffer_Vulkan*)encoder;
     CGPURootSignature_Vulkan* RS = (CGPURootSignature_Vulkan*)rs;
@@ -2193,7 +2192,7 @@ uint32_t index_stride, uint64_t offset)
     D->mVkDeviceTable.vkCmdBindIndexBuffer(Cmd->pVkCmdBuf, Buffer->pVkBuffer, offset, vk_index_type);
 }
 
-void cgpu_render_encoder_push_constants_vulkan(CGPURenderPassEncoderId encoder, CGPURootSignatureId rs, const char8_t* name, const void* data)
+void cgpu_render_encoder_push_constants_vulkan(CGPURenderPassEncoderId encoder, CGPURootSignatureId rs, const char* name, const void* data)
 {
     CGPUCommandBuffer_Vulkan* Cmd = (CGPUCommandBuffer_Vulkan*)encoder;
     CGPURootSignature_Vulkan* RS = (CGPURootSignature_Vulkan*)rs;
@@ -2494,7 +2493,6 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
         Ts[i].I.width = extent.width;
         Ts[i].I.height = extent.height;
         Ts[i].I.mip_levels = 1;
-        Ts[i].I.node_index = CGPU_SINGLE_GPU_NODE_INDEX;
         Ts[i].I.owns_image = false;
     }
     CGPUTextureId* Vs = (CGPUTextureId*)(Ts + buffer_count);

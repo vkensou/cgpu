@@ -587,7 +587,7 @@ int main(int argc, char** argv)
 				.dst_alpha_factors = { CGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA },
 				.blend_modes = { CGPU_BLEND_OP_ADD },
 				.blend_alpha_modes = { CGPU_BLEND_OP_ADD },
-				.masks = { CGPU_COLOR_MASK_ALL },
+				.masks = { CGPU_COLOR_MASK_RGBA },
 				.alpha_to_coverage = false,
 				.independent_blend = false,
 			};
@@ -616,7 +616,7 @@ int main(int argc, char** argv)
 				.dst_alpha_factors = { CGPU_BLEND_FACTOR_ZERO },
 				.blend_modes = { CGPU_BLEND_OP_ADD },
 				.blend_alpha_modes = { CGPU_BLEND_OP_ADD },
-				.masks = { CGPU_COLOR_MASK_ALL },
+				.masks = { CGPU_COLOR_MASK_RGBA },
 				.alpha_to_coverage = false,
 				.independent_blend = false,
 			};

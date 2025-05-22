@@ -370,7 +370,7 @@ static const CGPUBlendStateDescriptor defaultBlendStateDesc = {
     .src_alpha_factors = { CGPU_BLEND_FACTOR_ONE },
     .dst_alpha_factors = { CGPU_BLEND_FACTOR_ZERO },
     .blend_modes = { CGPU_BLEND_OP_ADD },
-    .masks = { CGPU_COLOR_MASK_ALL },
+    .masks = { CGPU_COLOR_MASK_RGBA },
     .independent_blend = false
 };
 static const CGPURasterizerStateDescriptor defaultRasterStateDesc = {
@@ -816,7 +816,7 @@ void cgpu_compute_encoder_bind_descriptor_set(CGPUComputePassEncoderId encoder, 
     fn_bind_descriptor_set(encoder, set);
 }
 
-void cgpu_compute_encoder_push_constants(CGPUComputePassEncoderId encoder, CGPURootSignatureId rs, const char8_t* name, const void* data)
+void cgpu_compute_encoder_push_constants(CGPUComputePassEncoderId encoder, CGPURootSignatureId rs, const char* name, const void* data)
 {
     CGPUDeviceId device = encoder->device;
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
@@ -939,7 +939,7 @@ void cgpu_render_encoder_bind_pipeline(CGPURenderPassEncoderId encoder, CGPURend
     fn_render_bind_pipeline(encoder, pipeline);
 }
 
-void cgpu_render_encoder_push_constants(CGPURenderPassEncoderId encoder, CGPURootSignatureId rs, const char8_t* name, const void* data)
+void cgpu_render_encoder_push_constants(CGPURenderPassEncoderId encoder, CGPURootSignatureId rs, const char* name, const void* data)
 {
     CGPUDeviceId device = encoder->device;
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
@@ -1036,7 +1036,7 @@ CGPUShaderLibraryId cgpu_create_shader_library(CGPUDeviceId device, const struct
     // handle name string
     const size_t str_len = strlen(desc->name);
     const size_t str_size = str_len + 1;
-    shader->name = cgpu_calloc(allocator, 1, str_size * sizeof(char8_t));
+    shader->name = cgpu_calloc(allocator, 1, str_size * sizeof(char));
     memcpy((void*)shader->name, desc->name, str_size);
 
     // SkrCZoneEnd(zz);
@@ -1326,7 +1326,7 @@ void cgpu_free_swap_chain(CGPUSwapChainId swapchain)
 
 // cgpux helpers
 CGPUBufferId cgpux_create_mapped_constant_buffer(CGPUDeviceId device,
-uint64_t size, const char8_t* name, bool device_local_preferred)
+uint64_t size, const char* name, bool device_local_preferred)
 {
     CGPU_DECLARE_ZERO(CGPUBufferDescriptor, buf_desc)
     buf_desc.descriptors = CGPU_RESOURCE_TYPE_BUFFER;
@@ -1344,7 +1344,7 @@ uint64_t size, const char8_t* name, bool device_local_preferred)
 }
 
 CGPU_API CGPUBufferId cgpux_create_mapped_upload_buffer(CGPUDeviceId device,
-uint64_t size, const char8_t* name)
+uint64_t size, const char* name)
 {
     CGPU_DECLARE_ZERO(CGPUBufferDescriptor, buf_desc)
     buf_desc.descriptors = CGPU_RESOURCE_TYPE_NONE;

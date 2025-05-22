@@ -39,6 +39,11 @@ void CGPUUtil_FreeRootSignaturePool(const CGPUAllocator* allocator, CGPURootSign
 
 CGPU_EXTERN_C_END
 
+#define CGPU_ARRAY_LEN(array) ((sizeof(array) / sizeof(array[0])))
+
+#define CGPU_CULL_MODE_COUNT 3
+
+
 #ifndef cgpu_max
     #define cgpu_max(a, b) (((a) > (b)) ? (a) : (b))
 #endif

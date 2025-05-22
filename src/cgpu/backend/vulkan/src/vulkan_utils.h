@@ -175,7 +175,7 @@ typedef struct VkUtil_FramebufferDesc {
         VkResult vkres = (exp);                                                         \
         if (VK_SUCCESS != vkres)                                                        \
         {                                                                               \
-            cgpu_error(logger, (const char8_t*)"VKRESULT %s: FAILED with VkResult: %d\n", #exp, (uint32_t)vkres); \
+            cgpu_error(logger, (const char*)"VKRESULT %s: FAILED with VkResult: %d\n", #exp, (uint32_t)vkres); \
             cgpu_assert(0);                                                             \
         }                                                                               \
     }

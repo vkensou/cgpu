@@ -137,22 +137,3 @@
 #else
     #error unsupported platform
 #endif
-
-#if __cplusplus >= 201100L
-#define CGPU_UTF8(str) u8##str
-#else
-#define CGPU_UTF8(str) str
-#endif
-
-#if __cpp_char8_t
-#define CHAR8_T_DEFINED
-#endif
-
-#ifndef CHAR8_T_DEFINED // If the user hasn't already defined these...
-    #if defined(EA_PLATFORM_APPLE)
-        #define char8_t char // The Apple debugger is too stupid to realize char8_t is typedef'd to char, so we #define it.
-    #else
-        typedef char char8_t;
-    #endif
-    #define CHAR8_T_DEFINED
-#endif
