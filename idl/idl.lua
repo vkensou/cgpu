@@ -44,6 +44,18 @@ local function new_type(typename)
 	return t
 end
 
+local function constdef(_, typename)
+	local t = new_type(typename)
+	t.const_value = true
+
+	return function (obj, attribs)
+		copy_attribs(t, obj)
+		return obj
+	end
+end
+
+idl.const_value = setmetatable({} , { __index = constdef, __call = constdef })
+
 local function typedef(_, typename)
 	local t = new_type(typename)
 
@@ -255,6 +267,7 @@ idl.INT32_MAX  = "INT32_MAX"
 idl.UINT32_MAX = "UINT32_MAX"
 idl.UINT8_MAX  = "UINT8_MAX"
 idl.union      = "union"
+idl.value      = "value"
 
 return setmetatable(idl , { __index = function (_, keyword)
 	error (tostring(keyword) .. " is invalid")

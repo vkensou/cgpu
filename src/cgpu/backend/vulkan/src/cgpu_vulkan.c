@@ -828,8 +828,8 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
     // Vertex input state
     if (desc->vertex_layout != NULL)
     {
-        // Ignore everything that's beyond CGPU_MAX_VERTEX_ATTRIBS
-        uint32_t attrib_count = desc->vertex_layout->attribute_count > CGPU_MAX_VERTEX_ATTRIBS ? CGPU_MAX_VERTEX_ATTRIBS : desc->vertex_layout->attribute_count;
+        // Ignore everything that's beyond CGPU_MAX_VERTEX_ATTRIBUTES
+        uint32_t attrib_count = desc->vertex_layout->attribute_count > CGPU_MAX_VERTEX_ATTRIBUTES ? CGPU_MAX_VERTEX_ATTRIBUTES : desc->vertex_layout->attribute_count;
         uint32_t attr_slot = 0;
         // Initial values
         for (uint32_t i = 0; i < attrib_count; ++i)

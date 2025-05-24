@@ -48,13 +48,26 @@ local function convert_arg(all_types, arg, namespace)
 	if array then
 		arg.fulltype = fulltype
 		arg.array = array
+		local number = array:match "%[(%d+)%]"
 		local enum, value = array:match "%[%s*([%a%d]+)::([%a%d]+)%]"
-		if enum then
+		local const_value = array:match "%[(%s*[%d%a_:]*)%]"
+		if number then
+			arg.array_at = { number = number }
+			arg.carray = "[" .. tostring(number) .. "]"
+		elseif enum then
 			local typedef = all_types[ enum .. "::Enum" ]
 			if typedef == nil then
 				error ("Unknown Enum " .. enum)
 			end
+			arg.array_at = { enum = enum, value = value }
 			arg.carray = "[CGPU_" .. camelcase_to_underscorecase(enum):upper() .. "_" .. value:upper() .. "]"
+		elseif const_value then
+			local typedef = all_types[ const_value ]
+			if typedef == nil then
+				error ("Unknown Enum " .. const_value)
+			end
+			arg.array_at = { const_value = const_value }
+			arg.carray = "[" .. typedef.cname .. "]"			
 		end
 	end
 	local t, postfix = arg.fulltype:match "(%a[%a%d_:]*)%s*([*&]+)%s*$"
@@ -309,6 +322,8 @@ function codegen.nameconversion(all_types, all_funcs)
 				v.cname = "CGPU" .. "Proc".. name
 			elseif v.struct then
 				v.cname = "CGPU" .. name
+			elseif v.const_value then
+				v.cname = "CGPU_" .. camelcase_to_underscorecase(name):upper()
 			else
 				v.cname = name
 			end
@@ -485,7 +500,7 @@ local function codetemp(func)
 		conversion_c2cpp[#conversion_c2cpp+1] = arg.conversion_back
 		local cname = arg.ctype .. " " .. (arg.cname or arg.name)
 		if arg.array then
-			cname = cname .. (arg.carray or arg.array)
+			cname = cname .. (arg.carray)
 		end
 		local name = arg.fulltype .. " " .. arg.name
 		if arg.array then
@@ -672,6 +687,23 @@ function codegen.doxygen_ctype(doxygen, func)
 	result[#result+1] = " *"
 	result[#result+1] = " */"
 	return table.concat(result, "\n")
+end
+
+function codegen.gen_const_define(const_value)
+	return "#define"
+end
+
+local const_temp = [[
+#define $NAME $VALUE
+]]
+
+function codegen.gen_const_cdefine(const_value)
+	assert(const_value.const_value == true, "Not a const value")
+	local temp = {
+		NAME = const_value.cname,
+		VALUE = tostring(const_value.value),
+	}
+	return const_temp:gsub("$(%u+)", temp)
 end
 
 local enum_temp = [[

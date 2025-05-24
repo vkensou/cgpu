@@ -19,6 +19,8 @@ local func_actions = {
 
 local type_actions = {
 
+	consts    = "\n",
+	cconsts    = "\n",
 	cflags    = "\n",
 	enums     = "\n",
 	cenums    = "\n",
@@ -153,6 +155,18 @@ local function add_doxygen(typedef, define, cstyle, cname)
 		else
 			return define
 		end
+end
+
+function typegen.consts(typedef)
+	if typedef.const_value then
+		return add_doxygen(typedef, codegen.gen_const_define(typedef), false, "bgfx_" .. typedef.cname)
+	end
+end
+
+function typegen.cconsts(typedef)
+	if typedef.const_value then
+		return add_doxygen(typedef, codegen.gen_const_cdefine(typedef), true)
+	end
 end
 
 function typegen.enums(typedef)

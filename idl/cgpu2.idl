@@ -16,6 +16,11 @@ typedef "va_list"
 typedef "void"
 typedef "size_t"
 
+const_value.MaxMrtCount { value = 8 }
+const_value.MaxAttachmentCount { value = 9 }
+const_value.MaxVertexAttributes { value = 15 }
+const_value.ShaderStageCount { value = 6 }
+
 enum.Backend { comment = "Backend:" }
 	.Vulkan		--- Vulkan
     .D3d12      --- D3D12
@@ -1513,7 +1518,7 @@ struct.AdapterDetail
     .supportShadingRate                     "bool"
     .supportShadingRateMask                 "bool"
     .supportShadingRateSv                   "bool"
-    .formatSupports                         "FormatSupport[CGPU_TEXTURE_FORMAT_COUNT]"
+    .formatSupports                         "FormatSupport[TextureFormat::Count]"
     .vendorPreset                           "VendorPreset"
 
 struct.Adapter
@@ -1691,13 +1696,13 @@ struct.VertexLayout
     .attributes         "VertexAttribute[15]"
 
 struct.BlendStateDescriptor
-    .srcFactors         "BlendFactor::Enum[CGPU_MAX_MRT_COUNT]"
-    .dstFactors         "BlendFactor::Enum[CGPU_MAX_MRT_COUNT]"
-    .srcAlphaFactors    "BlendFactor::Enum[CGPU_MAX_MRT_COUNT]"
-    .dstAlphaFactors    "BlendFactor::Enum[CGPU_MAX_MRT_COUNT]"
-    .blendModes         "BlendOp::Enum[CGPU_MAX_MRT_COUNT]"
-    .blendAlphaModes    "BlendOp::Enum[CGPU_MAX_MRT_COUNT]"
-    .masks              "int32_t[CGPU_MAX_MRT_COUNT]"
+    .srcFactors         "BlendFactor::Enum[MaxMrtCount]"
+    .dstFactors         "BlendFactor::Enum[MaxMrtCount]"
+    .srcAlphaFactors    "BlendFactor::Enum[MaxMrtCount]"
+    .dstAlphaFactors    "BlendFactor::Enum[MaxMrtCount]"
+    .blendModes         "BlendOp::Enum[MaxMrtCount]"
+    .blendAlphaModes    "BlendOp::Enum[MaxMrtCount]"
+    .masks              "int32_t[MaxMrtCount]"
     .alphaToCoverage    "bool"
     .independentBlend   "bool"
 
@@ -1958,19 +1963,19 @@ struct.DepthStencilAttachment
 
 struct.RenderPassDescriptor
     .sampleCount       "SampleCount"
-    .colorAttachments  "ColorAttachment[CGPU_MAX_MRT_COUNT]"
+    .colorAttachments  "ColorAttachment[MaxMrtCount]"
     .depthStencil      "DepthStencilAttachment" 
 
 struct.FramebufferDescriptor
     .renderpass         "RenderPassId" 
     .attachmentCount   "uint32_t" 
-    .attachments        "TextureViewId[CGPU_MAX_ATTACHMENT_COUNT]"
+    .attachments        "TextureViewId[MaxAttachmentCount]"
     .width              "uint32_t" 
     .height             "uint32_t" 
     .layers             "uint32_t" 
 
 struct.PipelineReflection 
-    .stages             "ShaderReflection*[CGPU_SHADER_STAGE_COUNT]" 
+    .stages             "ShaderReflection*[ShaderStageCount]" 
     .shaderResources    "ShaderResource*" 
     .shaderResourcesCount   "uint32_t"
 

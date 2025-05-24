@@ -49,8 +49,8 @@ CGPU_FORCEINLINE static void VkUtil_GetVertexInputBindingAttrCount(const CGPUVer
 	uint32_t input_attribute_count = 0;
     if (pLayout != NULL)
     {
-        // Ignore everything that's beyond CGPU_MAX_VERTEX_ATTRIBS
-        uint32_t attrib_count = pLayout->attribute_count > CGPU_MAX_VERTEX_ATTRIBS ? CGPU_MAX_VERTEX_ATTRIBS : pLayout->attribute_count;
+        // Ignore everything that's beyond CGPU_MAX_VERTEX_ATTRIBUTES
+        uint32_t attrib_count = pLayout->attribute_count > CGPU_MAX_VERTEX_ATTRIBUTES ? CGPU_MAX_VERTEX_ATTRIBUTES : pLayout->attribute_count;
         uint32_t binding_value = UINT32_MAX;
         // Initial values
         for (uint32_t i = 0; i < attrib_count; ++i)

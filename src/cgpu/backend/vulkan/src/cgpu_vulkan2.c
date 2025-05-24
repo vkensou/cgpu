@@ -446,8 +446,8 @@ void cgpu_binder_bind_vertex_layout_vulkan(CGPUBinderId binder, const struct CGP
     VkVertexInputBindingDescription2EXT* input_bindings = (VkVertexInputBindingDescription2EXT*)data;
     VkVertexInputAttributeDescription2EXT* input_attributes = (VkVertexInputAttributeDescription2EXT*)(data + input_attrs_offset);
     {
-        // Ignore everything that's beyond CGPU_MAX_VERTEX_ATTRIBS
-        uint32_t attrib_count = layout->attribute_count > CGPU_MAX_VERTEX_ATTRIBS ? CGPU_MAX_VERTEX_ATTRIBS : layout->attribute_count;
+        // Ignore everything that's beyond CGPU_MAX_VERTEX_ATTRIBUTES
+        uint32_t attrib_count = layout->attribute_count > CGPU_MAX_VERTEX_ATTRIBUTES ? CGPU_MAX_VERTEX_ATTRIBUTES : layout->attribute_count;
         uint32_t attr_slot = 0;
         // Initial values
         for (uint32_t i = 0; i < attrib_count; ++i)
