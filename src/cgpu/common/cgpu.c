@@ -1376,7 +1376,7 @@ bool cgpux_adapter_is_intel(CGPUAdapterId adapter)
 
 // surfaces
 #if defined(_WIN32) || defined(_WIN64)
-CGPUSurfaceId cgpu_surface_from_hwnd(CGPUDeviceId device, HWND window)
+CGPUSurfaceId cgpu_create_surface_from_hwnd(CGPUDeviceId device, HWND window)
 {
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
     cgpu_assert(device->adapter != CGPU_NULLPTR && "fatal: call on NULL adapter!");
@@ -1387,7 +1387,7 @@ CGPUSurfaceId cgpu_surface_from_hwnd(CGPUDeviceId device, HWND window)
     return device->adapter->instance->surfaces_table->from_hwnd(device, window);
 }
 #elif defined(_MACOS)
-CGPUSurfaceId cgpu_surface_from_ns_view(CGPUDeviceId device, CGPUNSView* window)
+CGPUSurfaceId cgpu_create_surface_from_ns_view(CGPUDeviceId device, CGPUNSView* window)
 {
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
     cgpu_assert(device->adapter != CGPU_NULLPTR && "fatal: call on NULL adapter!");
@@ -1398,7 +1398,7 @@ CGPUSurfaceId cgpu_surface_from_ns_view(CGPUDeviceId device, CGPUNSView* window)
     return device->adapter->instance->surfaces_table->from_ns_view(device, window);
 }
 #elif defined(__ANDROID__)
-CGPUSurfaceId cgpu_surface_from_native_window(CGPUDeviceId device, ANativeWindow* window)
+CGPUSurfaceId cgpu_create_surface_from_native_window(CGPUDeviceId device, ANativeWindow* window)
 {
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
     cgpu_assert(device->adapter != CGPU_NULLPTR && "fatal: call on NULL adapter!");
@@ -1410,14 +1410,14 @@ CGPUSurfaceId cgpu_surface_from_native_window(CGPUDeviceId device, ANativeWindow
 }
 #endif
 
-CGPUSurfaceId cgpu_surface_from_native_view(CGPUDeviceId device, void* view)
+CGPUSurfaceId cgpu_create_surface_from_native_view(CGPUDeviceId device, void* view)
 {
 #ifdef CGPU_OS_MACOSX
-    return cgpu_surface_from_ns_view(device, (CGPUNSView*)view);
+    return cgpu_create_surface_from_ns_view(device, (CGPUNSView*)view);
 #elif defined(CGPU_OS_WINDOWS)
-    return cgpu_surface_from_hwnd(device, (HWND)view);
+    return cgpu_create_surface_from_hwnd(device, (HWND)view);
 #elif defined(__ANDROID__)
-    return cgpu_surface_from_native_window(device, (ANativeWindow*)view);
+    return cgpu_create_surface_from_native_window(device, (ANativeWindow*)view);
 #endif
     return CGPU_NULLPTR;
 }

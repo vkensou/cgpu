@@ -1,6 +1,12 @@
 #ifndef CGPU_C99_H_HEADER_GUARD
 #define CGPU_C99_H_HEADER_GUARD
 
+#include "platform.h"
+
+#ifdef __cplusplus
+CGPU_EXTERN_C_BEGIN
+#endif
+
 #include <stdarg.h>  // va_list
 #include <stdbool.h> // bool
 #include <stdint.h>  // uint32_t
@@ -15,6 +21,8 @@
 
 typedef uint32_t ECGPUFlags;
 typedef uint32_t ECGPUFlags64;
+typedef struct HWND__* HWND;
+typedef struct ANativeWindow ANativeWindow;
 
 $cenums
 
@@ -75,5 +83,11 @@ $cfuncptrs
 $cstructs
 
 $c99decl
+
+#include "flags.h"
+
+#ifdef __cplusplus
+CGPU_EXTERN_C_END
+#endif
 
 #endif // CGPU_C99_H_HEADER_GUARD

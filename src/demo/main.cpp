@@ -173,7 +173,7 @@ struct RenderWindow
 		if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED)
 			return;
 
-		surface = cgpu_surface_from_hwnd(device, wmInfo.info.win.window);
+		surface = cgpu_create_surface_from_hwnd(device, wmInfo.info.win.window);
 
 		int w, h;
 		SDL_GetWindowSize(window, &w, &h);

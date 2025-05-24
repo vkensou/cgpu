@@ -520,7 +520,7 @@ void ImGui_ImplCGPU_DestroyAllViewportsRenderBuffers(CGPUDeviceId device)
 
 static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQueueId present_queue, CGPURenderPassId render_pass, uint32_t image_count, void* windowHandle, uint32_t width, uint32_t height)
 {
-    wd->Surface = cgpu_surface_from_native_view(device, windowHandle);
+    wd->Surface = cgpu_create_surface_from_native_view(device, windowHandle);
 
     CGPUSwapChainDescriptor descriptor = {
         .present_queues = &present_queue,

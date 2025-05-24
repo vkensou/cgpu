@@ -1,6 +1,12 @@
 #ifndef CGPU_C99_H_HEADER_GUARD
 #define CGPU_C99_H_HEADER_GUARD
 
+#include "platform.h"
+
+#ifdef __cplusplus
+CGPU_EXTERN_C_BEGIN
+#endif
+
 #include <stdarg.h>  // va_list
 #include <stdbool.h> // bool
 #include <stdint.h>  // uint32_t
@@ -15,6 +21,8 @@
 
 typedef uint32_t ECGPUFlags;
 typedef uint32_t ECGPUFlags64;
+typedef struct HWND__* HWND;
+typedef struct ANativeWindow ANativeWindow;
 
 typedef enum ECGPUBackend
 {
@@ -1028,6 +1036,10 @@ typedef CGPUBinderId (*CGPUProcCreateBinder)(CGPUCommandBufferId cmd);
 typedef void (*CGPUProcBinderBindVertexLayout)(CGPUBinderId binder, const CGPUVertexLayout* layout);
 typedef void (*CGPUProcBinderBindVertexBuffer)(CGPUBinderId binder, uint32_t first_binding, uint32_t binding_count, const CGPUBufferId* buffers, const uint64_t* offsets, const uint64_t* sizes, const uint64_t* strides);
 typedef void (*CGPUProcFreeBinder)(CGPUBinderId binder);
+typedef CGPUSurfaceId (*CGPUProcCreateSurfaceFromNativeView)(CGPUDeviceId device, void* view);
+typedef CGPUSurfaceId (*CGPUProcCreateSurfaceFromHwnd)(CGPUDeviceId device, HWND window);
+typedef CGPUSurfaceId (*CGPUProcCreateSurfaceFromNativeWindow)(CGPUDeviceId device, ANativeWindow* window);
+typedef void (*CGPUProcFreeSurface)(CGPUDeviceId device, CGPUSurfaceId surface);
 
 typedef struct CGPULogger
 {
@@ -2215,6 +2227,14 @@ typedef struct CGPUProcTable
 
 } CGPUProcTable;
 
+typedef struct CGPUSurfacesProcTable
+{
+    const CGPUProcCreateSurfaceFromHwnd from_hwnd;
+    const CGPUProcCreateSurfaceFromNativeWindow from_native_window;
+    const CGPUProcFreeSurface free_surface;
+
+} CGPUSurfacesProcTable;
+
 
 CGPU_API CGPUInstanceId cgpu_create_instance(const CGPUInstanceDescriptor* desc);
 CGPU_API void cgpu_free_instance(CGPUInstanceId instance);
@@ -2355,5 +2375,15 @@ CGPU_API CGPUBinderId cgpu_create_binder(CGPUCommandBufferId cmd);
 CGPU_API void cgpu_binder_bind_vertex_layout(CGPUBinderId binder, const CGPUVertexLayout* layout);
 CGPU_API void cgpu_binder_bind_vertex_buffer(CGPUBinderId binder, uint32_t first_binding, uint32_t binding_count, const CGPUBufferId* buffers, const uint64_t* offsets, const uint64_t* sizes, const uint64_t* strides);
 CGPU_API void cgpu_free_binder(CGPUBinderId binder);
+CGPU_API CGPUSurfaceId cgpu_create_surface_from_native_view(CGPUDeviceId device, void* view);
+CGPU_API CGPUSurfaceId cgpu_create_surface_from_hwnd(CGPUDeviceId device, HWND window);
+CGPU_API CGPUSurfaceId cgpu_create_surface_from_native_window(CGPUDeviceId device, ANativeWindow* window);
+CGPU_API void cgpu_free_surface(CGPUDeviceId device, CGPUSurfaceId surface);
+
+#include "flags.h"
+
+#ifdef __cplusplus
+CGPU_EXTERN_C_END
+#endif
 
 #endif // CGPU_C99_H_HEADER_GUARD

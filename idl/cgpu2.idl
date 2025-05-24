@@ -1383,6 +1383,30 @@ funcptr.FreeBinder
     "void"
     .binder        "BinderId"
 
+typedef "HWND"
+
+funcptr.CreateSurfaceFromNativeView
+    "SurfaceId"
+    .device         "DeviceId"
+    .view           "void*"
+
+funcptr.CreateSurfaceFromHwnd
+    "SurfaceId"
+    .device         "DeviceId"
+    .window         "HWND"
+
+typedef "ANativeWindow"
+
+funcptr.CreateSurfaceFromNativeWindow
+    "SurfaceId"
+    .device         "DeviceId"
+    .window         "ANativeWindow*"
+
+funcptr.FreeSurface
+    "void"
+    .device         "DeviceId"
+    .surface        "SurfaceId"
+
 id "InstanceId"
 id "AdapterId"
 id "DeviceId"
@@ -2316,6 +2340,11 @@ struct.ProcTable
     .binderBindVertexBuffer         "BinderBindVertexBuffer"
     .freeBinder                     "FreeBinder"
 
+struct.SurfacesProcTable
+    .fromHwnd                       "const CreateSurfaceFromHwnd"
+    .fromNativeWindow               "const CreateSurfaceFromNativeWindow"
+    .freeSurface                    "const FreeSurface"
+
 func.createInstance { cfunc }
     "InstanceId"
     .desc "const InstanceDescriptor*"
@@ -3018,3 +3047,22 @@ func.FreeBinder
     "void"
     .binder        "BinderId"
 
+func.CreateSurfaceFromNativeView
+    "SurfaceId"
+    .device         "DeviceId"
+    .view           "void*"
+
+func.CreateSurfaceFromHwnd
+    "SurfaceId"
+    .device         "DeviceId"
+    .window         "HWND"
+
+func.CreateSurfaceFromNativeWindow
+    "SurfaceId"
+    .device         "DeviceId"
+    .window         "ANativeWindow*"
+
+func.FreeSurface
+    "void"
+    .device         "DeviceId"
+    .surface        "SurfaceId"
