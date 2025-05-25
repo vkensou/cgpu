@@ -1,11 +1,14 @@
 #pragma once
 
+#ifndef CGPU_PLATFORM_HEADER_GUARD
+#define CGPU_PLATFORM_HEADER_GUARD
+
 #include <stdint.h>
 #include <stdbool.h>
 #ifdef __cplusplus
     #define CGPU_NULL nullptr
 #else
-    #define CGPU_NULL 0
+    #define CGPU_NULL NULL
 #endif
 
 #ifdef __cplusplus
@@ -90,12 +93,6 @@
     #define DEFINE_ALIGNED(def, a) __attribute__((aligned(a))) def
 #endif
 
-#ifdef __cplusplus
-    #define CGPU_IF_CPP(...) __VA_ARGS__
-#else
-    #define CGPU_IF_CPP(...)
-#endif
-
 #if defined(_MSC_VER)
     #define CGPU_ALIGNAS(x) __declspec(align(x))
 #else
@@ -124,10 +121,6 @@
     #error Unrecognized CPU was used.
 #endif
 
-#if defined(CGPU_PLATFORM_WA32)
-    #define size_t uint32_t;
-    typedef int64_t host_ptr_t;
-#endif
 
 // PTR SIZE
 #if INTPTR_MAX == 0x7FFFFFFFFFFFFFFFLL
@@ -136,4 +129,6 @@
     #define CGPU_PTR_SIZE 4
 #else
     #error unsupported platform
+#endif
+
 #endif

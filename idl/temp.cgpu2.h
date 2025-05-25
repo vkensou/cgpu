@@ -1,5 +1,7 @@
-#ifndef CGPU_C99_H_HEADER_GUARD
-#define CGPU_C99_H_HEADER_GUARD
+#pragma once
+
+#ifndef CGPU_API_HEADER_GUARD
+#define CGPU_API_HEADER_GUARD
 
 #include "platform.h"
 
