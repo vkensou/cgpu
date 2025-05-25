@@ -265,8 +265,12 @@ local function switch_tabledef(_, tablename)
 
 	def.cases = function(attribs)
 		t.cases = {}
-		for k, value in pairs(attribs) do
-			t.cases[#t.cases + 1] = { fulltype = k, value = value }
+		-- for order-preserving
+		for k, item in ipairs(attribs) do
+			for e, v in pairs(item) do
+				t.cases[#t.cases + 1] = { fulltype = e, value = v }
+				break
+			end
 		end
 		return def
 	end
