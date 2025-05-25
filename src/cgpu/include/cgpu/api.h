@@ -1426,9 +1426,9 @@ typedef struct CGPUBlendStateDescriptor
     ECGPUBlendFactor     dst_factors[CGPU_MAX_MRT_COUNT];
     ECGPUBlendFactor     src_alpha_factors[CGPU_MAX_MRT_COUNT];
     ECGPUBlendFactor     dst_alpha_factors[CGPU_MAX_MRT_COUNT];
-    ECGPUBlendOp         blend_modes[CGPU_MAX_MRT_COUNT];
-    ECGPUBlendOp         blend_alpha_modes[CGPU_MAX_MRT_COUNT];
-    int32_t              masks[CGPU_MAX_MRT_COUNT];
+    ECGPUBlendOp         blend_ops[CGPU_MAX_MRT_COUNT];
+    ECGPUBlendOp         blend_alpha_ops[CGPU_MAX_MRT_COUNT];
+    ECGPUColorMaskFlags  masks[CGPU_MAX_MRT_COUNT];
     bool                 alpha_to_coverage;
     bool                 independent_blend;
 
@@ -1438,18 +1438,18 @@ typedef struct CGPUDepthStateDescriptor
 {
     bool                 depth_test;
     bool                 depth_write;
-    ECGPUCompareOp       depth_func;
+    ECGPUCompareOp       depth_op;
     bool                 stencil_test;
     uint8_t              stencil_read_mask;
     uint8_t              stencil_write_mask;
-    ECGPUCompareOp       stencil_front_func;
-    ECGPUStencilOp       stencil_front_fail;
-    ECGPUStencilOp       depth_front_fail;
-    ECGPUStencilOp       stencil_front_pass;
-    ECGPUCompareOp       stencil_back_func;
-    ECGPUStencilOp       stencil_back_fail;
-    ECGPUStencilOp       depth_back_fail;
-    ECGPUStencilOp       stencil_back_pass;
+    ECGPUCompareOp       stencil_front_op;
+    ECGPUStencilOp       stencil_front_fail_op;
+    ECGPUStencilOp       depth_front_fail_op;
+    ECGPUStencilOp       stencil_front_pass_op;
+    ECGPUCompareOp       stencil_back_op;
+    ECGPUStencilOp       stencil_back_fail_op;
+    ECGPUStencilOp       depth_back_fail_op;
+    ECGPUStencilOp       stencil_back_pass_op;
 
 } CGPUDepthStateDescriptor;
 
@@ -1578,8 +1578,8 @@ typedef struct CGPUBufferInfo
 {
     uint64_t             size;
     void*                cpu_mapped_address;
-    uint32_t             descriptors;
-    uint32_t             memory_usage;
+    ECGPUResourceTypeFlags descriptors;
+    ECGPUMemoryUsage     memory_usage;
 
 } CGPUBufferInfo;
 
@@ -1601,7 +1601,7 @@ typedef struct CGPUTextureInfo
     ECGPUTextureFormat   format;
     ECGPUSampleCountFlags sample_count;
     uint64_t             unique_id;
-    uint32_t             aspect_mask;
+    ECGPUTextureViewAspectFlags aspect_mask;
     uint8_t              owns_image;
     uint8_t              is_cube;
     uint8_t              is_allocation_dedicated;

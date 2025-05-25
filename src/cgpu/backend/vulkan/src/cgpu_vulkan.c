@@ -992,25 +992,25 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
         
         .depthTestEnable = desc->depth_state->depth_test ? VK_TRUE : VK_FALSE,
         .depthWriteEnable = desc->depth_state->depth_write ? VK_TRUE : VK_FALSE,
-        .depthCompareOp = gVkComparisonFuncTranslator[desc->depth_state->depth_func],
+        .depthCompareOp = gVkComparisonFuncTranslator[desc->depth_state->depth_op],
         .depthBoundsTestEnable = VK_FALSE,
         .stencilTestEnable = desc->depth_state->stencil_test ? VK_TRUE : VK_FALSE,
 
         .front = {
-            .failOp = gVkStencilOpTranslator[desc->depth_state->stencil_front_fail],
-            .passOp = gVkStencilOpTranslator[desc->depth_state->stencil_front_pass],
-            .depthFailOp = gVkStencilOpTranslator[desc->depth_state->depth_front_fail],
-            .compareOp = gVkComparisonFuncTranslator[desc->depth_state->stencil_front_func],
+            .failOp = gVkStencilOpTranslator[desc->depth_state->stencil_front_fail_op],
+            .passOp = gVkStencilOpTranslator[desc->depth_state->stencil_front_pass_op],
+            .depthFailOp = gVkStencilOpTranslator[desc->depth_state->depth_front_fail_op],
+            .compareOp = gVkComparisonFuncTranslator[desc->depth_state->stencil_front_op],
             .compareMask = desc->depth_state->stencil_read_mask,
             .writeMask = desc->depth_state->stencil_write_mask,
             .reference = 0,
         },
 
         .back = {
-            .failOp = gVkStencilOpTranslator[desc->depth_state->stencil_back_fail],
-            .passOp = gVkStencilOpTranslator[desc->depth_state->stencil_back_pass],
-            .depthFailOp = gVkStencilOpTranslator[desc->depth_state->depth_back_fail],
-            .compareOp = gVkComparisonFuncTranslator[desc->depth_state->stencil_back_func],
+            .failOp = gVkStencilOpTranslator[desc->depth_state->stencil_back_fail_op],
+            .passOp = gVkStencilOpTranslator[desc->depth_state->stencil_back_pass_op],
+            .depthFailOp = gVkStencilOpTranslator[desc->depth_state->depth_back_fail_op],
+            .compareOp = gVkComparisonFuncTranslator[desc->depth_state->stencil_back_op],
             .compareMask = desc->depth_state->stencil_read_mask,
             .writeMask = desc->depth_state->stencil_write_mask,
             .reference = 0,
@@ -1059,10 +1059,10 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
         cb_attachments[i].colorWriteMask = pDesc->masks[blendDescIndex];
         cb_attachments[i].srcColorBlendFactor = gVkBlendConstantTranslator[pDesc->src_factors[blendDescIndex]];
         cb_attachments[i].dstColorBlendFactor = gVkBlendConstantTranslator[pDesc->dst_factors[blendDescIndex]];
-        cb_attachments[i].colorBlendOp = gVkBlendOpTranslator[pDesc->blend_modes[blendDescIndex]];
+        cb_attachments[i].colorBlendOp = gVkBlendOpTranslator[pDesc->blend_ops[blendDescIndex]];
         cb_attachments[i].srcAlphaBlendFactor = gVkBlendConstantTranslator[pDesc->src_alpha_factors[blendDescIndex]];
         cb_attachments[i].dstAlphaBlendFactor = gVkBlendConstantTranslator[pDesc->dst_alpha_factors[blendDescIndex]];
-        cb_attachments[i].alphaBlendOp = gVkBlendOpTranslator[pDesc->blend_alpha_modes[blendDescIndex]];
+        cb_attachments[i].alphaBlendOp = gVkBlendOpTranslator[pDesc->blend_alpha_ops[blendDescIndex]];
 
 		if (desc->blend_state->independent_blend)
 			++blendDescIndex;

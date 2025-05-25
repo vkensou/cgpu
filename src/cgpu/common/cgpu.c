@@ -368,7 +368,7 @@ static const CGPUBlendStateDescriptor defaultBlendStateDesc = {
     .dst_factors = { CGPU_BLEND_FACTOR_ZERO },
     .src_alpha_factors = { CGPU_BLEND_FACTOR_ONE },
     .dst_alpha_factors = { CGPU_BLEND_FACTOR_ZERO },
-    .blend_modes = { CGPU_BLEND_OP_ADD },
+    .blend_ops = { CGPU_BLEND_OP_ADD },
     .masks = { CGPU_COLOR_MASK_RGBA },
     .independent_blend = false
 };
