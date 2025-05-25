@@ -32,6 +32,7 @@ local type_actions = {
 	cids       = "\n",
 	funcptrs  = "\n",
 	cfuncptrs = "\n",
+	cswitches  = "\n",
 }
 
 local function cfunc(f)
@@ -242,6 +243,12 @@ end
 function typegen.cfuncptrs(typedef)
 	if typedef.args then
 		return add_doxygen(typedef, codegen.gen_cfuncptr(typedef), true)
+	end
+end
+
+function typegen.cswitches(typedef)
+	if typedef.cases then
+		return add_doxygen(typedef, codegen.gen_cswitches(typedef), true)
 	end
 end
 

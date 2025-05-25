@@ -246,6 +246,41 @@ idl.funcptr = setmetatable({}, { __index = func(all_types) })
 idl.func    = setmetatable({}, { __index = func(all_funcs) })
 idl.funcs   = all_funcs
 
+local function switch_tabledef(_, tablename)
+	local t = new_type(tablename)
+	t.cases = {}
+	t.default = nil
+
+	local def = {}
+
+	def.arg = function(attribs)
+		t.arg = { fulltype = attribs }
+		return def
+	end
+
+	def.ret = function(attribs)
+		t.ret = { fulltype = attribs }
+		return def
+	end
+
+	def.cases = function(attribs)
+		t.cases = {}
+		for k, value in pairs(attribs) do
+			t.cases[#t.cases + 1] = { fulltype = k, value = value }
+		end
+		return def
+	end
+	
+	def.default = function(attribs)
+		t.default = attribs
+		return def
+	end
+
+	return def
+end
+
+idl.switch_table = setmetatable({}, { __index = switch_tabledef })
+
 function idl.version(v)
 	rawset(idl, "_version", v)
 end

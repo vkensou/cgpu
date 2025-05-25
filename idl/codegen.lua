@@ -43,6 +43,20 @@ local function convert_funcname(name)
 	return camelcase_to_underscorecase(name)
 end
 
+local function find_enum_item(all_types, enum_name, item_name)
+	local typedef = all_types[enum_name]
+	if typedef == nil then
+		error ("Unknown Enum" .. enum_name)
+	end
+
+	for _, item in ipairs(typedef.enum) do
+		if item.name == item_name then
+			return item
+		end
+	end
+	error ("Unkown Enum" .. enum_name .. " item: ".. item_name)
+end
+
 local function convert_arg(all_types, arg, namespace)
 	local fulltype, array = arg.fulltype:match "(.-)%s*(%[%s*[%d%a_:]*%s*%])"
 	if array then
@@ -324,6 +338,8 @@ function codegen.nameconversion(all_types, all_funcs)
 				v.cname = "CGPU" .. name
 			elseif v.const_value then
 				v.cname = "CGPU_" .. camelcase_to_underscorecase(name):upper()
+			elseif v.cases then
+				v.cname = name
 			else
 				v.cname = name
 			end
@@ -383,6 +399,16 @@ function codegen.nameconversion(all_types, all_funcs)
 			end
 			convert_vararg(v)
 			convert_arg(all_types, v.ret, v)
+		elseif v.cases then
+			convert_arg(all_types, v.arg, v)
+			convert_arg(all_types, v.ret, v)
+			local type = v.arg.fulltype:match("(.-)::Enum$")
+			v.ccases = {}
+			for _, item in ipairs(v.cases) do
+				local ctype = find_enum_item(all_types, v.arg.fulltype, item.fulltype)
+				local ctype = "CGPU_" .. camelcase_to_underscorecase(type):upper() .. "_" .. item.fulltype:upper()
+				v.ccases[#v.ccases + 1] = { key = ctype, value = item.value }
+			end
 		end
 	end
 
@@ -606,6 +632,38 @@ end
 
 function codegen.gen_cfuncptr(funcptr)
 	return apply_template(funcptr, "typedef $CRET (*$CFUNCNAME)($CARGS);")
+end
+
+local switch_temp = [[
+static CGPU_FORCEINLINE $RET $NAME($ENUM const arg) {
+    switch(arg) {
+$CASE
+    }
+    return $DEFAULT;
+}
+]]
+
+local case_temp = [[        case $ENUM: return $VALUE;]]
+
+function codegen.gen_cswitches(switch_table)
+	local cases = {}
+	for _, item in ipairs(switch_table.ccases) do
+		local t = {
+			ENUM = item.key,
+			VALUE = tostring(item.value),
+		}
+		local case = case_temp:gsub("$(%u+)", t)
+		table.insert(cases, case)
+	end
+
+	local temp = {
+		RET = switch_table.ret.ctype,
+		NAME = switch_table.cname,
+		ENUM = switch_table.arg.ctype,
+		CASE = table.concat(cases, "\n"),
+		DEFAULT = tostring(switch_table.default),
+	}
+	return switch_temp:gsub("$(%u+)", temp)
 end
 
 local function doxygen_funcret(r, func, prefix)

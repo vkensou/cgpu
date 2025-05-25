@@ -81,7 +81,7 @@ $cstructs
 
 $c99decl
 
-#include "flags.h"
+$cswitches
 
 #ifdef __cplusplus
 CGPU_EXTERN_C_END
