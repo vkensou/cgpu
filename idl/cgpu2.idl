@@ -754,6 +754,7 @@ funcptr.QueryFenceStatus
 
 funcptr.FreeFence
     "void"
+    .device             "DeviceId"
     .fence              "FenceId"
 
 funcptr.CreateSemaphore
@@ -762,6 +763,7 @@ funcptr.CreateSemaphore
 
 funcptr.FreeSemaphore
     "void"
+    .device             "DeviceId"
     .semaphore          "SemaphoreId"
 
 funcptr.CreateRootSignaturePool
@@ -771,6 +773,7 @@ funcptr.CreateRootSignaturePool
 
 funcptr.FreeRootSignaturePool
     "void"
+    .device             "DeviceId"
     .pool               "RootSignaturePoolId"
 
 funcptr.CreateRootSignature
@@ -780,6 +783,7 @@ funcptr.CreateRootSignature
 
 funcptr.FreeRootSignature
     "void"
+    .device             "DeviceId"
     .signature          "RootSignatureId"
 
 funcptr.CreateDescriptorSet
@@ -795,6 +799,7 @@ funcptr.UpdateDescriptorSet
 
 funcptr.FreeDescriptorSet
     "void"
+    .device             "DeviceId"
     .set                "DescriptorSetId"
 
 funcptr.CreateComputePipeline
@@ -804,6 +809,7 @@ funcptr.CreateComputePipeline
 
 funcptr.FreeComputePipeline
     "void"
+    .device             "DeviceId"
     .pipeline           "ComputePipelineId"
 
 funcptr.CreateRenderPipeline
@@ -813,6 +819,7 @@ funcptr.CreateRenderPipeline
 
 funcptr.FreeRenderPipeline
     "void"
+    .device             "DeviceId"
     .pipeline           "RenderPipelineId"
 
 funcptr.CreateQueryPool
@@ -822,6 +829,7 @@ funcptr.CreateQueryPool
 
 funcptr.FreeQueryPool
     "void"
+    .device             "DeviceId"
     .pool               "QueryPoolId"
 
 funcptr.CreateMemoryPool
@@ -831,6 +839,7 @@ funcptr.CreateMemoryPool
 
 funcptr.FreeMemoryPool
     "void"
+    .device             "DeviceId"
     .pool               "MemoryPoolId"
 
 funcptr.GetQueue
@@ -879,6 +888,7 @@ funcptr.QueueUnmapPackedMips
 
 funcptr.FreeQueue
     "void"
+    .device             "DeviceId"
     .queue              "QueueId"
 
 funcptr.CreateRenderPass
@@ -893,10 +903,12 @@ funcptr.CreateFramebuffer
 
 funcptr.FreeRenderPass
     "void"
+    .device             "DeviceId"
     .renderPass         "RenderPassId"
 
 funcptr.FreeFramebuffer
     "void"
+    .device             "DeviceId"
     .framebuffer        "FramebufferId"
 
 funcptr.CreateCommandPool
@@ -919,6 +931,7 @@ funcptr.FreeCommandBuffer
 
 funcptr.FreeCommandPool
     "void"
+    .device             "DeviceId"
     .pool               "CommandPoolId"
 
 funcptr.CreateShaderLibrary
@@ -928,6 +941,7 @@ funcptr.CreateShaderLibrary
 
 funcptr.FreeShaderLibrary
     "void"
+    .device             "DeviceId"
     .library            "ShaderLibraryId"
 
 funcptr.CreateBuffer
@@ -946,6 +960,7 @@ funcptr.UnmapBuffer
 
 funcptr.FreeBuffer
     "void"
+    .device             "DeviceId"
     .buffer             "BufferId"
 
 funcptr.CreateSampler
@@ -955,6 +970,7 @@ funcptr.CreateSampler
 
 funcptr.FreeSampler
     "void"
+    .device             "DeviceId"
     .sampler            "SamplerId"
 
 funcptr.CreateTexture
@@ -964,6 +980,7 @@ funcptr.CreateTexture
 
 funcptr.FreeTexture
     "void"
+    .device             "DeviceId"
     .texture            "TextureId"
 
 funcptr.CreateTextureView
@@ -973,6 +990,7 @@ funcptr.CreateTextureView
 
 funcptr.FreeTextureView
     "void"
+    .device             "DeviceId"
     .renderTarget       "TextureViewId"
 
 funcptr.TryBindAliasingTexture
@@ -1002,6 +1020,7 @@ funcptr.AcquireNextImage
 
 funcptr.FreeSwapChain
     "void"
+    .device             "DeviceId"
     .swapchain          "SwapChainId"
 
 funcptr.CmdBegin
@@ -2403,25 +2422,24 @@ func.waitFences
     .fences             "const FenceId*"
     .fence_count        "uint32_t"
 
-func.queryFenceStatus
+func.Fence.queryFenceStatus
     "FenceStatus::Enum"
-    .fence              "FenceId"
 
-func.freeFence
+func.Device.freeFence
     "void"
     .fence              "FenceId"
 
 func.Device.createSemaphore
     "SemaphoreId"
 
-func.freeSemaphore
+func.Device.freeSemaphore
     "void"
     .semaphore          "SemaphoreId"
 
 func.Device.createSemaphore
     "SemaphoreId"
 
-func.freeSemaphore
+func.Device.freeSemaphore
     "void"
     .semaphore          "SemaphoreId"
 
@@ -2433,7 +2451,7 @@ func.CreateRootSignaturePool
     .device             "DeviceId"
     .desc               "const RootSignaturePoolDescriptor*"
 
-func.FreeRootSignaturePool
+func.Device.FreeRootSignaturePool
     "void"
     .pool               "RootSignaturePoolId"
 
@@ -2442,7 +2460,7 @@ func.CreateRootSignature
     .device             "DeviceId"
     .desc               "const RootSignatureDescriptor*"
 
-func.FreeRootSignature
+func.Device.FreeRootSignature
     "void"
     .signature          "RootSignatureId"
 
@@ -2457,7 +2475,7 @@ func.UpdateDescriptorSet
     .datas              "const DescriptorData*"
     .count              "uint32_t"
 
-func.FreeDescriptorSet
+func.Device.FreeDescriptorSet
     "void"
     .set                "DescriptorSetId"
 
@@ -2466,7 +2484,7 @@ func.CreateComputePipeline
     .device             "DeviceId"
     .desc               "const ComputePipelineDescriptor*"
 
-func.FreeComputePipeline
+func.Device.FreeComputePipeline
     "void"
     .pipeline           "ComputePipelineId"
 
@@ -2475,7 +2493,7 @@ func.CreateRenderPipeline
     .device             "DeviceId"
     .desc               "const RenderPipelineDescriptor*"
 
-func.FreeRenderPipeline
+func.Device.FreeRenderPipeline
     "void"
     .pipeline           "RenderPipelineId"
 
@@ -2484,7 +2502,7 @@ func.CreateQueryPool
     .device             "DeviceId"
     .desc               "const QueryPoolDescriptor*"
 
-func.FreeQueryPool
+func.Device.FreeQueryPool
     "void"
     .pool               "QueryPoolId"
 
@@ -2493,7 +2511,7 @@ func.CreateMemoryPool
     .device             "DeviceId"
     .desc               "const MemoryPoolDescriptor*"
 
-func.FreeMemoryPool
+func.Device.FreeMemoryPool
     "void"
     .pool               "MemoryPoolId"
 
@@ -2541,7 +2559,7 @@ func.QueueUnmapPackedMips
     .queue              "QueueId"
     .desc               "const TiledTexturePackedMips*"
 
-func.FreeQueue
+func.Device.FreeQueue
     "void"
     .queue              "QueueId"
 
@@ -2555,11 +2573,11 @@ func.CreateFramebuffer
     .device             "DeviceId"
     .desc               "const FramebufferDescriptor*"
 
-func.FreeRenderPass
+func.Device.FreeRenderPass
     "void"
     .renderPass         "RenderPassId"
 
-func.FreeFramebuffer
+func.Device.FreeFramebuffer
     "void"
     .framebuffer        "FramebufferId"
 
@@ -2581,7 +2599,7 @@ func.FreeCommandBuffer
     "void"
     .cmd                "CommandBufferId"
 
-func.FreeCommandPool
+func.Device.FreeCommandPool
     "void"
     .pool               "CommandPoolId"
 
@@ -2590,7 +2608,7 @@ func.CreateShaderLibrary
     .device             "DeviceId"
     .desc               "const ShaderLibraryDescriptor*"
 
-func.FreeShaderLibrary
+func.Device.FreeShaderLibrary
     "void"
     .library            "ShaderLibraryId"
 
@@ -2608,7 +2626,7 @@ func.UnmapBuffer
     "void"
     .buffer             "BufferId"
 
-func.FreeBuffer
+func.Device.FreeBuffer
     "void"
     .buffer             "BufferId"
 
@@ -2617,7 +2635,7 @@ func.CreateSampler
     .device             "DeviceId"
     .desc               "const SamplerDescriptor*"
 
-func.FreeSampler
+func.Device.FreeSampler
     "void"
     .sampler            "SamplerId"
 
@@ -2626,7 +2644,7 @@ func.CreateTexture
     .device             "DeviceId"
     .desc               "const TextureDescriptor*"
 
-func.FreeTexture
+func.Device.FreeTexture
     "void"
     .texture            "TextureId"
 
@@ -2635,7 +2653,7 @@ func.CreateTextureView
     .device             "DeviceId"
     .desc               "const TextureViewDescriptor*"
 
-func.FreeTextureView
+func.Device.FreeTextureView
     "void"
     .renderTarget       "TextureViewId"
 
@@ -2664,7 +2682,7 @@ func.AcquireNextImage
     .swapchain          "SwapChainId"
     .desc               "const AcquireNextDescriptor*"
 
-func.FreeSwapChain
+func.Device.FreeSwapChain
     "void"
     .swapchain          "SwapChainId"
 
@@ -3067,9 +3085,8 @@ func.CreateSurfaceFromNativeWindow
     .device             "DeviceId"
     .window             "ANativeWindow*"
 
-func.FreeSurface
+func.Device.FreeSurface
     "void"
-    .device             "DeviceId"
     .surface            "SurfaceId"
 
 switch_table.FormatUtil_IsDepthStencilFormat

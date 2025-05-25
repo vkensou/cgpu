@@ -138,7 +138,7 @@ public:
                 CGPURootSignature* enforceDestroy = (CGPURootSignature*)trueSig;
                 enforceDestroy->pool = nullptr;
                 enforceDestroy->pool_sig = nullptr;
-                cgpu_free_root_signature(enforceDestroy);
+                cgpu_free_root_signature(device, enforceDestroy);
                 return true;
             }
             iter->second--;
@@ -155,7 +155,7 @@ public:
             sig->pool = nullptr;
             sig->pool_sig = nullptr;
             sig->device = device;
-            cgpu_free_root_signature(sig);
+            cgpu_free_root_signature(device, sig);
 
             counterMap[iter->second]++;
             return iter->second;
@@ -174,7 +174,7 @@ public:
             CGPURootSignature* enforceDestroy = (CGPURootSignature*)iter.first;
             enforceDestroy->pool = nullptr;
             enforceDestroy->pool_sig = nullptr;
-            cgpu_free_root_signature(enforceDestroy);
+            cgpu_free_root_signature(device, enforceDestroy);
         }
     }
 protected:

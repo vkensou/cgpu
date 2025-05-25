@@ -66,7 +66,7 @@ struct FrameData
 
 	void free()
 	{
-		cgpu_free_fence(inflightFence);
+		cgpu_free_fence(device, inflightFence);
 		inflightFence = CGPU_NULLPTR;
 
 		for (auto cmd : cmds)
@@ -77,7 +77,7 @@ struct FrameData
 			cgpu_free_command_buffer(cmd);
 		allocated_cmds.clear();
 
-		cgpu_free_command_pool(pool);
+		cgpu_free_command_pool(device, pool);
 		pool = CGPU_NULLPTR;
 	}
 };
@@ -149,12 +149,12 @@ struct RenderWindow
 
 		for (uint32_t i = 0; i < swapchain->buffer_count; i++)
 		{
-			cgpu_free_texture_view(swapchain_views[i]);
+			cgpu_free_texture_view(device, swapchain_views[i]);
 			swapchain_views[i] = CGPU_NULLPTR;
-			cgpu_free_framebuffer(swapchain_framebuffer[i]);
+			cgpu_free_framebuffer(device, swapchain_framebuffer[i]);
 			swapchain_framebuffer[i] = CGPU_NULLPTR;
 		}
-		cgpu_free_swap_chain(swapchain);
+		cgpu_free_swap_chain(device, swapchain);
 		swapchain = CGPU_NULLPTR;
 		cgpu_free_surface(device, surface);
 		surface = CGPU_NULLPTR;
@@ -164,7 +164,7 @@ struct RenderWindow
 	{
 		for (uint32_t i = 0; i < swapchain->buffer_count; i++)
 		{
-			cgpu_free_semaphore(swapchain_prepared_semaphores[i]);
+			cgpu_free_semaphore(device, swapchain_prepared_semaphores[i]);
 		}
 	}
 
@@ -385,8 +385,8 @@ std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGP
 		.prim_topology = CGPU_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 	};
 	auto pipeline = cgpu_create_render_pipeline(device, &rp_desc);
-	cgpu_free_shader_library(vertex_shader);
-	cgpu_free_shader_library(fragment_shader);
+	cgpu_free_shader_library(device, vertex_shader);
+	cgpu_free_shader_library(device, fragment_shader);
 	return { root_sig, pipeline };
 }
 
@@ -791,11 +791,11 @@ int main(int argc, char** argv)
 			ImGui_ImplSDL2_Shutdown();
 			ImGui::DestroyContext();
 
-			cgpu_free_render_pipeline(imgui_pipeline);
-			cgpu_free_root_signature(imgui_root_sig);
+			cgpu_free_render_pipeline(device, imgui_pipeline);
+			cgpu_free_root_signature(device, imgui_root_sig);
 
-			cgpu_free_render_pipeline(pipeline);
-			cgpu_free_root_signature(root_sig);
+			cgpu_free_render_pipeline(device, pipeline);
+			cgpu_free_root_signature(device, root_sig);
 		}
 	}
 
@@ -806,14 +806,14 @@ int main(int argc, char** argv)
 	// 退出 SDL
 	SDL_Quit();
 
-	cgpu_free_semaphore(render_finished_semaphore);
+	cgpu_free_semaphore(device, render_finished_semaphore);
 	for (int i = 0; i < 3; ++i)
 	{
 		frameDatas[i].free();
 	}
 	delete gpu_timer;
-	cgpu_free_render_pass(render_pass);
-	cgpu_free_queue(gfx_queue);
+	cgpu_free_render_pass(device, render_pass);
+	cgpu_free_queue(device, gfx_queue);
 	cgpu_free_device(adapter, device);
 	cgpu_free_instance(instance);
 
@@ -848,8 +848,8 @@ static void ImGui_ImplArena_DestroyWindow(ImGuiViewport* viewport)
 		for (uint32_t n = 0; n < wrb->Count; n++)
 		{
 			ImGui_ImplCGPU_FrameRenderBuffers* buffers = &wrb->FrameRenderBuffers[n];
-			if (buffers->VertexBuffer) { cgpu_free_buffer(buffers->VertexBuffer); buffers->VertexBuffer = CGPU_NULLPTR; }
-			if (buffers->IndexBuffer) { cgpu_free_buffer(buffers->IndexBuffer); buffers->IndexBuffer = CGPU_NULLPTR; }
+			if (buffers->VertexBuffer) { cgpu_free_buffer(device, buffers->VertexBuffer); buffers->VertexBuffer = CGPU_NULLPTR; }
+			if (buffers->IndexBuffer) { cgpu_free_buffer(device, buffers->IndexBuffer); buffers->IndexBuffer = CGPU_NULLPTR; }
 			buffers->VertexBufferSize = 0;
 			buffers->IndexBufferSize = 0;
 		}

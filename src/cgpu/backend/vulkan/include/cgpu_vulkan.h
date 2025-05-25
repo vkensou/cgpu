@@ -41,22 +41,22 @@ CGPU_API void cgpu_free_device_vulkan(CGPUAdapterId adapter, CGPUDeviceId device
 CGPU_API CGPUFenceId cgpu_create_fence_vulkan(CGPUDeviceId device);
 CGPU_API void cgpu_wait_fences_vulkan(const CGPUFenceId* fences, uint32_t fence_count);
 ECGPUFenceStatus cgpu_query_fence_status_vulkan(CGPUFenceId fence);
-CGPU_API void cgpu_free_fence_vulkan(CGPUFenceId fence);
+CGPU_API void cgpu_free_fence_vulkan(CGPUDeviceId device, CGPUFenceId fence);
 CGPU_API CGPUSemaphoreId cgpu_create_semaphore_vulkan(CGPUDeviceId device);
-CGPU_API void cgpu_free_semaphore_vulkan(CGPUSemaphoreId semaphore);
+CGPU_API void cgpu_free_semaphore_vulkan(CGPUDeviceId device, CGPUSemaphoreId semaphore);
 CGPU_API CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device, const struct CGPURootSignatureDescriptor* desc);
-CGPU_API void cgpu_free_root_signature_vulkan(CGPURootSignatureId signature);
+CGPU_API void cgpu_free_root_signature_vulkan(CGPUDeviceId device, CGPURootSignatureId signature);
 CGPU_API CGPURootSignaturePoolId cgpu_create_root_signature_pool_vulkan(CGPUDeviceId device, const struct CGPURootSignaturePoolDescriptor* desc);
-CGPU_API void cgpu_free_root_signature_pool_vulkan(CGPURootSignaturePoolId pool);
+CGPU_API void cgpu_free_root_signature_pool_vulkan(CGPUDeviceId device, CGPURootSignaturePoolId pool);
 CGPU_API CGPUDescriptorSetId cgpu_create_descriptor_set_vulkan(CGPUDeviceId device, const struct CGPUDescriptorSetDescriptor* desc);
 CGPU_API void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGPUDescriptorData* datas, uint32_t count);
-CGPU_API void cgpu_free_descriptor_set_vulkan(CGPUDescriptorSetId set);
+CGPU_API void cgpu_free_descriptor_set_vulkan(CGPUDeviceId device, CGPUDescriptorSetId set);
 CGPU_API CGPUComputePipelineId cgpu_create_compute_pipeline_vulkan(CGPUDeviceId device, const struct CGPUComputePipelineDescriptor* desc);
-CGPU_API void cgpu_free_compute_pipeline_vulkan(CGPUComputePipelineId pipeline);
+CGPU_API void cgpu_free_compute_pipeline_vulkan(CGPUDeviceId device, CGPUComputePipelineId pipeline);
 CGPU_API CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, const struct CGPURenderPipelineDescriptor* desc);
-CGPU_API void cgpu_free_render_pipeline_vulkan(CGPURenderPipelineId pipeline);
+CGPU_API void cgpu_free_render_pipeline_vulkan(CGPUDeviceId device, CGPURenderPipelineId pipeline);
 CGPU_API CGPUQueryPoolId cgpu_create_query_pool_vulkan(CGPUDeviceId device, const struct CGPUQueryPoolDescriptor* desc);
-CGPU_API void cgpu_free_query_pool_vulkan(CGPUQueryPoolId pool);
+CGPU_API void cgpu_free_query_pool_vulkan(CGPUDeviceId device, CGPUQueryPoolId pool);
 
 // Queue APIs
 CGPU_API CGPUQueueId cgpu_get_queue_vulkan(CGPUDeviceId device, ECGPUQueueType type, uint32_t index);
@@ -68,39 +68,39 @@ CGPU_API void cgpu_queue_map_tiled_texture_vulkan(CGPUQueueId queue, const struc
 CGPU_API void cgpu_queue_unmap_tiled_texture_vulkan(CGPUQueueId queue, const struct CGPUTiledTextureRegions* regions);
 CGPU_API void cgpu_queue_map_packed_mips_vulkan(CGPUQueueId queue, const struct CGPUTiledTexturePackedMips* regions);
 CGPU_API void cgpu_queue_unmap_packed_mips_vulkan(CGPUQueueId queue, const struct CGPUTiledTexturePackedMips* regions);
-CGPU_API void cgpu_free_queue_vulkan(CGPUQueueId queue);
+CGPU_API void cgpu_free_queue_vulkan(CGPUDeviceId device, CGPUQueueId queue);
 
 CGPU_API CGPURenderPassId cgpu_create_render_pass_vulkan(CGPUDeviceId device, const struct CGPURenderPassDescriptor* desc);
 CGPU_API CGPUFramebufferId cgpu_create_framebuffer_vulkan(CGPUDeviceId device, const struct CGPUFramebufferDescriptor* desc);
-CGPU_API void cgpu_free_render_pass_vulkan(CGPURenderPassId render_pass);
-CGPU_API void cgpu_free_framebuffer_vulkan(CGPUFramebufferId framebuffer);
+CGPU_API void cgpu_free_render_pass_vulkan(CGPUDeviceId device, CGPURenderPassId render_pass);
+CGPU_API void cgpu_free_framebuffer_vulkan(CGPUDeviceId device, CGPUFramebufferId framebuffer);
 
 // Command APIs
 CGPU_API CGPUCommandPoolId cgpu_create_command_pool_vulkan(CGPUQueueId queue, const CGPUCommandPoolDescriptor* desc);
 CGPU_API CGPUCommandBufferId cgpu_create_command_buffer_vulkan(CGPUCommandPoolId pool, const struct CGPUCommandBufferDescriptor* desc);
 CGPU_API void cgpu_reset_command_pool_vulkan(CGPUCommandPoolId pool);
 CGPU_API void cgpu_free_command_buffer_vulkan(CGPUCommandBufferId cmd);
-CGPU_API void cgpu_free_command_pool_vulkan(CGPUCommandPoolId pool);
+CGPU_API void cgpu_free_command_pool_vulkan(CGPUDeviceId device, CGPUCommandPoolId pool);
 
 // Shader APIs
 CGPU_API CGPUShaderLibraryId cgpu_create_shader_library_vulkan(CGPUDeviceId device, const struct CGPUShaderLibraryDescriptor* desc);
-CGPU_API void cgpu_free_shader_library_vulkan(CGPUShaderLibraryId shader_module);
+CGPU_API void cgpu_free_shader_library_vulkan(CGPUDeviceId device, CGPUShaderLibraryId shader_module);
 
 // Buffer APIs
 CGPU_API CGPUBufferId cgpu_create_buffer_vulkan(CGPUDeviceId device, const struct CGPUBufferDescriptor* desc);
 CGPU_API void cgpu_map_buffer_vulkan(CGPUBufferId buffer, const struct CGPUBufferRange* range);
 CGPU_API void cgpu_unmap_buffer_vulkan(CGPUBufferId buffer);
-CGPU_API void cgpu_free_buffer_vulkan(CGPUBufferId buffer);
+CGPU_API void cgpu_free_buffer_vulkan(CGPUDeviceId device, CGPUBufferId buffer);
 
 // Sampler APIs
 CGPU_API CGPUSamplerId cgpu_create_sampler_vulkan(CGPUDeviceId device, const struct CGPUSamplerDescriptor* desc);
-CGPU_API void cgpu_free_sampler_vulkan(CGPUSamplerId sampler);
+CGPU_API void cgpu_free_sampler_vulkan(CGPUDeviceId device, CGPUSamplerId sampler);
 
 // Texture/TextureView APIs
 CGPU_API CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUTextureDescriptor* desc);
-CGPU_API void cgpu_free_texture_vulkan(CGPUTextureId texture);
+CGPU_API void cgpu_free_texture_vulkan(CGPUDeviceId device, CGPUTextureId texture);
 CGPU_API CGPUTextureViewId cgpu_create_texture_view_vulkan(CGPUDeviceId device, const struct CGPUTextureViewDescriptor* desc);
-CGPU_API void cgpu_free_texture_view_vulkan(CGPUTextureViewId render_target);
+CGPU_API void cgpu_free_texture_view_vulkan(CGPUDeviceId device, CGPUTextureViewId render_target);
 CGPU_API bool cgpu_try_bind_aliasing_texture_vulkan(CGPUDeviceId device, const struct CGPUTextureAliasingBindDescriptor* desc);
 
 // Shared Resource APIs
@@ -110,7 +110,7 @@ CGPUTextureId cgpu_import_shared_texture_handle_vulkan(CGPUDeviceId device, cons
 // Swapchain APIs
 CGPU_API CGPUSwapChainId cgpu_create_swapchain_vulkan(CGPUDeviceId device, const CGPUSwapChainDescriptor* desc);
 CGPU_API uint32_t cgpu_acquire_next_image_vulkan(CGPUSwapChainId swapchain, const struct CGPUAcquireNextDescriptor* desc);
-CGPU_API void cgpu_free_swapchain_vulkan(CGPUSwapChainId swapchain);
+CGPU_API void cgpu_free_swapchain_vulkan(CGPUDeviceId device, CGPUSwapChainId swapchain);
 
 // CMDs
 CGPU_API void cgpu_cmd_begin_vulkan(CGPUCommandBufferId cmd);

@@ -93,7 +93,7 @@ static void CreateOrResizeBuffer(CGPUBufferId& buffer, size_t& p_buffer_size, si
     ImGui_ImplCGPU_Data* bd = ImGui_ImplCGPU_GetBackendData();
     ImGui_ImplCGPU_InitInfo* v = &bd->CGPUInitInfo;
     if (buffer != CGPU_NULL)
-        cgpu_free_buffer(buffer);
+        cgpu_free_buffer(v->Device, buffer);
 
     CGPUBufferDescriptor buffer_desc = {
         .size = new_size,
@@ -357,8 +357,8 @@ bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId ro
     cgpu_submit_queue(queue, &cpy_submit);
     cgpu_wait_queue_idle(queue);
     cgpu_free_command_buffer(cpy_cmd);
-    cgpu_free_command_pool(cpy_cmd_pool);
-    cgpu_free_buffer(tex_upload_buffer);
+    cgpu_free_command_pool(v->Device, cpy_cmd_pool);
+    cgpu_free_buffer(v->Device, tex_upload_buffer);
     io.Fonts->TexID = (ImTextureID)(intptr_t)&bd->FontImage;
 
     CGPUTextureViewDescriptor view_desc = {
@@ -414,10 +414,10 @@ void    ImGui_ImplCGPU_DestroyDeviceObjects()
     ImGui_ImplCGPU_InitInfo* v = &bd->CGPUInitInfo;
     ImGui_ImplCGPU_DestroyAllViewportsRenderBuffers(v->Device);
 
-    if (bd->FontView) { cgpu_free_texture_view(bd->FontView); bd->FontView = CGPU_NULLPTR; }
-    if (bd->FontImage) { cgpu_free_texture(bd->FontImage); bd->FontImage = CGPU_NULLPTR; }
-    if (bd->FontSampler) { cgpu_free_sampler(bd->FontSampler); bd->FontSampler = CGPU_NULLPTR; }
-    if (bd->FontDescriptorSet) { cgpu_free_descriptor_set(bd->FontDescriptorSet); bd->FontDescriptorSet = CGPU_NULLPTR; }
+    if (bd->FontView) { cgpu_free_texture_view(v->Device, bd->FontView); bd->FontView = CGPU_NULLPTR; }
+    if (bd->FontImage) { cgpu_free_texture(v->Device, bd->FontImage); bd->FontImage = CGPU_NULLPTR; }
+    if (bd->FontSampler) { cgpu_free_sampler(v->Device, bd->FontSampler); bd->FontSampler = CGPU_NULLPTR; }
+    if (bd->FontDescriptorSet) { cgpu_free_descriptor_set(v->Device, bd->FontDescriptorSet); bd->FontDescriptorSet = CGPU_NULLPTR; }
 }
 
 bool    ImGui_ImplCGPU_Init(ImGui_ImplCGPU_InitInfo* info)
@@ -488,8 +488,8 @@ void ImGui_ImplCGPU_NewFrame()
 
 void ImGui_ImplCGPU_DestroyFrameRenderBuffers(CGPUDeviceId device, ImGui_ImplCGPU_FrameRenderBuffers* buffers)
 {
-    if (buffers->VertexBuffer) { cgpu_free_buffer(buffers->VertexBuffer); buffers->VertexBuffer = CGPU_NULLPTR; }
-    if (buffers->IndexBuffer) { cgpu_free_buffer(buffers->IndexBuffer); buffers->IndexBuffer = CGPU_NULLPTR; }
+    if (buffers->VertexBuffer) { cgpu_free_buffer(device, buffers->VertexBuffer); buffers->VertexBuffer = CGPU_NULLPTR; }
+    if (buffers->IndexBuffer) { cgpu_free_buffer(device, buffers->IndexBuffer); buffers->IndexBuffer = CGPU_NULLPTR; }
     buffers->VertexBufferSize = 0;
     buffers->IndexBufferSize = 0;
 }
@@ -572,7 +572,7 @@ static void FreeWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device)
     if (wd->Backbuffers) {
         for (int i = 0; i < wd->ImageCount; ++i)
         {
-            cgpu_free_texture_view(wd->Backbuffers[i]);
+            cgpu_free_texture_view(device, wd->Backbuffers[i]);
         }
         IM_FREE(wd->Backbuffers);
         wd->Backbuffers = nullptr;
@@ -580,14 +580,14 @@ static void FreeWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device)
     if (wd->Framebuffers) {
         for (int i = 0; i < wd->ImageCount; ++i)
         {
-            cgpu_free_framebuffer(wd->Framebuffers[i]);
+            cgpu_free_framebuffer(device, wd->Framebuffers[i]);
         }
         IM_FREE(wd->Framebuffers);
         wd->Framebuffers = nullptr;
     }
-    if (wd->Swapchain) { cgpu_free_swap_chain(wd->Swapchain); wd->Swapchain = nullptr; }
+    if (wd->Swapchain) { cgpu_free_swap_chain(device, wd->Swapchain); wd->Swapchain = nullptr; }
     if (wd->Surface) { cgpu_free_surface(device, wd->Surface); wd->Surface = nullptr; }
-    if (wd->Fence) { cgpu_free_fence(wd->Fence); wd->Fence = nullptr; }
+    if (wd->Fence) { cgpu_free_fence(device, wd->Fence); wd->Fence = nullptr; }
 }
 
 static void ImGui_ImplCGPU_CreateWindow(ImGuiViewport* viewport)
@@ -626,7 +626,7 @@ static void ImGui_ImplCGPU_DestroyWindow(ImGuiViewport* viewport)
             FreeWindow(wd, v->Device);
 
             if (wd->Command) cgpu_free_command_buffer(wd->Command); wd->Command = nullptr;
-            if (wd->CommandPool) cgpu_free_command_pool(wd->CommandPool); wd->CommandPool = nullptr;
+            if (wd->CommandPool) cgpu_free_command_pool(v->Device, wd->CommandPool); wd->CommandPool = nullptr;
         }
         ImGui_ImplCGPUH_DestroyWindowRenderBuffers(v->Device, wrb);
 

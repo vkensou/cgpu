@@ -35,8 +35,8 @@ GpuTimeStamps::~GpuTimeStamps()
 	for (int i = 0; i < frame_count; ++i)
 	{
 		auto& query = timeStampQueries[i];
-		cgpu_free_buffer(query.query_buffer);
-		cgpu_free_query_pool(query.query_pool);
+		cgpu_free_buffer(query.query_pool->device, query.query_buffer);
+		cgpu_free_query_pool(query.query_pool->device, query.query_pool);
 	}
 }
 

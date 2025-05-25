@@ -430,7 +430,7 @@ void cgpu_cmd_transfer_texture_to_texture_vulkan(CGPUCommandBufferId cmd, const 
     }
 }
 
-void cgpu_free_buffer_vulkan(CGPUBufferId buffer)
+void cgpu_free_buffer_vulkan(CGPUDeviceId device, CGPUBufferId buffer)
 {
     CGPUBuffer_Vulkan* B = (CGPUBuffer_Vulkan*)buffer;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)B->super.device;
@@ -1299,7 +1299,7 @@ CGPUTextureId cgpu_import_shared_texture_handle_vulkan(CGPUDeviceId device, cons
     return CGPU_NULLPTR;
 }
 
-void cgpu_free_texture_vulkan(CGPUTextureId texture)
+void cgpu_free_texture_vulkan(CGPUDeviceId device, CGPUTextureId texture)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)texture->device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
@@ -1460,7 +1460,7 @@ CGPUTextureViewId cgpu_create_texture_view_vulkan(CGPUDeviceId device, const str
     return &TV->super;
 }
 
-void cgpu_free_texture_view_vulkan(CGPUTextureViewId render_target)
+void cgpu_free_texture_view_vulkan(CGPUDeviceId device, CGPUTextureViewId render_target)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)render_target->device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
@@ -1551,7 +1551,7 @@ CGPUSamplerId cgpu_create_sampler_vulkan(CGPUDeviceId device, const struct CGPUS
     return &S->super;
 }
 
-void cgpu_free_sampler_vulkan(CGPUSamplerId sampler)
+void cgpu_free_sampler_vulkan(CGPUDeviceId device, CGPUSamplerId sampler)
 {
     CGPUSampler_Vulkan* S = (CGPUSampler_Vulkan*)sampler;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)sampler->device;
@@ -1583,7 +1583,7 @@ CGPUShaderLibraryId cgpu_create_shader_library_vulkan(CGPUDeviceId device, const
     return &S->super;
 }
 
-void cgpu_free_shader_library_vulkan(CGPUShaderLibraryId library)
+void cgpu_free_shader_library_vulkan(CGPUDeviceId device, CGPUShaderLibraryId library)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)library->device;
     CGPUAdapter_Vulkan* A = (CGPUAdapter_Vulkan*)D->super.adapter;
