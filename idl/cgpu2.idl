@@ -2417,14 +2417,6 @@ func.Device.querySharedMemoryInfo
 func.Device.createFence
     "FenceId"
 
-func.waitFences
-    "void"
-    .fences             "const FenceId*"
-    .fence_count        "uint32_t"
-
-func.Fence.queryFenceStatus
-    "FenceStatus::Enum"
-
 func.Device.freeFence
     "void"
     .fence              "FenceId"
@@ -2446,131 +2438,77 @@ func.Device.freeSemaphore
 func.Device.createSemaphore
     "SemaphoreId"
 
-func.CreateRootSignaturePool
+func.Device.CreateRootSignaturePool
     "RootSignaturePoolId"
-    .device             "DeviceId"
     .desc               "const RootSignaturePoolDescriptor*"
 
 func.Device.FreeRootSignaturePool
     "void"
     .pool               "RootSignaturePoolId"
 
-func.CreateRootSignature
+func.Device.CreateRootSignature
     "RootSignatureId"
-    .device             "DeviceId"
     .desc               "const RootSignatureDescriptor*"
 
 func.Device.FreeRootSignature
     "void"
     .signature          "RootSignatureId"
 
-func.CreateDescriptorSet
+func.Device.CreateDescriptorSet
     "DescriptorSetId"
-    .device             "DeviceId"
     .desc               "const DescriptorSetDescriptor*"
-
-func.UpdateDescriptorSet
-    "void"
-    .set                "DescriptorSetId"
-    .datas              "const DescriptorData*"
-    .count              "uint32_t"
 
 func.Device.FreeDescriptorSet
     "void"
     .set                "DescriptorSetId"
 
-func.CreateComputePipeline
+func.Device.CreateComputePipeline
     "ComputePipelineId"
-    .device             "DeviceId"
     .desc               "const ComputePipelineDescriptor*"
 
 func.Device.FreeComputePipeline
     "void"
     .pipeline           "ComputePipelineId"
 
-func.CreateRenderPipeline
+func.Device.CreateRenderPipeline
     "RenderPipelineId"
-    .device             "DeviceId"
     .desc               "const RenderPipelineDescriptor*"
 
 func.Device.FreeRenderPipeline
     "void"
     .pipeline           "RenderPipelineId"
 
-func.CreateQueryPool
+func.Device.CreateQueryPool
     "QueryPoolId"
-    .device             "DeviceId"
     .desc               "const QueryPoolDescriptor*"
 
 func.Device.FreeQueryPool
     "void"
     .pool               "QueryPoolId"
 
-func.CreateMemoryPool
+func.Device.CreateMemoryPool
     "MemoryPoolId"
-    .device             "DeviceId"
     .desc               "const MemoryPoolDescriptor*"
 
 func.Device.FreeMemoryPool
     "void"
     .pool               "MemoryPoolId"
 
-func.GetQueue
+func.Device.GetQueue
     "QueueId"
-    .device             "DeviceId"
     .type               "QueueType::Enum"
     .index              "uint32_t"
-
-func.SubmitQueue
-    "void"
-    .queue              "QueueId"
-    .desc               "const QueueSubmitDescriptor*"
-
-func.QueuePresent
-    "void"
-    .queue              "QueueId"
-    .desc               "const QueuePresentDescriptor*"
-
-func.WaitQueueIdle
-    "void"
-    .queue              "QueueId"
-
-func.QueueGetTimestampPeriodNS
-    "float"
-    .queue              "QueueId"
-
-func.QueueMapTiledTexture
-    "void"
-    .queue              "QueueId"
-    .desc               "const TiledTextureRegions*"
-
-func.QueueUnmapTiledTexture
-    "void"
-    .queue              "QueueId"
-    .desc               "const TiledTextureRegions*"
-
-func.QueueMapPackedMips
-    "void"
-    .queue              "QueueId"
-    .desc               "const TiledTexturePackedMips*"
-
-func.QueueUnmapPackedMips
-    "void"
-    .queue              "QueueId"
-    .desc               "const TiledTexturePackedMips*"
 
 func.Device.FreeQueue
     "void"
     .queue              "QueueId"
 
-func.CreateRenderPass
+func.Device.CreateRenderPass
     "RenderPassId"
-    .device             "DeviceId"
     .desc               "const RenderPassDescriptor*"
 
-func.CreateFramebuffer
+func.Device.CreateFramebuffer
     "FramebufferId"
-    .device             "DeviceId"
     .desc               "const FramebufferDescriptor*"
 
 func.Device.FreeRenderPass
@@ -2581,10 +2519,133 @@ func.Device.FreeFramebuffer
     "void"
     .framebuffer        "FramebufferId"
 
-func.CreateCommandPool
+func.Device.FreeCommandPool
+    "void"
+    .pool               "CommandPoolId"
+
+func.Device.CreateShaderLibrary
+    "ShaderLibraryId"
+    .desc               "const ShaderLibraryDescriptor*"
+
+func.Device.FreeShaderLibrary
+    "void"
+    .library            "ShaderLibraryId"
+
+func.Device.CreateBuffer
+    "BufferId"
+    .desc               "const BufferDescriptor*"
+
+func.Device.FreeBuffer
+    "void"
+    .buffer             "BufferId"
+
+func.Device.CreateSampler
+    "SamplerId"
+    .desc               "const SamplerDescriptor*"
+
+func.Device.FreeSampler
+    "void"
+    .sampler            "SamplerId"
+
+func.Device.CreateTexture
+    "TextureId"
+    .desc               "const TextureDescriptor*"
+
+func.Device.FreeTexture
+    "void"
+    .texture            "TextureId"
+
+func.Device.CreateTextureView
+    "TextureViewId"
+    .desc               "const TextureViewDescriptor*"
+
+func.Device.FreeTextureView
+    "void"
+    .renderTarget       "TextureViewId"
+
+func.Device.TryBindAliasingTexture
+    "bool"
+    .desc               "const TextureAliasingBindDescriptor*"
+
+func.Device.ExportSharedTextureHandle
+    "uint64_t"
+    .desc               "const ExportTextureDescriptor*"
+
+func.Device.ImportSharedTextureHandle
+    "TextureId"
+    .desc               "const ImportTextureDescriptor*"
+
+func.Device.CreateSwapChain
+    "SwapChainId"
+    .desc               "const SwapChainDescriptor*"
+
+func.Device.FreeSwapChain
+    "void"
+    .swapchain          "SwapChainId"
+
+func.Device.CreateSurfaceFromNativeView
+    "SurfaceId"
+    .view               "void*"
+
+func.Device.CreateSurfaceFromHwnd
+    "SurfaceId"
+    .window             "HWND"
+
+func.Device.CreateSurfaceFromNativeWindow
+    "SurfaceId"
+    .window             "ANativeWindow*"
+
+func.Device.FreeSurface
+    "void"
+    .surface            "SurfaceId"
+
+func.waitFences
+    "void"
+    .fences             "const FenceId*"
+    .fence_count        "uint32_t"
+
+func.Fence.queryFenceStatus
+    "FenceStatus::Enum"
+
+func.Queue.SubmitQueue
+    "void"
+    .desc               "const QueueSubmitDescriptor*"
+
+func.Queue.QueuePresent
+    "void"
+    .desc               "const QueuePresentDescriptor*"
+
+func.Queue.WaitQueueIdle
+    "void"
+
+func.Queue.QueueGetTimestampPeriodNS
+    "float"
+
+func.Queue.QueueMapTiledTexture
+    "void"
+    .desc               "const TiledTextureRegions*"
+
+func.Queue.QueueUnmapTiledTexture
+    "void"
+    .desc               "const TiledTextureRegions*"
+
+func.Queue.QueueMapPackedMips
+    "void"
+    .desc               "const TiledTexturePackedMips*"
+
+func.Queue.QueueUnmapPackedMips
+    "void"
+    .desc               "const TiledTexturePackedMips*"
+
+func.Queue.CreateCommandPool
     "CommandPoolId"
-    .queue              "QueueId"
     .desc               "const CommandPoolDescriptor*"
+
+func.UpdateDescriptorSet
+    "void"
+    .set                "DescriptorSetId"
+    .datas              "const DescriptorData*"
+    .count              "uint32_t"
 
 func.CreateCommandBuffer
     "CommandBufferId"
@@ -2599,24 +2660,6 @@ func.FreeCommandBuffer
     "void"
     .cmd                "CommandBufferId"
 
-func.Device.FreeCommandPool
-    "void"
-    .pool               "CommandPoolId"
-
-func.CreateShaderLibrary
-    "ShaderLibraryId"
-    .device             "DeviceId"
-    .desc               "const ShaderLibraryDescriptor*"
-
-func.Device.FreeShaderLibrary
-    "void"
-    .library            "ShaderLibraryId"
-
-func.CreateBuffer
-    "BufferId"
-    .device             "DeviceId"
-    .desc               "const BufferDescriptor*"
-
 func.MapBuffer
     "void"
     .buffer             "BufferId"
@@ -2626,65 +2669,10 @@ func.UnmapBuffer
     "void"
     .buffer             "BufferId"
 
-func.Device.FreeBuffer
-    "void"
-    .buffer             "BufferId"
-
-func.CreateSampler
-    "SamplerId"
-    .device             "DeviceId"
-    .desc               "const SamplerDescriptor*"
-
-func.Device.FreeSampler
-    "void"
-    .sampler            "SamplerId"
-
-func.CreateTexture
-    "TextureId"
-    .device             "DeviceId"
-    .desc               "const TextureDescriptor*"
-
-func.Device.FreeTexture
-    "void"
-    .texture            "TextureId"
-
-func.CreateTextureView
-    "TextureViewId"
-    .device             "DeviceId"
-    .desc               "const TextureViewDescriptor*"
-
-func.Device.FreeTextureView
-    "void"
-    .renderTarget       "TextureViewId"
-
-func.TryBindAliasingTexture
-    "bool"
-    .device             "DeviceId"
-    .desc               "const TextureAliasingBindDescriptor*"
-
-func.ExportSharedTextureHandle
-    "uint64_t"
-    .device             "DeviceId"
-    .desc               "const ExportTextureDescriptor*"
-
-func.ImportSharedTextureHandle
-    "TextureId"
-    .device             "DeviceId"
-    .desc               "const ImportTextureDescriptor*"
-
-func.CreateSwapChain
-    "SwapChainId"
-    .device             "DeviceId"
-    .desc               "const SwapChainDescriptor*"
-
 func.AcquireNextImage
     "uint32_t"
     .swapchain          "SwapChainId"
     .desc               "const AcquireNextDescriptor*"
-
-func.Device.FreeSwapChain
-    "void"
-    .swapchain          "SwapChainId"
 
 func.CmdBegin
     "void"
@@ -3069,25 +3057,6 @@ func.BinderBindVertexBuffer
 func.FreeBinder
     "void"
     .binder             "BinderId"
-
-func.CreateSurfaceFromNativeView
-    "SurfaceId"
-    .device             "DeviceId"
-    .view               "void*"
-
-func.CreateSurfaceFromHwnd
-    "SurfaceId"
-    .device             "DeviceId"
-    .window             "HWND"
-
-func.CreateSurfaceFromNativeWindow
-    "SurfaceId"
-    .device             "DeviceId"
-    .window             "ANativeWindow*"
-
-func.Device.FreeSurface
-    "void"
-    .surface            "SurfaceId"
 
 switch_table.FormatUtil_IsDepthStencilFormat
     .arg            "TextureFormat::Enum"
