@@ -2,7 +2,6 @@
 #include "cgpu_vulkan.h"
 // #include "cgpu/drivers/cgpu_ags.h"
 // #include "cgpu/drivers/cgpu_nvapi.h"
-#include "cgpu/flags.h"
 #include "vulkan/vulkan_core.h"
 #ifdef CGPU_THREAD_SAFETY
     #include "SkrRT/platform/thread.h"

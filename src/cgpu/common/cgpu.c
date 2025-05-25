@@ -1,5 +1,4 @@
 #include "cgpu/api.h"
-#include "cgpu/flags.h"
 #include "common_utils.h"
 #include <stdint.h>
 #ifdef CGPU_USE_VULKAN

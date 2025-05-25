@@ -54,6 +54,9 @@ local function find_enum_item(all_types, enum_name, item_name)
 			return item
 		end
 	end
+	if item_name == "Count" then
+		return typedef.count_item
+	end
 	error ("Unkown Enum" .. enum_name .. " item: ".. item_name)
 end
 
@@ -69,12 +72,8 @@ local function convert_arg(all_types, arg, namespace)
 			arg.array_at = { number = number }
 			arg.carray = "[" .. tostring(number) .. "]"
 		elseif enum then
-			local typedef = all_types[ enum .. "::Enum" ]
-			if typedef == nil then
-				error ("Unknown Enum " .. enum)
-			end
 			arg.array_at = { enum = enum, value = value }
-			arg.carray = "[CGPU_" .. camelcase_to_underscorecase(enum):upper() .. "_" .. value:upper() .. "]"
+			arg.carray = "[" .. find_enum_item(all_types, enum .. "::Enum", value).cname  .. "]"
 		elseif const_value then
 			local typedef = all_types[ const_value ]
 			if typedef == nil then
@@ -364,6 +363,27 @@ function codegen.nameconversion(all_types, all_funcs)
 		end
 	end
 
+	for _,v in ipairs(all_types) do
+		if v.enum then
+			local uname = ("cgpu_" .. camelcase_to_underscorecase(v.name:match("(.-)::Enum$"))):upper()
+
+			for _,item in ipairs(v.enum) do
+				local ename
+				if v.underscore then
+					ename = camelcase_to_underscorecase(item.name)
+				else
+					ename = item.name
+				end
+				ename = ename:upper()
+				local name = uname .. "_" .. ename
+				item.cname = name
+			end
+
+			local count_cname = uname .. "_" .. "COUNT"
+			v.count_item = { name = "Count", cname = count_cname }
+		end
+	end
+
 	-- make sub struct index
 	for _,v in ipairs(all_types) do
 		if v.namespace then
@@ -405,8 +425,7 @@ function codegen.nameconversion(all_types, all_funcs)
 			local type = v.arg.fulltype:match("(.-)::Enum$")
 			v.ccases = {}
 			for _, item in ipairs(v.cases) do
-				local ctype = find_enum_item(all_types, v.arg.fulltype, item.fulltype)
-				local ctype = "CGPU_" .. camelcase_to_underscorecase(type):upper() .. "_" .. item.fulltype:upper()
+				local ctype = find_enum_item(all_types, v.arg.fulltype, item.fulltype).cname
 				v.ccases[#v.ccases + 1] = { key = ctype, value = item.value }
 			end
 		end
@@ -822,19 +841,10 @@ function codegen.gen_enum_cdefine(enum)
 		if item.comment then
 			comment = table.concat(item.comment, " ")
 		end
-		local ename = item.cname
-		if not ename then
-			if enum.underscore then
-				ename = camelcase_to_underscorecase(item.name)
-			else
-				ename = item.name
-			end
-			ename = ename:upper()
-		end
-		local name = uname .. "_" .. ename
+		local cname = item.cname
 		items[#items+1] = string.format("%s,%s /** (%2d) %s%s */",
-			name,
-			namealign(name, 40),
+			cname,
+			namealign(cname, 40),
 			index - 1,
 			comment,
 			namealign(comment, 30))

@@ -4,12 +4,10 @@
         #define WIN32_LEAN_AND_MEAN
     #endif
 #endif
-#include "cgpu/flags.h"
 #include "cgpu/api.h"
 #include "cgpu_vulkan.h"
 #include "internal/vk_mem_alloc.h"
 #include "common_utils.h"
-#include "cgpu/flags.h"
 
 #include "vulkan/vulkan_core.h"
 
