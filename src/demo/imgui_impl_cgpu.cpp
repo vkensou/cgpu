@@ -113,7 +113,7 @@ static void ImGui_ImplCGPU_SetupRenderState(ImDrawData* draw_data, CGPURenderPip
 
     // Bind pipeline:
     {
-        cgpu_render_encoder_bind_pipeline(rp_encoder, pipeline);
+        cgpu_bind_render_pipeline(rp_encoder, pipeline);
     }
 
     // Bind Vertex And Index Buffer:
@@ -122,13 +122,13 @@ static void ImGui_ImplCGPU_SetupRenderState(ImDrawData* draw_data, CGPURenderPip
         //VkBuffer vertex_buffers[1] = { rb->VertexBuffer };
         //VkDeviceSize vertex_offset[1] = { 0 };
         const uint32_t vert_stride = sizeof(ImDrawVert);
-        cgpu_render_encoder_bind_vertex_buffers(rp_encoder, 1, &rb->VertexBuffer, &vert_stride, nullptr);
-        cgpu_render_encoder_bind_index_buffer(rp_encoder, rb->IndexBuffer, sizeof(uint16_t), 0);
+        cgpu_bind_vertex_buffers(rp_encoder, 1, &rb->VertexBuffer, &vert_stride, nullptr);
+        cgpu_bind_index_buffer(rp_encoder, rb->IndexBuffer, sizeof(uint16_t), 0);
     }
 
     // Setup viewport:
     {
-		cgpu_render_encoder_set_viewport(rp_encoder,
+		cgpu_set_viewport(rp_encoder,
 			0.0f, 0.0f,
 			(float)fb_width, (float)fb_height,
 			0.f, 1.f);
@@ -152,7 +152,7 @@ static void ImGui_ImplCGPU_SetupRenderState(ImDrawData* draw_data, CGPURenderPip
             .scale = { scale[0], scale[1] },
             .translate = { translate[0], translate[1] },
         };
-        cgpu_render_encoder_push_constants(rp_encoder, root_sig, "pc", &data);
+        cgpu_push_constants(rp_encoder, root_sig, "pc", &data);
     }
 }
 
@@ -200,11 +200,11 @@ void ImGui_ImplCGPU_RenderDrawData(ImDrawData* draw_data, CGPURenderPassEncoderI
         ImDrawIdx* idx_dst = nullptr;
 
         CGPUBufferRange range = { .offset = 0, .size = rb->VertexBufferSize };
-        cgpu_map_buffer(rb->VertexBuffer, &range);
+        cgpu_map(rb->VertexBuffer, &range);
         vtx_dst = (ImDrawVert*)rb->VertexBuffer->info->cpu_mapped_address;
 
         range = { .offset = 0, .size = rb->IndexBufferSize };
-        cgpu_map_buffer(rb->IndexBuffer, &range);
+        cgpu_map(rb->IndexBuffer, &range);
         idx_dst = (ImDrawIdx*)rb->IndexBuffer->info->cpu_mapped_address;
 
         for (int n = 0; n < draw_data->CmdListsCount; n++)
@@ -216,8 +216,8 @@ void ImGui_ImplCGPU_RenderDrawData(ImDrawData* draw_data, CGPURenderPassEncoderI
             idx_dst += cmd_list->IdxBuffer.Size;
         }
 
-        cgpu_unmap_buffer(rb->VertexBuffer);
-        cgpu_unmap_buffer(rb->IndexBuffer);
+        cgpu_unmap(rb->VertexBuffer);
+        cgpu_unmap(rb->IndexBuffer);
     }
 
     // Setup desired CGPU state
@@ -261,7 +261,7 @@ void ImGui_ImplCGPU_RenderDrawData(ImDrawData* draw_data, CGPURenderPassEncoderI
                     continue;
 
                 // Apply scissor/clipping rectangle
-                cgpu_render_encoder_set_scissor(rp_encoder, (clip_min.x), (clip_min.y), (clip_max.x - clip_min.x), (clip_max.y - clip_min.y));
+                cgpu_set_scissor(rp_encoder, (clip_min.x), (clip_min.y), (clip_max.x - clip_min.x), (clip_max.y - clip_min.y));
 
                 // // Bind DescriptorSet with font or user texture
                 // VkDescriptorSet desc_set[1] = { (VkDescriptorSet)pcmd->TextureId };
@@ -272,10 +272,10 @@ void ImGui_ImplCGPU_RenderDrawData(ImDrawData* draw_data, CGPURenderPassEncoderI
                 //     desc_set[0] = bd->FontDescriptorSet;
                 // }
                 // vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bd->PipelineLayout, 0, 1, desc_set, 0, nullptr);
-                cgpu_render_encoder_bind_descriptor_set(rp_encoder, bd->FontDescriptorSet);
+                cgpu_bind_descriptor_set(rp_encoder, bd->FontDescriptorSet);
 
                 // Draw
-                cgpu_render_encoder_draw_indexed(rp_encoder, pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset);
+                cgpu_draw_indexed(rp_encoder, pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset);
             }
         }
         global_idx_offset += cmd_list->IdxBuffer.Size;
@@ -289,7 +289,7 @@ void ImGui_ImplCGPU_RenderDrawData(ImDrawData* draw_data, CGPURenderPassEncoderI
     // If you use VK_DYNAMIC_STATE_VIEWPORT or VK_DYNAMIC_STATE_SCISSOR you are responsible for setting the values before rendering.
     // In theory we should aim to backup/restore those values but I am not sure this is possible.
     // We perform a call to vkCmdSetScissor() to set back a full viewport which is likely to fix things for 99% users but technically this is not perfect. (See github #4644)
-    cgpu_render_encoder_set_scissor(rp_encoder, 0, 0, fb_width, fb_height);
+    cgpu_set_scissor(rp_encoder, 0, 0, fb_width, fb_height);
 }
 
 bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId root_sig)
@@ -333,7 +333,7 @@ bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId ro
     }
     auto cpy_cmd_pool = cgpu_create_command_pool(queue, &cmd_pool_desc);
     auto cpy_cmd = cgpu_create_command_buffer(cpy_cmd_pool, &cmd_desc);
-    cgpu_cmd_begin(cpy_cmd);
+    cgpu_begin(cpy_cmd);
     CGPUBufferToTextureTransfer b2t = {};
     b2t.src = tex_upload_buffer;
     b2t.src_offset = 0;
@@ -341,7 +341,7 @@ bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId ro
     b2t.dst_subresource.mip_level = 0;
     b2t.dst_subresource.base_array_layer = 0;
     b2t.dst_subresource.layer_count = 1;
-    cgpu_cmd_transfer_buffer_to_texture(cpy_cmd, &b2t);
+    cgpu_transfer_buffer_to_texture(cpy_cmd, &b2t);
     CGPUTextureBarrier srv_barrier = {};
     srv_barrier.texture = bd->FontImage;
     srv_barrier.src_state = CGPU_RESOURCE_STATE_COPY_DEST;
@@ -349,14 +349,14 @@ bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId ro
     CGPUResourceBarrierDescriptor barrier_desc1 = {};
     barrier_desc1.texture_barriers = &srv_barrier;
     barrier_desc1.texture_barriers_count = 1;
-    cgpu_cmd_resource_barrier(cpy_cmd, &barrier_desc1);
-    cgpu_cmd_end(cpy_cmd);
+    cgpu_resource_barrier(cpy_cmd, &barrier_desc1);
+    cgpu_end(cpy_cmd);
     CGPUQueueSubmitDescriptor cpy_submit = {};
     cpy_submit.cmds = &cpy_cmd;
     cpy_submit.cmds_count = 1;
     cgpu_submit_queue(queue, &cpy_submit);
     cgpu_wait_queue_idle(queue);
-    cgpu_free_command_buffer(cpy_cmd);
+    cgpu_free_command_buffer(cpy_cmd_pool, cpy_cmd);
     cgpu_free_command_pool(v->Device, cpy_cmd_pool);
     cgpu_free_buffer(v->Device, tex_upload_buffer);
     io.Fonts->TexID = (ImTextureID)(intptr_t)&bd->FontImage;
@@ -403,7 +403,7 @@ bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId ro
         .count = 1,
     };
 
-    cgpu_update_descriptor_set(bd->FontDescriptorSet, datas, 2);
+    cgpu_update(bd->FontDescriptorSet, datas, 2);
 
     return true;
 }
@@ -625,7 +625,7 @@ static void ImGui_ImplCGPU_DestroyWindow(ImGuiViewport* viewport)
         {
             FreeWindow(wd, v->Device);
 
-            if (wd->Command) cgpu_free_command_buffer(wd->Command); wd->Command = nullptr;
+            if (wd->Command) cgpu_free_command_buffer(wd->CommandPool, wd->Command); wd->Command = nullptr;
             if (wd->CommandPool) cgpu_free_command_pool(v->Device, wd->CommandPool); wd->CommandPool = nullptr;
         }
         ImGui_ImplCGPUH_DestroyWindowRenderBuffers(v->Device, wrb);
@@ -671,8 +671,8 @@ static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)
     const CGPUTextureId back_buffer = wd->Swapchain->back_buffers[wd->FrameIndex];
     const CGPUTextureViewId back_buffer_view = wd->Backbuffers[wd->FrameIndex];
 
-    cgpu_reset_command_pool(wd->CommandPool);
-    cgpu_cmd_begin(wd->Command);
+    cgpu_reset(wd->CommandPool);
+    cgpu_begin(wd->Command);
 
     CGPUTextureBarrier draw_barrier = {
     .texture = back_buffer,
@@ -680,7 +680,7 @@ static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)
     .dst_state = CGPU_RESOURCE_STATE_RENDER_TARGET
     };
     CGPUResourceBarrierDescriptor barrier_desc0 = { .texture_barriers = &draw_barrier, .texture_barriers_count = 1 };
-    cgpu_cmd_resource_barrier(wd->Command, &barrier_desc0);
+    cgpu_resource_barrier(wd->Command, &barrier_desc0);
 
     const CGPUClearValue clearColor = {
         .color = { 0.f, 0.f, 0.f, 1.f },
@@ -694,20 +694,20 @@ static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)
         .clear_values = &clearColor,
     };
 
-    CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass(wd->Command, &begin_info);
+    CGPURenderPassEncoderId rp_encoder = cgpu_begin_render_pass(wd->Command, &begin_info);
 
     ImGui_ImplCGPU_RenderDrawData(viewport->DrawData, rp_encoder, v->RootSig, v->Pipeline);
 
-    cgpu_cmd_end_render_pass(wd->Command, rp_encoder);
+    cgpu_end_render_pass(wd->Command, rp_encoder);
     CGPUTextureBarrier present_barrier = {
         .texture = back_buffer,
         .src_state = CGPU_RESOURCE_STATE_RENDER_TARGET,
         .dst_state = CGPU_RESOURCE_STATE_PRESENT
     };
     CGPUResourceBarrierDescriptor barrier_desc1 = { .texture_barriers = &present_barrier, .texture_barriers_count = 1 };
-    cgpu_cmd_resource_barrier(wd->Command, &barrier_desc1);
+    cgpu_resource_barrier(wd->Command, &barrier_desc1);
 
-    cgpu_cmd_end(wd->Command);
+    cgpu_end(wd->Command);
     // submit
     CGPUQueueSubmitDescriptor submit_desc = {
         .cmds = &wd->Command,

@@ -73,7 +73,7 @@ void GpuTimeStamps::OnBeginFrame(CGPUCommandBufferId cmd, float gpuTicksPerSecon
 		gpuLabels.clear();
 	}
 
-	cgpu_cmd_reset_query_pool(cmd, query.query_pool, current_frame_index * MaxValuesPerFrame, MaxValuesPerFrame);
+	cgpu_reset_query_pool(cmd, query.query_pool, current_frame_index * MaxValuesPerFrame, MaxValuesPerFrame);
 }
 
 void GpuTimeStamps::GetTimeStamp(CGPUCommandBufferId cmd, const char* label)
@@ -86,7 +86,7 @@ void GpuTimeStamps::GetTimeStamp(CGPUCommandBufferId cmd, const char* label)
 		.index = offset,
 		.stage = CGPU_SHADER_STAGE_ALL_GRAPHICS,
 	};
-	cgpu_cmd_begin_query(cmd, query.query_pool, &query_desc);
+	cgpu_begin_query(cmd, query.query_pool, &query_desc);
 
 	query.labels.push_back(label);
 }
@@ -94,7 +94,7 @@ void GpuTimeStamps::GetTimeStamp(CGPUCommandBufferId cmd, const char* label)
 void GpuTimeStamps::CollectTimings(CGPUCommandBufferId cmd)
 {
 	auto& query = timeStampQueries[current_frame_index];
-	cgpu_cmd_resolve_query(cmd, query.query_pool, query.query_buffer, current_frame_index * MaxValuesPerFrame, query.labels.size());
+	cgpu_resolve_query(cmd, query.query_pool, query.query_buffer, current_frame_index * MaxValuesPerFrame, query.labels.size());
 }
 
 void GpuTimeStamps::OnEndFrame()

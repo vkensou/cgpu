@@ -1367,7 +1367,7 @@ void cgpu_free_queue_vulkan(CGPUDeviceId device, CGPUQueueId queue)
 {
     const CGPUAllocator* allocator = &queue->device->adapter->instance->allocator;
     CGPUQueue_Vulkan* Q = (CGPUQueue_Vulkan*)queue;
-    if (Q->pInnerCmdBuffer) cgpu_free_command_buffer(Q->pInnerCmdBuffer);
+    if (Q->pInnerCmdBuffer) cgpu_free_command_buffer(Q->pInnerCmdPool, Q->pInnerCmdBuffer);
     if (Q->pInnerCmdPool) cgpu_free_command_pool(device, Q->pInnerCmdPool);
     if (Q->pInnerFence) cgpu_free_fence(device, Q->pInnerFence);
 #ifdef CGPU_THREAD_SAFETY
@@ -1619,7 +1619,7 @@ void cgpu_reset_command_pool_vulkan(CGPUCommandPoolId pool)
     CHECK_VKRESULT(&pool->queue->device->adapter->instance->logger, D->mVkDeviceTable.vkResetCommandPool(D->pVkDevice, P->pVkCmdPool, 0));
 }
 
-void cgpu_free_command_buffer_vulkan(CGPUCommandBufferId cmd)
+void cgpu_free_command_buffer_vulkan(CGPUCommandPoolId pool, CGPUCommandBufferId cmd)
 {
     CGPUCommandBuffer_Vulkan* Cmd = (CGPUCommandBuffer_Vulkan*)cmd;
     CGPUCommandPool_Vulkan* P = (CGPUCommandPool_Vulkan*)cmd->pool;
@@ -1845,7 +1845,7 @@ void cgpu_cmd_reset_query_pool_vulkan(CGPUCommandBufferId cmd, CGPUQueryPoolId p
 
 void cgpu_cmd_end_query_vulkan(CGPUCommandBufferId cmd, CGPUQueryPoolId pool, const struct CGPUQueryDescriptor* desc)
 {
-    cgpu_cmd_begin_query(cmd, pool, desc);
+    cgpu_begin_query(cmd, pool, desc);
 }
 
 void cgpu_cmd_resolve_query_vulkan(CGPUCommandBufferId cmd, CGPUQueryPoolId pool, CGPUBufferId readback, uint32_t start_query, uint32_t query_count)

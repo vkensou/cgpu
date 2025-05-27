@@ -39,7 +39,7 @@ struct FrameData
 
 	void newFrame()
 	{
-		cgpu_reset_command_pool(pool);
+		cgpu_reset(pool);
 
 		for (auto cmd : allocated_cmds)
 			cmds.push_back(cmd);
@@ -70,11 +70,11 @@ struct FrameData
 		inflightFence = CGPU_NULLPTR;
 
 		for (auto cmd : cmds)
-			cgpu_free_command_buffer(cmd);
+			cgpu_free_command_buffer(pool, cmd);
 		cmds.clear();
 
 		for (auto cmd : allocated_cmds)
-			cgpu_free_command_buffer(cmd);
+			cgpu_free_command_buffer(pool, cmd);
 		allocated_cmds.clear();
 
 		cgpu_free_command_pool(device, pool);
@@ -278,7 +278,7 @@ struct RenderWindow
 			.dst_state = CGPU_RESOURCE_STATE_RENDER_TARGET
 		};
 		CGPUResourceBarrierDescriptor barrier_desc0 = { .texture_barriers = &draw_barrier, .texture_barriers_count = 1 };
-		cgpu_cmd_resource_barrier(cmd, &barrier_desc0);
+		cgpu_resource_barrier(cmd, &barrier_desc0);
 
 		const CGPUClearValue clearColor = {
 			.color = { 0.f, 0.f, 0.f, 1.f },
@@ -292,30 +292,30 @@ struct RenderWindow
 			.clear_values = &clearColor,
 		};
 
-		CGPURenderPassEncoderId rp_encoder = cgpu_cmd_begin_render_pass(cmd, &begin_info);
-		cgpu_render_encoder_set_shading_rate(rp_encoder, CGPU_SHADING_RATE_FULL, CGPU_SHADING_RATE_COMBINER_PASS_THROUGH, CGPU_SHADING_RATE_COMBINER_PASS_THROUGH);
-		cgpu_render_encoder_set_viewport(rp_encoder,
+		CGPURenderPassEncoderId rp_encoder = cgpu_begin_render_pass(cmd, &begin_info);
+		cgpu_set_shading_rate(rp_encoder, CGPU_SHADING_RATE_FULL, CGPU_SHADING_RATE_COMBINER_PASS_THROUGH, CGPU_SHADING_RATE_COMBINER_PASS_THROUGH);
+		cgpu_set_viewport(rp_encoder,
 			0.0f, 0.0f,
 			(float)w, (float)h,
 			0.f, 1.f);
-		cgpu_render_encoder_set_scissor(rp_encoder, 0, 0, w, h);
+		cgpu_set_scissor(rp_encoder, 0, 0, w, h);
 		if (pipeline)
 		{
-			cgpu_render_encoder_bind_pipeline(rp_encoder, pipeline);
-			cgpu_render_encoder_draw(rp_encoder, 3, 0);
+			cgpu_bind_render_pipeline(rp_encoder, pipeline);
+			cgpu_draw(rp_encoder, 3, 0);
 		}
 
 		ImDrawData* draw_data = imgui_viewport->DrawData;
 		ImGui_ImplCGPU_RenderDrawData(draw_data, rp_encoder, imgui_root_sig, imgui_pipeline);
 
-		cgpu_cmd_end_render_pass(cmd, rp_encoder);
+		cgpu_end_render_pass(cmd, rp_encoder);
 		CGPUTextureBarrier present_barrier = {
 			.texture = back_buffer,
 			.src_state = CGPU_RESOURCE_STATE_RENDER_TARGET,
 			.dst_state = CGPU_RESOURCE_STATE_PRESENT
 		};
 		CGPUResourceBarrierDescriptor barrier_desc1 = { .texture_barriers = &present_barrier, .texture_barriers_count = 1 };
-		cgpu_cmd_resource_barrier(cmd, &barrier_desc1);
+		cgpu_resource_barrier(cmd, &barrier_desc1);
 	}
 };
 
@@ -725,7 +725,7 @@ int main(int argc, char** argv)
 				cur_frame_data.newFrame();
 
 				auto cmd = cur_frame_data.request();
-				cgpu_cmd_begin(cmd);
+				cgpu_begin(cmd);
 
 				gpu_timer->OnBeginFrame(cmd, gpuTicksPerSecond, stamps);
 
@@ -739,7 +739,7 @@ int main(int argc, char** argv)
 
 				gpu_timer->CollectTimings(cmd);
 
-				cgpu_cmd_end(cmd);
+				cgpu_end(cmd);
 
 				gpu_timer->OnEndFrame();
 

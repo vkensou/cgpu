@@ -79,7 +79,7 @@ CGPU_API void cgpu_free_framebuffer_vulkan(CGPUDeviceId device, CGPUFramebufferI
 CGPU_API CGPUCommandPoolId cgpu_create_command_pool_vulkan(CGPUQueueId queue, const CGPUCommandPoolDescriptor* desc);
 CGPU_API CGPUCommandBufferId cgpu_create_command_buffer_vulkan(CGPUCommandPoolId pool, const struct CGPUCommandBufferDescriptor* desc);
 CGPU_API void cgpu_reset_command_pool_vulkan(CGPUCommandPoolId pool);
-CGPU_API void cgpu_free_command_buffer_vulkan(CGPUCommandBufferId cmd);
+CGPU_API void cgpu_free_command_buffer_vulkan(CGPUCommandPoolId pool, CGPUCommandBufferId cmd);
 CGPU_API void cgpu_free_command_pool_vulkan(CGPUDeviceId device, CGPUCommandPoolId pool);
 
 // Shader APIs

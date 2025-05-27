@@ -225,8 +225,8 @@ CGPUBufferId cgpu_create_buffer_vulkan(CGPUDeviceId device, const struct CGPUBuf
 #ifdef CGPU_THREAD_SAFETY
         if (Q->pMutex) skr_mutex_acquire(Q->pMutex);
 #endif
-        cgpu_reset_command_pool(Q->pInnerCmdPool);
-        cgpu_cmd_begin(Q->pInnerCmdBuffer);
+        cgpu_reset(Q->pInnerCmdPool);
+        cgpu_begin(Q->pInnerCmdBuffer);
         CGPUBufferBarrier init_barrier = {
             .buffer = &B->super,
             .src_state = CGPU_RESOURCE_STATE_UNDEFINED,
@@ -236,8 +236,8 @@ CGPUBufferId cgpu_create_buffer_vulkan(CGPUDeviceId device, const struct CGPUBuf
             .buffer_barriers = &init_barrier,
             .buffer_barriers_count = 1
         };
-        cgpu_cmd_resource_barrier(Q->pInnerCmdBuffer, &init_barrier_d);
-        cgpu_cmd_end(Q->pInnerCmdBuffer);
+        cgpu_resource_barrier(Q->pInnerCmdBuffer, &init_barrier_d);
+        cgpu_end(Q->pInnerCmdBuffer);
         CGPUQueueSubmitDescriptor barrier_submit = {
             .cmds = &Q->pInnerCmdBuffer,
             .signal_fence = Q->pInnerFence,
@@ -963,8 +963,8 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
 #ifdef CGPU_THREAD_SAFETY
         if (Q->pMutex) skr_mutex_acquire(Q->pMutex);
 #endif
-        cgpu_reset_command_pool(Q->pInnerCmdPool);
-        cgpu_cmd_begin(Q->pInnerCmdBuffer);
+        cgpu_reset(Q->pInnerCmdPool);
+        cgpu_begin(Q->pInnerCmdBuffer);
         CGPUTextureBarrier init_barrier = {
             .texture = &T->super,
             .src_state = CGPU_RESOURCE_STATE_UNDEFINED,
@@ -974,8 +974,8 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
             .texture_barriers = &init_barrier,
             .texture_barriers_count = 1
         };
-        cgpu_cmd_resource_barrier(Q->pInnerCmdBuffer, &init_barrier_d);
-        cgpu_cmd_end(Q->pInnerCmdBuffer);
+        cgpu_resource_barrier(Q->pInnerCmdBuffer, &init_barrier_d);
+        cgpu_end(Q->pInnerCmdBuffer);
         CGPUQueueSubmitDescriptor barrier_submit = {
             .cmds = &Q->pInnerCmdBuffer,
             .signal_fence = Q->pInnerFence,

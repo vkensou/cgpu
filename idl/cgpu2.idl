@@ -927,6 +927,7 @@ funcptr.ResetCommandPool
 
 funcptr.FreeCommandBuffer
     "void"
+    .pool               "CommandPoolId"
     .cmd                "CommandBufferId"
 
 funcptr.FreeCommandPool
@@ -2641,102 +2642,84 @@ func.Queue.CreateCommandPool
     "CommandPoolId"
     .desc               "const CommandPoolDescriptor*"
 
-func.UpdateDescriptorSet
+func.DescriptorSet.Update
     "void"
-    .set                "DescriptorSetId"
     .datas              "const DescriptorData*"
     .count              "uint32_t"
 
-func.CreateCommandBuffer
+func.CommandPool.CreateCommandBuffer
     "CommandBufferId"
-    .pool               "CommandPoolId"
     .desc               "const CommandBufferDescriptor*"
 
-func.ResetCommandPool
+func.CommandPool.Reset
     "void"
-    .pool               "CommandPoolId"
 
-func.FreeCommandBuffer
+func.CommandPool.FreeCommandBuffer
     "void"
     .cmd                "CommandBufferId"
 
-func.MapBuffer
+func.Buffer.Map
     "void"
-    .buffer             "BufferId"
     .range              "const BufferRange*"
 
-func.UnmapBuffer
+func.Buffer.Unmap
     "void"
-    .buffer             "BufferId"
 
-func.AcquireNextImage
+func.SwapChain.AcquireNextImage
     "uint32_t"
-    .swapchain          "SwapChainId"
     .desc               "const AcquireNextDescriptor*"
 
-func.CmdBegin
+func.CommandBuffer.Begin
     "void"
-    .cmd                "CommandBufferId"
 
-func.CmdTransferBufferToBuffer
+func.CommandBuffer.TransferBufferToBuffer
     "void"
-    .cmd                "CommandBufferId"
     .desc               "const BufferToBufferTransfer*"
 
-func.CmdTransferTextureToTexture
+func.CommandBuffer.TransferTextureToTexture
     "void"
-    .cmd                "CommandBufferId"
     .desc               "const TextureToTextureTransfer*"
 
-func.CmdTransferBufferToTexture
+func.CommandBuffer.TransferBufferToTexture
     "void"
-    .cmd                "CommandBufferId"
     .desc               "const BufferToTextureTransfer*"
 
-func.CmdTransferBufferToTiles
+func.CommandBuffer.TransferBufferToTiles
     "void"
-    .cmd                "CommandBufferId"
     .desc               "const BufferToTilesTransfer*"
 
-func.CmdResourceBarrier
+func.CommandBuffer.ResourceBarrier
     "void"
-    .cmd                "CommandBufferId"
     .desc               "const ResourceBarrierDescriptor*"
 
-func.CmdBeginQuery
+func.CommandBuffer.BeginQuery
     "void"
-    .cmd                "CommandBufferId"
     .pool               "QueryPoolId"
     .desc               "const QueryDescriptor*"
 
-func.CmdEndQuery
+func.CommandBuffer.EndQuery
     "void"
-    .cmd                "CommandBufferId"
     .pool               "QueryPoolId"
     .desc               "const QueryDescriptor*"
 
-func.CmdResetQueryPool
+func.CommandBuffer.ResetQueryPool
     "void"
-    .cmd                "CommandBufferId"
     .pool               "QueryPoolId"
     .startQuery         "uint32_t"
     .queryCount         "uint32_t"
 
-func.CmdResolveQuery
+func.CommandBuffer.ResolveQuery
     "void"
-    .cmd                "CommandBufferId"
     .pool               "QueryPoolId"
     .readback           "BufferId"
     .startQuery         "uint32_t"
     .queryCount         "uint32_t"
 
-func.CmdEnd
+func.CommandBuffer.End
     "void"
-    .cmd                "CommandBufferId"
 
-func.CmdBeginComputePass
+func.CommandBuffer.BeginComputePass
     "ComputePassEncoderId"
-    .cmd                "CommandBufferId"
     .desc               "const ComputePassDescriptor*"
 
 func.ComputeEncoderBindDescriptorSet
@@ -2744,7 +2727,7 @@ func.ComputeEncoderBindDescriptorSet
     .encoder            "ComputePassEncoderId"
     .set                "DescriptorSetId"
 
-func.ComputeEncoderBindPipeline
+func.ComputeEncoderBindComputePipeline
     "void"
     .encoder            "ComputePassEncoderId"
     .pipeline           "ComputePipelineId"
@@ -2756,31 +2739,26 @@ func.ComputeEncoderDispatch
     .Y                  "uint32_t"
     .Z                  "uint32_t"
 
-func.CmdEndComputePass
+func.CommandBuffer.EndComputePass
     "void"
-    .cmd                "CommandBufferId"
     .encoder            "ComputePassEncoderId"
 
-func.CmdBeginRenderPass
+func.CommandBuffer.BeginRenderPass
     "RenderPassEncoderId"
-    .cmd                "CommandBufferId"
     .beginInfo          "const BeginRenderPassInfo*"
 
-func.RenderEncoderSetShadingRate
+func.RenderPassEncoder.SetShadingRate
     "void"
-    .encoder            "RenderPassEncoderId"
     .shadingRate        "ShadingRate::Enum"
     .postRasterizeRate  "ShadingRateCombiner::Enum"
     .finalRate          "ShadingRateCombiner::Enum"
 
-func.RenderEncoderBindDescriptorSet
+func.RenderPassEncoder.BindDescriptorSet
     "void"
-    .encoder            "RenderPassEncoderId"
     .set                "DescriptorSetId"
 
-func.RenderEncoderSetViewport
+func.RenderPassEncoder.SetViewport
     "void"
-    .encoder            "RenderPassEncoderId"
     .x                  "float"
     .y                  "float"
     .width              "float"
@@ -2788,37 +2766,32 @@ func.RenderEncoderSetViewport
     .minDepth           "float"
     .maxDepth           "float"
 
-func.RenderEncoderSetScissor
+func.RenderPassEncoder.SetScissor
     "void"
-    .encoder            "RenderPassEncoderId"
     .x                  "uint32_t"
     .y                  "uint32_t"
     .width              "uint32_t"
     .height             "uint32_t"
 
-func.RenderEncoderBindPipeline
+func.RenderPassEncoder.BindRenderPipeline
     "void"
-    .encoder            "RenderPassEncoderId"
     .pipeline           "RenderPipelineId"
 
-func.RenderEncoderBindVertexBuffers
+func.RenderPassEncoder.BindVertexBuffers
     "void"
-    .encoder            "RenderPassEncoderId"
     .bufferCount        "uint32_t"
     .buffers            "const BufferId*"
     .strides            "const uint32_t*"
     .offsets            "const uint32_t*"
 
-func.RenderEncoderBindIndexBuffer
+func.RenderPassEncoder.BindIndexBuffer
     "void"
-    .encoder            "RenderPassEncoderId"
     .buffer             "BufferId"
     .indexStride        "uint32_t"
     .offset             "uint64_t"
 
-func.RenderEncoderPushConstants
+func.RenderPassEncoder.PushConstants
     "void"
-    .encoder            "RenderPassEncoderId"
     .rs                 "RootSignatureId"
     .name               "const char*"
     .data               "const void*"
@@ -2830,54 +2803,46 @@ func.ComputeEncoderPushConstants
     .name               "const char*"
     .data               "const void*"
 
-func.RenderEncoderDraw
+func.RenderPassEncoder.Draw
     "void"
-    .encoder            "RenderPassEncoderId"
     .vertexCount        "uint32_t"
     .firstVertex        "uint32_t"
 
-func.RenderEncoderDrawInstanced
+func.RenderPassEncoder.DrawInstanced
     "void"
-    .encoder            "RenderPassEncoderId"
     .vertexCount        "uint32_t"
     .firstVertex        "uint32_t"
     .instanceCount      "uint32_t"
     .firstInstance      "uint32_t"
 
-func.RenderEncoderDrawIndexed
+func.RenderPassEncoder.DrawIndexed
     "void"
-    .encoder            "RenderPassEncoderId"
     .indexCount         "uint32_t"
     .firstIndex         "uint32_t"
     .firstVertex        "uint32_t"
 
-func.RenderEncoderDrawIndexedInstanced
+func.RenderPassEncoder.DrawIndexedInstanced
     "void"
-    .encoder            "RenderPassEncoderId"
     .indexCount         "uint32_t"
     .firstIndex         "uint32_t"
     .instanceCount      "uint32_t"
     .firstInstance      "uint32_t"
     .firstVertex        "uint32_t"
 
-func.CmdEndRenderPass
+func.CommandBuffer.EndRenderPass
     "void"
-    .cmd                "CommandBufferId"
     .encoder            "RenderPassEncoderId"
 
-func.CmdBeginEvent
+func.CommandBuffer.BeginEvent
     "void"
-    .cmd                "CommandBufferId"
     .event              "const EventInfo*"
 
-func.CmdSetMarker
+func.CommandBuffer.SetMarker
     "void"
-    .cmd                "CommandBufferId"
     .marker             "const MarkerInfo*"
 
-func.CmdEndEvent
+func.CommandBuffer.EndEvent
     "void"
-    .cmd                "CommandBufferId"
 
 func.CompileAndLinkShaders
     "LinkedShaderId"
@@ -2905,9 +2870,8 @@ func.CreateStateBuffer
     .cmd                "CommandBufferId"
     .desc               "const StateBufferDescriptor*"
 
-func.RenderEncoderBindStateBuffer
+func.RenderPassEncoder.BindStateBuffer
     "void"
-    .encoder            "RenderPassEncoderId"
     .stream             "StateBufferId"
 
 func.ComputeEncoderBindStateBuffer
