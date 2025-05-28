@@ -2605,36 +2605,36 @@ func.waitFences
     .fences             "const FenceId*"
     .fence_count        "uint32_t"
 
-func.Fence.queryFenceStatus
+func.Fence.queryStatus
     "FenceStatus::Enum"
 
-func.Queue.SubmitQueue
+func.Queue.Submit
     "void"
     .desc               "const QueueSubmitDescriptor*"
 
-func.Queue.QueuePresent
+func.Queue.Present
     "void"
     .desc               "const QueuePresentDescriptor*"
 
-func.Queue.WaitQueueIdle
+func.Queue.WaitIdle
     "void"
 
-func.Queue.QueueGetTimestampPeriodNS
+func.Queue.GetTimestampPeriodNS
     "float"
 
-func.Queue.QueueMapTiledTexture
+func.Queue.MapTiledTexture
     "void"
     .desc               "const TiledTextureRegions*"
 
-func.Queue.QueueUnmapTiledTexture
+func.Queue.UnmapTiledTexture
     "void"
     .desc               "const TiledTextureRegions*"
 
-func.Queue.QueueMapPackedMips
+func.Queue.MapPackedMips
     "void"
     .desc               "const TiledTexturePackedMips*"
 
-func.Queue.QueueUnmapPackedMips
+func.Queue.UnmapPackedMips
     "void"
     .desc               "const TiledTexturePackedMips*"
 
@@ -2722,23 +2722,6 @@ func.CommandBuffer.BeginComputePass
     "ComputePassEncoderId"
     .desc               "const ComputePassDescriptor*"
 
-func.ComputeEncoderBindDescriptorSet
-    "void"
-    .encoder            "ComputePassEncoderId"
-    .set                "DescriptorSetId"
-
-func.ComputeEncoderBindComputePipeline
-    "void"
-    .encoder            "ComputePassEncoderId"
-    .pipeline           "ComputePipelineId"
-
-func.ComputeEncoderDispatch
-    "void"
-    .encoder            "ComputePassEncoderId"
-    .X                  "uint32_t"
-    .Y                  "uint32_t"
-    .Z                  "uint32_t"
-
 func.CommandBuffer.EndComputePass
     "void"
     .encoder            "ComputePassEncoderId"
@@ -2746,6 +2729,62 @@ func.CommandBuffer.EndComputePass
 func.CommandBuffer.BeginRenderPass
     "RenderPassEncoderId"
     .beginInfo          "const BeginRenderPassInfo*"
+
+func.CommandBuffer.EndRenderPass
+    "void"
+    .encoder            "RenderPassEncoderId"
+
+func.CommandBuffer.BeginEvent
+    "void"
+    .event              "const EventInfo*"
+
+func.CommandBuffer.SetMarker
+    "void"
+    .marker             "const MarkerInfo*"
+
+func.CommandBuffer.EndEvent
+    "void"
+
+func.CommandBuffer.CreateStateBuffer
+    "StateBufferId"
+    .cmd                "CommandBufferId"
+    .desc               "const StateBufferDescriptor*"
+
+func.CommandBuffer.FreeStateBuffer
+    "void"
+    .stream             "StateBufferId"
+
+func.CommandBuffer.CreateBinder
+    "BinderId"
+    .cmd                "CommandBufferId"
+
+func.CommandBuffer.FreeBinder
+    "void"
+    .binder             "BinderId"
+
+func.ComputePassEncoder.BindDescriptorSet
+    "void"
+    .set                "DescriptorSetId"
+
+func.ComputePassEncoder.BindComputePipeline
+    "void"
+    .pipeline           "ComputePipelineId"
+
+func.ComputePassEncoder.Dispatch
+    "void"
+    .X                  "uint32_t"
+    .Y                  "uint32_t"
+    .Z                  "uint32_t"
+
+func.ComputePassEncoder.PushConstants
+    "void"
+    .rs                 "RootSignatureId"
+    .name               "const char*"
+    .data               "const void*"
+
+func.ComputePassEncoder.BindStateBuffer
+    "void"
+    .stream             "StateBufferId"
 
 func.RenderPassEncoder.SetShadingRate
     "void"
@@ -2796,13 +2835,6 @@ func.RenderPassEncoder.PushConstants
     .name               "const char*"
     .data               "const void*"
 
-func.ComputeEncoderPushConstants
-    "void"
-    .encoder            "ComputePassEncoderId"
-    .rs                 "RootSignatureId"
-    .name               "const char*"
-    .data               "const void*"
-
 func.RenderPassEncoder.Draw
     "void"
     .vertexCount        "uint32_t"
@@ -2829,68 +2861,59 @@ func.RenderPassEncoder.DrawIndexedInstanced
     .firstInstance      "uint32_t"
     .firstVertex        "uint32_t"
 
-func.CommandBuffer.EndRenderPass
-    "void"
-    .encoder            "RenderPassEncoderId"
-
-func.CommandBuffer.BeginEvent
-    "void"
-    .event              "const EventInfo*"
-
-func.CommandBuffer.SetMarker
-    "void"
-    .marker             "const MarkerInfo*"
-
-func.CommandBuffer.EndEvent
-    "void"
-
-func.CompileAndLinkShaders
-    "LinkedShaderId"
-    .signature          "RootSignatureId"
-    .desc               "const CompiledShaderDescriptor*"
-    .count              "uint32_t"
-
-func.CompileShaders
-    "void"
-    .signature          "RootSignatureId"
-    .desc               "const CompiledShaderDescriptor*"
-    .count              "uint32_t"
-    .outIsas            "CompiledShaderId*"
-
-func.FreeCompiledShader
-    "void"
-    .shader             "CompiledShaderId"
-
-func.FreeLinkedShader
-    "void"
-    .shader             "LinkedShaderId"
-
-func.CreateStateBuffer
-    "StateBufferId"
-    .cmd                "CommandBufferId"
-    .desc               "const StateBufferDescriptor*"
-
 func.RenderPassEncoder.BindStateBuffer
     "void"
     .stream             "StateBufferId"
 
-func.ComputeEncoderBindStateBuffer
-    "void"
-    .encoder            "ComputePassEncoderId"
-    .stream             "StateBufferId"
+func.RootSignature.CompileAndLinkShaders
+    "LinkedShaderId"
+    .desc               "const CompiledShaderDescriptor*"
+    .count              "uint32_t"
 
-func.FreeStateBuffer
+func.RootSignature.CompileShaders
     "void"
-    .stream             "StateBufferId"
+    .desc               "const CompiledShaderDescriptor*"
+    .count              "uint32_t"
+    .outIsas            "CompiledShaderId*"
 
-func.OpenRasterStateEncoder
+func.RootSignature.FreeCompiledShader
+    "void"
+    .shader             "CompiledShaderId"
+
+func.RootSignature.FreeLinkedShader
+    "void"
+    .shader             "LinkedShaderId"
+
+func.StateBuffer.OpenRasterStateEncoder
     "RasterStateEncoderId"
-    .stream             "StateBufferId"
     .encoder            "RenderPassEncoderId"
 
-func.RasterStateEncoderSetViewport
+func.StateBuffer.CloseRasterStateEncoder
     "void"
     .encoder            "RasterStateEncoderId"
+
+func.StateBuffer.OpenShaderStateEncoderR
+    "ShaderStateEncoderId"
+    .encoder            "RenderPassEncoderId"
+
+func.StateBuffer.OpenShaderStateEncoderC
+    "ShaderStateEncoderId"
+    .encoder            "ComputePassEncoderId"
+
+func.StateBuffer.CloseShaderStateEncoder
+    "void"
+    .encoder            "ShaderStateEncoderId"
+
+func.StateBuffer.OpenUserStateEncoder
+    "UserStateEncoderId"
+    .encoder            "RenderPassEncoderId"
+
+func.StateBuffer.CloseUserStateEncoder
+    "void"
+    .encoder            "UserStateEncoderId"
+
+func.RasterStateEncoder.SetViewport
+    "void"
     .x                  "float"
     .y                  "float"
     .width              "float"
@@ -2898,129 +2921,79 @@ func.RasterStateEncoderSetViewport
     .minDepth           "float"
     .maxDepth           "float"
 
-func.RasterStateEncoderSetScissor
+func.RasterStateEncoder.SetScissor
     "void"
-    .encoder            "RasterStateEncoderId"
     .x                  "uint32_t"
     .y                  "uint32_t"
     .width              "uint32_t"
     .height             "uint32_t"
 
-func.RasterStateEncoderSetCullMode
+func.RasterStateEncoder.SetCullMode
     "void"
-    .encoder            "RasterStateEncoderId"
     .cullMode           "CullMode"
 
-func.RasterStateEncoderSetFrontFace
+func.RasterStateEncoder.SetFrontFace
     "void"
-    .encoder            "RasterStateEncoderId"
     .frontFace          "FrontFace::Enum"
 
-func.RasterStateEncoderSetPrimitiveTopology
+func.RasterStateEncoder.SetPrimitiveTopology
     "void"
-    .encoder            "RasterStateEncoderId"
     .topology           "PrimitiveTopology::Enum"
 
-func.RasterStateEncoderSetDepthTestEnabled
+func.RasterStateEncoder.SetDepthTestEnabled
     "void"
-    .encoder            "RasterStateEncoderId"
     .enabled            "bool"
 
-func.RasterStateEncoderSetDepthWriteEnabled
+func.RasterStateEncoder.SetDepthWriteEnabled
     "void"
-    .encoder            "RasterStateEncoderId"
     .enabled            "bool"
 
-func.RasterStateEncoderSetDepthCompareOp
+func.RasterStateEncoder.SetDepthCompareOp
     "void"
-    .encoder            "RasterStateEncoderId"
     .compareOp          "CompareOp::Enum"
 
-func.RasterStateEncoderSetStencilTestEnabled
+func.RasterStateEncoder.SetStencilTestEnabled
     "void"
-    .encoder            "RasterStateEncoderId"
     .enabled            "bool"
 
-func.RasterStateEncoderSetStencilCompareOp
+func.RasterStateEncoder.SetStencilCompareOp
     "void"
-    .encoder            "RasterStateEncoderId"
     .faces              "StencilFace"
     .failOp             "StencilOp::Enum"
     .passOp             "StencilOp::Enum"
     .depthFailOp        "StencilOp::Enum"
     .compareOp          "CompareOp::Enum"
 
-func.RasterStateEncoderSetFillMode
+func.RasterStateEncoder.SetFillMode
     "void"
-    .encoder            "RasterStateEncoderId"
     .fillMode           "FillMode::Enum"
 
-func.RasterStateEncoderSetSampleCount
+func.RasterStateEncoder.SetSampleCount
     "void"
-    .encoder            "RasterStateEncoderId"
     .sampleCount        "SampleCount"
 
-func.CloseRasterStateEncoder
+func.ShaderStateEncoder.BindShaders
     "void"
-    .encoder            "RasterStateEncoderId"
-
-func.OpenShaderStateEncoderR
-    "ShaderStateEncoderId"
-    .stream             "StateBufferId"
-    .encoder            "RenderPassEncoderId"
-
-func.OpenShaderStateEncoderC
-    "ShaderStateEncoderId"
-    .stream             "StateBufferId"
-    .encoder            "ComputePassEncoderId"
-
-func.ShaderStateEncoderBindShaders
-    "void"
-    .encoder            "ShaderStateEncoderId"
     .stageCount         "uint32_t"
     .stages             "const ShaderStage*"
     .shaders            "const CompiledShaderId*"
 
-func.ShaderStateEncoderBindLinkedShader
+func.ShaderStateEncoder.BindLinkedShader
     "void"
-    .encoder            "ShaderStateEncoderId"
     .linked             "LinkedShaderId"
 
-func.CloseShaderStateEncoder
+func.Binder.BindVertexLayout
     "void"
-    .encoder            "ShaderStateEncoderId"
-
-func.OpenUserStateEncoder
-    "UserStateEncoderId"
-    .stream             "StateBufferId"
-    .encoder            "RenderPassEncoderId"
-
-func.CloseUserStateEncoder
-    "void"
-    .encoder            "UserStateEncoderId"
-
-func.CreateBinder
-    "BinderId"
-    .cmd                "CommandBufferId"
-
-func.BinderBindVertexLayout
-    "void"
-    .binder             "BinderId"
     .layout             "const VertexLayout*"
 
-func.BinderBindVertexBuffer
+func.Binder.BindVertexBuffer
     "void"
-    .binder             "BinderId"
     .firstBinding       "uint32_t"
     .bindingCount       "uint32_t"
     .buffers            "const BufferId*"
     .offsets            "const uint64_t*"
     .sizes              "const uint64_t*"
     .strides            "const uint64_t*"
-
-func.FreeBinder
-    "void"
-    .binder             "BinderId"
 
 switch_table.FormatUtil_IsDepthStencilFormat
     .arg            "TextureFormat::Enum"

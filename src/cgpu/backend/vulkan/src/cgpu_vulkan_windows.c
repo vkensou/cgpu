@@ -41,5 +41,5 @@ CGPU_EXTERN_C CGPUTextureId cgpu_import_shared_texture_handle_vulkan_win32(CGPUD
     cgpu_trace(&device->adapter->instance->logger, u8"Vulkan Win32 Imported shared texture handle %llu %dx%dx%d backend: %d\n",
         desc->shared_handle, desc->width, desc->height, desc->depth, desc->backend);
 
-    return cgpu_create_texture(device, &tex_desc);
+    return cgpu_device_create_texture(device, &tex_desc);
 }

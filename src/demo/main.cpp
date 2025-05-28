@@ -57,7 +57,7 @@ struct FrameData
 		else
 		{
 			CGPUCommandBufferDescriptor cmd_desc = { .is_secondary = false };
-			cmd = cgpu_create_command_buffer(pool, &cmd_desc);
+			cmd = cgpu_command_pool_create_command_buffer(pool, &cmd_desc);
 		}
 
 		allocated_cmds.push_back(cmd);
@@ -70,14 +70,14 @@ struct FrameData
 		inflightFence = CGPU_NULLPTR;
 
 		for (auto cmd : cmds)
-			cgpu_free_command_buffer(pool, cmd);
+			cgpu_command_pool_free_command_buffer(pool, cmd);
 		cmds.clear();
 
 		for (auto cmd : allocated_cmds)
-			cgpu_free_command_buffer(pool, cmd);
+			cgpu_command_pool_free_command_buffer(pool, cmd);
 		allocated_cmds.clear();
 
-		cgpu_free_command_pool(device, pool);
+		cgpu_device_free_command_pool(device, pool);
 		pool = CGPU_NULLPTR;
 	}
 };
@@ -149,7 +149,7 @@ struct RenderWindow
 
 		for (uint32_t i = 0; i < swapchain->buffer_count; i++)
 		{
-			cgpu_free_texture_view(device, swapchain_views[i]);
+			cgpu_device_free_texture_view(device, swapchain_views[i]);
 			swapchain_views[i] = CGPU_NULLPTR;
 			cgpu_free_framebuffer(device, swapchain_framebuffer[i]);
 			swapchain_framebuffer[i] = CGPU_NULLPTR;
@@ -199,7 +199,7 @@ struct RenderWindow
 				.dims = CGPU_TEXTURE_DIMENSION_2D,
 				.array_layer_count = 1,
 			};
-			swapchain_views[i] = cgpu_create_texture_view(device, &view_desc);
+			swapchain_views[i] = cgpu_device_create_texture_view(device, &view_desc);
 
 			CGPUFramebufferDescriptor framebuffer_desc = {
 				.renderpass = render_pass,
@@ -278,7 +278,7 @@ struct RenderWindow
 			.dst_state = CGPU_RESOURCE_STATE_RENDER_TARGET
 		};
 		CGPUResourceBarrierDescriptor barrier_desc0 = { .texture_barriers = &draw_barrier, .texture_barriers_count = 1 };
-		cgpu_resource_barrier(cmd, &barrier_desc0);
+		cgpu_command_buffer_resource_barrier(cmd, &barrier_desc0);
 
 		const CGPUClearValue clearColor = {
 			.color = { 0.f, 0.f, 0.f, 1.f },
@@ -294,14 +294,14 @@ struct RenderWindow
 
 		CGPURenderPassEncoderId rp_encoder = cgpu_begin_render_pass(cmd, &begin_info);
 		cgpu_set_shading_rate(rp_encoder, CGPU_SHADING_RATE_FULL, CGPU_SHADING_RATE_COMBINER_PASS_THROUGH, CGPU_SHADING_RATE_COMBINER_PASS_THROUGH);
-		cgpu_set_viewport(rp_encoder,
+		cgpu_render_pass_encoder_set_viewport(rp_encoder,
 			0.0f, 0.0f,
 			(float)w, (float)h,
 			0.f, 1.f);
-		cgpu_set_scissor(rp_encoder, 0, 0, w, h);
+		cgpu_render_pass_encoder_set_scissor(rp_encoder, 0, 0, w, h);
 		if (pipeline)
 		{
-			cgpu_bind_render_pipeline(rp_encoder, pipeline);
+			cgpu_render_pass_encoder_bind_render_pipeline(rp_encoder, pipeline);
 			cgpu_draw(rp_encoder, 3, 0);
 		}
 
@@ -315,7 +315,7 @@ struct RenderWindow
 			.dst_state = CGPU_RESOURCE_STATE_PRESENT
 		};
 		CGPUResourceBarrierDescriptor barrier_desc1 = { .texture_barriers = &present_barrier, .texture_barriers_count = 1 };
-		cgpu_resource_barrier(cmd, &barrier_desc1);
+		cgpu_command_buffer_resource_barrier(cmd, &barrier_desc1);
 	}
 };
 
@@ -521,7 +521,7 @@ int main(int argc, char** argv)
 	for (int i = 0; i < 3; ++i)
 	{
 		frameDatas[i].inflightFence = cgpu_create_fence(device);
-		frameDatas[i].pool = cgpu_create_command_pool(gfx_queue, CGPU_NULLPTR);
+		frameDatas[i].pool = cgpu_queue_create_command_pool(gfx_queue, CGPU_NULLPTR);
 	}
 	auto render_finished_semaphore = cgpu_create_semaphore(device);
 	int current_frame_index = -1;
@@ -671,7 +671,7 @@ int main(int argc, char** argv)
 
 				if (!need_resize_windows.empty())
 				{
-					cgpu_wait_queue_idle(gfx_queue);
+					cgpu_queue_wait_idle(gfx_queue);
 					for (auto window : need_resize_windows)
 						window->OnResize();
 				}
@@ -725,7 +725,7 @@ int main(int argc, char** argv)
 				cur_frame_data.newFrame();
 
 				auto cmd = cur_frame_data.request();
-				cgpu_begin(cmd);
+				cgpu_command_buffer_begin(cmd);
 
 				gpu_timer->OnBeginFrame(cmd, gpuTicksPerSecond, stamps);
 
@@ -739,7 +739,7 @@ int main(int argc, char** argv)
 
 				gpu_timer->CollectTimings(cmd);
 
-				cgpu_end(cmd);
+				cgpu_command_buffer_end(cmd);
 
 				gpu_timer->OnEndFrame();
 
@@ -759,7 +759,7 @@ int main(int argc, char** argv)
 					.wait_semaphore_count = (uint32_t)wait_semaphores.size(),
 					.signal_semaphore_count = 1,
 				};
-				cgpu_submit_queue(gfx_queue, &submit_desc);
+				cgpu_queue_submit(gfx_queue, &submit_desc);
 
 				for (auto window : prepared_windows)
 				{
@@ -785,7 +785,7 @@ int main(int argc, char** argv)
 				rdc_capture = false;
 			}
 
-			cgpu_wait_queue_idle(gfx_queue);
+			cgpu_queue_wait_idle(gfx_queue);
 
 			ImGui_ImplCGPU_Shutdown();
 			ImGui_ImplSDL2_Shutdown();
@@ -848,8 +848,8 @@ static void ImGui_ImplArena_DestroyWindow(ImGuiViewport* viewport)
 		for (uint32_t n = 0; n < wrb->Count; n++)
 		{
 			ImGui_ImplCGPU_FrameRenderBuffers* buffers = &wrb->FrameRenderBuffers[n];
-			if (buffers->VertexBuffer) { cgpu_free_buffer(device, buffers->VertexBuffer); buffers->VertexBuffer = CGPU_NULLPTR; }
-			if (buffers->IndexBuffer) { cgpu_free_buffer(device, buffers->IndexBuffer); buffers->IndexBuffer = CGPU_NULLPTR; }
+			if (buffers->VertexBuffer) { cgpu_device_free_buffer(device, buffers->VertexBuffer); buffers->VertexBuffer = CGPU_NULLPTR; }
+			if (buffers->IndexBuffer) { cgpu_device_free_buffer(device, buffers->IndexBuffer); buffers->IndexBuffer = CGPU_NULLPTR; }
 			buffers->VertexBufferSize = 0;
 			buffers->IndexBufferSize = 0;
 		}

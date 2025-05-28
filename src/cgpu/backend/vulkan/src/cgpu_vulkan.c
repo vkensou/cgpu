@@ -1209,11 +1209,11 @@ CGPUQueueId cgpu_get_queue_vulkan(CGPUDeviceId device, ECGPUQueueType type, uint
     CGPUCommandPoolDescriptor pool_desc = {
         .name = u8"InternalCmdPool"
     };
-    RQ->pInnerCmdPool = cgpu_create_command_pool(&RQ->super, &pool_desc);
+    RQ->pInnerCmdPool = cgpu_queue_create_command_pool(&RQ->super, &pool_desc);
     CGPUCommandBufferDescriptor cmd_desc = {
         .is_secondary = false
     };
-    RQ->pInnerCmdBuffer = cgpu_create_command_buffer(RQ->pInnerCmdPool, &cmd_desc);
+    RQ->pInnerCmdBuffer = cgpu_command_pool_create_command_buffer(RQ->pInnerCmdPool, &cmd_desc);
     RQ->pInnerFence = cgpu_create_fence(device);
 #ifdef CGPU_THREAD_SAFETY
     RQ->pMutex = (SMutex*)cgpu_calloc(1, sizeof(SMutex));
@@ -1367,8 +1367,8 @@ void cgpu_free_queue_vulkan(CGPUDeviceId device, CGPUQueueId queue)
 {
     const CGPUAllocator* allocator = &queue->device->adapter->instance->allocator;
     CGPUQueue_Vulkan* Q = (CGPUQueue_Vulkan*)queue;
-    if (Q->pInnerCmdBuffer) cgpu_free_command_buffer(Q->pInnerCmdPool, Q->pInnerCmdBuffer);
-    if (Q->pInnerCmdPool) cgpu_free_command_pool(device, Q->pInnerCmdPool);
+    if (Q->pInnerCmdBuffer) cgpu_command_pool_free_command_buffer(Q->pInnerCmdPool, Q->pInnerCmdBuffer);
+    if (Q->pInnerCmdPool) cgpu_device_free_command_pool(device, Q->pInnerCmdPool);
     if (Q->pInnerFence) cgpu_free_fence(device, Q->pInnerFence);
 #ifdef CGPU_THREAD_SAFETY
     if (Q->pMutex)

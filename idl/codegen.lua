@@ -440,6 +440,7 @@ function codegen.nameconversion(all_types, all_funcs)
 			v.cname = convert_funcname(v.name)
 		end
 		if v.class then
+			v.cname = convert_funcname(v.class) .. "_" .. v.cname
 			local classtype = all_types[v.class]
 			if classtype then
 				local methods = classtype.methods

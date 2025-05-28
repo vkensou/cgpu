@@ -19,7 +19,7 @@ GpuTimeStamps::GpuTimeStamps(CGPUDeviceId device, uint32_t frame_count)
 		   .flags = CGPU_BUFFER_CREATION_USAGE_PERSISTENT_MAP,
 		   .start_state = CGPU_RESOURCE_STATE_UNDEFINED,
 		};
-		auto query_buffer = cgpu_create_buffer(device, &query_buffer_desc);
+		auto query_buffer = cgpu_device_create_buffer(device, &query_buffer_desc);
 
 		TimeStampQuery query;
 		query.query_pool = query_pool;
@@ -35,7 +35,7 @@ GpuTimeStamps::~GpuTimeStamps()
 	for (int i = 0; i < frame_count; ++i)
 	{
 		auto& query = timeStampQueries[i];
-		cgpu_free_buffer(query.query_pool->device, query.query_buffer);
+		cgpu_device_free_buffer(query.query_pool->device, query.query_buffer);
 		cgpu_free_query_pool(query.query_pool->device, query.query_pool);
 	}
 }
