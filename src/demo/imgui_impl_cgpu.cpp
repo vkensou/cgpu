@@ -347,13 +347,13 @@ bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId ro
     srv_barrier.src_state = CGPU_RESOURCE_STATE_COPY_DEST;
     srv_barrier.dst_state = CGPU_RESOURCE_STATE_SHADER_RESOURCE;
     CGPUResourceBarrierDescriptor barrier_desc1 = {};
-    barrier_desc1.texture_barriers = &srv_barrier;
-    barrier_desc1.texture_barriers_count = 1;
+    barrier_desc1.p_texture_barriers = &srv_barrier;
+    barrier_desc1.texture_barrier_count = 1;
     cgpu_command_buffer_resource_barrier(cpy_cmd, &barrier_desc1);
     cgpu_command_buffer_end(cpy_cmd);
     CGPUQueueSubmitDescriptor cpy_submit = {};
-    cpy_submit.cmds = &cpy_cmd;
-    cpy_submit.cmds_count = 1;
+    cpy_submit.p_cmds = &cpy_cmd;
+    cpy_submit.cmd_count = 1;
     cgpu_queue_submit(queue, &cpy_submit);
     cgpu_queue_wait_idle(queue);
     cgpu_command_pool_free_command_buffer(cpy_cmd_pool, cpy_cmd);
@@ -523,8 +523,8 @@ static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQue
     wd->Surface = cgpu_device_create_surface_from_native_view(device, windowHandle);
 
     CGPUSwapChainDescriptor descriptor = {
-        .present_queues = &present_queue,
-        .present_queues_count = 1,
+        .present_queue_count = 1,
+        .p_present_queues = &present_queue,
         .surface = wd->Surface,
         .image_count = image_count,
         .width = width,
@@ -554,7 +554,7 @@ static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQue
         CGPUFramebufferDescriptor framebuffer_desc = {
             .renderpass = render_pass,
             .attachment_count = 1,
-            .attachments = {wd->Backbuffers[i], CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR} ,
+            .p_attachments = {wd->Backbuffers[i], CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR} ,
             .width = width,
             .height = height,
             .layers = 1,
@@ -679,7 +679,7 @@ static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)
     .src_state = CGPU_RESOURCE_STATE_UNDEFINED,
     .dst_state = CGPU_RESOURCE_STATE_RENDER_TARGET
     };
-    CGPUResourceBarrierDescriptor barrier_desc0 = { .texture_barriers = &draw_barrier, .texture_barriers_count = 1 };
+    CGPUResourceBarrierDescriptor barrier_desc0 = { .texture_barrier_count = 1, .p_texture_barriers = &draw_barrier, };
     cgpu_command_buffer_resource_barrier(wd->Command, &barrier_desc0);
 
     const CGPUClearValue clearColor = {
@@ -691,7 +691,7 @@ static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)
         .render_pass = v->RenderPass,
         .framebuffer = wd->Framebuffers[wd->FrameIndex],
         .clear_value_count = 1,
-        .clear_values = &clearColor,
+        .p_clear_values = &clearColor,
     };
 
     CGPURenderPassEncoderId rp_encoder = cgpu_command_buffer_begin_render_pass(wd->Command, &begin_info);
@@ -704,14 +704,14 @@ static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)
         .src_state = CGPU_RESOURCE_STATE_RENDER_TARGET,
         .dst_state = CGPU_RESOURCE_STATE_PRESENT
     };
-    CGPUResourceBarrierDescriptor barrier_desc1 = { .texture_barriers = &present_barrier, .texture_barriers_count = 1 };
+    CGPUResourceBarrierDescriptor barrier_desc1 = { .texture_barrier_count = 1, .p_texture_barriers = &present_barrier, };
     cgpu_command_buffer_resource_barrier(wd->Command, &barrier_desc1);
 
     cgpu_command_buffer_end(wd->Command);
     // submit
     CGPUQueueSubmitDescriptor submit_desc = {
-        .cmds = &wd->Command,
-        .cmds_count = 1,
+        .cmd_count = 1,
+        .p_cmds = &wd->Command,
     };
     cgpu_queue_submit(v->GfxQueue, &submit_desc);
 
@@ -727,8 +727,8 @@ static void ImGui_ImplCGPU_SwapBuffers(ImGuiViewport* viewport, void*)
 
     CGPUQueuePresentDescriptor present_desc = {
         .swapchain = wd->Swapchain,
-        .wait_semaphores = CGPU_NULLPTR,
         .wait_semaphore_count = 0,
+        .p_wait_semaphores = CGPU_NULLPTR,
         .index = (uint8_t)wd->FrameIndex,
     };
     cgpu_queue_present(v->PresentQueue, &present_desc);

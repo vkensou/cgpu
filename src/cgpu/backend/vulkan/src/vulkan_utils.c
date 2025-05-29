@@ -349,12 +349,12 @@ void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vu
     (void)spvRes;
     cgpu_assert(spvRes == SPV_REFLECT_RESULT_SUCCESS && "Failed to Reflect Shader!");
     uint32_t entry_count = S->pReflect->entry_point_count;
-    S->super.entrys_count = entry_count;
-    S->super.entry_reflections = cgpu_calloc(allocator, entry_count, sizeof(CGPUShaderReflection));
+    S->super.entry_count = entry_count;
+    S->super.p_entry_reflections = cgpu_calloc(allocator, entry_count, sizeof(CGPUShaderReflection));
     for (uint32_t i = 0; i < entry_count; i++)
     {
         // Initialize Common Reflection Data
-        CGPUShaderReflection* reflection = &S->super.entry_reflections[i];
+        CGPUShaderReflection* reflection = &S->super.p_entry_reflections[i];
         // ATTENTION: We have only one entry point now
         const SpvReflectEntryPoint* entry = spvReflectGetEntryPoint(S->pReflect, S->pReflect->entry_points[i].name);
         reflection->entry_name = (const char*)entry->name;
@@ -376,15 +376,15 @@ void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vu
             spvReflectEnumerateInputVariables(S->pReflect, &icount, input_vars);
             if ((entry->shader_stage & SPV_REFLECT_SHADER_STAGE_VERTEX_BIT))
             {
-                reflection->vertex_inputs_count = icount;
-                reflection->vertex_inputs = cgpu_calloc(allocator, icount, sizeof(CGPUVertexInput));
+                reflection->vertex_input_count = icount;
+                reflection->p_vertex_inputs = cgpu_calloc(allocator, icount, sizeof(CGPUVertexInput));
                 // Handle Vertex Inputs
                 for (uint32_t i = 0; i < icount; i++)
                 {
                     // We use semantic for HLSL sources because DXC is a piece of shit.
-                    reflection->vertex_inputs[i].name = (const char*)
+                    reflection->p_vertex_inputs[i].name = (const char*)
                         (bHLSL ? input_vars[i]->semantic : input_vars[i]->name);
-                    reflection->vertex_inputs[i].format =
+                    reflection->p_vertex_inputs[i].format =
                         VkUtil_FormatTranslateToCGPU((VkFormat)input_vars[i]->format);
                 }
             }
@@ -406,8 +406,8 @@ void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vu
                 bcount += descriptros_sets[i]->binding_count;
             }
             bcount += ccount;
-            reflection->shader_resources_count = bcount;
-            reflection->shader_resources = cgpu_calloc(allocator, bcount, sizeof(CGPUShaderResource));
+            reflection->shader_resource_count = bcount;
+            reflection->p_shader_resources = cgpu_calloc(allocator, bcount, sizeof(CGPUShaderResource));
             // Fill Shader Resources
             uint32_t i_res = 0;
             for (uint32_t i_set = 0; i_set < scount; i_set++)
@@ -416,7 +416,7 @@ void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vu
                 for (uint32_t i_binding = 0; i_binding < current_set->binding_count; i_binding++, i_res++)
                 {
                     SpvReflectDescriptorBinding* current_binding = current_set->bindings[i_binding];
-                    CGPUShaderResource* current_res = &reflection->shader_resources[i_res];
+                    CGPUShaderResource* current_res = &reflection->p_shader_resources[i_res];
                     current_res->set = current_binding->set;
                     current_res->binding = current_binding->binding;
                     current_res->stages = S->pReflect->shader_stage;
@@ -444,7 +444,7 @@ void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vu
             // Fill Push Constants
             for (uint32_t i = 0; i < ccount; i++)
             {
-                CGPUShaderResource* current_res = &reflection->shader_resources[i_res + i];
+                CGPUShaderResource* current_res = &reflection->p_shader_resources[i_res + i];
                 current_res->set = 0;
                 current_res->type = CGPU_RESOURCE_TYPE_PUSH_CONSTANT;
                 current_res->binding = 0;
@@ -463,16 +463,16 @@ void VkUtil_FreeShaderReflection(CGPUShaderLibrary_Vulkan* S)
 {
     const CGPUAllocator* allocator = &S->super.device->adapter->instance->allocator;
     spvReflectDestroyShaderModule(S->pReflect);
-    if (S->super.entry_reflections)
+    if (S->super.p_entry_reflections)
     {
-        for (uint32_t i = 0; i < S->super.entrys_count; i++)
+        for (uint32_t i = 0; i < S->super.entry_count; i++)
         {
-            CGPUShaderReflection* reflection = S->super.entry_reflections + i;
-            if (reflection->vertex_inputs) cgpu_free(allocator, reflection->vertex_inputs);
-            if (reflection->shader_resources) cgpu_free(allocator, reflection->shader_resources);
+            CGPUShaderReflection* reflection = S->super.p_entry_reflections + i;
+            if (reflection->p_vertex_inputs) cgpu_free(allocator, reflection->p_vertex_inputs);
+            if (reflection->p_shader_resources) cgpu_free(allocator, reflection->p_shader_resources);
         }
     }
-    cgpu_free(allocator, S->super.entry_reflections);
+    cgpu_free(allocator, S->super.p_entry_reflections);
     cgpu_free(allocator, S->pReflect);
 }
 

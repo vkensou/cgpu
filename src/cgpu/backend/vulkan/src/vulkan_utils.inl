@@ -55,7 +55,7 @@ CGPU_FORCEINLINE static void VkUtil_GetVertexInputBindingAttrCount(const CGPUVer
         // Initial values
         for (uint32_t i = 0; i < attrib_count; ++i)
         {
-            const CGPUVertexAttribute* attrib = &(pLayout->attributes[i]);
+            const CGPUVertexAttribute* attrib = &(pLayout->p_attributes[i]);
             const uint32_t array_size = attrib->array_size ? attrib->array_size : 1;
             if (binding_value != attrib->binding)
             {

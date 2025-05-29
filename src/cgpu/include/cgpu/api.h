@@ -1009,8 +1009,8 @@ typedef void (*CGPUProcCmdEndRenderPass)(CGPUCommandBufferId cmd, CGPURenderPass
 typedef void (*CGPUProcCmdBeginEvent)(CGPUCommandBufferId cmd, const CGPUEventInfo* event);
 typedef void (*CGPUProcCmdSetMarker)(CGPUCommandBufferId cmd, const CGPUMarkerInfo* marker);
 typedef void (*CGPUProcCmdEndEvent)(CGPUCommandBufferId cmd);
-typedef CGPULinkedShaderId (*CGPUProcCompileAndLinkShaders)(CGPURootSignatureId signature, const CGPUCompiledShaderDescriptor* desc, uint32_t count);
-typedef void (*CGPUProcCompileShaders)(CGPURootSignatureId signature, const CGPUCompiledShaderDescriptor* desc, uint32_t count, CGPUCompiledShaderId* out_isas);
+typedef CGPULinkedShaderId (*CGPUProcCompileAndLinkShaders)(CGPURootSignatureId signature, uint32_t count, const CGPUCompiledShaderDescriptor* desc);
+typedef void (*CGPUProcCompileShaders)(CGPURootSignatureId signature, uint32_t count, const CGPUCompiledShaderDescriptor* desc, CGPUCompiledShaderId* out_isas);
 typedef void (*CGPUProcFreeCompiledShader)(CGPUCompiledShaderId shader);
 typedef void (*CGPUProcFreeLinkedShader)(CGPULinkedShaderId shader);
 typedef CGPUStateBufferId (*CGPUProcCreateStateBuffer)(CGPUCommandBufferId cmd, const CGPUStateBufferDescriptor* desc);
@@ -1158,8 +1158,8 @@ typedef struct CGPUQueueGroupDescriptor
 typedef struct CGPUDeviceDescriptor
 {
     bool                 disable_pipeline_cache;
-    CGPUQueueGroupDescriptor* queue_groups;
     uint32_t             queue_group_count;
+    CGPUQueueGroupDescriptor* p_queue_groups;
 
 } CGPUDeviceDescriptor;
 
@@ -1316,10 +1316,10 @@ typedef struct CGPUShaderReflection
 {
     const char*          entry_name;
     ECGPUShaderStageFlags stage;
-    CGPUVertexInput*     vertex_inputs;
-    CGPUShaderResource*  shader_resources;
-    uint32_t             vertex_inputs_count;
-    uint32_t             shader_resources_count;
+    uint32_t             vertex_input_count;
+    CGPUVertexInput*     p_vertex_inputs;
+    uint32_t             shader_resource_count;
+    CGPUShaderResource*  p_shader_resources;
     uint32_t             thread_group_sizes[3];
 
 } CGPUShaderReflection;
@@ -1328,8 +1328,8 @@ typedef struct CGPUShaderLibrary
 {
     CGPUDeviceId         device;
     const char*          name;
-    CGPUShaderReflection* entry_reflections;
-    uint32_t             entrys_count;
+    uint32_t             entry_count;
+    CGPUShaderReflection* p_entry_reflections;
 
 } CGPUShaderLibrary;
 
@@ -1360,21 +1360,21 @@ typedef struct CGPUShaderEntryDescriptor
 
 typedef struct CGPURootSignatureDescriptor
 {
-    CGPUShaderEntryDescriptor* shaders;
     uint32_t             shader_count;
-    const char*          static_sampler_names;
-    const CGPUSamplerId* static_samplers;
+    CGPUShaderEntryDescriptor* p_shaders;
     uint32_t             static_sampler_count;
-    const char*          push_constant_names;
+    const CGPUSamplerId* p_static_samplers;
+    const char*          p_static_sampler_names;
     uint32_t             push_constant_count;
+    const char*          p_push_constant_names;
     CGPURootSignaturePoolId pool;
 
 } CGPURootSignatureDescriptor;
 
 typedef struct CGPUParameterTable
 {
-    CGPUShaderResource*  resources;
     uint32_t             resources_count;
+    CGPUShaderResource*  p_resources;
     uint32_t             set_index;
 
 } CGPUParameterTable;
@@ -1382,12 +1382,12 @@ typedef struct CGPUParameterTable
 typedef struct CGPURootSignature
 {
     CGPUDeviceId         device;
-    CGPUParameterTable*  tables;
     uint32_t             table_count;
-    CGPUShaderResource*  push_constants;
+    CGPUParameterTable*  p_tables;
     uint32_t             push_constant_count;
-    CGPUShaderResource*  static_samplers;
+    CGPUShaderResource*  p_push_constants;
     uint32_t             static_sampler_count;
+    CGPUShaderResource*  p_static_samplers;
     ECGPUPipelineType    pipeline_type;
     CGPURootSignaturePoolId pool;
     CGPURootSignatureId  pool_sig;
@@ -1416,7 +1416,7 @@ typedef struct CGPUVertexAttribute
 typedef struct CGPUVertexLayout
 {
     uint32_t             attribute_count;
-    CGPUVertexAttribute  attributes[15];
+    CGPUVertexAttribute  p_attributes[15];
 
 } CGPUVertexLayout;
 
@@ -1721,21 +1721,21 @@ typedef struct CGPUMemoryPool
 
 typedef struct CGPUQueueSubmitDescriptor
 {
-    CGPUCommandBufferId* cmds;
+    uint32_t             cmd_count;
+    CGPUCommandBufferId* p_cmds;
     CGPUFenceId          signal_fence;
-    CGPUSemaphoreId*     wait_semaphores;
-    CGPUSemaphoreId*     signal_semaphores;
-    uint32_t             cmds_count;
     uint32_t             wait_semaphore_count;
+    CGPUSemaphoreId*     p_wait_semaphores;
     uint32_t             signal_semaphore_count;
+    CGPUSemaphoreId*     p_signal_semaphores;
 
 } CGPUQueueSubmitDescriptor;
 
 typedef struct CGPUQueuePresentDescriptor
 {
     CGPUSwapChainId      swapchain;
-    CGPUSemaphoreId*     wait_semaphores;
     uint32_t             wait_semaphore_count;
+    CGPUSemaphoreId*     p_wait_semaphores;
     uint8_t              index;
 
 } CGPUQueuePresentDescriptor;
@@ -1767,8 +1767,8 @@ typedef struct CGPUTextureCoordinateRegion
 typedef struct CGPUTiledTextureRegions
 {
     CGPUTextureId        texture;
-    CGPUTextureCoordinateRegion* regions;
     uint32_t             region_count;
+    CGPUTextureCoordinateRegion* p_regions;
 
 } CGPUTiledTextureRegions;
 
@@ -1781,8 +1781,8 @@ typedef struct CGPUTiledTexturePackedMip
 
 typedef struct CGPUTiledTexturePackedMips
 {
-    CGPUTiledTexturePackedMip* packed_mips;
     uint32_t             packed_mip_count;
+    CGPUTiledTexturePackedMip* p_packed_mips;
 
 } CGPUTiledTexturePackedMips;
 
@@ -1816,7 +1816,7 @@ typedef struct CGPUFramebufferDescriptor
 {
     CGPURenderPassId     renderpass;
     uint32_t             attachment_count;
-    CGPUTextureViewId    attachments[CGPU_MAX_ATTACHMENT_COUNT];
+    CGPUTextureViewId    p_attachments[CGPU_MAX_ATTACHMENT_COUNT];
     uint32_t             width;
     uint32_t             height;
     uint32_t             layers;
@@ -1826,8 +1826,8 @@ typedef struct CGPUFramebufferDescriptor
 typedef struct CGPUPipelineReflection
 {
     CGPUShaderReflection* stages[CGPU_SHADER_STAGE_COUNT];
-    CGPUShaderResource*  shader_resources;
     uint32_t             shader_resources_count;
+    CGPUShaderResource*  p_shader_resources;
 
 } CGPUPipelineReflection;
 
@@ -1931,10 +1931,10 @@ typedef struct CGPUTextureBarrier
 
 typedef struct CGPUResourceBarrierDescriptor
 {
-    CGPUBufferBarrier*   buffer_barriers;
-    uint32_t             buffer_barriers_count;
-    CGPUTextureBarrier*  texture_barriers;
-    uint32_t             texture_barriers_count;
+    uint32_t             buffer_barrier_count;
+    CGPUBufferBarrier*   p_buffer_barriers;
+    uint32_t             texture_barrier_count;
+    CGPUTextureBarrier*  p_texture_barriers;
 
 } CGPUResourceBarrierDescriptor;
 
@@ -1952,8 +1952,8 @@ typedef struct CGPUCommandBufferDescriptor
 
 typedef struct CGPUSwapChainDescriptor
 {
-    CGPUQueueId*         present_queues;
-    uint32_t             present_queues_count;
+    uint32_t             present_queue_count;
+    CGPUQueueId*         p_present_queues;
     CGPUSurfaceId        surface;
     uint32_t             image_count;
     uint32_t             width;
@@ -2072,7 +2072,7 @@ typedef struct CGPUBeginRenderPassInfo
     CGPURenderPassId     render_pass;
     CGPUFramebufferId    framebuffer;
     uint32_t             clear_value_count;
-    const CGPUClearValue* clear_values;
+    const CGPUClearValue* p_clear_values;
 
 } CGPUBeginRenderPassInfo;
 
@@ -2350,7 +2350,7 @@ CGPU_API void cgpu_render_pass_encoder_bind_descriptor_set(CGPURenderPassEncoder
 CGPU_API void cgpu_render_pass_encoder_set_viewport(CGPURenderPassEncoderId _this, float x, float y, float width, float height, float min_depth, float max_depth);
 CGPU_API void cgpu_render_pass_encoder_set_scissor(CGPURenderPassEncoderId _this, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 CGPU_API void cgpu_render_pass_encoder_bind_render_pipeline(CGPURenderPassEncoderId _this, CGPURenderPipelineId pipeline);
-CGPU_API void cgpu_render_pass_encoder_bind_vertex_buffers(CGPURenderPassEncoderId _this, uint32_t buffer_count, const CGPUBufferId* buffers, const uint32_t* strides, const uint32_t* offsets);
+CGPU_API void cgpu_render_pass_encoder_bind_vertex_buffers(CGPURenderPassEncoderId _this, uint32_t buffer_count, const CGPUBufferId* p_buffers, const uint32_t* p_strides, const uint32_t* p_offsets);
 CGPU_API void cgpu_render_pass_encoder_bind_index_buffer(CGPURenderPassEncoderId _this, CGPUBufferId buffer, uint32_t index_stride, uint64_t offset);
 CGPU_API void cgpu_render_pass_encoder_push_constants(CGPURenderPassEncoderId _this, CGPURootSignatureId rs, const char* name, const void* data);
 CGPU_API void cgpu_render_pass_encoder_draw(CGPURenderPassEncoderId _this, uint32_t vertex_count, uint32_t first_vertex);
@@ -2358,8 +2358,8 @@ CGPU_API void cgpu_render_pass_encoder_draw_instanced(CGPURenderPassEncoderId _t
 CGPU_API void cgpu_render_pass_encoder_draw_indexed(CGPURenderPassEncoderId _this, uint32_t index_count, uint32_t first_index, uint32_t first_vertex);
 CGPU_API void cgpu_render_pass_encoder_draw_indexed_instanced(CGPURenderPassEncoderId _this, uint32_t index_count, uint32_t first_index, uint32_t instance_count, uint32_t first_instance, uint32_t first_vertex);
 CGPU_API void cgpu_render_pass_encoder_bind_state_buffer(CGPURenderPassEncoderId _this, CGPUStateBufferId stream);
-CGPU_API CGPULinkedShaderId cgpu_root_signature_compile_and_link_shaders(CGPURootSignatureId _this, const CGPUCompiledShaderDescriptor* desc, uint32_t count);
-CGPU_API void cgpu_root_signature_compile_shaders(CGPURootSignatureId _this, const CGPUCompiledShaderDescriptor* desc, uint32_t count, CGPUCompiledShaderId* out_isas);
+CGPU_API CGPULinkedShaderId cgpu_root_signature_compile_and_link_shaders(CGPURootSignatureId _this, uint32_t count, const CGPUCompiledShaderDescriptor* desc);
+CGPU_API void cgpu_root_signature_compile_shaders(CGPURootSignatureId _this, uint32_t count, const CGPUCompiledShaderDescriptor* desc, CGPUCompiledShaderId* out_isas);
 CGPU_API void cgpu_root_signature_free_compiled_shader(CGPURootSignatureId _this, CGPUCompiledShaderId shader);
 CGPU_API void cgpu_root_signature_free_linked_shader(CGPURootSignatureId _this, CGPULinkedShaderId shader);
 CGPU_API CGPURasterStateEncoderId cgpu_state_buffer_open_raster_state_encoder(CGPUStateBufferId _this, CGPURenderPassEncoderId encoder);
@@ -2381,10 +2381,10 @@ CGPU_API void cgpu_raster_state_encoder_set_stencil_test_enabled(CGPURasterState
 CGPU_API void cgpu_raster_state_encoder_set_stencil_compare_op(CGPURasterStateEncoderId _this, ECGPUStencilFaceFlags faces, ECGPUStencilOp fail_op, ECGPUStencilOp pass_op, ECGPUStencilOp depth_fail_op, ECGPUCompareOp compare_op);
 CGPU_API void cgpu_raster_state_encoder_set_fill_mode(CGPURasterStateEncoderId _this, ECGPUFillMode fill_mode);
 CGPU_API void cgpu_raster_state_encoder_set_sample_count(CGPURasterStateEncoderId _this, ECGPUSampleCountFlags sample_count);
-CGPU_API void cgpu_shader_state_encoder_bind_shaders(CGPUShaderStateEncoderId _this, uint32_t stage_count, const ECGPUShaderStageFlags* stages, const CGPUCompiledShaderId* shaders);
+CGPU_API void cgpu_shader_state_encoder_bind_shaders(CGPUShaderStateEncoderId _this, uint32_t stage_count, const ECGPUShaderStageFlags* p_stages, const CGPUCompiledShaderId* shaders);
 CGPU_API void cgpu_shader_state_encoder_bind_linked_shader(CGPUShaderStateEncoderId _this, CGPULinkedShaderId linked);
 CGPU_API void cgpu_binder_bind_vertex_layout(CGPUBinderId _this, const CGPUVertexLayout* layout);
-CGPU_API void cgpu_binder_bind_vertex_buffer(CGPUBinderId _this, uint32_t first_binding, uint32_t binding_count, const CGPUBufferId* buffers, const uint64_t* offsets, const uint64_t* sizes, const uint64_t* strides);
+CGPU_API void cgpu_binder_bind_vertex_buffer(CGPUBinderId _this, uint32_t first_binding, uint32_t binding_count, const CGPUBufferId* p_buffers, const uint64_t* p_offsets, const uint64_t* p_sizes, const uint64_t* p_strides);
 
 static CGPU_FORCEINLINE bool FormatUtil_IsDepthStencilFormat(ECGPUTextureFormat const arg) {
     switch(arg) {

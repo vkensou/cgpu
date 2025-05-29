@@ -38,6 +38,16 @@ local function underscorecase_to_camelcase(name)
 	return table.concat(tmp)
 end
 
+local function convert_membername(name)
+	local p = ""
+	if name:match("^p%u") ~= nil then
+		p = "p_"
+		name = name:sub(2)
+	end
+	name = name:gsub("^%l", string.upper)	-- Change to upper CamlCase
+	return p .. camelcase_to_underscorecase(name)
+end
+
 local function convert_funcname(name)
 	name = name:gsub("^%l", string.upper)	-- Change to upper CamlCase
 	return camelcase_to_underscorecase(name)
@@ -408,13 +418,13 @@ function codegen.nameconversion(all_types, all_funcs)
 	for _,v in ipairs(all_types) do
 		if v.struct then
 			for _, item in ipairs(v.struct) do
-				item.cname= convert_funcname(item.name)
+				item.cname= convert_membername(item.name)
 				convert_arg(all_types, item, v)
 			end
 		elseif v.args then
 			-- funcptr
 			for _, arg in ipairs(v.args) do
-				arg.cname = convert_funcname(arg.name)
+				arg.cname = convert_membername(arg.name)
 				convert_arg(all_types, arg, v)
 			end
 			convert_vararg(v)
@@ -459,7 +469,7 @@ function codegen.nameconversion(all_types, all_funcs)
 		end
 
 		for _, arg in ipairs(v.args) do
-			arg.cname = convert_funcname(arg.name)
+			arg.cname = convert_membername(arg.name)
 			convert_arg(all_types, arg, v)
 			gen_arg_conversion(all_types, arg)
 		end

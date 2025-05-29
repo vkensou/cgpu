@@ -233,15 +233,15 @@ CGPUBufferId cgpu_create_buffer_vulkan(CGPUDeviceId device, const struct CGPUBuf
             .dst_state = desc->start_state
         };
         CGPUResourceBarrierDescriptor init_barrier_d = {
-            .buffer_barriers = &init_barrier,
-            .buffer_barriers_count = 1
+            .buffer_barrier_count = 1,
+            .p_buffer_barriers = &init_barrier,
         };
         cgpu_command_buffer_resource_barrier(Q->pInnerCmdBuffer, &init_barrier_d);
         cgpu_command_buffer_end(Q->pInnerCmdBuffer);
         CGPUQueueSubmitDescriptor barrier_submit = {
-            .cmds = &Q->pInnerCmdBuffer,
+            .cmd_count = 1,
+            .p_cmds = &Q->pInnerCmdBuffer,
             .signal_fence = Q->pInnerFence,
-            .cmds_count = 1,
         };
         cgpu_queue_submit(&Q->super, &barrier_submit);
         cgpu_wait_fences(&Q->pInnerFence, 1);
@@ -971,15 +971,15 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
             .dst_state = desc->start_state
         };
         CGPUResourceBarrierDescriptor init_barrier_d = {
-            .texture_barriers = &init_barrier,
-            .texture_barriers_count = 1
+            .texture_barrier_count = 1,
+            .p_texture_barriers = &init_barrier,
         };
         cgpu_command_buffer_resource_barrier(Q->pInnerCmdBuffer, &init_barrier_d);
         cgpu_command_buffer_end(Q->pInnerCmdBuffer);
         CGPUQueueSubmitDescriptor barrier_submit = {
-            .cmds = &Q->pInnerCmdBuffer,
+            .cmd_count = 1,
+            .p_cmds = &Q->pInnerCmdBuffer,
             .signal_fence = Q->pInnerFence,
-            .cmds_count = 1,
         };
         cgpu_queue_submit(&Q->super, &barrier_submit);
         cgpu_wait_fences(&Q->pInnerFence, 1);
@@ -1053,8 +1053,8 @@ void cgpu_queue_map_packed_mips_vulkan(CGPUQueueId queue, const struct CGPUTiled
     uint32_t N = 0;
     for (uint32_t i = 0; i < regions->packed_mip_count; i++)
     {
-        CGPUTexture_Vulkan* T = (CGPUTexture_Vulkan*)regions->packed_mips[i].texture;
-        uint32_t layer = T->mSingleTail ? 0 : regions->packed_mips[i].layer;
+        CGPUTexture_Vulkan* T = (CGPUTexture_Vulkan*)regions->p_packed_mips[i].texture;
+        uint32_t layer = T->mSingleTail ? 0 : regions->p_packed_mips[i].layer;
         CGPUTileTexturePackedMipMapping_Vulkan* pMapping = &T->pVkPackedMappings[layer];
 
         const int32_t prev = skr_atomic32_cas_relaxed(&pMapping->status, VK_TILE_MAPPING_STATUS_UNMAPPED, VK_TILE_MAPPING_STATUS_PENDING);
@@ -1070,8 +1070,8 @@ void cgpu_queue_map_packed_mips_vulkan(CGPUQueueId queue, const struct CGPUTiled
     VkSparseImageOpaqueMemoryBindInfo* bindInfos = (VkSparseImageOpaqueMemoryBindInfo*)(opaqueBinds + N);
     for (uint32_t i = 0; i < regions->packed_mip_count; i++)
     {
-        CGPUTexture_Vulkan* T = (CGPUTexture_Vulkan*)regions->packed_mips[i].texture;
-        uint32_t layer = T->mSingleTail ? 0 : regions->packed_mips[i].layer;
+        CGPUTexture_Vulkan* T = (CGPUTexture_Vulkan*)regions->p_packed_mips[i].texture;
+        uint32_t layer = T->mSingleTail ? 0 : regions->p_packed_mips[i].layer;
         CGPUTileTexturePackedMipMapping_Vulkan* pMapping = &T->pVkPackedMappings[layer];
 
         const int32_t prev = skr_atomic32_cas_relaxed(&pMapping->status, VK_TILE_MAPPING_STATUS_PENDING, VK_TILE_MAPPING_STATUS_MAPPING);
@@ -1114,9 +1114,9 @@ void cgpu_queue_map_packed_mips_vulkan(CGPUQueueId queue, const struct CGPUTiled
     // mark mapping requests as complete
     for (uint32_t i = 0; i < N; i++)
     {
-        CGPUTexture_Vulkan* T = (CGPUTexture_Vulkan*)regions->packed_mips[i].texture;
+        CGPUTexture_Vulkan* T = (CGPUTexture_Vulkan*)regions->p_packed_mips[i].texture;
         CGPUTiledTextureInfo* pModTiledInfo = (CGPUTiledTextureInfo*)T->super.tiled_resource;
-        uint32_t layer = T->mSingleTail ? 0 : regions->packed_mips[i].layer;
+        uint32_t layer = T->mSingleTail ? 0 : regions->p_packed_mips[i].layer;
         CGPUTileTexturePackedMipMapping_Vulkan* pMapping = &T->pVkPackedMappings[layer];
         
         skr_atomic32_cas_relaxed(&pMapping->status, VK_TILE_MAPPING_STATUS_MAPPING, VK_TILE_MAPPING_STATUS_MAPPED);
@@ -1130,8 +1130,8 @@ void cgpu_queue_unmap_packed_mips_vulkan(CGPUQueueId queue, const struct CGPUTil
 {
     for (uint32_t i = 0; i < regions->packed_mip_count; i++)
     {
-        CGPUTexture_Vulkan* T = (CGPUTexture_Vulkan*)regions->packed_mips[i].texture;
-        uint32_t layer = T->mSingleTail ? 0 : regions->packed_mips[i].layer;
+        CGPUTexture_Vulkan* T = (CGPUTexture_Vulkan*)regions->p_packed_mips[i].texture;
+        uint32_t layer = T->mSingleTail ? 0 : regions->p_packed_mips[i].layer;
 
         VkUtil_UnmapPackedMappingAt(T, layer);
     }
@@ -1151,7 +1151,7 @@ void cgpu_queue_map_tiled_texture_vulkan(CGPUQueueId queue, const struct CGPUTil
     uint32_t TotalTileCount = 0;
     for (uint32_t i = 0; i < RegionCount; i++)
     {
-        const CGPUTextureCoordinateRegion Region = regions->regions[i];
+        const CGPUTextureCoordinateRegion Region = regions->p_regions[i];
         uint32_t RegionTileCount = 0;
             for (uint32_t x = Region.start.x; x < Region.end.x; x++)
             for (uint32_t y = Region.start.y; y < Region.end.y; y++)
@@ -1191,7 +1191,7 @@ void cgpu_queue_map_tiled_texture_vulkan(CGPUQueueId queue, const struct CGPUTil
     uint32_t AllocateTileCount = 0;
     for (uint32_t i = 0; i < RegionCount; i++)
     {
-        const CGPUTextureCoordinateRegion Region = regions->regions[i];
+        const CGPUTextureCoordinateRegion Region = regions->p_regions[i];
             for (uint32_t x = Region.start.x; x < Region.end.x; x++)
             for (uint32_t y = Region.start.y; y < Region.end.y; y++)
             for (uint32_t z = Region.start.z; z < Region.end.z; z++)
@@ -1260,7 +1260,7 @@ void cgpu_queue_unmap_tiled_texture_vulkan(CGPUQueueId queue, const struct CGPUT
     // calculate page count
     for (uint32_t i = 0; i < RegionCount; i++)
     {
-        const CGPUTextureCoordinateRegion Region = regions->regions[i];
+        const CGPUTextureCoordinateRegion Region = regions->p_regions[i];
         CGPUTileTextureSubresourceMapping_Vulkan* subres = VkUtil_GetSubresTileMappings(T, Region.mip_level, Region.layer);
         for (uint32_t x = Region.start.x; x < Region.end.x; x++)
         for (uint32_t y = Region.start.y; y < Region.end.y; y++)

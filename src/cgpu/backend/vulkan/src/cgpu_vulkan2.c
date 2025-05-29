@@ -58,7 +58,7 @@ void cgpu_create_shader_objs_vulkan_impl(CGPURootSignatureId signature,
     }
 }
 
-CGPULinkedShaderId cgpu_compile_and_link_shaders_vulkan(CGPURootSignatureId signature, const struct CGPUCompiledShaderDescriptor* descs, uint32_t count)
+CGPULinkedShaderId cgpu_compile_and_link_shaders_vulkan(CGPURootSignatureId signature, uint32_t count, const struct CGPUCompiledShaderDescriptor* descs)
 {
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)signature->device;
     const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
@@ -84,7 +84,7 @@ CGPULinkedShaderId cgpu_compile_and_link_shaders_vulkan(CGPURootSignatureId sign
     }
 }
 
-void cgpu_compile_shaders_vulkan(CGPURootSignatureId signature, const struct CGPUCompiledShaderDescriptor* descs, uint32_t count, CGPUCompiledShaderId* out_isas)
+void cgpu_compile_shaders_vulkan(CGPURootSignatureId signature, uint32_t count, const struct CGPUCompiledShaderDescriptor* descs, CGPUCompiledShaderId* out_isas)
 {
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)signature->device;
     const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;
@@ -452,7 +452,7 @@ void cgpu_binder_bind_vertex_layout_vulkan(CGPUBinderId binder, const struct CGP
         // Initial values
         for (uint32_t i = 0; i < attrib_count; ++i)
         {
-            const CGPUVertexAttribute* attrib = &(layout->attributes[i]);
+            const CGPUVertexAttribute* attrib = &(layout->p_attributes[i]);
             const uint32_t array_size = attrib->array_size ? attrib->array_size : 1;
 
             VkVertexInputBindingDescription2EXT* current_binding = &input_bindings[attrib->binding];

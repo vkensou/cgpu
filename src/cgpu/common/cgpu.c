@@ -1252,14 +1252,14 @@ CGPUSwapChainId cgpu_device_create_swap_chain(CGPUDeviceId device, const CGPUSwa
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
     cgpu_assert(device->proc_table_cache->create_swapchain && "create_swapchain Proc Missing!");
 
-    if (desc->present_queues == CGPU_NULLPTR)
+    if (desc->p_present_queues == CGPU_NULLPTR)
     {
-        cgpu_assert(desc->present_queues_count <= 0 &&
+        cgpu_assert(desc->present_queue_count <= 0 &&
                     "fatal cgpu_create_swapchain: queue array & queue coutn dismatch!");
     }
     else
     {
-        cgpu_assert(desc->present_queues_count > 0 &&
+        cgpu_assert(desc->present_queue_count > 0 &&
                     "fatal cgpu_create_swapchain: queue array & queue count dismatch!");
     }
     CGPUSwapChain* swapchain = (CGPUSwapChain*)device->proc_table_cache->create_swapchain(device, desc);
@@ -1422,23 +1422,23 @@ void cgpu_device_free_surface(CGPUDeviceId device, CGPUSurfaceId surface)
     return;
 }
 
-CGPULinkedShaderId cgpu_root_signature_compile_and_link_shaders(CGPURootSignatureId signature, const struct CGPUCompiledShaderDescriptor* descs, uint32_t count)
+CGPULinkedShaderId cgpu_root_signature_compile_and_link_shaders(CGPURootSignatureId signature, uint32_t count, const struct CGPUCompiledShaderDescriptor* descs)
 {
     cgpu_assert(signature != CGPU_NULLPTR && "fatal: call on NULL signature!");
     cgpu_assert(signature->device != CGPU_NULLPTR && "fatal: call on NULL device!");
     cgpu_assert(signature->device->proc_table_cache->create_root_signature && "compile_and_link_shaders Proc Missing!");
-    CGPULinkedShader* linked = (CGPULinkedShader*)signature->device->proc_table_cache->compile_and_link_shaders(signature, descs, count);
+    CGPULinkedShader* linked = (CGPULinkedShader*)signature->device->proc_table_cache->compile_and_link_shaders(signature, count, descs);
     linked->device = signature->device;
     linked->root_signature = signature;
     return linked;
 }
 
-CGPU_API void cgpu_root_signature_compile_shaders(CGPURootSignatureId signature, const struct CGPUCompiledShaderDescriptor* descs, uint32_t count, CGPUCompiledShaderId* out_isas)
+CGPU_API void cgpu_root_signature_compile_shaders(CGPURootSignatureId signature, uint32_t count, const struct CGPUCompiledShaderDescriptor* descs, CGPUCompiledShaderId* out_isas)
 {
     cgpu_assert(signature != CGPU_NULLPTR && "fatal: call on NULL signature!");
     cgpu_assert(signature->device != CGPU_NULLPTR && "fatal: call on NULL device!");
     cgpu_assert(signature->device->proc_table_cache->compile_shaders && "compile_shaders Proc Missing!");
-    signature->device->proc_table_cache->compile_shaders(signature, descs, count, out_isas);
+    signature->device->proc_table_cache->compile_shaders(signature, count, descs, out_isas);
 }
 
 void cgpu_root_signature_free_compiled_shader(CGPURootSignatureId _this, CGPUCompiledShaderId shader)

@@ -1232,14 +1232,14 @@ funcptr.CmdEndEvent
 funcptr.CompileAndLinkShaders
     "LinkedShaderId"
     .signature          "RootSignatureId"
-    .desc               "const CompiledShaderDescriptor*"
     .count              "uint32_t"
+    .desc               "const CompiledShaderDescriptor*"
 
 funcptr.CompileShaders
     "void"
     .signature          "RootSignatureId"
-    .desc               "const CompiledShaderDescriptor*"
     .count              "uint32_t"
+    .desc               "const CompiledShaderDescriptor*"
     .outIsas            "CompiledShaderId*"
 
 funcptr.FreeCompiledShader
@@ -1551,8 +1551,8 @@ struct.QueueGroupDescriptor
 
 struct.DeviceDescriptor
     .disablePipelineCache   "bool"
-    .queueGroups        "QueueGroupDescriptor*"
     .queueGroupCount    "uint32_t"
+    .pQueueGroups       "QueueGroupDescriptor*"
 
 struct.Device
     .Adapter            "AdapterId"
@@ -1643,17 +1643,17 @@ struct.ShaderResource
 struct.ShaderReflection
     .entryName          "const char*"
     .stage              "ShaderStage"
-    .vertexInputs       "VertexInput*"
-    .shaderResources    "ShaderResource*"
-    .vertexInputsCount  "uint32_t"
-    .shaderResourcesCount   "uint32_t"
+    .vertexInputCount   "uint32_t"
+    .pVertexInputs      "VertexInput*"
+    .shaderResourceCount   "uint32_t"
+    .pShaderResources   "ShaderResource*"
     .threadGroupSizes   "uint32_t[3]"
 
 struct.ShaderLibrary
     .device             "DeviceId"
     .name               "const char*"
-    .entryReflections   "ShaderReflection*"
-    .entrysCount        "uint32_t"
+    .entryCount         "uint32_t"
+    .pEntryReflections  "ShaderReflection*"
 
 struct.ConstantSpecializationImpl { union }
     .u                  "uint64_t"
@@ -1672,28 +1672,28 @@ struct.ShaderEntryDescriptor
     .numConstants       "uint32_t"
 
 struct.RootSignatureDescriptor
-    .shaders            "ShaderEntryDescriptor*"
     .shaderCount        "uint32_t"
-    .staticSamplerNames "const char*"
-    .staticSamplers     "const SamplerId*"
+    .pShaders           "ShaderEntryDescriptor*"
     .staticSamplerCount "uint32_t"
-    .pushConstantNames  "const char*"
+    .pStaticSamplers    "const SamplerId*"
+    .pStaticSamplerNames"const char*"
     .pushConstantCount  "uint32_t"
+    .pPushConstantNames "const char*"
     .pool               "RootSignaturePoolId"
 
 struct.ParameterTable
-    .resources          "ShaderResource*"
     .resourcesCount     "uint32_t"
+    .pResources          "ShaderResource*"
     .setIndex           "uint32_t"
 
 struct.RootSignature
     .device             "DeviceId"
-    .tables             "ParameterTable*"
     .tableCount         "uint32_t"
-    .pushConstants      "ShaderResource*"
+    .pTables             "ParameterTable*"
     .pushConstantCount  "uint32_t"
-    .staticSamplers     "ShaderResource*"
+    .pPushConstants      "ShaderResource*"
     .staticSamplerCount "uint32_t"
+    .pStaticSamplers     "ShaderResource*"
     .pipelineType       "PipelineType::Enum"
     .pool               "RootSignaturePoolId"
     .poolSig            "RootSignatureId"
@@ -1713,7 +1713,7 @@ struct.VertexAttribute
 
 struct.VertexLayout
     .attributeCount     "uint32_t"
-    .attributes         "VertexAttribute[15]"
+    .pAttributes        "VertexAttribute[15]"
 
 struct.BlendStateDescriptor
     .srcFactors         "BlendFactor::Enum[MaxMrtCount]"
@@ -1927,18 +1927,18 @@ struct.MemoryPool
     .type               "MemoryPoolType::Enum"
 
 struct.QueueSubmitDescriptor
-    .cmds               "CommandBufferId*"
+    .cmdCount           "uint32_t"
+    .pCmds              "CommandBufferId*"
     .signalFence        "FenceId"
-    .waitSemaphores     "SemaphoreId*"
-    .signalSemaphores   "SemaphoreId*"
-    .cmdsCount          "uint32_t"
     .waitSemaphoreCount "uint32_t"
+    .pWaitSemaphores    "SemaphoreId*"
     .signalSemaphoreCount   "uint32_t"
+    .pSignalSemaphores  "SemaphoreId*"
 
 struct.QueuePresentDescriptor
     .swapchain          "SwapChainId"
-    .waitSemaphores     "SemaphoreId*"
     .waitSemaphoreCount "uint32_t"
+    .pWaitSemaphores    "SemaphoreId*"
     .index              "uint8_t"
 
 struct.Coordinate
@@ -1958,16 +1958,16 @@ struct.TextureCoordinateRegion
 
 struct.TiledTextureRegions
     .texture            "TextureId"
-    .regions            "TextureCoordinateRegion*"
     .regionCount        "uint32_t"
+    .pRegions           "TextureCoordinateRegion*"
 
 struct.TiledTexturePackedMip
     .texture            "TextureId"
     .layer              "uint32_t"
 
 struct.TiledTexturePackedMips
-    .packedMips         "TiledTexturePackedMip*"
     .packedMipCount     "uint32_t"
+    .pPackedMips         "TiledTexturePackedMip*"
 
 struct.ColorAttachment
     .format             "TextureFormat::Enum" 
@@ -1989,15 +1989,15 @@ struct.RenderPassDescriptor
 struct.FramebufferDescriptor
     .renderpass         "RenderPassId" 
     .attachmentCount    "uint32_t" 
-    .attachments        "TextureViewId[MaxAttachmentCount]"
+    .pAttachments       "TextureViewId[MaxAttachmentCount]"
     .width              "uint32_t" 
     .height             "uint32_t" 
     .layers             "uint32_t" 
 
 struct.PipelineReflection 
     .stages             "ShaderReflection*[ShaderStageCount]" 
-    .shaderResources    "ShaderResource*" 
     .shaderResourcesCount   "uint32_t"
+    .pShaderResources    "ShaderResource*" 
 
 struct.ClearValue 
     .color              "float[4]" 
@@ -2068,10 +2068,10 @@ struct.TextureBarrier
     .d3d12EndOnly       "uint8_t"
 
 struct.ResourceBarrierDescriptor 
-    .bufferBarriers     "BufferBarrier*" 
-    .bufferBarriersCount    "uint32_t" 
-    .textureBarriers    "TextureBarrier*" 
-    .textureBarriersCount   "uint32_t"
+    .bufferBarrierCount "uint32_t" 
+    .pBufferBarriers    "BufferBarrier*" 
+    .textureBarrierCount"uint32_t"
+    .pTextureBarriers   "TextureBarrier*" 
 
 struct.CommandPoolDescriptor 
     .name               "const char*"
@@ -2080,8 +2080,8 @@ struct.CommandBufferDescriptor
     .isSecondary        "bool"
 
 struct.SwapChainDescriptor 
-    .presentQueues      "QueueId*" 
-    .presentQueuesCount "uint32_t" 
+    .presentQueueCount  "uint32_t" 
+    .pPresentQueues     "QueueId*" 
     .surface            "SurfaceId" 
     .imageCount         "uint32_t" 
     .width              "uint32_t" 
@@ -2171,7 +2171,7 @@ struct.BeginRenderPassInfo
     .renderPass         "RenderPassId" 
     .framebuffer        "FramebufferId" 
     .clearValueCount    "uint32_t" 
-    .clearValues        "const ClearValue*"
+    .pClearValues       "const ClearValue*"
 
 struct.EventInfo 
     .name               "const char*" 
@@ -2747,7 +2747,6 @@ func.CommandBuffer.EndEvent
 
 func.CommandBuffer.CreateStateBuffer
     "StateBufferId"
-    .cmd                "CommandBufferId"
     .desc               "const StateBufferDescriptor*"
 
 func.CommandBuffer.FreeStateBuffer
@@ -2756,7 +2755,6 @@ func.CommandBuffer.FreeStateBuffer
 
 func.CommandBuffer.CreateBinder
     "BinderId"
-    .cmd                "CommandBufferId"
 
 func.CommandBuffer.FreeBinder
     "void"
@@ -2819,9 +2817,9 @@ func.RenderPassEncoder.BindRenderPipeline
 func.RenderPassEncoder.BindVertexBuffers
     "void"
     .bufferCount        "uint32_t"
-    .buffers            "const BufferId*"
-    .strides            "const uint32_t*"
-    .offsets            "const uint32_t*"
+    .pBuffers           "const BufferId*"
+    .pStrides           "const uint32_t*"
+    .pOffsets           "const uint32_t*"
 
 func.RenderPassEncoder.BindIndexBuffer
     "void"
@@ -2867,13 +2865,13 @@ func.RenderPassEncoder.BindStateBuffer
 
 func.RootSignature.CompileAndLinkShaders
     "LinkedShaderId"
-    .desc               "const CompiledShaderDescriptor*"
     .count              "uint32_t"
+    .desc               "const CompiledShaderDescriptor*"
 
 func.RootSignature.CompileShaders
     "void"
-    .desc               "const CompiledShaderDescriptor*"
     .count              "uint32_t"
+    .desc               "const CompiledShaderDescriptor*"
     .outIsas            "CompiledShaderId*"
 
 func.RootSignature.FreeCompiledShader
@@ -2975,7 +2973,7 @@ func.RasterStateEncoder.SetSampleCount
 func.ShaderStateEncoder.BindShaders
     "void"
     .stageCount         "uint32_t"
-    .stages             "const ShaderStage*"
+    .pStages             "const ShaderStage*"
     .shaders            "const CompiledShaderId*"
 
 func.ShaderStateEncoder.BindLinkedShader
@@ -2990,10 +2988,10 @@ func.Binder.BindVertexBuffer
     "void"
     .firstBinding       "uint32_t"
     .bindingCount       "uint32_t"
-    .buffers            "const BufferId*"
-    .offsets            "const uint64_t*"
-    .sizes              "const uint64_t*"
-    .strides            "const uint64_t*"
+    .pBuffers           "const BufferId*"
+    .pOffsets           "const uint64_t*"
+    .pSizes             "const uint64_t*"
+    .pStrides           "const uint64_t*"
 
 switch_table.FormatUtil_IsDepthStencilFormat
     .arg            "TextureFormat::Enum"

@@ -272,12 +272,12 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
     // tables
     for (uint32_t i = 0; i < RS->super.table_count; i++)
     {
-        set_index_mask |= (1 << RS->super.tables[i].set_index);
+        set_index_mask |= (1 << RS->super.p_tables[i].set_index);
     }
     // static samplers
     for (uint32_t i = 0; i < RS->super.static_sampler_count; i++)
     {
-        set_index_mask |= (1 << RS->super.static_samplers[i].set);
+        set_index_mask |= (1 << RS->super.p_static_samplers[i].set);
     }
     // parse
     const uint32_t set_count = get_set_count(set_index_mask);
@@ -291,9 +291,9 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
             CGPUParameterTable* param_table = CGPU_NULLPTR;
             for (uint32_t i = 0; i < RS->super.table_count; i++)
             {
-                if (RS->super.tables[i].set_index == set_index)
+                if (RS->super.p_tables[i].set_index == set_index)
                 {
-                    param_table = &RS->super.tables[i];
+                    param_table = &RS->super.p_tables[i];
                     break;
                 }
             }
@@ -306,23 +306,23 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
             {
                 for (i_binding = 0; i_binding < param_table->resources_count; i_binding++)
                 {
-                    vkbindings[i_binding].binding = param_table->resources[i_binding].binding;
-                    vkbindings[i_binding].stageFlags = VkUtil_TranslateShaderUsages(param_table->resources[i_binding].stages);
-                    vkbindings[i_binding].descriptorType = VkUtil_TranslateResourceType(param_table->resources[i_binding].type);
-                    vkbindings[i_binding].descriptorCount = param_table->resources[i_binding].size;
+                    vkbindings[i_binding].binding = param_table->p_resources[i_binding].binding;
+                    vkbindings[i_binding].stageFlags = VkUtil_TranslateShaderUsages(param_table->p_resources[i_binding].stages);
+                    vkbindings[i_binding].descriptorType = VkUtil_TranslateResourceType(param_table->p_resources[i_binding].type);
+                    vkbindings[i_binding].descriptorCount = param_table->p_resources[i_binding].size;
                 }
             }
             // static samplers
             for (uint32_t i_ss = 0; i_ss < desc->static_sampler_count; i_ss++)
             {
-                if (RS->super.static_samplers[i_ss].set == set_index)
+                if (RS->super.p_static_samplers[i_ss].set == set_index)
                 {
-                    CGPUSampler_Vulkan* immutableSampler = (CGPUSampler_Vulkan*)desc->static_samplers[i_ss];
+                    CGPUSampler_Vulkan* immutableSampler = (CGPUSampler_Vulkan*)desc->p_static_samplers[i_ss];
                     vkbindings[i_binding].pImmutableSamplers = &immutableSampler->pVkSampler;
-                    vkbindings[i_binding].binding = RS->super.static_samplers[i_ss].binding;
-                    vkbindings[i_binding].stageFlags = VkUtil_TranslateShaderUsages(RS->super.static_samplers[i_ss].stages);
-                    vkbindings[i_binding].descriptorType = VkUtil_TranslateResourceType(RS->super.static_samplers[i_ss].type);
-                    vkbindings[i_binding].descriptorCount = RS->super.static_samplers[i_ss].size;
+                    vkbindings[i_binding].binding = RS->super.p_static_samplers[i_ss].binding;
+                    vkbindings[i_binding].stageFlags = VkUtil_TranslateShaderUsages(RS->super.p_static_samplers[i_ss].stages);
+                    vkbindings[i_binding].descriptorType = VkUtil_TranslateResourceType(RS->super.p_static_samplers[i_ss].type);
+                    vkbindings[i_binding].descriptorCount = RS->super.p_static_samplers[i_ss].size;
                     i_binding++;
                 }
             }
@@ -352,9 +352,9 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
         for (uint32_t i_const = 0; i_const < RS->super.push_constant_count; i_const++)
         {
             RS->pPushConstRanges[i_const].stageFlags =
-            VkUtil_TranslateShaderUsages(RS->super.push_constants[i_const].stages);
-            RS->pPushConstRanges[i_const].size = RS->super.push_constants[i_const].size;
-            RS->pPushConstRanges[i_const].offset = RS->super.push_constants[i_const].offset;
+            VkUtil_TranslateShaderUsages(RS->super.p_push_constants[i_const].stages);
+            RS->pPushConstRanges[i_const].size = RS->super.p_push_constants[i_const].size;
+            RS->pPushConstRanges[i_const].offset = RS->super.p_push_constants[i_const].offset;
         }
     }
     // Record Descriptor Sets
@@ -380,17 +380,17 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
     {
         for (uint32_t i_table = 0; i_table < RS->super.table_count; i_table++)
         {
-            CGPUParameterTable* param_table = &RS->super.tables[i_table];
+            CGPUParameterTable* param_table = &RS->super.p_tables[i_table];
             SetLayout_Vulkan* set_to_record = &RS->pSetLayouts[param_table->set_index];
             uint32_t update_entry_count = param_table->resources_count;
             VkDescriptorUpdateTemplateEntry* template_entries = cgpu_calloc(allocator,
                 param_table->resources_count, sizeof(VkDescriptorUpdateTemplateEntry));
             for (uint32_t i_iter = 0; i_iter < param_table->resources_count; i_iter++)
             {
-                uint32_t i_binding = param_table->resources[i_iter].binding;
+                uint32_t i_binding = param_table->p_resources[i_iter].binding;
                 VkDescriptorUpdateTemplateEntry* this_entry = template_entries + i_iter;
-                this_entry->descriptorCount = param_table->resources[i_iter].size;
-                this_entry->descriptorType = VkUtil_TranslateResourceType(param_table->resources[i_iter].type);
+                this_entry->descriptorCount = param_table->p_resources[i_iter].size;
+                this_entry->descriptorType = VkUtil_TranslateResourceType(param_table->p_resources[i_iter].type);
                 this_entry->dstBinding = i_binding;
                 this_entry->dstArrayElement = 0;
                 this_entry->stride = sizeof(VkDescriptorUpdateData);
@@ -478,14 +478,14 @@ CGPUDescriptorSetId cgpu_create_descriptor_set_vulkan(CGPUDeviceId device, const
     uint32_t table_index = 0;
     for (uint32_t i = 0; i < RS->super.table_count; i++)
     {
-        if (RS->super.tables[i].set_index == desc->set_index)
+        if (RS->super.p_tables[i].set_index == desc->set_index)
         {
             table_index = i;
         }
     }
     SetLayout_Vulkan* SetLayout = &RS->pSetLayouts[desc->set_index];
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
-    const size_t UpdateTemplateSize = RS->super.tables[table_index].resources_count * sizeof(VkDescriptorUpdateData);
+    const size_t UpdateTemplateSize = RS->super.p_tables[table_index].resources_count * sizeof(VkDescriptorUpdateData);
     totalSize += UpdateTemplateSize;
     CGPUDescriptorSet_Vulkan* Set = cgpu_calloc_aligned(allocator, 1, totalSize, _Alignof(CGPUDescriptorSet_Vulkan));
     char* pMem = (char*)(Set + 1);
@@ -505,13 +505,13 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
     uint32_t table_index = 0;
     for (uint32_t i = 0; i < RS->super.table_count; i++)
     {
-        if (RS->super.tables[i].set_index == set->index)
+        if (RS->super.p_tables[i].set_index == set->index)
         {
             table_index = i;
         }
     }
     SetLayout_Vulkan* SetLayout = &RS->pSetLayouts[set->index];
-    const CGPUParameterTable* ParamTable = &RS->super.tables[table_index];
+    const CGPUParameterTable* ParamTable = &RS->super.p_tables[table_index];
     if (SetLayout->pUpdateTemplate)
     {
         VkDescriptorUpdateData* pUpdateData = Set->pUpdateData;
@@ -527,9 +527,9 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
                 size_t argNameHash = cgpu_name_hash(pParam->name, strlen(pParam->name));
                 for (uint32_t p = 0; p < ParamTable->resources_count; p++)
                 {
-                    if (ParamTable->resources[p].name_hash == argNameHash)
+                    if (ParamTable->p_resources[p].name_hash == argNameHash)
                     {
-                        ResData = ParamTable->resources + p;
+                        ResData = ParamTable->p_resources + p;
                     }
                 }
             }
@@ -537,9 +537,9 @@ void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGP
             {
                 for (uint32_t p = 0; p < ParamTable->resources_count; p++)
                 {
-                    if (ParamTable->resources[p].binding == pParam->binding)
+                    if (ParamTable->p_resources[p].binding == pParam->binding)
                     {
-                        ResData = ParamTable->resources + p;
+                        ResData = ParamTable->p_resources + p;
                     }
                 }
             }
@@ -834,7 +834,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
         // Initial values
         for (uint32_t i = 0; i < attrib_count; ++i)
         {
-            const CGPUVertexAttribute* attrib = &(desc->vertex_layout->attributes[i]);
+            const CGPUVertexAttribute* attrib = &(desc->vertex_layout->p_attributes[i]);
             const uint32_t array_size = attrib->array_size ? attrib->array_size : 1;
 
             VkVertexInputBindingDescription* current_binding = &input_bindings[attrib->binding];
@@ -1224,8 +1224,8 @@ CGPUQueueId cgpu_get_queue_vulkan(CGPUDeviceId device, ECGPUQueueType type, uint
 
 void cgpu_submit_queue_vulkan(CGPUQueueId queue, const struct CGPUQueueSubmitDescriptor* desc)
 {
-    uint32_t CmdCount = desc->cmds_count;
-    CGPUCommandBuffer_Vulkan** Cmds = (CGPUCommandBuffer_Vulkan**)desc->cmds;
+    uint32_t CmdCount = desc->cmd_count;
+    CGPUCommandBuffer_Vulkan** Cmds = (CGPUCommandBuffer_Vulkan**)desc->p_cmds;
     CGPUQueue_Vulkan* Q = (CGPUQueue_Vulkan*)queue;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)queue->device;
     CGPUFence_Vulkan* F = (CGPUFence_Vulkan*)desc->signal_fence;
@@ -1245,7 +1245,7 @@ void cgpu_submit_queue_vulkan(CGPUQueueId queue, const struct CGPUQueueSubmitDes
     CGPU_DECLARE_ZERO_VLA(VkSemaphore, wait_semaphores, desc->wait_semaphore_count + 1)
     CGPU_DECLARE_ZERO_VLA(VkPipelineStageFlags, wait_stages, desc->wait_semaphore_count + 1)
     uint32_t waitCount = 0;
-    CGPUSemaphore_Vulkan** WaitSemaphores = (CGPUSemaphore_Vulkan**)desc->wait_semaphores;
+    CGPUSemaphore_Vulkan** WaitSemaphores = (CGPUSemaphore_Vulkan**)desc->p_wait_semaphores;
     for (uint32_t i = 0; i < desc->wait_semaphore_count; ++i)
     {
         if (WaitSemaphores[i]->mSignaled)
@@ -1259,7 +1259,7 @@ void cgpu_submit_queue_vulkan(CGPUQueueId queue, const struct CGPUQueueSubmitDes
     // Set signal semaphores
     CGPU_DECLARE_ZERO_VLA(VkSemaphore, signal_semaphores, desc->signal_semaphore_count + 1)
     uint32_t signalCount = 0;
-    CGPUSemaphore_Vulkan** SignalSemaphores = (CGPUSemaphore_Vulkan**)desc->signal_semaphores;
+    CGPUSemaphore_Vulkan** SignalSemaphores = (CGPUSemaphore_Vulkan**)desc->p_signal_semaphores;
     for (uint32_t i = 0; i < desc->signal_semaphore_count; ++i)
     {
         if (!SignalSemaphores[i]->mSignaled)
@@ -1320,7 +1320,7 @@ void cgpu_queue_present_vulkan(CGPUQueueId queue, const struct CGPUQueuePresentD
         // Set semaphores
         CGPU_DECLARE_ZERO_VLA(VkSemaphore, wait_semaphores, desc->wait_semaphore_count + 1)
         uint32_t waitCount = 0;
-        CGPUSemaphore_Vulkan** Semaphores = (CGPUSemaphore_Vulkan**)desc->wait_semaphores;
+        CGPUSemaphore_Vulkan** Semaphores = (CGPUSemaphore_Vulkan**)desc->p_wait_semaphores;
         for (uint32_t i = 0; i < desc->wait_semaphore_count; ++i)
         {
             if (Semaphores[i]->mSignaled)
@@ -1508,7 +1508,7 @@ CGPUFramebufferId cgpu_create_framebuffer_vulkan(CGPUDeviceId device, const stru
     VkImageView imageViews[CGPU_MAX_MRT_COUNT + 1] = { 0 };
     for (uint32_t i = 0; i < desc->attachment_count; ++i)
     {
-        CGPUTextureView_Vulkan* t = (CGPUTextureView_Vulkan*)desc->attachments[i];
+        CGPUTextureView_Vulkan* t = (CGPUTextureView_Vulkan*)desc->p_attachments[i];
         imageViews[i] = t->pVkRTVDSVDescriptor;
     }
 
@@ -1662,11 +1662,11 @@ void cgpu_cmd_resource_barrier_vulkan(CGPUCommandBufferId cmd, const struct CGPU
     VkAccessFlags srcAccessFlags = 0;
     VkAccessFlags dstAccessFlags = 0;
 
-    CGPU_DECLARE_ZERO_VLA(VkBufferMemoryBarrier, BBs, desc->buffer_barriers_count)
+    CGPU_DECLARE_ZERO_VLA(VkBufferMemoryBarrier, BBs, desc->buffer_barrier_count)
     uint32_t bufferBarrierCount = 0;
-    for (uint32_t i = 0; i < desc->buffer_barriers_count; i++)
+    for (uint32_t i = 0; i < desc->buffer_barrier_count; i++)
     {
-        const CGPUBufferBarrier* buffer_barrier = &desc->buffer_barriers[i];
+        const CGPUBufferBarrier* buffer_barrier = &desc->p_buffer_barriers[i];
         CGPUBuffer_Vulkan* B = (CGPUBuffer_Vulkan*)buffer_barrier->buffer;
         VkBufferMemoryBarrier* pBufferBarrier = NULL;
 
@@ -1716,11 +1716,11 @@ void cgpu_cmd_resource_barrier_vulkan(CGPUCommandBufferId cmd, const struct CGPU
         }
     }
 
-    CGPU_DECLARE_ZERO_VLA(VkImageMemoryBarrier, TBs, desc->texture_barriers_count)
+    CGPU_DECLARE_ZERO_VLA(VkImageMemoryBarrier, TBs, desc->texture_barrier_count)
     uint32_t imageBarrierCount = 0;
-    for (uint32_t i = 0; i < desc->texture_barriers_count; i++)
+    for (uint32_t i = 0; i < desc->texture_barrier_count; i++)
     {
-        const CGPUTextureBarrier* texture_barrier = &desc->texture_barriers[i];
+        const CGPUTextureBarrier* texture_barrier = &desc->p_texture_barriers[i];
         CGPUTexture_Vulkan* T = (CGPUTexture_Vulkan*)texture_barrier->texture;
         const CGPUTextureInfo* pInfo = T->super.info;
         VkImageMemoryBarrier* pImageBarrier = NULL;
@@ -2051,17 +2051,17 @@ CGPURenderPassEncoderId cgpu_cmd_begin_render_pass_vulkan(CGPUCommandBufferId cm
     uint32_t clearCount = begin_info->clear_value_count;
     for (uint32_t i = 0; i < begin_info->clear_value_count; i++)
     {
-        if (begin_info->clear_values[i].is_color)
+        if (begin_info->p_clear_values[i].is_color)
         {
-            clearValues[i].color.float32[0] = begin_info->clear_values[i].color[0];
-            clearValues[i].color.float32[1] = begin_info->clear_values[i].color[1];
-            clearValues[i].color.float32[2] = begin_info->clear_values[i].color[2];
-            clearValues[i].color.float32[3] = begin_info->clear_values[i].color[3];
+            clearValues[i].color.float32[0] = begin_info->p_clear_values[i].color[0];
+            clearValues[i].color.float32[1] = begin_info->p_clear_values[i].color[1];
+            clearValues[i].color.float32[2] = begin_info->p_clear_values[i].color[2];
+            clearValues[i].color.float32[3] = begin_info->p_clear_values[i].color[3];
         }
         else
         {
-            clearValues[i].depthStencil.depth = begin_info->clear_values[i].depth;
-            clearValues[i].depthStencil.stencil = begin_info->clear_values[i].stencil;
+            clearValues[i].depthStencil.depth = begin_info->p_clear_values[i].depth;
+            clearValues[i].depthStencil.stencil = begin_info->p_clear_values[i].stencil;
         }
     }
     VkRect2D render_area = {

@@ -2,8 +2,8 @@
 #include "cgpu_vulkan.h"
 
 // Compiled/Linked ISA APIs
-CGPU_API CGPULinkedShaderId cgpu_compile_and_link_shaders_vulkan(CGPURootSignatureId signature, const struct CGPUCompiledShaderDescriptor* descs, uint32_t count);
-CGPU_API void cgpu_compile_shaders_vulkan(CGPURootSignatureId signature, const struct CGPUCompiledShaderDescriptor* descs, uint32_t count, CGPUCompiledShaderId* out_isas);
+CGPU_API CGPULinkedShaderId cgpu_compile_and_link_shaders_vulkan(CGPURootSignatureId signature, uint32_t count, const struct CGPUCompiledShaderDescriptor* descs);
+CGPU_API void cgpu_compile_shaders_vulkan(CGPURootSignatureId signature, uint32_t count, const struct CGPUCompiledShaderDescriptor* descs, CGPUCompiledShaderId* out_isas);
 CGPU_API void cgpu_free_compiled_shader_vulkan(CGPUCompiledShaderId shader);
 CGPU_API void cgpu_free_linked_shader_vulkan(CGPULinkedShaderId shader);
 

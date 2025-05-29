@@ -61,9 +61,9 @@ public:
         newCharacteristic.table_hash = (size_t)this;
         for(uint32_t i = 0; i < RSTables->table_count; i++)
         {
-            for(uint32_t j = 0; j < RSTables->tables[i].resources_count; j++)
+            for(uint32_t j = 0; j < RSTables->p_tables[i].resources_count; j++)
             {
-                const auto& res = RSTables->tables[i].resources[j];
+                const auto& res = RSTables->p_tables[i].p_resources[j];
                 RSCharacteristic::RSTResource r = {};
                 r.type = res.type;
                 r.dim = res.dim;
@@ -80,11 +80,11 @@ public:
         for(uint32_t i = 0; i < desc->push_constant_count; i++)
         {
             RSCharacteristic::PushConstant p = {};
-            p.set = RSTables->push_constants[i].set;
-            p.binding = RSTables->push_constants[i].binding;
-            p.size = RSTables->push_constants[i].size;
-            p.offset = RSTables->push_constants[i].offset;
-            p.stages = RSTables->push_constants[i].stages;
+            p.set = RSTables->p_push_constants[i].set;
+            p.binding = RSTables->p_push_constants[i].binding;
+            p.size = RSTables->p_push_constants[i].size;
+            p.offset = RSTables->p_push_constants[i].offset;
+            p.stages = RSTables->p_push_constants[i].stages;
             newCharacteristic.push_constant_hash = cgpu_hash(&p, sizeof(p), newCharacteristic.push_constant_hash);
         }
         newCharacteristic.static_sampler_count = desc->static_sampler_count;
@@ -94,12 +94,12 @@ public:
         {
             for (uint32_t j = 0; j < desc->static_sampler_count; j++)
             {
-                if(strcmp((const char*)desc->static_sampler_names[j], (const char*)RSTables->static_samplers[i].name) == 0)
+                if(strcmp((const char*)desc->p_static_sampler_names[j], (const char*)RSTables->p_static_samplers[i].name) == 0)
                 {
                     RSCharacteristic::StaticSampler s = {};
-                    s.set = RSTables->static_samplers[i].set;
-                    s.binding = RSTables->static_samplers[i].binding;
-                    s.id = desc->static_samplers[j];
+                    s.set = RSTables->p_static_samplers[i].set;
+                    s.binding = RSTables->p_static_samplers[i].binding;
+                    s.id = desc->p_static_samplers[j];
                     newCharacteristic.static_samplers_hash =
                         cgpu_hash(&s, sizeof(s), newCharacteristic.static_samplers_hash);
                 }
