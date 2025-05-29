@@ -2336,9 +2336,9 @@ CGPU_API void cgpu_command_buffer_end_render_pass(CGPUCommandBufferId _this, CGP
 CGPU_API void cgpu_command_buffer_begin_event(CGPUCommandBufferId _this, const CGPUEventInfo* event);
 CGPU_API void cgpu_command_buffer_set_marker(CGPUCommandBufferId _this, const CGPUMarkerInfo* marker);
 CGPU_API void cgpu_command_buffer_end_event(CGPUCommandBufferId _this);
-CGPU_API CGPUStateBufferId cgpu_command_buffer_create_state_buffer(CGPUCommandBufferId _this, CGPUCommandBufferId cmd, const CGPUStateBufferDescriptor* desc);
+CGPU_API CGPUStateBufferId cgpu_command_buffer_create_state_buffer(CGPUCommandBufferId _this, const CGPUStateBufferDescriptor* desc);
 CGPU_API void cgpu_command_buffer_free_state_buffer(CGPUCommandBufferId _this, CGPUStateBufferId stream);
-CGPU_API CGPUBinderId cgpu_command_buffer_create_binder(CGPUCommandBufferId _this, CGPUCommandBufferId cmd);
+CGPU_API CGPUBinderId cgpu_command_buffer_create_binder(CGPUCommandBufferId _this);
 CGPU_API void cgpu_command_buffer_free_binder(CGPUCommandBufferId _this, CGPUBinderId binder);
 CGPU_API void cgpu_compute_pass_encoder_bind_descriptor_set(CGPUComputePassEncoderId _this, CGPUDescriptorSetId set);
 CGPU_API void cgpu_compute_pass_encoder_bind_compute_pipeline(CGPUComputePassEncoderId _this, CGPUComputePipelineId pipeline);

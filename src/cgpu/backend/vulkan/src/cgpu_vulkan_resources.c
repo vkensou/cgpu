@@ -225,7 +225,7 @@ CGPUBufferId cgpu_create_buffer_vulkan(CGPUDeviceId device, const struct CGPUBuf
 #ifdef CGPU_THREAD_SAFETY
         if (Q->pMutex) skr_mutex_acquire(Q->pMutex);
 #endif
-        cgpu_reset(Q->pInnerCmdPool);
+        cgpu_command_pool_reset(Q->pInnerCmdPool);
         cgpu_command_buffer_begin(Q->pInnerCmdBuffer);
         CGPUBufferBarrier init_barrier = {
             .buffer = &B->super,
@@ -963,7 +963,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
 #ifdef CGPU_THREAD_SAFETY
         if (Q->pMutex) skr_mutex_acquire(Q->pMutex);
 #endif
-        cgpu_reset(Q->pInnerCmdPool);
+        cgpu_command_pool_reset(Q->pInnerCmdPool);
         cgpu_command_buffer_begin(Q->pInnerCmdBuffer);
         CGPUTextureBarrier init_barrier = {
             .texture = &T->super,

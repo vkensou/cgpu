@@ -1214,7 +1214,7 @@ CGPUQueueId cgpu_get_queue_vulkan(CGPUDeviceId device, ECGPUQueueType type, uint
         .is_secondary = false
     };
     RQ->pInnerCmdBuffer = cgpu_command_pool_create_command_buffer(RQ->pInnerCmdPool, &cmd_desc);
-    RQ->pInnerFence = cgpu_create_fence(device);
+    RQ->pInnerFence = cgpu_device_create_fence(device);
 #ifdef CGPU_THREAD_SAFETY
     RQ->pMutex = (SMutex*)cgpu_calloc(1, sizeof(SMutex));
     skr_init_mutex_recursive(RQ->pMutex);
@@ -1369,7 +1369,7 @@ void cgpu_free_queue_vulkan(CGPUDeviceId device, CGPUQueueId queue)
     CGPUQueue_Vulkan* Q = (CGPUQueue_Vulkan*)queue;
     if (Q->pInnerCmdBuffer) cgpu_command_pool_free_command_buffer(Q->pInnerCmdPool, Q->pInnerCmdBuffer);
     if (Q->pInnerCmdPool) cgpu_device_free_command_pool(device, Q->pInnerCmdPool);
-    if (Q->pInnerFence) cgpu_free_fence(device, Q->pInnerFence);
+    if (Q->pInnerFence) cgpu_device_free_fence(device, Q->pInnerFence);
 #ifdef CGPU_THREAD_SAFETY
     if (Q->pMutex)
     {
@@ -1845,7 +1845,7 @@ void cgpu_cmd_reset_query_pool_vulkan(CGPUCommandBufferId cmd, CGPUQueryPoolId p
 
 void cgpu_cmd_end_query_vulkan(CGPUCommandBufferId cmd, CGPUQueryPoolId pool, const struct CGPUQueryDescriptor* desc)
 {
-    cgpu_begin_query(cmd, pool, desc);
+    cgpu_command_buffer_begin_query(cmd, pool, desc);
 }
 
 void cgpu_cmd_resolve_query_vulkan(CGPUCommandBufferId cmd, CGPUQueryPoolId pool, CGPUBufferId readback, uint32_t start_query, uint32_t query_count)

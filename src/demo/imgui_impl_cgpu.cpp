@@ -520,7 +520,7 @@ void ImGui_ImplCGPU_DestroyAllViewportsRenderBuffers(CGPUDeviceId device)
 
 static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQueueId present_queue, CGPURenderPassId render_pass, uint32_t image_count, void* windowHandle, uint32_t width, uint32_t height)
 {
-    wd->Surface = cgpu_create_surface_from_native_view(device, windowHandle);
+    wd->Surface = cgpu_device_create_surface_from_native_view(device, windowHandle);
 
     CGPUSwapChainDescriptor descriptor = {
         .present_queues = &present_queue,
@@ -532,7 +532,7 @@ static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQue
         .enable_vsync = true,
         .format = CGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM,
     };
-    wd->Swapchain = cgpu_create_swap_chain(device, &descriptor);
+    wd->Swapchain = cgpu_device_create_swap_chain(device, &descriptor);
     wd->Width = width;
     wd->Height = height;
     wd->ImageCount = wd->Swapchain->buffer_count;
@@ -559,12 +559,12 @@ static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQue
             .height = height,
             .layers = 1,
         };
-        wd->Framebuffers[i] = cgpu_create_framebuffer(device, &framebuffer_desc);
+        wd->Framebuffers[i] = cgpu_device_create_framebuffer(device, &framebuffer_desc);
     }
 
     wd->SurfaceFormat = wd->Swapchain->back_buffers[0]->info->format;
 
-    wd->Fence = cgpu_create_fence(device);
+    wd->Fence = cgpu_device_create_fence(device);
 }
 
 static void FreeWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device)
@@ -580,14 +580,14 @@ static void FreeWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device)
     if (wd->Framebuffers) {
         for (int i = 0; i < wd->ImageCount; ++i)
         {
-            cgpu_free_framebuffer(device, wd->Framebuffers[i]);
+            cgpu_device_free_framebuffer(device, wd->Framebuffers[i]);
         }
         IM_FREE(wd->Framebuffers);
         wd->Framebuffers = nullptr;
     }
-    if (wd->Swapchain) { cgpu_free_swap_chain(device, wd->Swapchain); wd->Swapchain = nullptr; }
-    if (wd->Surface) { cgpu_free_surface(device, wd->Surface); wd->Surface = nullptr; }
-    if (wd->Fence) { cgpu_free_fence(device, wd->Fence); wd->Fence = nullptr; }
+    if (wd->Swapchain) { cgpu_device_free_swap_chain(device, wd->Swapchain); wd->Swapchain = nullptr; }
+    if (wd->Surface) { cgpu_device_free_surface(device, wd->Surface); wd->Surface = nullptr; }
+    if (wd->Fence) { cgpu_device_free_fence(device, wd->Fence); wd->Fence = nullptr; }
 }
 
 static void ImGui_ImplCGPU_CreateWindow(ImGuiViewport* viewport)
@@ -664,14 +664,14 @@ static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)
         .fence = wd->Fence
     };
 
-    wd->FrameIndex = cgpu_acquire_next_image(wd->Swapchain, &acquire_desc);
+    wd->FrameIndex = cgpu_swap_chain_acquire_next_image(wd->Swapchain, &acquire_desc);
     if (wd->FrameIndex >= wd->ImageCount)
         return;
 
     const CGPUTextureId back_buffer = wd->Swapchain->back_buffers[wd->FrameIndex];
     const CGPUTextureViewId back_buffer_view = wd->Backbuffers[wd->FrameIndex];
 
-    cgpu_reset(wd->CommandPool);
+    cgpu_command_pool_reset(wd->CommandPool);
     cgpu_command_buffer_begin(wd->Command);
 
     CGPUTextureBarrier draw_barrier = {
@@ -694,11 +694,11 @@ static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)
         .clear_values = &clearColor,
     };
 
-    CGPURenderPassEncoderId rp_encoder = cgpu_begin_render_pass(wd->Command, &begin_info);
+    CGPURenderPassEncoderId rp_encoder = cgpu_command_buffer_begin_render_pass(wd->Command, &begin_info);
 
     ImGui_ImplCGPU_RenderDrawData(viewport->DrawData, rp_encoder, v->RootSig, v->Pipeline);
 
-    cgpu_end_render_pass(wd->Command, rp_encoder);
+    cgpu_command_buffer_end_render_pass(wd->Command, rp_encoder);
     CGPUTextureBarrier present_barrier = {
         .texture = back_buffer,
         .src_state = CGPU_RESOURCE_STATE_RENDER_TARGET,
