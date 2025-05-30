@@ -27,6 +27,14 @@ local function upperCamelcase_to_underscorecase(name)
 	return table.concat(tmp, "_")
 end
 
+local function lowerCamelcase_to_underscorecase(name)
+	local tmp = {}
+	for v in name:gmatch "[%u%l%d][%l%d]*" do
+		tmp[#tmp+1] = v:lower()
+	end
+	return table.concat(tmp, "_")
+end
+
 local function Set(list)
     local set = {}
     for _, l in ipairs(list) do
@@ -196,8 +204,6 @@ local converter = {}
 local yield = coroutine.yield
 local gen = {}
 
-local indent = ""
-
 function gen.gen()
 	-- find the functions that have `this` first argument
 	-- these belong to a type (struct) and we need to add them when converting structures
@@ -331,7 +337,7 @@ local function FlagBlock(typ)
 end
 
 local function convert_struct_member(member)
-	return member.name .. ": " .. convert_struct_type(member)
+	return lowerCamelcase_to_underscorecase(member.name) .. ": " .. convert_struct_type(member)
 end
 
 local namespace = ""
@@ -362,28 +368,25 @@ function converter.types(params)
 	elseif typ.struct ~= nil then
 		local skip = false
 
+        local indent = 0
 		if typ.namespace ~= nil then
 			if namespace ~= typ.namespace then
 				yield("pub const " .. typ.namespace .. " = extern struct {")
 				namespace = typ.namespace
-				indent = "    "
+				indent = indent + 1
 			end
 		elseif namespace ~= "" then
-			indent = "    "
+			indent = indent + 1
 			namespace = ""
 			skip = true
 		end
 
 		if not skip then
-			if typ.name ~= "Encoder" then
-				yield(indent .. "pub const " .. typ.name .. " = extern struct {")
-			else
-				yield(indent .. "pub const " .. typ.name .. " = opaque {")
-			end
+            yield(string.rep("    ", indent) .. "pub const " .. typ.name .. " = extern struct {")
 		end
 
 		for _, member in ipairs(typ.struct) do
-			yield(indent .. indent .. convert_struct_member(member) .. ",")
+			yield(string.rep("    ", indent + 1) .. convert_struct_member(member) .. ",")
 		end
 		if funcs ~= nil then
 			for _, func in ipairs(funcs) do
@@ -394,7 +397,7 @@ function converter.types(params)
 			end
 		end
 
-		yield(indent .. "};")
+		yield(string.rep("    ", indent) .. "};")
 	end
 end
 
@@ -411,6 +414,7 @@ function converter.funcs(params)
 		return
 	end
 
+    local indent = ""
 	local func_indent = (params.asMethod == true and indent .. indent or "")
 
 	if func.comments ~= nil then
