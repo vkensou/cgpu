@@ -932,7 +932,7 @@ funcptr.FreeCommandBuffer
 
 funcptr.FreeCommandPool
     "void"
-    .device             "DeviceId"
+    .queue              "QueueId"
     .pool               "CommandPoolId"
 
 funcptr.CreateShaderLibrary
@@ -1676,9 +1676,9 @@ struct.RootSignatureDescriptor
     .pShaders           "ShaderEntryDescriptor*"
     .staticSamplerCount "uint32_t"
     .pStaticSamplers    "const SamplerId*"
-    .pStaticSamplerNames"const char*"
+    .pStaticSamplerNames"const char**"
     .pushConstantCount  "uint32_t"
-    .pPushConstantNames "const char*"
+    .pPushConstantNames "const char**"
     .pool               "RootSignaturePoolId"
 
 struct.ParameterTable
@@ -2520,10 +2520,6 @@ func.Device.FreeFramebuffer
     "void"
     .framebuffer        "FramebufferId"
 
-func.Device.FreeCommandPool
-    "void"
-    .pool               "CommandPoolId"
-
 func.Device.CreateShaderLibrary
     "ShaderLibraryId"
     .desc               "const ShaderLibraryDescriptor*"
@@ -2641,6 +2637,10 @@ func.Queue.UnmapPackedMips
 func.Queue.CreateCommandPool
     "CommandPoolId"
     .desc               "const CommandPoolDescriptor*"
+
+func.Queue.FreeCommandPool
+    "void"
+    .pool               "CommandPoolId"
 
 func.DescriptorSet.Update
     "void"
@@ -3325,3 +3325,36 @@ switch_table.FormatUtil_HeightOfBlock
                         { ASTC_12x12_SFloat_Block = 12 },
                     })
     .default        (1)
+
+switch_table.VertexFormatUtil_BitSizeOfBlock
+    .arg            "VertexFormat::Enum"
+    .ret            "uint32_t"
+    .cases          ({
+                        { Float32x1 = 32 },
+                        { Float32x2 = 64 },
+                        { Float32x3 = 96 },
+                        { Float32x4 = 128 },
+                        { Sint32x1 = 32 },
+                        { Sint32x2 = 64 },
+                        { Sint32x3 = 96 },
+                        { Sint32x4 = 128 },
+                        { Uint32x1 = 32 },
+                        { Uint32x2 = 64 },
+                        { Uint32x3 = 96 },
+                        { Uint32x4 = 128 },
+                        { Float16x2 = 32 },
+                        { Float16x4 = 64 },
+                        { Sint16x2 = 32 },
+                        { Sint16x4 = 64 },
+                        { Uint16x2 = 32 },
+                        { Uint16x4 = 64 },
+                        { Snorm16x2 = 32 },
+                        { Snorm16x4 = 64 },
+                        { Unorm16x2 = 32 },
+                        { Unorm16x4 = 64 },
+                        { Sint8x4 = 32 },
+                        { Uint8x4 = 32 },
+                        { Snorm8x4 = 32 },
+                        { Unorm8x4 = 32 },
+                    })
+    .default        (0)

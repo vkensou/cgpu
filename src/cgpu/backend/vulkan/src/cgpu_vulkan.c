@@ -850,7 +850,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
                 input_attributes[attr_slot].location = attr_slot;
                 input_attributes[attr_slot].binding = attrib->binding;
                 input_attributes[attr_slot].format = VkUtil_VertexFormatTranslateToVk(attrib->format);
-                input_attributes[attr_slot].offset = attrib->offset + (j * FormatUtil_BitSizeOfBlock(attrib->format) / 8);
+                input_attributes[attr_slot].offset = attrib->offset + (j * VertexFormatUtil_BitSizeOfBlock(attrib->format) / 8);
                 ++attr_slot;
             }
         }
@@ -1368,7 +1368,7 @@ void cgpu_free_queue_vulkan(CGPUDeviceId device, CGPUQueueId queue)
     const CGPUAllocator* allocator = &queue->device->adapter->instance->allocator;
     CGPUQueue_Vulkan* Q = (CGPUQueue_Vulkan*)queue;
     if (Q->pInnerCmdBuffer) cgpu_command_pool_free_command_buffer(Q->pInnerCmdPool, Q->pInnerCmdBuffer);
-    if (Q->pInnerCmdPool) cgpu_device_free_command_pool(device, Q->pInnerCmdPool);
+    if (Q->pInnerCmdPool) cgpu_queue_free_command_pool(queue, Q->pInnerCmdPool);
     if (Q->pInnerFence) cgpu_device_free_fence(device, Q->pInnerFence);
 #ifdef CGPU_THREAD_SAFETY
     if (Q->pMutex)
@@ -1630,7 +1630,7 @@ void cgpu_free_command_buffer_vulkan(CGPUCommandPoolId pool, CGPUCommandBufferId
     cgpu_free_aligned(allocator, Cmd);
 }
 
-void cgpu_free_command_pool_vulkan(CGPUDeviceId device, CGPUCommandPoolId pool)
+void cgpu_free_command_pool_vulkan(CGPUQueueId queue, CGPUCommandPoolId pool)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)pool->queue->device;
     const CGPUAllocator* allocator = &D->super.adapter->instance->allocator;

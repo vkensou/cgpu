@@ -77,7 +77,7 @@ struct FrameData
 			cgpu_command_pool_free_command_buffer(pool, cmd);
 		allocated_cmds.clear();
 
-		cgpu_device_free_command_pool(device, pool);
+		cgpu_queue_free_command_pool(pool->queue, pool);
 		pool = CGPU_NULLPTR;
 	}
 };

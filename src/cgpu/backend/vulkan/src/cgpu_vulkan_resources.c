@@ -861,7 +861,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
                     &externalInfo, &exportMemoryInfo, &win32ExportMemoryInfo);
             }
 #else
-            if ((desc->flags & CGPU_TEXTURE_CREATION_USAGE_EXPORT_BIT) || (desc->flags & CGPU_INNER_TCF_IMPORT_SHARED_HANDLE))
+            if ((desc->flags & CGPU_TEXTURE_CREATION_USAGE_EXPORT) || (desc->flags & CGPU_INNER_TCF_IMPORT_SHARED_HANDLE))
             {
                 cgpu_error(&device->adapter->instance->logger, "Unsupportted platform detected!");
                 return CGPU_NULLPTR;

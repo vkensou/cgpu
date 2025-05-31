@@ -657,14 +657,14 @@ CGPU_API void cgpu_command_pool_free_command_buffer(CGPUCommandPoolId pool, CGPU
     fn_free_cmd(pool, cmd);
 }
 
-CGPU_API void cgpu_device_free_command_pool(CGPUDeviceId device, CGPUCommandPoolId pool)
+CGPU_API void cgpu_queue_free_command_pool(CGPUQueueId queue, CGPUCommandPoolId pool)
 {
     cgpu_assert(pool != CGPU_NULLPTR && "fatal: call on NULL pool!");
     cgpu_assert(pool->queue != CGPU_NULLPTR && "fatal: call on NULL queue!");
     cgpu_assert(pool->queue->device != CGPU_NULLPTR && "fatal: call on NULL device!");
     cgpu_assert(pool->queue->device->proc_table_cache->free_command_pool && "free_command_pool Proc Missing!");
 
-    pool->queue->device->proc_table_cache->free_command_pool(device, pool);
+    pool->queue->device->proc_table_cache->free_command_pool(queue, pool);
     return;
 }
 

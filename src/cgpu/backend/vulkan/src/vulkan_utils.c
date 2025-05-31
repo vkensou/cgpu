@@ -385,7 +385,7 @@ void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vu
                     reflection->p_vertex_inputs[i].name = (const char*)
                         (bHLSL ? input_vars[i]->semantic : input_vars[i]->name);
                     reflection->p_vertex_inputs[i].format =
-                        VkUtil_FormatTranslateToCGPU((VkFormat)input_vars[i]->format);
+                        VkUtil_VertexFormatTranslateToCGPU((VkFormat)input_vars[i]->format);
                 }
             }
         }
@@ -1168,6 +1168,8 @@ VkUtil_DebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
             I->super.logger.log_callback(I->super.logger.user_data, CGPU_LOG_SEVERITY_ERROR, "Vulkan validation layer: %s\n", pCallbackData->pMessage);
+            break;
+        default:
             break;
     }
     return VK_FALSE;

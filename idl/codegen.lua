@@ -668,6 +668,7 @@ local switch_temp = [[
 static CGPU_FORCEINLINE $RET $NAME($ENUM const arg) {
     switch(arg) {
 $CASE
+        default: return $DEFAULT;
     }
     return $DEFAULT;
 }

@@ -956,7 +956,7 @@ typedef CGPUCommandPoolId (*CGPUProcCreateCommandPool)(CGPUQueueId queue, const 
 typedef CGPUCommandBufferId (*CGPUProcCreateCommandBuffer)(CGPUCommandPoolId pool, const CGPUCommandBufferDescriptor* desc);
 typedef void (*CGPUProcResetCommandPool)(CGPUCommandPoolId pool);
 typedef void (*CGPUProcFreeCommandBuffer)(CGPUCommandPoolId pool, CGPUCommandBufferId cmd);
-typedef void (*CGPUProcFreeCommandPool)(CGPUDeviceId device, CGPUCommandPoolId pool);
+typedef void (*CGPUProcFreeCommandPool)(CGPUQueueId queue, CGPUCommandPoolId pool);
 typedef CGPUShaderLibraryId (*CGPUProcCreateShaderLibrary)(CGPUDeviceId device, const CGPUShaderLibraryDescriptor* desc);
 typedef void (*CGPUProcFreeShaderLibrary)(CGPUDeviceId device, CGPUShaderLibraryId library);
 typedef CGPUBufferId (*CGPUProcCreateBuffer)(CGPUDeviceId device, const CGPUBufferDescriptor* desc);
@@ -1364,9 +1364,9 @@ typedef struct CGPURootSignatureDescriptor
     CGPUShaderEntryDescriptor* p_shaders;
     uint32_t             static_sampler_count;
     const CGPUSamplerId* p_static_samplers;
-    const char*          p_static_sampler_names;
+    const char**         p_static_sampler_names;
     uint32_t             push_constant_count;
-    const char*          p_push_constant_names;
+    const char**         p_push_constant_names;
     CGPURootSignaturePoolId pool;
 
 } CGPURootSignatureDescriptor;
@@ -2280,7 +2280,6 @@ CGPU_API CGPURenderPassId cgpu_device_create_render_pass(CGPUDeviceId _this, con
 CGPU_API CGPUFramebufferId cgpu_device_create_framebuffer(CGPUDeviceId _this, const CGPUFramebufferDescriptor* desc);
 CGPU_API void cgpu_device_free_render_pass(CGPUDeviceId _this, CGPURenderPassId render_pass);
 CGPU_API void cgpu_device_free_framebuffer(CGPUDeviceId _this, CGPUFramebufferId framebuffer);
-CGPU_API void cgpu_device_free_command_pool(CGPUDeviceId _this, CGPUCommandPoolId pool);
 CGPU_API CGPUShaderLibraryId cgpu_device_create_shader_library(CGPUDeviceId _this, const CGPUShaderLibraryDescriptor* desc);
 CGPU_API void cgpu_device_free_shader_library(CGPUDeviceId _this, CGPUShaderLibraryId library);
 CGPU_API CGPUBufferId cgpu_device_create_buffer(CGPUDeviceId _this, const CGPUBufferDescriptor* desc);
@@ -2311,6 +2310,7 @@ CGPU_API void cgpu_queue_unmap_tiled_texture(CGPUQueueId _this, const CGPUTiledT
 CGPU_API void cgpu_queue_map_packed_mips(CGPUQueueId _this, const CGPUTiledTexturePackedMips* desc);
 CGPU_API void cgpu_queue_unmap_packed_mips(CGPUQueueId _this, const CGPUTiledTexturePackedMips* desc);
 CGPU_API CGPUCommandPoolId cgpu_queue_create_command_pool(CGPUQueueId _this, const CGPUCommandPoolDescriptor* desc);
+CGPU_API void cgpu_queue_free_command_pool(CGPUQueueId _this, CGPUCommandPoolId pool);
 CGPU_API void cgpu_descriptor_set_update(CGPUDescriptorSetId _this, const CGPUDescriptorData* datas, uint32_t count);
 CGPU_API CGPUCommandBufferId cgpu_command_pool_create_command_buffer(CGPUCommandPoolId _this, const CGPUCommandBufferDescriptor* desc);
 CGPU_API void cgpu_command_pool_reset(CGPUCommandPoolId _this);
@@ -2394,6 +2394,7 @@ static CGPU_FORCEINLINE bool FormatUtil_IsDepthStencilFormat(ECGPUTextureFormat 
         case CGPU_TEXTURE_FORMAT_X8_D24_UNORM_PACK32: return true;
         case CGPU_TEXTURE_FORMAT_D16_UNORM: return true;
         case CGPU_TEXTURE_FORMAT_D16_UNORM_S8_UINT: return true;
+        default: return false;
     }
     return false;
 }
@@ -2402,6 +2403,7 @@ static CGPU_FORCEINLINE bool FormatUtil_IsDepthOnlyFormat(ECGPUTextureFormat con
     switch(arg) {
         case CGPU_TEXTURE_FORMAT_D32_SFLOAT: return true;
         case CGPU_TEXTURE_FORMAT_D16_UNORM: return true;
+        default: return false;
     }
     return false;
 }
@@ -2544,6 +2546,7 @@ static CGPU_FORCEINLINE uint32_t FormatUtil_BitSizeOfBlock(ECGPUTextureFormat co
         case CGPU_TEXTURE_FORMAT_ASTC_10X10_SFLOAT_BLOCK: return 128;
         case CGPU_TEXTURE_FORMAT_ASTC_12X10_SFLOAT_BLOCK: return 128;
         case CGPU_TEXTURE_FORMAT_ASTC_12X12_SFLOAT_BLOCK: return 128;
+        default: return 32;
     }
     return 32;
 }
@@ -2627,6 +2630,7 @@ static CGPU_FORCEINLINE uint32_t FormatUtil_WidthOfBlock(ECGPUTextureFormat cons
         case CGPU_TEXTURE_FORMAT_ASTC_10X10_SFLOAT_BLOCK: return 10;
         case CGPU_TEXTURE_FORMAT_ASTC_12X10_SFLOAT_BLOCK: return 12;
         case CGPU_TEXTURE_FORMAT_ASTC_12X12_SFLOAT_BLOCK: return 12;
+        default: return 1;
     }
     return 1;
 }
@@ -2710,8 +2714,42 @@ static CGPU_FORCEINLINE uint32_t FormatUtil_HeightOfBlock(ECGPUTextureFormat con
         case CGPU_TEXTURE_FORMAT_ASTC_10X10_SFLOAT_BLOCK: return 10;
         case CGPU_TEXTURE_FORMAT_ASTC_12X10_SFLOAT_BLOCK: return 10;
         case CGPU_TEXTURE_FORMAT_ASTC_12X12_SFLOAT_BLOCK: return 12;
+        default: return 1;
     }
     return 1;
+}
+
+static CGPU_FORCEINLINE uint32_t VertexFormatUtil_BitSizeOfBlock(ECGPUVertexFormat const arg) {
+    switch(arg) {
+        case CGPU_VERTEX_FORMAT_FLOAT32X1: return 32;
+        case CGPU_VERTEX_FORMAT_FLOAT32X2: return 64;
+        case CGPU_VERTEX_FORMAT_FLOAT32X3: return 96;
+        case CGPU_VERTEX_FORMAT_FLOAT32X4: return 128;
+        case CGPU_VERTEX_FORMAT_SINT32X1: return 32;
+        case CGPU_VERTEX_FORMAT_SINT32X2: return 64;
+        case CGPU_VERTEX_FORMAT_SINT32X3: return 96;
+        case CGPU_VERTEX_FORMAT_SINT32X4: return 128;
+        case CGPU_VERTEX_FORMAT_UINT32X1: return 32;
+        case CGPU_VERTEX_FORMAT_UINT32X2: return 64;
+        case CGPU_VERTEX_FORMAT_UINT32X3: return 96;
+        case CGPU_VERTEX_FORMAT_UINT32X4: return 128;
+        case CGPU_VERTEX_FORMAT_FLOAT16X2: return 32;
+        case CGPU_VERTEX_FORMAT_FLOAT16X4: return 64;
+        case CGPU_VERTEX_FORMAT_SINT16X2: return 32;
+        case CGPU_VERTEX_FORMAT_SINT16X4: return 64;
+        case CGPU_VERTEX_FORMAT_UINT16X2: return 32;
+        case CGPU_VERTEX_FORMAT_UINT16X4: return 64;
+        case CGPU_VERTEX_FORMAT_SNORM16X2: return 32;
+        case CGPU_VERTEX_FORMAT_SNORM16X4: return 64;
+        case CGPU_VERTEX_FORMAT_UNORM16X2: return 32;
+        case CGPU_VERTEX_FORMAT_UNORM16X4: return 64;
+        case CGPU_VERTEX_FORMAT_SINT8X4: return 32;
+        case CGPU_VERTEX_FORMAT_UINT8X4: return 32;
+        case CGPU_VERTEX_FORMAT_SNORM8X4: return 32;
+        case CGPU_VERTEX_FORMAT_UNORM8X4: return 32;
+        default: return 0;
+    }
+    return 0;
 }
 
 

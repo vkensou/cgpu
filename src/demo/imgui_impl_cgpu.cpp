@@ -357,7 +357,7 @@ bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId ro
     cgpu_queue_submit(queue, &cpy_submit);
     cgpu_queue_wait_idle(queue);
     cgpu_command_pool_free_command_buffer(cpy_cmd_pool, cpy_cmd);
-    cgpu_device_free_command_pool(v->Device, cpy_cmd_pool);
+    cgpu_queue_free_command_pool(queue, cpy_cmd_pool);
     cgpu_device_free_buffer(v->Device, tex_upload_buffer);
     io.Fonts->TexID = (ImTextureID)(intptr_t)&bd->FontImage;
 
@@ -626,7 +626,7 @@ static void ImGui_ImplCGPU_DestroyWindow(ImGuiViewport* viewport)
             FreeWindow(wd, v->Device);
 
             if (wd->Command) cgpu_command_pool_free_command_buffer(wd->CommandPool, wd->Command); wd->Command = nullptr;
-            if (wd->CommandPool) cgpu_device_free_command_pool(v->Device, wd->CommandPool); wd->CommandPool = nullptr;
+            if (wd->CommandPool) cgpu_queue_free_command_pool(v->PresentQueue, wd->CommandPool); wd->CommandPool = nullptr;
         }
         ImGui_ImplCGPUH_DestroyWindowRenderBuffers(v->Device, wrb);
 

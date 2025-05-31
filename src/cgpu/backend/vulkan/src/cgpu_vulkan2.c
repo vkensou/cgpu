@@ -468,7 +468,7 @@ void cgpu_binder_bind_vertex_layout_vulkan(CGPUBinderId binder, const struct CGP
                 input_attributes[attr_slot].location = attr_slot;
                 input_attributes[attr_slot].binding = attrib->binding;
                 input_attributes[attr_slot].format = VkUtil_VertexFormatTranslateToVk(attrib->format);
-                input_attributes[attr_slot].offset = attrib->offset + (j * FormatUtil_BitSizeOfBlock(attrib->format) / 8);
+                input_attributes[attr_slot].offset = attrib->offset + (j * VertexFormatUtil_BitSizeOfBlock(attrib->format) / 8);
                 ++attr_slot;
             }
         }

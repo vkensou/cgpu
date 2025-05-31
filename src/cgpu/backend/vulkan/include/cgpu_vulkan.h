@@ -80,7 +80,7 @@ CGPU_API CGPUCommandPoolId cgpu_create_command_pool_vulkan(CGPUQueueId queue, co
 CGPU_API CGPUCommandBufferId cgpu_create_command_buffer_vulkan(CGPUCommandPoolId pool, const struct CGPUCommandBufferDescriptor* desc);
 CGPU_API void cgpu_reset_command_pool_vulkan(CGPUCommandPoolId pool);
 CGPU_API void cgpu_free_command_buffer_vulkan(CGPUCommandPoolId pool, CGPUCommandBufferId cmd);
-CGPU_API void cgpu_free_command_pool_vulkan(CGPUDeviceId device, CGPUCommandPoolId pool);
+CGPU_API void cgpu_free_command_pool_vulkan(CGPUQueueId queue, CGPUCommandPoolId pool);
 
 // Shader APIs
 CGPU_API CGPUShaderLibraryId cgpu_create_shader_library_vulkan(CGPUDeviceId device, const struct CGPUShaderLibraryDescriptor* desc);
