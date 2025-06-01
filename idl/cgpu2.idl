@@ -699,22 +699,22 @@ funcptr.FreeInstance
 
 funcptr.QueryInstanceFeatures
     "void"
-    .instance           "const InstanceId"
+    .instance           "InstanceId"
     .features           "InstanceFeatures*"
 
 funcptr.EnumAdapters
     "void"
-    .instance           "const InstanceId"
+    .instance           "InstanceId"
     .adapters           "AdapterId*"
     .adaptersNum        "uint32_t*"
 
 funcptr.QueryAdapterDetail
     "const AdapterDetail*"
-    .adapter            "const AdapterId"
+    .adapter            "AdapterId"
 
 funcptr.QueryQueueCount
     "uint32_t"
-    .adapter            "const AdapterId"
+    .adapter            "AdapterId"
     .type               "QueueType::Enum"
 
 funcptr.CreateDevice
@@ -1420,12 +1420,12 @@ funcptr.CreateSurfaceFromHwnd
     .device             "DeviceId"
     .window             "HWND"
 
-typedef "ANativeWindow"
+typedef "ANativeWindowPtr"
 
 funcptr.CreateSurfaceFromNativeWindow
     "SurfaceId"
     .device             "DeviceId"
-    .window             "ANativeWindow*"
+    .window             "ANativeWindowPtr"
 
 funcptr.FreeSurface
     "void"
@@ -1493,14 +1493,10 @@ struct.InstanceDescriptor
 struct.InstanceFeatures
     .specializationConstant "bool"
 
-typedef "CGPUProcTable"
-typedef "CGPUSurfacesProcTable"
-typedef "CGPURuntimeTable"
-
 struct.Instance 
-    .procTable          "const CGPUProcTable*"
-    .surfacesTable      "const CGPUSurfacesProcTable*"
-    .runtimeTable       "CGPURuntimeTable*"
+    .procTable          "const ProcTable*"
+    .surfacesTable      "const SurfacesProcTable*"
+    .runtimeTable       "RuntimeTable*"
     .backend            "Backend::Enum"
     .enableSetName      "bool"
     .logger             "Logger"
@@ -1543,7 +1539,7 @@ struct.AdapterDetail
 
 struct.Adapter
     .instance           "InstanceId"
-    .procTableCache     "const CGPUProcTable*"
+    .procTableCache     "const ProcTable*"
 
 struct.QueueGroupDescriptor
     .queueType          "QueueType::Enum"
@@ -1556,7 +1552,7 @@ struct.DeviceDescriptor
 
 struct.Device
     .Adapter            "AdapterId"
-    .procTableCache     "const CGPUProcTable*"
+    .procTableCache     "const ProcTable*"
     .nextTextureId      "uint64_t"
     .isLost             "bool"
 
@@ -1808,7 +1804,7 @@ struct.DescriptorDataParams { union }
     .enableStencilResource  "bool"
 
 struct.DescriptorDataResource { union }
-    .ptrs               "const void**"
+    .ptrs               "void**"
     .textures           "TextureViewId*"
     .samplers           "SamplerId*"
     .buffers            "BufferId*"
@@ -2366,9 +2362,11 @@ struct.ProcTable
     .freeBinder                     "FreeBinder"
 
 struct.SurfacesProcTable
-    .fromHwnd           "const CreateSurfaceFromHwnd"
-    .fromNativeWindow   "const CreateSurfaceFromNativeWindow"
-    .freeSurface        "const FreeSurface"
+    .fromHwnd           "CreateSurfaceFromHwnd"
+    .fromNativeWindow   "CreateSurfaceFromNativeWindow"
+    .freeSurface        "FreeSurface"
+
+struct.RuntimeTable {}
 
 func.createInstance { cfunc }
     "InstanceId"
@@ -2428,16 +2426,6 @@ func.Device.createSemaphore
 func.Device.freeSemaphore
     "void"
     .semaphore          "SemaphoreId"
-
-func.Device.createSemaphore
-    "SemaphoreId"
-
-func.Device.freeSemaphore
-    "void"
-    .semaphore          "SemaphoreId"
-
-func.Device.createSemaphore
-    "SemaphoreId"
 
 func.Device.CreateRootSignaturePool
     "RootSignaturePoolId"
@@ -2590,7 +2578,7 @@ func.Device.CreateSurfaceFromHwnd
 
 func.Device.CreateSurfaceFromNativeWindow
     "SurfaceId"
-    .window             "ANativeWindow*"
+    .window             "ANativeWindowPtr"
 
 func.Device.FreeSurface
     "void"

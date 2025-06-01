@@ -22,6 +22,7 @@ typedef uint32_t ECGPUFlags;
 typedef uint32_t ECGPUFlags64;
 typedef struct HWND__* HWND;
 typedef struct ANativeWindow ANativeWindow;
+typedef ANativeWindow* ANativeWindowPtr;
 
 $cenums
 

@@ -5,13 +5,14 @@ local zig_template = [[
 // Copyright 2011-2023 Branimir Karadzic. All rights reserved.
 // License: https://github.com/bkaradzic/bgfx/blob/master/LICENSE
 
-
 //
 // AUTO GENERATED! DO NOT EDIT!
 //
 
-
 const std = @import("std");
+
+pub const HWND = *anyopaque;
+pub const ANativeWindowPtr = *anyopaque;
 
 $types
 
@@ -70,6 +71,10 @@ local function hasSuffix(str, suffix)
 	return suffix == "" or str:sub(- #suffix) == suffix
 end
 
+local function isMatch(str, sub)
+	return str:match(sub) == sub
+end
+
 local enum = {}
 
 local function convert_array(member)
@@ -92,26 +97,30 @@ local function gisub(s, pat, repl, n)
 end
 
 local function convert_type_0(arg)
-	if hasPrefix(arg.ctype, "uint64_t") then
+	if isMatch(arg.ctype, "uint64_t") then
 		return arg.ctype:gsub("uint64_t", "u64")
-	elseif hasPrefix(arg.ctype, "int64_t") then
+	elseif isMatch(arg.ctype, "int64_t") then
 		return arg.ctype:gsub("int64_t", "i64")
-	elseif hasPrefix(arg.ctype, "uint32_t") then
+	elseif isMatch(arg.ctype, "uint32_t") then
 		return arg.ctype:gsub("uint32_t", "u32")
-	elseif hasPrefix(arg.ctype, "int32_t") then
+	elseif isMatch(arg.ctype, "int32_t") then
 		return arg.ctype:gsub("int32_t", "i32")
-	elseif hasPrefix(arg.ctype, "uint16_t") then
+	elseif isMatch(arg.ctype, "uint16_t") then
 		return arg.ctype:gsub("uint16_t", "u16")
-	elseif hasPrefix(arg.ctype, "uint8_t") then
+	elseif isMatch(arg.ctype, "uint8_t") then
 		return arg.ctype:gsub("uint8_t", "u8")
-	elseif hasPrefix(arg.ctype, "uintptr_t") then
+	elseif isMatch(arg.ctype, "uintptr_t") then
 		return arg.ctype:gsub("uintptr_t", "usize")
-	elseif hasPrefix(arg.ctype, "float") then
+	elseif isMatch(arg.ctype, "float") then
 		return arg.ctype:gsub("float", "f32")
+	elseif isMatch(arg.ctype, "double") then
+		return arg.ctype:gsub("double", "f64")
 	elseif arg.ctype == "const char*" then
 		return "[*c]const u8"
-	elseif hasPrefix(arg.ctype, "char") then
+	elseif isMatch(arg.ctype, "char") then
 		return arg.ctype:gsub("char", "u8")
+	elseif isMatch(arg.ctype, "size_t") then
+		return arg.ctype:gsub("size_t", "usize")
 	elseif hasSuffix(arg.fulltype, "Handle") then
 		return arg.fulltype
 	elseif arg.ctype == "..." then
@@ -292,14 +301,14 @@ local function FlagBlock(typ)
             local comment = ""
 
             local zname = handle_embed_keyword(upperCamelcase_to_underscorecase(flag.name))
-            local code = string.format("\t%s: bool = false, // (%2d) %s%s", zname, used, comment, namealign(comment, 30))
+            local code = string.format("    %s: bool = false, // (%2d) %s%s", zname, used, namealign(comment, 30), comment)
             yield(code)
             used = used + 1
         end
 	end
 
     if used < typ.bits then
-        yield(string.format("\tpadding: u%d = 0,", typ.bits - used))
+        yield(string.format("    padding: u%d = 0,", typ.bits - used))
     end
 
     local flat_flags = {}
@@ -329,15 +338,22 @@ local function FlagBlock(typ)
                 sets[#sets + 1] = "." .. zv .. " = true"
             end
             local zname = handle_embed_keyword(upperCamelcase_to_underscorecase(flag.name))
-            yield(string.format("\tconst %s: %s = .{ %s };", zname, name, table.concat(sets, ", ")))
+            yield(string.format("    const %s: %s = .{ %s };", zname, name, table.concat(sets, ", ")))
         end
     end
 
     yield("};")
 end
 
+local function convert_member_name(name)
+	if name == "type" then 
+		return "_type"
+	end
+	return lowerCamelcase_to_underscorecase(name)
+end
+
 local function convert_struct_member(member)
-	return lowerCamelcase_to_underscorecase(member.name) .. ": " .. convert_struct_type(member)
+	return convert_member_name(member.name) .. ": " .. convert_struct_type(member)
 end
 
 local namespace = ""
@@ -349,6 +365,9 @@ function converter.types(params)
 		yield("pub const " .. typ.name .. " = extern struct {")
 		yield("    idx: c_ushort,")
 		yield("};")
+	elseif typ.id then
+		local t = typ.name:match "([%u%l%d]*)Id"
+		yield("pub const " .. typ.name .. " = *" .. t .. ";")
 	elseif hasSuffix(typ.name, "::Enum") then
 		yield("pub const " .. typ.typename .. " = enum(u32) {")
 		for idx, enum in ipairs(typ.enum) do
@@ -357,7 +376,7 @@ function converter.types(params)
                 comment = table.concat(enum.comment, " ")
             end
             local iname = handle_embed_keyword(upperCamelcase_to_underscorecase(enum.name))
-            yield(string.format("\t%s, // (%2d) %s%s", iname, idx - 1, comment, namealign(comment, 30)))
+            yield(string.format("    %s, // (%2d) %s%s", iname, idx - 1, namealign(comment, 30), comment))
 		end
 		yield("};")
 
@@ -398,6 +417,33 @@ function converter.types(params)
 		end
 
 		yield(string.rep("    ", indent) .. "};")
+	elseif typ.args then
+		local args = {}
+		local argNames = {}
+		local func_indent = ""
+
+		for _, arg in ipairs(typ.args) do
+			local argName = arg.name
+			-- local argName = arg.name:gsub("_", "")
+			-- argName = argName:gsub("enum", "enumeration")
+			-- argName = argName:gsub("type_", '@"type"')
+			if not isempty(argName) then
+				table.insert(argNames, argName)
+				table.insert(args, convert_member_name(argName) .. ": " .. convert_type(arg))
+			else
+				table.insert(args, convert_type(arg))
+			end
+		end
+
+		if (params.asMethod == true) then
+			yield(wrap_method(func, typ.this_type.type, args, argNames, func_indent))
+		else
+			yield(
+				"pub const " .. typ.name .. " = fn (" .. table.concat(args, ", ") .. ") " .. convert_ret_type(typ.ret) ..
+				";")
+		end
+	elseif typ.const_value then
+		yield("pub const " .. typ.name .. ": u32 = " .. tostring(typ.value) .. ";")
 	end
 end
 
@@ -414,8 +460,8 @@ function converter.funcs(params)
 		return
 	end
 
-    local indent = ""
-	local func_indent = (params.asMethod == true and indent .. indent or "")
+    local indent = "    "
+	local func_indent = (params.asMethod == true and indent or "")
 
 	if func.comments ~= nil then
 		for _, line in ipairs(func.comments) do
@@ -455,7 +501,7 @@ function converter.funcs(params)
 		argNames[1] = "self"
 	end
 	for _, arg in ipairs(func.args) do
-		local argName = arg.name
+		local argName = convert_member_name(arg.name)
 		-- local argName = arg.name:gsub("_", "")
 		-- argName = argName:gsub("enum", "enumeration")
 		-- argName = argName:gsub("type_", '@"type"')

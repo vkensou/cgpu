@@ -29,6 +29,7 @@ typedef uint32_t ECGPUFlags;
 typedef uint32_t ECGPUFlags64;
 typedef struct HWND__* HWND;
 typedef struct ANativeWindow ANativeWindow;
+typedef ANativeWindow* ANativeWindowPtr;
 
 typedef enum ECGPUBackend
 {
@@ -909,10 +910,10 @@ typedef void* (*CGPUProcCallocAligned)(void* user_data, size_t count, size_t siz
 typedef void (*CGPUProcFreeAligned)(void* user_data, void* ptr, const void* pool);
 typedef CGPUInstanceId (*CGPUProcCreateInstance)(const CGPUInstanceDescriptor* desc);
 typedef void (*CGPUProcFreeInstance)(CGPUInstanceId instance);
-typedef void (*CGPUProcQueryInstanceFeatures)(const CGPUInstanceId instance, CGPUInstanceFeatures* features);
-typedef void (*CGPUProcEnumAdapters)(const CGPUInstanceId instance, CGPUAdapterId* adapters, uint32_t* adapters_num);
-typedef const CGPUAdapterDetail* (*CGPUProcQueryAdapterDetail)(const CGPUAdapterId adapter);
-typedef uint32_t (*CGPUProcQueryQueueCount)(const CGPUAdapterId adapter, ECGPUQueueType type);
+typedef void (*CGPUProcQueryInstanceFeatures)(CGPUInstanceId instance, CGPUInstanceFeatures* features);
+typedef void (*CGPUProcEnumAdapters)(CGPUInstanceId instance, CGPUAdapterId* adapters, uint32_t* adapters_num);
+typedef const CGPUAdapterDetail* (*CGPUProcQueryAdapterDetail)(CGPUAdapterId adapter);
+typedef uint32_t (*CGPUProcQueryQueueCount)(CGPUAdapterId adapter, ECGPUQueueType type);
 typedef CGPUDeviceId (*CGPUProcCreateDevice)(CGPUAdapterId adapter, const CGPUDeviceDescriptor* desc);
 typedef void (*CGPUProcFreeDevice)(CGPUAdapterId adapter, CGPUDeviceId device);
 typedef void (*CGPUProcQueryVideoMemoryInfo)(CGPUDeviceId device, uint64_t* total, uint64_t* used);
@@ -1044,7 +1045,7 @@ typedef void (*CGPUProcBinderBindVertexBuffer)(CGPUBinderId binder, uint32_t fir
 typedef void (*CGPUProcFreeBinder)(CGPUBinderId binder);
 typedef CGPUSurfaceId (*CGPUProcCreateSurfaceFromNativeView)(CGPUDeviceId device, void* view);
 typedef CGPUSurfaceId (*CGPUProcCreateSurfaceFromHwnd)(CGPUDeviceId device, HWND window);
-typedef CGPUSurfaceId (*CGPUProcCreateSurfaceFromNativeWindow)(CGPUDeviceId device, ANativeWindow* window);
+typedef CGPUSurfaceId (*CGPUProcCreateSurfaceFromNativeWindow)(CGPUDeviceId device, ANativeWindowPtr window);
 typedef void (*CGPUProcFreeSurface)(CGPUDeviceId device, CGPUSurfaceId surface);
 
 typedef struct CGPULogger
@@ -1553,7 +1554,7 @@ typedef union CGPUDescriptorDataParams
 
 typedef union CGPUDescriptorDataResource
 {
-    const void**         ptrs;
+    void**               ptrs;
     CGPUTextureViewId*   textures;
     CGPUSamplerId*       samplers;
     CGPUBufferId*        buffers;
@@ -2235,11 +2236,14 @@ typedef struct CGPUProcTable
 
 typedef struct CGPUSurfacesProcTable
 {
-    const CGPUProcCreateSurfaceFromHwnd from_hwnd;
-    const CGPUProcCreateSurfaceFromNativeWindow from_native_window;
-    const CGPUProcFreeSurface free_surface;
+    CGPUProcCreateSurfaceFromHwnd from_hwnd;
+    CGPUProcCreateSurfaceFromNativeWindow from_native_window;
+    CGPUProcFreeSurface  free_surface;
 
 } CGPUSurfacesProcTable;
+
+struct CGPURuntimeTable_s;
+typedef struct CGPURuntimeTable_s CGPURuntimeTable_t;
 
 
 CGPU_API CGPUInstanceId cgpu_create_instance(const CGPUInstanceDescriptor* desc);
@@ -2257,9 +2261,6 @@ CGPU_API CGPUFenceId cgpu_device_create_fence(CGPUDeviceId _this);
 CGPU_API void cgpu_device_free_fence(CGPUDeviceId _this, CGPUFenceId fence);
 CGPU_API CGPUSemaphoreId cgpu_device_create_semaphore(CGPUDeviceId _this);
 CGPU_API void cgpu_device_free_semaphore(CGPUDeviceId _this, CGPUSemaphoreId semaphore);
-CGPU_API CGPUSemaphoreId cgpu_device_create_semaphore(CGPUDeviceId _this);
-CGPU_API void cgpu_device_free_semaphore(CGPUDeviceId _this, CGPUSemaphoreId semaphore);
-CGPU_API CGPUSemaphoreId cgpu_device_create_semaphore(CGPUDeviceId _this);
 CGPU_API CGPURootSignaturePoolId cgpu_device_create_root_signature_pool(CGPUDeviceId _this, const CGPURootSignaturePoolDescriptor* desc);
 CGPU_API void cgpu_device_free_root_signature_pool(CGPUDeviceId _this, CGPURootSignaturePoolId pool);
 CGPU_API CGPURootSignatureId cgpu_device_create_root_signature(CGPUDeviceId _this, const CGPURootSignatureDescriptor* desc);
@@ -2297,7 +2298,7 @@ CGPU_API CGPUSwapChainId cgpu_device_create_swap_chain(CGPUDeviceId _this, const
 CGPU_API void cgpu_device_free_swap_chain(CGPUDeviceId _this, CGPUSwapChainId swapchain);
 CGPU_API CGPUSurfaceId cgpu_device_create_surface_from_native_view(CGPUDeviceId _this, void* view);
 CGPU_API CGPUSurfaceId cgpu_device_create_surface_from_hwnd(CGPUDeviceId _this, HWND window);
-CGPU_API CGPUSurfaceId cgpu_device_create_surface_from_native_window(CGPUDeviceId _this, ANativeWindow* window);
+CGPU_API CGPUSurfaceId cgpu_device_create_surface_from_native_window(CGPUDeviceId _this, ANativeWindowPtr window);
 CGPU_API void cgpu_device_free_surface(CGPUDeviceId _this, CGPUSurfaceId surface);
 CGPU_API void cgpu_wait_fences(const CGPUFenceId* fences, uint32_t fence);
 CGPU_API ECGPUFenceStatus cgpu_fence_query_status(CGPUFenceId _this);
