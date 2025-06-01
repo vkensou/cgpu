@@ -825,7 +825,7 @@ int main(int argc, char** argv)
 
 static void ImGui_ImplArena_CreateWindow(ImGuiViewport* viewport)
 {
-	RenderWindow* window = new RenderWindow(device, gfx_queue, render_pass, (SDL_Window*)viewport->PlatformHandle);
+	RenderWindow* window = new RenderWindow(device, gfx_queue, render_pass, SDL_GetWindowFromID((unsigned int)(uintptr_t)viewport->PlatformHandle));
 	windows.push_back(window);
 	ImGui_Arena_ViewportData* vd = IM_NEW(ImGui_Arena_ViewportData)();
 	vd->window = window;
