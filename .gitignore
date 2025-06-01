@@ -163,3 +163,6 @@ $RECYCLE.BIN/
 *.exe
 /src/Editor/GeneratedFiles
 /.vscode
+/zig-out
+/vsxmake*
+/.zig-cache
