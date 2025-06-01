@@ -1,5 +1,4 @@
 #include "imgui.h"
-#include <vcruntime.h>
 #ifndef IMGUI_DISABLE
 #include "imgui_impl_cgpu.h"
 #include <stdio.h>

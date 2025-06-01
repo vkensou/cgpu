@@ -61,7 +61,7 @@ target_end()
 if has_config("use_demo") then 
     add_rules("mode.debug", "mode.release", "mode.releasedbg")
     add_requires("libsdl 2.28.5", {configs = {sdlmain = false}})
-    add_requires("imgui v1.89.8-docking", {configs = {debug = true}})
+    add_requires("imgui v1.91.8-docking", {configs = {debug = true}})
 
     target("demo")
         set_kind("binary")

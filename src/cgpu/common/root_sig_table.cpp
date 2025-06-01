@@ -250,7 +250,7 @@ void CGPUUtil_FreeRSParamTables(CGPURootSignature* RS)
                     CGPUShaderResource* binding_to_free = &param_table->p_resources[i_binding];
                     if (binding_to_free->name != CGPU_NULLPTR)
                     {
-                        cgpu_free(allocator, (char8_t*)binding_to_free->name);
+                        cgpu_free(allocator, (char*)binding_to_free->name);
                     }
                 }
                 cgpu_free(allocator, param_table->p_resources);
@@ -265,7 +265,7 @@ void CGPUUtil_FreeRSParamTables(CGPURootSignature* RS)
             CGPUShaderResource* binding_to_free = RS->p_push_constants + i;
             if (binding_to_free->name != CGPU_NULLPTR)
             {
-                cgpu_free(allocator, (char8_t*)binding_to_free->name);
+                cgpu_free(allocator, (char*)binding_to_free->name);
             }
         }
         cgpu_free(allocator, RS->p_push_constants);
@@ -277,7 +277,7 @@ void CGPUUtil_FreeRSParamTables(CGPURootSignature* RS)
             CGPUShaderResource* binding_to_free = RS->p_static_samplers + i;
             if (binding_to_free->name != CGPU_NULLPTR)
             {
-                cgpu_free(allocator, (char8_t*)binding_to_free->name);
+                cgpu_free(allocator, (char*)binding_to_free->name);
             }
         }
         cgpu_free(allocator, RS->p_static_samplers);
