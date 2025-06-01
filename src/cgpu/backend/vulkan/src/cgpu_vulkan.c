@@ -1662,7 +1662,7 @@ void cgpu_cmd_resource_barrier_vulkan(CGPUCommandBufferId cmd, const struct CGPU
     VkAccessFlags srcAccessFlags = 0;
     VkAccessFlags dstAccessFlags = 0;
 
-    CGPU_DECLARE_ZERO_VLA(VkBufferMemoryBarrier, BBs, max(desc->buffer_barrier_count, 1))
+    CGPU_DECLARE_ZERO_VLA(VkBufferMemoryBarrier, BBs, cgpu_max(desc->buffer_barrier_count, 1))
     uint32_t bufferBarrierCount = 0;
     for (uint32_t i = 0; i < desc->buffer_barrier_count; i++)
     {
@@ -1716,7 +1716,7 @@ void cgpu_cmd_resource_barrier_vulkan(CGPUCommandBufferId cmd, const struct CGPU
         }
     }
 
-    CGPU_DECLARE_ZERO_VLA(VkImageMemoryBarrier, TBs, max(desc->texture_barrier_count, 1))
+    CGPU_DECLARE_ZERO_VLA(VkImageMemoryBarrier, TBs, cgpu_max(desc->texture_barrier_count, 1))
     uint32_t imageBarrierCount = 0;
     for (uint32_t i = 0; i < desc->texture_barrier_count; i++)
     {
