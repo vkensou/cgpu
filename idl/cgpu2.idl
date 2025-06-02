@@ -705,8 +705,8 @@ funcptr.QueryInstanceFeatures
 funcptr.EnumAdapters
     "void"
     .instance           "InstanceId"
-    .adapters           "AdapterId*"
-    .adaptersNum        "uint32_t*"
+    .pAdaptersCount     "uint32_t*"
+    .pAdapters          "AdapterId*"
 
 funcptr.QueryAdapterDetail
     "const AdapterDetail*"
@@ -1542,8 +1542,8 @@ struct.Adapter
     .procTableCache     "const ProcTable*"
 
 struct.QueueGroupDescriptor
-    .queueType          "QueueType::Enum"
     .queueCount         "uint32_t"
+    .queueType          "QueueType::Enum"
 
 struct.DeviceDescriptor
     .disablePipelineCache   "bool"
@@ -2385,8 +2385,8 @@ func.Instance.queryInstanceFeatures { const }
 
 func.Instance.enumAdapters { const }
     "void"
-    .adapters           "AdapterId*"
-    .adaptersNum        "uint32_t*"
+    .pAdaptersCount     "uint32_t*"
+    .pAdapters          "AdapterId*"
 
 func.Adapter.queryAdapterDetail { const }
     "const AdapterDetail*"

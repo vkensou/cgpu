@@ -27,7 +27,7 @@ void cgpu_query_instance_features_vulkan(CGPUInstanceId instance, struct CGPUIns
     features->specialization_constant = true;
 }
 
-void cgpu_enum_adapters_vulkan(CGPUInstanceId instance, CGPUAdapterId* const adapters, uint32_t* adapters_num)
+void cgpu_enum_adapters_vulkan(CGPUInstanceId instance, uint32_t* adapters_num, CGPUAdapterId* const adapters)
 {
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)instance;
     *adapters_num = I->mPhysicalDeviceCount;

@@ -75,6 +75,10 @@ local function isMatch(str, sub)
 	return str:match(sub) == sub
 end
 
+local function isFuncPtr(str)
+	return idl.types[str] ~= nil and idl.types[str].args
+end
+
 local enum = {}
 
 local function convert_array(member)
@@ -135,6 +139,15 @@ end
 
 local function convert_type(arg)
 	local ctype = convert_type_0(arg)
+
+	if ctype == "void*" then
+		return "?*anyopaque", "null"
+	elseif ctype == "void**" then
+		return "[*c]?*anyopaque", "null"
+	elseif isFuncPtr(arg.fulltype) then
+		return "?*const " .. arg.fulltype, "null"
+	end 
+	
 	ctype = ctype:gsub("::Enum", "")
 	ctype = ctype:gsub(" &", "*")
 	ctype = ctype:gsub("&", "*")
@@ -353,7 +366,14 @@ local function convert_member_name(name)
 end
 
 local function convert_struct_member(member)
-	return convert_member_name(member.name) .. ": " .. convert_struct_type(member)
+	local name = convert_member_name(member.name)
+	local type, default = convert_struct_type(member)
+	local q = name .. ": " .. type
+	if default == nil then
+		return q
+	else
+		return q .. " = " .. default
+	end
 end
 
 local namespace = ""
@@ -439,7 +459,7 @@ function converter.types(params)
 			yield(wrap_method(func, typ.this_type.type, args, argNames, func_indent))
 		else
 			yield(
-				"pub const " .. typ.name .. " = fn (" .. table.concat(args, ", ") .. ") " .. convert_ret_type(typ.ret) ..
+				"pub const " .. typ.name .. " = fn (" .. table.concat(args, ", ") .. ") callconv(.C) " .. convert_ret_type(typ.ret) ..
 				";")
 		end
 	elseif typ.const_value then

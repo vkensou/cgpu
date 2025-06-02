@@ -911,7 +911,7 @@ typedef void (*CGPUProcFreeAligned)(void* user_data, void* ptr, const void* pool
 typedef CGPUInstanceId (*CGPUProcCreateInstance)(const CGPUInstanceDescriptor* desc);
 typedef void (*CGPUProcFreeInstance)(CGPUInstanceId instance);
 typedef void (*CGPUProcQueryInstanceFeatures)(CGPUInstanceId instance, CGPUInstanceFeatures* features);
-typedef void (*CGPUProcEnumAdapters)(CGPUInstanceId instance, CGPUAdapterId* adapters, uint32_t* adapters_num);
+typedef void (*CGPUProcEnumAdapters)(CGPUInstanceId instance, uint32_t* p_adapters_count, CGPUAdapterId* p_adapters);
 typedef const CGPUAdapterDetail* (*CGPUProcQueryAdapterDetail)(CGPUAdapterId adapter);
 typedef uint32_t (*CGPUProcQueryQueueCount)(CGPUAdapterId adapter, ECGPUQueueType type);
 typedef CGPUDeviceId (*CGPUProcCreateDevice)(CGPUAdapterId adapter, const CGPUDeviceDescriptor* desc);
@@ -1151,8 +1151,8 @@ typedef struct CGPUAdapter
 
 typedef struct CGPUQueueGroupDescriptor
 {
-    ECGPUQueueType       queue_type;
     uint32_t             queue_count;
+    ECGPUQueueType       queue_type;
 
 } CGPUQueueGroupDescriptor;
 
@@ -2250,7 +2250,7 @@ CGPU_API CGPUInstanceId cgpu_create_instance(const CGPUInstanceDescriptor* desc)
 CGPU_API void cgpu_free_instance(CGPUInstanceId instance);
 CGPU_API ECGPUBackend cgpu_instance_get_backend(const CGPUInstanceId _this);
 CGPU_API void cgpu_instance_query_instance_features(const CGPUInstanceId _this, CGPUInstanceFeatures* features);
-CGPU_API void cgpu_instance_enum_adapters(const CGPUInstanceId _this, CGPUAdapterId* adapters, uint32_t* adapters_num);
+CGPU_API void cgpu_instance_enum_adapters(const CGPUInstanceId _this, uint32_t* p_adapters_count, CGPUAdapterId* p_adapters);
 CGPU_API const CGPUAdapterDetail* cgpu_adapter_query_adapter_detail(const CGPUAdapterId _this);
 CGPU_API uint32_t cgpu_adapter_query_queue_count(const CGPUAdapterId _this, ECGPUQueueType type);
 CGPU_API CGPUDeviceId cgpu_adapter_create_device(CGPUAdapterId _this, const CGPUDeviceDescriptor* desc);

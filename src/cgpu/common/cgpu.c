@@ -104,14 +104,14 @@ CGPU_API void cgpu_free_instance(CGPUInstanceId instance)
     // SkrCZoneEnd(zz);
 }
 
-void cgpu_instance_enum_adapters(CGPUInstanceId instance, CGPUAdapterId* const adapters, uint32_t* adapters_num)
+void cgpu_instance_enum_adapters(CGPUInstanceId instance, uint32_t* adapters_num, CGPUAdapterId* const adapters)
 {
     // SkrCZoneN(zz, "CGPUEnumAdapters", 1);
 
     cgpu_assert(instance != CGPU_NULLPTR && "fatal: can't destroy NULL instance!");
     cgpu_assert(instance->proc_table->enum_adapters && "enum_adapters Proc Missing!");
 
-    instance->proc_table->enum_adapters(instance, adapters, adapters_num);
+    instance->proc_table->enum_adapters(instance, adapters_num, adapters);
     // ++ proc_table_cache
     if (adapters != CGPU_NULLPTR)
     {

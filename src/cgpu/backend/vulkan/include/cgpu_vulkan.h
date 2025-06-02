@@ -27,7 +27,7 @@ CGPU_API void cgpu_query_instance_features_vulkan(CGPUInstanceId instance, struc
 CGPU_API void cgpu_free_instance_vulkan(CGPUInstanceId instance);
 
 // Adapter APIs
-CGPU_API void cgpu_enum_adapters_vulkan(CGPUInstanceId instance, CGPUAdapterId* const adapters, uint32_t* adapters_num);
+CGPU_API void cgpu_enum_adapters_vulkan(CGPUInstanceId instance, uint32_t* adapters_num, CGPUAdapterId* const adapters);
 CGPU_API const CGPUAdapterDetail* cgpu_query_adapter_detail_vulkan(const CGPUAdapterId adapter);
 CGPU_API uint32_t cgpu_query_queue_count_vulkan(const CGPUAdapterId adapter, const ECGPUQueueType type);
 

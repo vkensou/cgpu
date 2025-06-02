@@ -489,15 +489,15 @@ int main(int argc, char** argv)
 	instance = cgpu_create_instance(&instance_desc);
 
 	uint32_t adapters_count = 0;
-	cgpu_instance_enum_adapters(instance, CGPU_NULLPTR, &adapters_count);
+	cgpu_instance_enum_adapters(instance, &adapters_count, CGPU_NULLPTR);
 	CGPUAdapterId* adapters = (CGPUAdapterId*)_alloca(sizeof(CGPUAdapterId) * (adapters_count));
-	cgpu_instance_enum_adapters(instance, adapters, &adapters_count);
+	cgpu_instance_enum_adapters(instance, &adapters_count, adapters);
 	auto adapter = adapters[0];
 
 	// Create device
 	CGPUQueueGroupDescriptor G = {
+		.queue_count = 1,
 		.queue_type = CGPU_QUEUE_TYPE_GRAPHICS,
-		.queue_count = 1
 	};
 	CGPUDeviceDescriptor device_desc = {
 		.queue_group_count = 1,

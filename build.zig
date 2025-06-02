@@ -9,11 +9,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
         .link_libc = true,
         .link_libcpp = true,
+        .root_source_file = b.path("idl/cgpu.zig"),
     });
 
-    const cgpu = b.addLibrary(.{
+    const cgpu_lib = b.addLibrary(.{
         .linkage = .static,
-        .name = "cgpu",
+        .name = "cgpu_lib",
         .root_module = cgpu_module,
     });
 
@@ -74,7 +75,7 @@ pub fn build(b: *std.Build) !void {
     const spirv_reflect = try compileSpirvReflect(b, target, optimize);
     linkLibrary(cgpu_module, spirv_reflect);
 
-    const want_demo = b.option(bool, "want_demo", "build zgpu demo") orelse false;
+    const want_demo = b.option(bool, "want_demo", "build cgpu demo") orelse false;
     if (want_demo) {
         const demo_module = b.addModule("demo", .{
             .target = target,
@@ -102,7 +103,44 @@ pub fn build(b: *std.Build) !void {
         }
 
         demo_module.addIncludePath(b.path("src/cgpu/include"));
-        demo_module.linkLibrary(cgpu);
+        demo_module.linkLibrary(cgpu_lib);
+
+        const demo = b.addExecutable(.{
+            .name = "demo",
+            .root_module = demo_module,
+        });
+
+        b.installArtifact(demo);
+
+        const run = b.addRunArtifact(demo);
+        const run_step = b.step("run", "");
+        run_step.dependOn(&run.step);
+    }
+
+    const want_zig_demo = b.option(bool, "want_zig_demo", "build cgpu zig demo") orelse false;
+    if (want_zig_demo) {
+        const demo_module = b.addModule("demo", .{
+            .root_source_file = b.path("src/zigdemo/main.zig"),
+            .target = target,
+            .optimize = optimize,
+        });
+
+        demo_module.addImport("cgpu", cgpu_module);
+
+        if (b.lazyDependency("zsdl3", .{ .target = target, .optimize = optimize })) |zsdl3_depend| {
+            demo_module.addImport("zsdl3", zsdl3_depend.module("zsdl3"));
+        }
+
+        if (b.lazyDependency("zgui", .{
+            .target = target,
+            .backend = .sdl3,
+            .with_implot = false,
+            .with_gizmo = false,
+            .with_node_editor = false,
+        })) |zgpu_depend| {
+            demo_module.addImport("imgui", zgpu_depend.module("root"));
+            demo_module.linkLibrary(zgpu_depend.artifact("imgui"));
+        }
 
         const demo = b.addExecutable(.{
             .name = "demo",
