@@ -25,604 +25,604 @@ pub const Backend = enum(u32) {
 };
 
 pub const BlendFactor = enum(u32) {
-    zero, // ( 0)                               
-    one, // ( 1)                               
-    src_color, // ( 2)                               
-    one_minus_src_color, // ( 3)                               
-    dst_color, // ( 4)                               
-    one_minus_dst_color, // ( 5)                               
-    src_alpha, // ( 6)                               
-    one_minus_src_alpha, // ( 7)                               
-    dst_alpha, // ( 8)                               
-    one_minus_dst_alpha, // ( 9)                               
-    src_alpha_saturate, // (10)                               
+    zero, // ( 0)
+    one, // ( 1)
+    src_color, // ( 2)
+    one_minus_src_color, // ( 3)
+    dst_color, // ( 4)
+    one_minus_dst_color, // ( 5)
+    src_alpha, // ( 6)
+    one_minus_src_alpha, // ( 7)
+    dst_alpha, // ( 8)
+    one_minus_dst_alpha, // ( 9)
+    src_alpha_saturate, // (10)
 };
 
 pub const BlendOp = enum(u32) {
-    add, // ( 0)                               
-    subtract, // ( 1)                               
-    reverse_subtract, // ( 2)                               
-    min, // ( 3)                               
-    max, // ( 4)                               
+    add, // ( 0)
+    subtract, // ( 1)
+    reverse_subtract, // ( 2)
+    min, // ( 3)
+    max, // ( 4)
 };
 
 pub const ColorMask = packed struct(u32) {
-    r: bool = false, // ( 0)                               
-    g: bool = false, // ( 1)                               
-    b: bool = false, // ( 2)                               
-    a: bool = false, // ( 3)                               
+    r: bool = false, // ( 0)
+    g: bool = false, // ( 1)
+    b: bool = false, // ( 2)
+    a: bool = false, // ( 3)
     padding: u28 = 0,
-    const rgb: ColorMask = .{ .g = true, .r = true, .b = true };
-    const rgba: ColorMask = .{ .b = true, .g = true, .r = true, .a = true };
+    const rgb: ColorMask = .{ .r = true, .g = true, .b = true };
+    const rgba: ColorMask = .{ .a = true, .r = true, .g = true, .b = true };
 };
 
 pub const LogSeverity = enum(u32) {
-    trace, // ( 0)                               
-    debug, // ( 1)                               
-    info, // ( 2)                               
-    warning, // ( 3)                               
-    @"error", // ( 4)                               
-    fatal, // ( 5)                               
+    trace, // ( 0)
+    debug, // ( 1)
+    info, // ( 2)
+    warning, // ( 3)
+    @"error", // ( 4)
+    fatal, // ( 5)
 };
 
 pub const TextureFormat = enum(u32) {
-    undefined, // ( 0)                               
-    r4g4_unorm_pack8, // ( 1)                               
-    r4g4b4a4_unorm_pack16, // ( 2)                               
-    b4g4r4a4_unorm_pack16, // ( 3)                               
-    r5g6b5_unorm_pack16, // ( 4)                               
-    b5g6r5_unorm_pack16, // ( 5)                               
-    r5g5b5a1_unorm_pack16, // ( 6)                               
-    b5g5r5a1_unorm_pack16, // ( 7)                               
-    a1r5g5b5_unorm_pack16, // ( 8)                               
-    r8_unorm, // ( 9)                               
-    r8_snorm, // (10)                               
-    r8_uint, // (11)                               
-    r8_sint, // (12)                               
-    r8_srgb, // (13)                               
-    r8g8_unorm, // (14)                               
-    r8g8_snorm, // (15)                               
-    r8g8_uint, // (16)                               
-    r8g8_sint, // (17)                               
-    r8g8_srgb, // (18)                               
-    r8g8b8_unorm, // (19)                               
-    r8g8b8_snorm, // (20)                               
-    r8g8b8_uint, // (21)                               
-    r8g8b8_sint, // (22)                               
-    r8g8b8_srgb, // (23)                               
-    b8g8r8_unorm, // (24)                               
-    b8g8r8_snorm, // (25)                               
-    b8g8r8_uint, // (26)                               
-    b8g8r8_sint, // (27)                               
-    b8g8r8_srgb, // (28)                               
-    r8g8b8a8_unorm, // (29)                               
-    r8g8b8a8_snorm, // (30)                               
-    r8g8b8a8_uint, // (31)                               
-    r8g8b8a8_sint, // (32)                               
-    r8g8b8a8_srgb, // (33)                               
-    b8g8r8a8_unorm, // (34)                               
-    b8g8r8a8_snorm, // (35)                               
-    b8g8r8a8_uint, // (36)                               
-    b8g8r8a8_sint, // (37)                               
-    b8g8r8a8_srgb, // (38)                               
-    a8b8g8r8_unorm_pack32, // (39)                               
-    a8b8g8r8_snorm_pack32, // (40)                               
-    a8b8g8r8_uint_pack32, // (41)                               
-    a8b8g8r8_sint_pack32, // (42)                               
-    a8b8g8r8_srgb_pack32, // (43)                               
-    a2r10g10b10_unorm_pack32, // (44)                               
-    a2r10g10b10_snorm_pack32, // (45)                               
-    a2r10g10b10_uint_pack32, // (46)                               
-    a2r10g10b10_sint_pack32, // (47)                               
-    a2b10g10r10_unorm_pack32, // (48)                               
-    a2b10g10r10_snorm_pack32, // (49)                               
-    a2b10g10r10_uint_pack32, // (50)                               
-    a2b10g10r10_sint_pack32, // (51)                               
-    r16_unorm, // (52)                               
-    r16_snorm, // (53)                               
-    r16_uint, // (54)                               
-    r16_sint, // (55)                               
-    r16_sfloat, // (56)                               
-    r16g16_unorm, // (57)                               
-    r16g16_snorm, // (58)                               
-    r16g16_uint, // (59)                               
-    r16g16_sint, // (60)                               
-    r16g16_sfloat, // (61)                               
-    r16g16b16_unorm, // (62)                               
-    r16g16b16_snorm, // (63)                               
-    r16g16b16_uint, // (64)                               
-    r16g16b16_sint, // (65)                               
-    r16g16b16_sfloat, // (66)                               
-    r16g16b16a16_unorm, // (67)                               
-    r16g16b16a16_snorm, // (68)                               
-    r16g16b16a16_uint, // (69)                               
-    r16g16b16a16_sint, // (70)                               
-    r16g16b16a16_sfloat, // (71)                               
-    r32_uint, // (72)                               
-    r32_sint, // (73)                               
-    r32_sfloat, // (74)                               
-    r32g32_uint, // (75)                               
-    r32g32_sint, // (76)                               
-    r32g32_sfloat, // (77)                               
-    r32g32b32_uint, // (78)                               
-    r32g32b32_sint, // (79)                               
-    r32g32b32_sfloat, // (80)                               
-    r32g32b32a32_uint, // (81)                               
-    r32g32b32a32_sint, // (82)                               
-    r32g32b32a32_sfloat, // (83)                               
-    r64_uint, // (84)                               
-    r64_sint, // (85)                               
-    r64_sfloat, // (86)                               
-    r64g64_uint, // (87)                               
-    r64g64_sint, // (88)                               
-    r64g64_sfloat, // (89)                               
-    r64g64b64_uint, // (90)                               
-    r64g64b64_sint, // (91)                               
-    r64g64b64_sfloat, // (92)                               
-    r64g64b64a64_uint, // (93)                               
-    r64g64b64a64_sint, // (94)                               
-    r64g64b64a64_sfloat, // (95)                               
-    b10g11r11_ufloat_pack32, // (96)                               
-    e5b9g9r9_ufloat_pack32, // (97)                               
-    d16_unorm, // (98)                               
-    x8_d24_unorm_pack32, // (99)                               
-    d32_sfloat, // (100)                               
-    s8_uint, // (101)                               
-    d16_unorm_s8_uint, // (102)                               
-    d24_unorm_s8_uint, // (103)                               
-    d32_sfloat_s8_uint, // (104)                               
-    bc1_rgb_unorm_block, // (105)                               
-    bc1_rgb_srgb_block, // (106)                               
-    bc1_rgba_unorm_block, // (107)                               
-    bc1_rgba_srgb_block, // (108)                               
-    bc2_unorm_block, // (109)                               
-    bc2_srgb_block, // (110)                               
-    bc3_unorm_block, // (111)                               
-    bc3_srgb_block, // (112)                               
-    bc4_unorm_block, // (113)                               
-    bc4_snorm_block, // (114)                               
-    bc5_unorm_block, // (115)                               
-    bc5_snorm_block, // (116)                               
-    bc6h_ufloat_block, // (117)                               
-    bc6h_sfloat_block, // (118)                               
-    bc7_unorm_block, // (119)                               
-    bc7_srgb_block, // (120)                               
-    pvrtc1_2bpp_unorm_block, // (121)                               
-    pvrtc1_4bpp_unorm_block, // (122)                               
-    pvrtc2_2bpp_unorm_block, // (123)                               
-    pvrtc2_4bpp_unorm_block, // (124)                               
-    pvrtc1_2bpp_srgb_block, // (125)                               
-    pvrtc1_4bpp_srgb_block, // (126)                               
-    pvrtc2_2bpp_srgb_block, // (127)                               
-    pvrtc2_4bpp_srgb_block, // (128)                               
-    etc2_r8g8b8_unorm_block, // (129)                               
-    etc2_r8g8b8_srgb_block, // (130)                               
-    etc2_r8g8b8a1_unorm_block, // (131)                               
-    etc2_r8g8b8a1_srgb_block, // (132)                               
-    etc2_r8g8b8a8_unorm_block, // (133)                               
-    etc2_r8g8b8a8_srgb_block, // (134)                               
-    eac_r11_unorm_block, // (135)                               
-    eac_r11_snorm_block, // (136)                               
-    eac_r11g11_unorm_block, // (137)                               
-    eac_r11g11_snorm_block, // (138)                               
-    astc_4x4_unorm_block, // (139)                               
-    astc_4x4_srgb_block, // (140)                               
-    astc_5x4_unorm_block, // (141)                               
-    astc_5x4_srgb_block, // (142)                               
-    astc_5x5_unorm_block, // (143)                               
-    astc_5x5_srgb_block, // (144)                               
-    astc_6x5_unorm_block, // (145)                               
-    astc_6x5_srgb_block, // (146)                               
-    astc_6x6_unorm_block, // (147)                               
-    astc_6x6_srgb_block, // (148)                               
-    astc_8x5_unorm_block, // (149)                               
-    astc_8x5_srgb_block, // (150)                               
-    astc_8x6_unorm_block, // (151)                               
-    astc_8x6_srgb_block, // (152)                               
-    astc_8x8_unorm_block, // (153)                               
-    astc_8x8_srgb_block, // (154)                               
-    astc_10x5_unorm_block, // (155)                               
-    astc_10x5_srgb_block, // (156)                               
-    astc_10x6_unorm_block, // (157)                               
-    astc_10x6_srgb_block, // (158)                               
-    astc_10x8_unorm_block, // (159)                               
-    astc_10x8_srgb_block, // (160)                               
-    astc_10x10_unorm_block, // (161)                               
-    astc_10x10_srgb_block, // (162)                               
-    astc_12x10_unorm_block, // (163)                               
-    astc_12x10_srgb_block, // (164)                               
-    astc_12x12_unorm_block, // (165)                               
-    astc_12x12_srgb_block, // (166)                               
-    astc_4x4_sfloat_block, // (167)                               
-    astc_5x4_sfloat_block, // (168)                               
-    astc_5x5_sfloat_block, // (169)                               
-    astc_6x5_sfloat_block, // (170)                               
-    astc_6x6_sfloat_block, // (171)                               
-    astc_8x5_sfloat_block, // (172)                               
-    astc_8x6_sfloat_block, // (173)                               
-    astc_8x8_sfloat_block, // (174)                               
-    astc_10x5_sfloat_block, // (175)                               
-    astc_10x6_sfloat_block, // (176)                               
-    astc_10x8_sfloat_block, // (177)                               
-    astc_10x10_sfloat_block, // (178)                               
-    astc_12x10_sfloat_block, // (179)                               
-    astc_12x12_sfloat_block, // (180)                               
+    undefined, // ( 0)
+    r4g4_unorm_pack8, // ( 1)
+    r4g4b4a4_unorm_pack16, // ( 2)
+    b4g4r4a4_unorm_pack16, // ( 3)
+    r5g6b5_unorm_pack16, // ( 4)
+    b5g6r5_unorm_pack16, // ( 5)
+    r5g5b5a1_unorm_pack16, // ( 6)
+    b5g5r5a1_unorm_pack16, // ( 7)
+    a1r5g5b5_unorm_pack16, // ( 8)
+    r8_unorm, // ( 9)
+    r8_snorm, // (10)
+    r8_uint, // (11)
+    r8_sint, // (12)
+    r8_srgb, // (13)
+    r8g8_unorm, // (14)
+    r8g8_snorm, // (15)
+    r8g8_uint, // (16)
+    r8g8_sint, // (17)
+    r8g8_srgb, // (18)
+    r8g8b8_unorm, // (19)
+    r8g8b8_snorm, // (20)
+    r8g8b8_uint, // (21)
+    r8g8b8_sint, // (22)
+    r8g8b8_srgb, // (23)
+    b8g8r8_unorm, // (24)
+    b8g8r8_snorm, // (25)
+    b8g8r8_uint, // (26)
+    b8g8r8_sint, // (27)
+    b8g8r8_srgb, // (28)
+    r8g8b8a8_unorm, // (29)
+    r8g8b8a8_snorm, // (30)
+    r8g8b8a8_uint, // (31)
+    r8g8b8a8_sint, // (32)
+    r8g8b8a8_srgb, // (33)
+    b8g8r8a8_unorm, // (34)
+    b8g8r8a8_snorm, // (35)
+    b8g8r8a8_uint, // (36)
+    b8g8r8a8_sint, // (37)
+    b8g8r8a8_srgb, // (38)
+    a8b8g8r8_unorm_pack32, // (39)
+    a8b8g8r8_snorm_pack32, // (40)
+    a8b8g8r8_uint_pack32, // (41)
+    a8b8g8r8_sint_pack32, // (42)
+    a8b8g8r8_srgb_pack32, // (43)
+    a2r10g10b10_unorm_pack32, // (44)
+    a2r10g10b10_snorm_pack32, // (45)
+    a2r10g10b10_uint_pack32, // (46)
+    a2r10g10b10_sint_pack32, // (47)
+    a2b10g10r10_unorm_pack32, // (48)
+    a2b10g10r10_snorm_pack32, // (49)
+    a2b10g10r10_uint_pack32, // (50)
+    a2b10g10r10_sint_pack32, // (51)
+    r16_unorm, // (52)
+    r16_snorm, // (53)
+    r16_uint, // (54)
+    r16_sint, // (55)
+    r16_sfloat, // (56)
+    r16g16_unorm, // (57)
+    r16g16_snorm, // (58)
+    r16g16_uint, // (59)
+    r16g16_sint, // (60)
+    r16g16_sfloat, // (61)
+    r16g16b16_unorm, // (62)
+    r16g16b16_snorm, // (63)
+    r16g16b16_uint, // (64)
+    r16g16b16_sint, // (65)
+    r16g16b16_sfloat, // (66)
+    r16g16b16a16_unorm, // (67)
+    r16g16b16a16_snorm, // (68)
+    r16g16b16a16_uint, // (69)
+    r16g16b16a16_sint, // (70)
+    r16g16b16a16_sfloat, // (71)
+    r32_uint, // (72)
+    r32_sint, // (73)
+    r32_sfloat, // (74)
+    r32g32_uint, // (75)
+    r32g32_sint, // (76)
+    r32g32_sfloat, // (77)
+    r32g32b32_uint, // (78)
+    r32g32b32_sint, // (79)
+    r32g32b32_sfloat, // (80)
+    r32g32b32a32_uint, // (81)
+    r32g32b32a32_sint, // (82)
+    r32g32b32a32_sfloat, // (83)
+    r64_uint, // (84)
+    r64_sint, // (85)
+    r64_sfloat, // (86)
+    r64g64_uint, // (87)
+    r64g64_sint, // (88)
+    r64g64_sfloat, // (89)
+    r64g64b64_uint, // (90)
+    r64g64b64_sint, // (91)
+    r64g64b64_sfloat, // (92)
+    r64g64b64a64_uint, // (93)
+    r64g64b64a64_sint, // (94)
+    r64g64b64a64_sfloat, // (95)
+    b10g11r11_ufloat_pack32, // (96)
+    e5b9g9r9_ufloat_pack32, // (97)
+    d16_unorm, // (98)
+    x8_d24_unorm_pack32, // (99)
+    d32_sfloat, // (100)
+    s8_uint, // (101)
+    d16_unorm_s8_uint, // (102)
+    d24_unorm_s8_uint, // (103)
+    d32_sfloat_s8_uint, // (104)
+    bc1_rgb_unorm_block, // (105)
+    bc1_rgb_srgb_block, // (106)
+    bc1_rgba_unorm_block, // (107)
+    bc1_rgba_srgb_block, // (108)
+    bc2_unorm_block, // (109)
+    bc2_srgb_block, // (110)
+    bc3_unorm_block, // (111)
+    bc3_srgb_block, // (112)
+    bc4_unorm_block, // (113)
+    bc4_snorm_block, // (114)
+    bc5_unorm_block, // (115)
+    bc5_snorm_block, // (116)
+    bc6h_ufloat_block, // (117)
+    bc6h_sfloat_block, // (118)
+    bc7_unorm_block, // (119)
+    bc7_srgb_block, // (120)
+    pvrtc1_2bpp_unorm_block, // (121)
+    pvrtc1_4bpp_unorm_block, // (122)
+    pvrtc2_2bpp_unorm_block, // (123)
+    pvrtc2_4bpp_unorm_block, // (124)
+    pvrtc1_2bpp_srgb_block, // (125)
+    pvrtc1_4bpp_srgb_block, // (126)
+    pvrtc2_2bpp_srgb_block, // (127)
+    pvrtc2_4bpp_srgb_block, // (128)
+    etc2_r8g8b8_unorm_block, // (129)
+    etc2_r8g8b8_srgb_block, // (130)
+    etc2_r8g8b8a1_unorm_block, // (131)
+    etc2_r8g8b8a1_srgb_block, // (132)
+    etc2_r8g8b8a8_unorm_block, // (133)
+    etc2_r8g8b8a8_srgb_block, // (134)
+    eac_r11_unorm_block, // (135)
+    eac_r11_snorm_block, // (136)
+    eac_r11g11_unorm_block, // (137)
+    eac_r11g11_snorm_block, // (138)
+    astc_4x4_unorm_block, // (139)
+    astc_4x4_srgb_block, // (140)
+    astc_5x4_unorm_block, // (141)
+    astc_5x4_srgb_block, // (142)
+    astc_5x5_unorm_block, // (143)
+    astc_5x5_srgb_block, // (144)
+    astc_6x5_unorm_block, // (145)
+    astc_6x5_srgb_block, // (146)
+    astc_6x6_unorm_block, // (147)
+    astc_6x6_srgb_block, // (148)
+    astc_8x5_unorm_block, // (149)
+    astc_8x5_srgb_block, // (150)
+    astc_8x6_unorm_block, // (151)
+    astc_8x6_srgb_block, // (152)
+    astc_8x8_unorm_block, // (153)
+    astc_8x8_srgb_block, // (154)
+    astc_10x5_unorm_block, // (155)
+    astc_10x5_srgb_block, // (156)
+    astc_10x6_unorm_block, // (157)
+    astc_10x6_srgb_block, // (158)
+    astc_10x8_unorm_block, // (159)
+    astc_10x8_srgb_block, // (160)
+    astc_10x10_unorm_block, // (161)
+    astc_10x10_srgb_block, // (162)
+    astc_12x10_unorm_block, // (163)
+    astc_12x10_srgb_block, // (164)
+    astc_12x12_unorm_block, // (165)
+    astc_12x12_srgb_block, // (166)
+    astc_4x4_sfloat_block, // (167)
+    astc_5x4_sfloat_block, // (168)
+    astc_5x5_sfloat_block, // (169)
+    astc_6x5_sfloat_block, // (170)
+    astc_6x6_sfloat_block, // (171)
+    astc_8x5_sfloat_block, // (172)
+    astc_8x6_sfloat_block, // (173)
+    astc_8x8_sfloat_block, // (174)
+    astc_10x5_sfloat_block, // (175)
+    astc_10x6_sfloat_block, // (176)
+    astc_10x8_sfloat_block, // (177)
+    astc_10x10_sfloat_block, // (178)
+    astc_12x10_sfloat_block, // (179)
+    astc_12x12_sfloat_block, // (180)
 };
 
 pub const FilterType = enum(u32) {
-    nearest, // ( 0)                               
-    linear, // ( 1)                               
+    nearest, // ( 0)
+    linear, // ( 1)
 };
 
 pub const AddressMode = enum(u32) {
-    mirror, // ( 0)                               
-    repeat, // ( 1)                               
-    clamp_to_edge, // ( 2)                               
-    clamp_to_border, // ( 3)                               
+    mirror, // ( 0)
+    repeat, // ( 1)
+    clamp_to_edge, // ( 2)
+    clamp_to_border, // ( 3)
 };
 
 pub const MipMapMode = enum(u32) {
-    nearest, // ( 0)                               
-    linear, // ( 1)                               
+    nearest, // ( 0)
+    linear, // ( 1)
 };
 
 pub const LoadAction = enum(u32) {
-    dont_care, // ( 0)                               
-    load, // ( 1)                               
-    clear, // ( 2)                               
+    dont_care, // ( 0)
+    load, // ( 1)
+    clear, // ( 2)
 };
 
 pub const StoreAction = enum(u32) {
-    store, // ( 0)                               
-    discard, // ( 1)                               
+    store, // ( 0)
+    discard, // ( 1)
 };
 
 pub const PrimitiveTopology = enum(u32) {
-    point_list, // ( 0)                               
-    line_list, // ( 1)                               
-    line_strip, // ( 2)                               
-    triangle_list, // ( 3)                               
-    triangle_strip, // ( 4)                               
-    patch_list, // ( 5)                               
+    point_list, // ( 0)
+    line_list, // ( 1)
+    line_strip, // ( 2)
+    triangle_list, // ( 3)
+    triangle_strip, // ( 4)
+    patch_list, // ( 5)
 };
 
 pub const CompareOp = enum(u32) {
-    never, // ( 0)                               
-    less, // ( 1)                               
-    equal, // ( 2)                               
-    less_equal, // ( 3)                               
-    greater, // ( 4)                               
-    not_equal, // ( 5)                               
-    greater_equal, // ( 6)                               
-    always, // ( 7)                               
+    never, // ( 0)
+    less, // ( 1)
+    equal, // ( 2)
+    less_equal, // ( 3)
+    greater, // ( 4)
+    not_equal, // ( 5)
+    greater_equal, // ( 6)
+    always, // ( 7)
 };
 
 pub const CullMode = packed struct(u32) {
-    back: bool = false, // ( 0)                               
-    front: bool = false, // ( 1)                               
+    back: bool = false, // ( 0)
+    front: bool = false, // ( 1)
     padding: u30 = 0,
-    const both: CullMode = .{ .front = true, .back = true };
+    const both: CullMode = .{ .back = true, .front = true };
 };
 
 pub const FillMode = enum(u32) {
-    solid, // ( 0)                               
-    wire_frame, // ( 1)                               
+    solid, // ( 0)
+    wire_frame, // ( 1)
 };
 
 pub const FrontFace = enum(u32) {
-    counter_clock_wise, // ( 0)                               
-    clock_wise, // ( 1)                               
+    counter_clockwise, // ( 0)
+    clock_wise, // ( 1)
 };
 
 pub const VertexInputRate = enum(u32) {
-    vertex, // ( 0)                               
-    instance, // ( 1)                               
+    vertex, // ( 0)
+    instance, // ( 1)
 };
 
 pub const StencilFace = packed struct(u32) {
-    front: bool = false, // ( 0)                               
-    back: bool = false, // ( 1)                               
+    front: bool = false, // ( 0)
+    back: bool = false, // ( 1)
     padding: u30 = 0,
     const both: StencilFace = .{ .back = true, .front = true };
 };
 
 pub const StencilOp = enum(u32) {
-    keep, // ( 0)                               
-    zero, // ( 1)                               
-    replace, // ( 2)                               
-    increment_and_clamp, // ( 3)                               
-    decrement_and_clamp, // ( 4)                               
-    invert, // ( 5)                               
-    increment_and_wrap, // ( 6)                               
-    decrement_and_wrap, // ( 7)                               
+    keep, // ( 0)
+    zero, // ( 1)
+    replace, // ( 2)
+    increment_and_clamp, // ( 3)
+    decrement_and_clamp, // ( 4)
+    invert, // ( 5)
+    increment_and_wrap, // ( 6)
+    decrement_and_wrap, // ( 7)
 };
 
 pub const TextureDimension = enum(u32) {
-    undefined, // ( 0)                               
-    @"1d", // ( 1)                               
-    @"2d", // ( 2)                               
-    @"2dms", // ( 3)                               
-    @"3d", // ( 4)                               
-    cube, // ( 5)                               
-    @"1darray", // ( 6)                               
-    @"2darray", // ( 7)                               
-    @"2dmsarray", // ( 8)                               
-    cube_array, // ( 9)                               
+    undefined, // ( 0)
+    @"1d", // ( 1)
+    @"2d", // ( 2)
+    @"2dms", // ( 3)
+    @"3d", // ( 4)
+    cube, // ( 5)
+    @"1darray", // ( 6)
+    @"2darray", // ( 7)
+    @"2dmsarray", // ( 8)
+    cube_array, // ( 9)
 };
 
 pub const ShaderBytecodeType = enum(u32) {
-    spirv, // ( 0)                               
-    dxil, // ( 1)                               
-    mtl, // ( 2)                               
+    spirv, // ( 0)
+    dxil, // ( 1)
+    mtl, // ( 2)
 };
 
 pub const ShaderStage = packed struct(u32) {
-    vertex: bool = false, // ( 0)                               
-    tessellation_control: bool = false, // ( 1)                               
-    tessellation_evaluation: bool = false, // ( 2)                               
-    geometry: bool = false, // ( 3)                               
-    fragment: bool = false, // ( 4)                               
-    compute: bool = false, // ( 5)                               
-    ray_tracing: bool = false, // ( 6)                               
+    vertex: bool = false, // ( 0)
+    tessellation_control: bool = false, // ( 1)
+    tessellation_evaluation: bool = false, // ( 2)
+    geometry: bool = false, // ( 3)
+    fragment: bool = false, // ( 4)
+    compute: bool = false, // ( 5)
+    ray_tracing: bool = false, // ( 6)
     padding: u25 = 0,
-    const all_graphics: ShaderStage = .{ .tessellation_evaluation = true, .geometry = true, .fragment = true, .vertex = true, .tessellation_control = true };
+    const all_graphics: ShaderStage = .{ .geometry = true, .tessellation_control = true, .vertex = true, .tessellation_evaluation = true, .fragment = true };
 };
 
 pub const PipelineStage = packed struct(u32) {
-    index: bool = false, // ( 0)                               
-    vertex: bool = false, // ( 1)                               
-    fragment: bool = false, // ( 2)                               
-    depth: bool = false, // ( 3)                               
-    render_target: bool = false, // ( 4)                               
-    compute: bool = false, // ( 5)                               
-    ray_tracing: bool = false, // ( 6)                               
-    copy: bool = false, // ( 7)                               
-    resolve: bool = false, // ( 8)                               
-    execute_indirect: bool = false, // ( 9)                               
+    index: bool = false, // ( 0)
+    vertex: bool = false, // ( 1)
+    fragment: bool = false, // ( 2)
+    depth: bool = false, // ( 3)
+    render_target: bool = false, // ( 4)
+    compute: bool = false, // ( 5)
+    ray_tracing: bool = false, // ( 6)
+    copy: bool = false, // ( 7)
+    resolve: bool = false, // ( 8)
+    execute_indirect: bool = false, // ( 9)
     padding: u22 = 0,
 };
 
 pub const FenceStatus = enum(u32) {
-    complete, // ( 0)                               
-    incomplete, // ( 1)                               
-    not_submitted, // ( 2)                               
+    complete, // ( 0)
+    incomplete, // ( 1)
+    not_submitted, // ( 2)
 };
 
 pub const QueryType = enum(u32) {
-    timestamp, // ( 0)                               
-    pipeline_statistics, // ( 1)                               
-    occlusion, // ( 2)                               
+    timestamp, // ( 0)
+    pipeline_statistics, // ( 1)
+    occlusion, // ( 2)
 };
 
 pub const ResourceState = packed struct(u32) {
-    vertex_and_constant_buffer: bool = false, // ( 0)                               
-    index_buffer: bool = false, // ( 1)                               
-    render_target: bool = false, // ( 2)                               
-    unordered_access: bool = false, // ( 3)                               
-    depth_write: bool = false, // ( 4)                               
-    depth_read: bool = false, // ( 5)                               
-    non_pixel_shader_resource: bool = false, // ( 6)                               
-    pixel_shader_resource: bool = false, // ( 7)                               
-    stream_out: bool = false, // ( 8)                               
-    indirect_argument: bool = false, // ( 9)                               
-    copy_dest: bool = false, // (10)                               
-    copy_source: bool = false, // (11)                               
-    present: bool = false, // (12)                               
-    common: bool = false, // (13)                               
-    acceleration_structure: bool = false, // (14)                               
-    shading_rate_source: bool = false, // (15)                               
-    resolve_dest: bool = false, // (16)                               
+    vertex_and_constant_buffer: bool = false, // ( 0)
+    index_buffer: bool = false, // ( 1)
+    render_target: bool = false, // ( 2)
+    unordered_access: bool = false, // ( 3)
+    depth_write: bool = false, // ( 4)
+    depth_read: bool = false, // ( 5)
+    non_pixel_shader_resource: bool = false, // ( 6)
+    pixel_shader_resource: bool = false, // ( 7)
+    stream_out: bool = false, // ( 8)
+    indirect_argument: bool = false, // ( 9)
+    copy_dest: bool = false, // (10)
+    copy_source: bool = false, // (11)
+    present: bool = false, // (12)
+    common: bool = false, // (13)
+    acceleration_structure: bool = false, // (14)
+    shading_rate_source: bool = false, // (15)
+    resolve_dest: bool = false, // (16)
     padding: u15 = 0,
-    const shader_resource: ResourceState = .{ .non_pixel_shader_resource = true, .pixel_shader_resource = true };
-    const generic_read: ResourceState = .{ .vertex_and_constant_buffer = true, .pixel_shader_resource = true, .copy_source = true, .indirect_argument = true, .index_buffer = true, .non_pixel_shader_resource = true };
+    const shader_resource: ResourceState = .{ .pixel_shader_resource = true, .non_pixel_shader_resource = true };
+    const generic_read: ResourceState = .{ .pixel_shader_resource = true, .index_buffer = true, .copy_source = true, .indirect_argument = true, .vertex_and_constant_buffer = true, .non_pixel_shader_resource = true };
 };
 
 pub const MemoryUsage = enum(u32) {
-    unknown, // ( 0)                               
-    gpu_only, // ( 1)                               
-    cpu_only, // ( 2)                               
-    cpu_to_gpu, // ( 3)                               
-    gpu_to_cpu, // ( 4)                               
+    unknown, // ( 0)
+    gpu_only, // ( 1)
+    cpu_only, // ( 2)
+    cpu_to_gpu, // ( 3)
+    gpu_to_cpu, // ( 4)
 };
 
 pub const MemoryPoolType = enum(u32) {
-    automatic, // ( 0)                               
-    linear, // ( 1)                               
-    tiled, // ( 2)                               
+    automatic, // ( 0)
+    linear, // ( 1)
+    tiled, // ( 2)
 };
 
 pub const BufferCreationUsage = packed struct(u32) {
-    dedicated: bool = false, // ( 0)                               
-    persistent_map: bool = false, // ( 1)                               
-    host_visible: bool = false, // ( 2)                               
+    dedicated: bool = false, // ( 0)
+    persistent_map: bool = false, // ( 1)
+    host_visible: bool = false, // ( 2)
     padding: u29 = 0,
 };
 
 pub const TextureCreationUsage = packed struct(u32) {
-    dedicated: bool = false, // ( 0)                               
-    force2d: bool = false, // ( 1)                               
-    force3d: bool = false, // ( 2)                               
-    aliasing_resource: bool = false, // ( 3)                               
-    tiled_resource: bool = false, // ( 4)                               
-    @"export": bool = false, // ( 5)                               
-    import_shared: bool = false, // ( 6)                               
+    dedicated: bool = false, // ( 0)
+    force2d: bool = false, // ( 1)
+    force3d: bool = false, // ( 2)
+    aliasing_resource: bool = false, // ( 3)
+    tiled_resource: bool = false, // ( 4)
+    @"export": bool = false, // ( 5)
+    import_shared: bool = false, // ( 6)
     padding: u25 = 0,
 };
 
 pub const SampleCount = packed struct(u32) {
-    @"1": bool = false, // ( 0)                               
-    @"2": bool = false, // ( 1)                               
-    @"4": bool = false, // ( 2)                               
-    @"8": bool = false, // ( 3)                               
-    @"16": bool = false, // ( 4)                               
+    @"1": bool = false, // ( 0)
+    @"2": bool = false, // ( 1)
+    @"4": bool = false, // ( 2)
+    @"8": bool = false, // ( 3)
+    @"16": bool = false, // ( 4)
     padding: u27 = 0,
 };
 
 pub const PipelineType = enum(u32) {
-    none, // ( 0)                               
-    compute, // ( 1)                               
-    graphics, // ( 2)                               
-    ray_tracing, // ( 3)                               
+    none, // ( 0)
+    compute, // ( 1)
+    graphics, // ( 2)
+    ray_tracing, // ( 3)
 };
 
 pub const ResourceType = packed struct(u32) {
-    sampler: bool = false, // ( 0)                               
-    texture: bool = false, // ( 1)                               
-    render_target: bool = false, // ( 2)                               
-    depth_stencil: bool = false, // ( 3)                               
-    rw_texture: bool = false, // ( 4)                               
-    buffer: bool = false, // ( 5)                               
-    buffer_raw: bool = false, // ( 6)                               
-    rw_buffer: bool = false, // ( 7)                               
-    rw_buffer_raw: bool = false, // ( 8)                               
-    uniform_buffer: bool = false, // ( 9)                               
-    push_constant: bool = false, // (10)                               
-    vertex_buffer: bool = false, // (11)                               
-    index_buffer: bool = false, // (12)                               
-    indirect_buffer: bool = false, // (13)                               
-    texture_cube: bool = false, // (14)                               
-    render_target_mip_slices: bool = false, // (15)                               
-    render_target_array_slices: bool = false, // (16)                               
-    render_target_depth_slices: bool = false, // (17)                               
-    ray_tracing: bool = false, // (18)                               
-    input_attachment: bool = false, // (19)                               
-    texel_buffer: bool = false, // (20)                               
-    rw_texel_buffer: bool = false, // (21)                               
-    combined_image_sampler: bool = false, // (22)                               
+    sampler: bool = false, // ( 0)
+    texture: bool = false, // ( 1)
+    render_target: bool = false, // ( 2)
+    depth_stencil: bool = false, // ( 3)
+    rw_texture: bool = false, // ( 4)
+    buffer: bool = false, // ( 5)
+    buffer_raw: bool = false, // ( 6)
+    rw_buffer: bool = false, // ( 7)
+    rw_buffer_raw: bool = false, // ( 8)
+    uniform_buffer: bool = false, // ( 9)
+    push_constant: bool = false, // (10)
+    vertex_buffer: bool = false, // (11)
+    index_buffer: bool = false, // (12)
+    indirect_buffer: bool = false, // (13)
+    texture_cube: bool = false, // (14)
+    render_target_mip_slices: bool = false, // (15)
+    render_target_array_slices: bool = false, // (16)
+    render_target_depth_slices: bool = false, // (17)
+    ray_tracing: bool = false, // (18)
+    input_attachment: bool = false, // (19)
+    texel_buffer: bool = false, // (20)
+    rw_texel_buffer: bool = false, // (21)
+    combined_image_sampler: bool = false, // (22)
     padding: u9 = 0,
 };
 
 pub const TextureViewUsage = packed struct(u32) {
-    srv: bool = false, // ( 0)                               
-    rtv_dsv: bool = false, // ( 1)                               
-    uav: bool = false, // ( 2)                               
+    srv: bool = false, // ( 0)
+    rtv_dsv: bool = false, // ( 1)
+    uav: bool = false, // ( 2)
     padding: u29 = 0,
 };
 
 pub const TextureViewAspect = packed struct(u32) {
-    color: bool = false, // ( 0)                               
-    depth: bool = false, // ( 1)                               
-    stencil: bool = false, // ( 2)                               
+    color: bool = false, // ( 0)
+    depth: bool = false, // ( 1)
+    stencil: bool = false, // ( 2)
     padding: u29 = 0,
 };
 
 pub const ShadingRate = enum(u32) {
-    full, // ( 0)                               
-    half, // ( 1)                               
-    quarter, // ( 2)                               
-    @"1x2", // ( 3)                               
-    @"2x1", // ( 4)                               
-    @"2x4", // ( 5)                               
-    @"4x2", // ( 6)                               
+    full, // ( 0)
+    half, // ( 1)
+    quarter, // ( 2)
+    @"1x2", // ( 3)
+    @"2x1", // ( 4)
+    @"2x4", // ( 5)
+    @"4x2", // ( 6)
 };
 
 pub const ShadingRateCombiner = enum(u32) {
-    pass_through, // ( 0)                               
-    override, // ( 1)                               
-    min, // ( 2)                               
-    max, // ( 3)                               
-    sum, // ( 4)                               
+    pass_through, // ( 0)
+    override, // ( 1)
+    min, // ( 2)
+    max, // ( 3)
+    sum, // ( 4)
 };
 
 pub const QueueType = enum(u32) {
-    graphics, // ( 0)                               
-    compute, // ( 1)                               
-    transfer, // ( 2)                               
-    tile_mapping, // ( 3)                               
+    graphics, // ( 0)
+    compute, // ( 1)
+    transfer, // ( 2)
+    tile_mapping, // ( 3)
 };
 
 pub const TextureFormatSupport = packed struct(u32) {
-    sample: bool = false, // ( 0)                               
-    render: bool = false, // ( 1)                               
-    load_store: bool = false, // ( 2)                               
-    blend: bool = false, // ( 3)                               
-    msaa2x: bool = false, // ( 4)                               
-    msaa4x: bool = false, // ( 5)                               
-    msaa8x: bool = false, // ( 6)                               
-    msaa16x: bool = false, // ( 7)                               
+    sample: bool = false, // ( 0)
+    render: bool = false, // ( 1)
+    load_store: bool = false, // ( 2)
+    blend: bool = false, // ( 3)
+    msaa2x: bool = false, // ( 4)
+    msaa4x: bool = false, // ( 5)
+    msaa8x: bool = false, // ( 6)
+    msaa16x: bool = false, // ( 7)
     padding: u24 = 0,
 };
 
 pub const VertexFormat = enum(u32) {
-    undefined, // ( 0)                               
-    float32x1, // ( 1)                               
-    float32x2, // ( 2)                               
-    float32x3, // ( 3)                               
-    float32x4, // ( 4)                               
-    sint32x1, // ( 5)                               
-    sint32x2, // ( 6)                               
-    sint32x3, // ( 7)                               
-    sint32x4, // ( 8)                               
-    uint32x1, // ( 9)                               
-    uint32x2, // (10)                               
-    uint32x3, // (11)                               
-    uint32x4, // (12)                               
-    float16x2, // (13)                               
-    float16x4, // (14)                               
-    sint16x2, // (15)                               
-    sint16x4, // (16)                               
-    uint16x2, // (17)                               
-    uint16x4, // (18)                               
-    snorm16x2, // (19)                               
-    snorm16x4, // (20)                               
-    unorm16x2, // (21)                               
-    unorm16x4, // (22)                               
-    sint8x4, // (23)                               
-    uint8x4, // (24)                               
-    snorm8x4, // (25)                               
-    unorm8x4, // (26)                               
+    undefined, // ( 0)
+    float32x1, // ( 1)
+    float32x2, // ( 2)
+    float32x3, // ( 3)
+    float32x4, // ( 4)
+    sint32x1, // ( 5)
+    sint32x2, // ( 6)
+    sint32x3, // ( 7)
+    sint32x4, // ( 8)
+    uint32x1, // ( 9)
+    uint32x2, // (10)
+    uint32x3, // (11)
+    uint32x4, // (12)
+    float16x2, // (13)
+    float16x4, // (14)
+    sint16x2, // (15)
+    sint16x4, // (16)
+    uint16x2, // (17)
+    uint16x4, // (18)
+    snorm16x2, // (19)
+    snorm16x4, // (20)
+    unorm16x2, // (21)
+    unorm16x4, // (22)
+    sint8x4, // (23)
+    uint8x4, // (24)
+    snorm8x4, // (25)
+    unorm8x4, // (26)
 };
 
 pub const DynamicStateFeatures = packed struct(u64) {
-    cull_mode: bool = false, // ( 0)                               
-    front_face: bool = false, // ( 1)                               
-    primitive_topology: bool = false, // ( 2)                               
-    depth_test: bool = false, // ( 3)                               
-    depth_write: bool = false, // ( 4)                               
-    depth_compare: bool = false, // ( 5)                               
-    depth_bounds_test: bool = false, // ( 6)                               
-    stencil_test: bool = false, // ( 7)                               
-    stencil_op: bool = false, // ( 8)                               
-    raster_discard: bool = false, // ( 9)                               
-    depth_bias: bool = false, // (10)                               
-    primitive_restart: bool = false, // (11)                               
-    logic_op: bool = false, // (12)                               
-    patch_control_points: bool = false, // (13)                               
-    tessellation_domain_origin: bool = false, // (14)                               
-    depth_clamp_enable: bool = false, // (15)                               
-    polygon_mode: bool = false, // (16)                               
-    sample_count: bool = false, // (17)                               
-    sample_mask: bool = false, // (18)                               
-    alpha_to_coverage_enable: bool = false, // (19)                               
-    alpha_to_one_enable: bool = false, // (20)                               
-    logic_op_enable: bool = false, // (21)                               
-    color_blend_enable: bool = false, // (22)                               
-    color_blend_equation: bool = false, // (23)                               
-    color_write_mask: bool = false, // (24)                               
-    raster_stream: bool = false, // (25)                               
-    conservative_raster_mode: bool = false, // (26)                               
-    extra_primitive_overestimation_size: bool = false, // (27)                               
-    depth_clip_enable: bool = false, // (28)                               
-    sample_locations_enable: bool = false, // (29)                               
-    color_blend_advanced: bool = false, // (30)                               
-    provoking_vertex_mode: bool = false, // (31)                               
-    line_rasterization_mode: bool = false, // (32)                               
-    line_stipple_enable: bool = false, // (33)                               
-    depth_clip_negative_one_to_one: bool = false, // (34)                               
-    viewport_wscaling_enable: bool = false, // (35)                               
-    viewport_swizzle: bool = false, // (36)                               
-    coverage_to_color_enable: bool = false, // (37)                               
-    coverage_to_color_location: bool = false, // (38)                               
-    coverage_modulation_mode: bool = false, // (39)                               
-    coverage_modulation_table_enable: bool = false, // (40)                               
-    coverage_modulation_table: bool = false, // (41)                               
-    coverage_reduction_mode: bool = false, // (42)                               
-    representative_fragment_test_enable: bool = false, // (43)                               
-    shading_rate_image_enable: bool = false, // (44)                               
+    cull_mode: bool = false, // ( 0)
+    front_face: bool = false, // ( 1)
+    primitive_topology: bool = false, // ( 2)
+    depth_test: bool = false, // ( 3)
+    depth_write: bool = false, // ( 4)
+    depth_compare: bool = false, // ( 5)
+    depth_bounds_test: bool = false, // ( 6)
+    stencil_test: bool = false, // ( 7)
+    stencil_op: bool = false, // ( 8)
+    raster_discard: bool = false, // ( 9)
+    depth_bias: bool = false, // (10)
+    primitive_restart: bool = false, // (11)
+    logic_op: bool = false, // (12)
+    patch_control_points: bool = false, // (13)
+    tessellation_domain_origin: bool = false, // (14)
+    depth_clamp_enable: bool = false, // (15)
+    polygon_mode: bool = false, // (16)
+    sample_count: bool = false, // (17)
+    sample_mask: bool = false, // (18)
+    alpha_to_coverage_enable: bool = false, // (19)
+    alpha_to_one_enable: bool = false, // (20)
+    logic_op_enable: bool = false, // (21)
+    color_blend_enable: bool = false, // (22)
+    color_blend_equation: bool = false, // (23)
+    color_write_mask: bool = false, // (24)
+    raster_stream: bool = false, // (25)
+    conservative_raster_mode: bool = false, // (26)
+    extra_primitive_overestimation_size: bool = false, // (27)
+    depth_clip_enable: bool = false, // (28)
+    sample_locations_enable: bool = false, // (29)
+    color_blend_advanced: bool = false, // (30)
+    provoking_vertex_mode: bool = false, // (31)
+    line_rasterization_mode: bool = false, // (32)
+    line_stipple_enable: bool = false, // (33)
+    depth_clip_negative_one_to_one: bool = false, // (34)
+    viewport_wscaling_enable: bool = false, // (35)
+    viewport_swizzle: bool = false, // (36)
+    coverage_to_color_enable: bool = false, // (37)
+    coverage_to_color_location: bool = false, // (38)
+    coverage_modulation_mode: bool = false, // (39)
+    coverage_modulation_table_enable: bool = false, // (40)
+    coverage_modulation_table: bool = false, // (41)
+    coverage_reduction_mode: bool = false, // (42)
+    representative_fragment_test_enable: bool = false, // (43)
+    shading_rate_image_enable: bool = false, // (44)
     padding: u19 = 0,
-    const tier1: DynamicStateFeatures = .{ .front_face = true, .primitive_topology = true, .depth_bounds_test = true, .depth_test = true, .stencil_op = true, .depth_write = true, .depth_compare = true, .stencil_test = true, .cull_mode = true };
-    const tier2: DynamicStateFeatures = .{ .front_face = true, .primitive_topology = true, .depth_bounds_test = true, .depth_test = true, .stencil_op = true, .depth_write = true, .depth_bias = true, .logic_op = true, .depth_compare = true, .primitive_restart = true, .raster_discard = true, .patch_control_points = true, .stencil_test = true, .cull_mode = true };
-    const tier3: DynamicStateFeatures = .{ .logic_op = true, .raster_stream = true, .stencil_op = true, .coverage_to_color_location = true, .depth_clip_enable = true, .extra_primitive_overestimation_size = true, .front_face = true, .coverage_modulation_table_enable = true, .depth_bounds_test = true, .depth_test = true, .coverage_modulation_table = true, .raster_discard = true, .sample_locations_enable = true, .cull_mode = true, .depth_clamp_enable = true, .color_blend_advanced = true, .color_blend_equation = true, .shading_rate_image_enable = true, .conservative_raster_mode = true, .polygon_mode = true, .depth_write = true, .alpha_to_one_enable = true, .logic_op_enable = true, .primitive_restart = true, .sample_mask = true, .coverage_modulation_mode = true, .patch_control_points = true, .stencil_test = true, .provoking_vertex_mode = true, .depth_bias = true, .primitive_topology = true, .tessellation_domain_origin = true, .coverage_reduction_mode = true, .viewport_swizzle = true, .representative_fragment_test_enable = true, .depth_clip_negative_one_to_one = true, .coverage_to_color_enable = true, .line_rasterization_mode = true, .viewport_wscaling_enable = true, .sample_count = true, .alpha_to_coverage_enable = true, .line_stipple_enable = true, .color_blend_enable = true, .color_write_mask = true, .depth_compare = true };
+    const tier1: DynamicStateFeatures = .{ .front_face = true, .cull_mode = true, .depth_bounds_test = true, .primitive_topology = true, .stencil_test = true, .depth_test = true, .stencil_op = true, .depth_compare = true, .depth_write = true };
+    const tier2: DynamicStateFeatures = .{ .front_face = true, .depth_bias = true, .cull_mode = true, .patch_control_points = true, .depth_bounds_test = true, .primitive_topology = true, .raster_discard = true, .logic_op = true, .primitive_restart = true, .stencil_test = true, .depth_test = true, .stencil_op = true, .depth_compare = true, .depth_write = true };
+    const tier3: DynamicStateFeatures = .{ .coverage_reduction_mode = true, .patch_control_points = true, .coverage_to_color_location = true, .logic_op = true, .stencil_op = true, .raster_stream = true, .sample_count = true, .color_blend_advanced = true, .cull_mode = true, .depth_bounds_test = true, .primitive_topology = true, .alpha_to_coverage_enable = true, .color_blend_equation = true, .shading_rate_image_enable = true, .depth_clamp_enable = true, .tessellation_domain_origin = true, .coverage_modulation_mode = true, .representative_fragment_test_enable = true, .coverage_modulation_table = true, .depth_compare = true, .raster_discard = true, .provoking_vertex_mode = true, .conservative_raster_mode = true, .extra_primitive_overestimation_size = true, .depth_write = true, .coverage_to_color_enable = true, .alpha_to_one_enable = true, .viewport_swizzle = true, .primitive_restart = true, .front_face = true, .depth_bias = true, .line_rasterization_mode = true, .depth_clip_negative_one_to_one = true, .sample_locations_enable = true, .line_stipple_enable = true, .sample_mask = true, .depth_test = true, .coverage_modulation_table_enable = true, .polygon_mode = true, .depth_clip_enable = true, .logic_op_enable = true, .stencil_test = true, .color_write_mask = true, .color_blend_enable = true, .viewport_wscaling_enable = true };
 };
 
 pub const LogCallback = fn (user_data: ?*anyopaque, severity: LogSeverity, fmt: [*c]const u8, ...) callconv(.C) void;
@@ -685,7 +685,7 @@ pub const FreeRootSignature = fn (device: ?DeviceId, signature: ?RootSignatureId
 
 pub const CreateDescriptorSet = fn (device: ?DeviceId, desc: [*c]const DescriptorSetDescriptor) callconv(.C) ?DescriptorSetId;
 
-pub const UpdateDescriptorSet = fn (set: ?DescriptorSetId, datas: [*c]const DescriptorData, count: u32) callconv(.C) void;
+pub const UpdateDescriptorSet = fn (set: ?DescriptorSetId, data_count: u32, p_datas: [*c]const DescriptorData) callconv(.C) void;
 
 pub const FreeDescriptorSet = fn (device: ?DeviceId, set: ?DescriptorSetId) callconv(.C) void;
 
@@ -1658,13 +1658,13 @@ pub const RootSignature = extern struct {
 pub const DescriptorSet = extern struct {
     root_signature: ?RootSignatureId,
     index: u32,
-    pub inline fn update(self: *DescriptorSet, datas: [*c]const DescriptorData, count: u32) void {
-        return cgpu_descriptor_set_update(self, datas, count);
+    pub inline fn update(self: *DescriptorSet, data_count: u32, p_datas: [*c]const DescriptorData) void {
+        return cgpu_descriptor_set_update(self, data_count, p_datas);
     }
 };
 
 pub const VertexAttribute = extern struct {
-    semantic_name: [64]u8,
+    semantic_name: [*c]const u8,
     array_size: u32,
     format: VertexFormat,
     binding: u32,
@@ -1675,17 +1675,23 @@ pub const VertexAttribute = extern struct {
 
 pub const VertexLayout = extern struct {
     attribute_count: u32,
-    p_attributes: [15]VertexAttribute,
+    p_attributes: [*c]const VertexAttribute,
+};
+
+pub const BlendAttachmentState = extern struct {
+    enable: bool,
+    src_factor: BlendFactor,
+    dst_factor: BlendFactor,
+    src_alpha_factor: BlendFactor,
+    dst_alpha_factor: BlendFactor,
+    blend_op: BlendOp,
+    blend_alpha_op: BlendOp,
+    color_mask: ColorMask,
 };
 
 pub const BlendStateDescriptor = extern struct {
-    src_factors: [MaxMrtCount]BlendFactor,
-    dst_factors: [MaxMrtCount]BlendFactor,
-    src_alpha_factors: [MaxMrtCount]BlendFactor,
-    dst_alpha_factors: [MaxMrtCount]BlendFactor,
-    blend_ops: [MaxMrtCount]BlendOp,
-    blend_alpha_ops: [MaxMrtCount]BlendOp,
-    masks: [MaxMrtCount]ColorMask,
+    attachment_count: u32,
+    p_attachments: [*c]const BlendAttachmentState,
     alpha_to_coverage: bool,
     independent_blend: bool,
 };
@@ -1777,16 +1783,16 @@ pub const UavParams = extern struct {
     blend_mip_chain: bool,
 };
 
-pub const DescriptorDataParams = extern struct {
+pub const DescriptorDataParams = extern union {
     buffers_params: BufferParams,
     uav_params: UavParams,
     enable_stencil_resource: bool,
 };
 
-pub const DescriptorDataResource = extern struct {
-    ptrs: [*c]?*anyopaque = null,
-    textures: [*c]TextureViewId,
-    samplers: [*c]SamplerId,
+pub const DescriptorDataResource = extern union {
+    ptrs: [*c]?*anyopaque,
+    textures: [*c]const TextureViewId,
+    samplers: [*c]const SamplerId,
     buffers: [*c]BufferId,
     render_pipelines: [*c]RenderPipelineId,
     compute_pipelines: [*c]ComputePipelineId,
@@ -1906,8 +1912,7 @@ pub const SwapChain = extern struct {
     }
 };
 
-pub const Surface = extern struct {
-};
+pub const Surface = extern struct {};
 
 pub const BufferRange = extern struct {
     offset: u64,
@@ -2221,8 +2226,7 @@ pub const MarkerInfo = extern struct {
     color: [4]f32,
 };
 
-pub const StateBufferDescriptor = extern struct {
-};
+pub const StateBufferDescriptor = extern struct {};
 
 pub const ProcTable = extern struct {
     create_instance: ?*const CreateInstance = null,
@@ -2368,9 +2372,7 @@ pub const SurfacesProcTable = extern struct {
     free_surface: ?*const FreeSurface = null,
 };
 
-pub const RuntimeTable = extern struct {
-};
-
+pub const RuntimeTable = extern struct {};
 
 pub inline fn createInstance(desc: [*c]const InstanceDescriptor) ?InstanceId {
     return cgpu_create_instance(desc);
@@ -2513,7 +2515,7 @@ extern fn cgpu_queue_create_command_pool(self: [*c]Queue, desc: [*c]const Comman
 
 extern fn cgpu_queue_free_command_pool(self: [*c]Queue, pool: ?CommandPoolId) void;
 
-extern fn cgpu_descriptor_set_update(self: [*c]DescriptorSet, datas: [*c]const DescriptorData, count: u32) void;
+extern fn cgpu_descriptor_set_update(self: [*c]DescriptorSet, data_count: u32, p_datas: [*c]const DescriptorData) void;
 
 extern fn cgpu_command_pool_create_command_buffer(self: [*c]CommandPool, desc: [*c]const CommandBufferDescriptor) ?CommandBufferId;
 
@@ -2660,5 +2662,3 @@ extern fn cgpu_shader_state_encoder_bind_linked_shader(self: [*c]ShaderStateEnco
 extern fn cgpu_binder_bind_vertex_layout(self: [*c]Binder, layout: [*c]const VertexLayout) void;
 
 extern fn cgpu_binder_bind_vertex_buffer(self: [*c]Binder, first_binding: u32, binding_count: u32, p_buffers: [*c]const BufferId, p_offsets: [*c]const u64, p_sizes: [*c]const u64, p_strides: [*c]const u64) void;
-
-

@@ -572,22 +572,28 @@ int main(int argc, char** argv)
 			ImGui_ImplCGPU_Init(&init_info);
 			ImGui_ImplArena_InitPlatformInterface();
 
-			CGPUVertexLayout imgui_vertex_layout = {
-				.attribute_count = 3,
-				.p_attributes = {
+			CGPUVertexAttribute imgui_vertex_attributes[3] = {
 					{ "POSITION", 1, CGPU_VERTEX_FORMAT_FLOAT32X2, 0, 0, sizeof(float) * 2, CGPU_VERTEX_INPUT_RATE_VERTEX },
 					{ "TEXCOORD", 1, CGPU_VERTEX_FORMAT_FLOAT32X2, 0, sizeof(float) * 2, sizeof(float) * 2, CGPU_VERTEX_INPUT_RATE_VERTEX },
 					{ "COLOR", 1, CGPU_VERTEX_FORMAT_UNORM8X4, 0, sizeof(float) * 4, sizeof(uint32_t), CGPU_VERTEX_INPUT_RATE_VERTEX },
-				}
+			};
+			CGPUVertexLayout imgui_vertex_layout = {
+				.attribute_count = 3,
+				.p_attributes = imgui_vertex_attributes,
+			};
+			CGPUBlendAttachmentState imgui_blend_attachments = {
+				.enable = true,
+				.src_factor = CGPU_BLEND_FACTOR_SRC_ALPHA,
+				.dst_factor = CGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+				.src_alpha_factor = CGPU_BLEND_FACTOR_SRC_ALPHA,
+				.dst_alpha_factor = CGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+				.blend_op = CGPU_BLEND_OP_ADD,
+				.blend_alpha_op = CGPU_BLEND_OP_ADD,
+				.color_mask = CGPU_COLOR_MASK_RGBA,
 			};
 			CGPUBlendStateDescriptor imgui_blend_desc = {
-				.src_factors = { CGPU_BLEND_FACTOR_SRC_ALPHA },
-				.dst_factors = { CGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA },
-				.src_alpha_factors = { CGPU_BLEND_FACTOR_SRC_ALPHA },
-				.dst_alpha_factors = { CGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA },
-				.blend_ops = { CGPU_BLEND_OP_ADD },
-				.blend_alpha_ops = { CGPU_BLEND_OP_ADD },
-				.masks = { CGPU_COLOR_MASK_RGBA },
+				.attachment_count = 1,
+				.p_attachments = &imgui_blend_attachments,
 				.alpha_to_coverage = false,
 				.independent_blend = false,
 			};
@@ -609,14 +615,19 @@ int main(int argc, char** argv)
 			main_window->imgui_viewport = ImGui::GetMainViewport();
 
 			CGPUVertexLayout vertex_layout = { .attribute_count = 0 };
+			CGPUBlendAttachmentState blend_attachments = {
+				.enable = false,
+				.src_factor = CGPU_BLEND_FACTOR_ONE,
+				.dst_factor = CGPU_BLEND_FACTOR_ZERO,
+				.src_alpha_factor = CGPU_BLEND_FACTOR_ONE,
+				.dst_alpha_factor = CGPU_BLEND_FACTOR_ZERO,
+				.blend_op = CGPU_BLEND_OP_ADD,
+				.blend_alpha_op = CGPU_BLEND_OP_ADD,
+				.color_mask = CGPU_COLOR_MASK_RGBA,
+			};
 			CGPUBlendStateDescriptor blend_desc = {
-				.src_factors = { CGPU_BLEND_FACTOR_ONE },
-				.dst_factors = { CGPU_BLEND_FACTOR_ZERO },
-				.src_alpha_factors = { CGPU_BLEND_FACTOR_ONE },
-				.dst_alpha_factors = { CGPU_BLEND_FACTOR_ZERO },
-				.blend_ops = { CGPU_BLEND_OP_ADD },
-				.blend_alpha_ops = { CGPU_BLEND_OP_ADD },
-				.masks = { CGPU_COLOR_MASK_RGBA },
+				.attachment_count = 1,
+				.p_attachments = &blend_attachments,
 				.alpha_to_coverage = false,
 				.independent_blend = false,
 			};

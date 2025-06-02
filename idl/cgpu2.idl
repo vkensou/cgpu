@@ -312,7 +312,7 @@ enum.FillMode { underscore, comment = "Fill Mode:" }
     ()
 
 enum.FrontFace { underscore, comment = "Front Face:" }
-    .CounterClockWise
+    .CounterClockwise
     .ClockWise
     ()
 
@@ -794,8 +794,8 @@ funcptr.CreateDescriptorSet
 funcptr.UpdateDescriptorSet
     "void"
     .set                "DescriptorSetId"
-    .datas              "const DescriptorData*"
-    .count              "uint32_t"
+    .dataCount          "uint32_t"
+    .pDatas             "const DescriptorData*"
 
 funcptr.FreeDescriptorSet
     "void"
@@ -1699,7 +1699,7 @@ struct.DescriptorSet
     .index              "uint32_t"
 
 struct.VertexAttribute
-    .semanticName       "char[64]"
+    .semanticName       "const char*"
     .arraySize          "uint32_t"
     .format             "VertexFormat::Enum"
     .binding            "uint32_t"
@@ -1709,16 +1709,21 @@ struct.VertexAttribute
 
 struct.VertexLayout
     .attributeCount     "uint32_t"
-    .pAttributes        "VertexAttribute[15]"
+    .pAttributes        "const VertexAttribute*"
+
+struct.BlendAttachmentState
+    .enable             "bool"
+    .srcFactor          "BlendFactor::Enum"
+    .dstFactor          "BlendFactor::Enum"
+    .srcAlphaFactor     "BlendFactor::Enum"
+    .dstAlphaFactor     "BlendFactor::Enum"
+    .blendOp            "BlendOp::Enum"
+    .blendAlphaOp       "BlendOp::Enum"
+    .colorMask          "ColorMask"
 
 struct.BlendStateDescriptor
-    .srcFactors         "BlendFactor::Enum[MaxMrtCount]"
-    .dstFactors         "BlendFactor::Enum[MaxMrtCount]"
-    .srcAlphaFactors    "BlendFactor::Enum[MaxMrtCount]"
-    .dstAlphaFactors    "BlendFactor::Enum[MaxMrtCount]"
-    .blendOps           "BlendOp::Enum[MaxMrtCount]"
-    .blendAlphaOps      "BlendOp::Enum[MaxMrtCount]"
-    .masks              "ColorMask[MaxMrtCount]"
+    .attachmentCount    "uint32_t"
+    .pAttachments      "const BlendAttachmentState*"
     .alphaToCoverage    "bool"
     .independentBlend   "bool"
 
@@ -2632,8 +2637,8 @@ func.Queue.FreeCommandPool
 
 func.DescriptorSet.Update
     "void"
-    .datas              "const DescriptorData*"
-    .count              "uint32_t"
+    .dataCount          "uint32_t"
+    .pDatas             "const DescriptorData*"
 
 func.CommandPool.CreateCommandBuffer
     "CommandBufferId"

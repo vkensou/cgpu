@@ -307,7 +307,7 @@ CGPUDescriptorSetId cgpu_device_create_descriptor_set(CGPUDeviceId device, const
     return set;
 }
 
-void cgpu_descriptor_set_update(CGPUDescriptorSetId set, const struct CGPUDescriptorData* datas, uint32_t count)
+void cgpu_descriptor_set_update(CGPUDescriptorSetId set, uint32_t count, const struct CGPUDescriptorData* datas)
 {
     // SkrCZoneN(zz, "CGPUUpdateDescSet", 1);
 
@@ -315,7 +315,7 @@ void cgpu_descriptor_set_update(CGPUDescriptorSetId set, const struct CGPUDescri
     const CGPUDeviceId device = set->root_signature->device;
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
     cgpu_assert(device->proc_table_cache->update_descriptor_set && "update_descriptor_set Proc Missing!");
-    device->proc_table_cache->update_descriptor_set(set, datas, count);
+    device->proc_table_cache->update_descriptor_set(set, count, datas);
 
     // SkrCZoneEnd(zz);
 }
@@ -360,12 +360,9 @@ void cgpu_device_free_compute_pipeline(CGPUDeviceId device, CGPUComputePipelineI
 }
 
 static const CGPUBlendStateDescriptor defaultBlendStateDesc = {
-    .src_factors = { CGPU_BLEND_FACTOR_ONE },
-    .dst_factors = { CGPU_BLEND_FACTOR_ZERO },
-    .src_alpha_factors = { CGPU_BLEND_FACTOR_ONE },
-    .dst_alpha_factors = { CGPU_BLEND_FACTOR_ZERO },
-    .blend_ops = { CGPU_BLEND_OP_ADD },
-    .masks = { CGPU_COLOR_MASK_RGBA },
+    .attachment_count = 0,
+    .p_attachments = CGPU_NULLPTR,
+    .alpha_to_coverage = false,
     .independent_blend = false
 };
 static const CGPURasterizerStateDescriptor defaultRasterStateDesc = {
@@ -373,7 +370,7 @@ static const CGPURasterizerStateDescriptor defaultRasterStateDesc = {
     .depth_bias = 0,
     .slope_scaled_depth_bias = 0.f,
     .fill_mode = CGPU_FILL_MODE_SOLID,
-    .front_face = CGPU_FRONT_FACE_COUNTER_CLOCK_WISE,
+    .front_face = CGPU_FRONT_FACE_COUNTER_CLOCKWISE,
     .enable_multi_sample = false,
     .enable_scissor = false,
     .enable_depth_clamp = false,

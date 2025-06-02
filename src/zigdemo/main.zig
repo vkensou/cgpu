@@ -251,7 +251,7 @@ pub fn main() !void {
         .use_flip_swap_effect = false,
         .format = .r8g8b8a8_unorm,
     };
-    const swapchain = device.createSwapChain(&swap_chain_descriptor);
+    const swapchain = device.createSwapChain(&swap_chain_descriptor).?;
     defer device.freeSwapChain(swapchain);
 
     var texture_upload_queue = WaitUploadTextureQueue.init(allocator, device);
@@ -320,6 +320,104 @@ pub fn main() !void {
     for (0..3) |i| {
         imgui_vertex_buffers[i] = null;
         imgui_index_buffers[i] = null;
+    }
+
+    const invalid_color_attachment = std.mem.zeroes(cgpu.ColorAttachment);
+
+    const render_pass_descriptor = cgpu.RenderPassDescriptor{
+        .sample_count = .{ .@"1" = true },
+        .color_attachments = [_]cgpu.ColorAttachment{ .{ .format = swapchain.back_buffers[0].info.*.format, .load_action = .clear, .store_action = .store }, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment },
+        .depth_stencil = .{ .format = .undefined, .depth_load_action = .load, .depth_store_action = .store, .stencil_load_action = .load, .stencil_store_action = .store },
+    };
+    const render_pass = device.createRenderPass(&render_pass_descriptor).?;
+    defer device.freeRenderPass(render_pass);
+    const render_pipeline = device.createRenderPipeline(&.{
+        .dynamic_state = 0,
+        .root_signature = shader.root_sig,
+        .vertex_shader = &shader.vs_shader,
+        .tesc_shader = null,
+        .tese_shader = null,
+        .geom_shader = null,
+        .fragment_shader = &shader.ps_shader,
+        .vertex_layout = null,
+        .blend_state = null,
+        .depth_state = null,
+        .rasterizer_state = null,
+        .render_pass = render_pass,
+        .subpass = 0,
+        .render_target_count = 1,
+        .sample_count = .{ .@"1" = true },
+        .prim_topology = .triangle_list,
+    }).?;
+    defer device.freeRenderPipeline(render_pipeline);
+    const imgui_vertex_layout = cgpu.VertexLayout{ .attribute_count = 3, .p_attributes = &[_]cgpu.VertexAttribute{
+        cgpu.VertexAttribute{ .semantic_name = "POSITION", .array_size = 1, .format = .float32x2, .binding = 0, .offset = 0, .elem_stride = @sizeOf(f32) * 2, .rate = .vertex },
+        cgpu.VertexAttribute{ .semantic_name = "TEXCOORD", .array_size = 1, .format = .float32x2, .binding = 0, .offset = @sizeOf(f32) * 2, .elem_stride = @sizeOf(f32) * 2, .rate = .vertex },
+        cgpu.VertexAttribute{ .semantic_name = "COLOR", .array_size = 1, .format = .unorm8x4, .binding = 0, .offset = @sizeOf(f32) * 4, .elem_stride = @sizeOf(u32), .rate = .vertex },
+    } };
+
+    const imgui_blend_mode = cgpu.BlendStateDescriptor{
+        .attachment_count = 1,
+        .p_attachments = &[_]cgpu.BlendAttachmentState{.{
+            .enable = true,
+            .src_factor = .src_alpha,
+            .dst_factor = .src_alpha,
+            .src_alpha_factor = .src_alpha,
+            .dst_alpha_factor = .src_alpha,
+            .blend_op = .add,
+            .blend_alpha_op = .add,
+            .color_mask = .{ .r = true, .g = true, .b = true, .a = true },
+        }},
+        .alpha_to_coverage = false,
+        .independent_blend = true,
+    };
+
+    const imgui_rasterizer_state = cgpu.RasterizerStateDescriptor{
+        .cull_mode = .{},
+        .depth_bias = 0,
+        .slope_scaled_depth_bias = 0,
+        .fill_mode = .solid,
+        .front_face = .counter_clockwise,
+        .enable_multi_sample = true,
+        .enable_scissor = true,
+        .enable_depth_clamp = true,
+    };
+
+    const imgui_render_pipeline = device.createRenderPipeline(&.{
+        .dynamic_state = 0,
+        .root_signature = imgui_shader.root_sig,
+        .vertex_shader = &imgui_shader.vs_shader,
+        .tesc_shader = null,
+        .tese_shader = null,
+        .geom_shader = null,
+        .fragment_shader = &imgui_shader.ps_shader,
+        .vertex_layout = &imgui_vertex_layout,
+        .blend_state = &imgui_blend_mode,
+        .depth_state = null,
+        .rasterizer_state = &imgui_rasterizer_state,
+        .render_pass = render_pass,
+        .subpass = 0,
+        .render_target_count = 1,
+        .sample_count = .{ .@"1" = true },
+        .prim_topology = .triangle_list,
+    }).?;
+    defer device.freeRenderPipeline(imgui_render_pipeline);
+
+    const imgui_font_descriptor_set = device.createDescriptorSet(&.{ .root_signature = imgui_shader.root_sig, .set_index = 0 }).?;
+    imgui_font_descriptor_set.update(2, &[_]cgpu.DescriptorData{
+        .{ .name = "", .binding = 0, .binding_type = .{ .texture = true }, .count = 0, .params = .{ .enable_stencil_resource = false }, .resources = .{ .textures = &[_]cgpu.TextureViewId{imgui_font_texture_view} } },
+        .{ .name = "", .binding = 1, .binding_type = .{ .sampler = true }, .count = 0, .params = .{ .enable_stencil_resource = false }, .resources = .{ .samplers = &[_]cgpu.SamplerId{imgui_font_texture_sampler} } },
+    });
+    var frame_datas: [3]FrameData = undefined;
+    for (0..frame_datas.len) |i| {
+        const cmdpool = queue.createCommandPool(&.{ .name = "" }).?;
+        const cmd = cmdpool.createCommandBuffer(&.{ .is_secondary = false }).?;
+        frame_datas[i] = .{
+            .inflight_fence = device.createFence().?,
+            .swapchain_prepared_semaphore = device.createSemaphore().?,
+            .cmdpool = cmdpool,
+            .cmd = cmd,
+        };
     }
 
     _ = fw;

@@ -49,7 +49,7 @@ CGPU_API void cgpu_free_root_signature_vulkan(CGPUDeviceId device, CGPURootSigna
 CGPU_API CGPURootSignaturePoolId cgpu_create_root_signature_pool_vulkan(CGPUDeviceId device, const struct CGPURootSignaturePoolDescriptor* desc);
 CGPU_API void cgpu_free_root_signature_pool_vulkan(CGPUDeviceId device, CGPURootSignaturePoolId pool);
 CGPU_API CGPUDescriptorSetId cgpu_create_descriptor_set_vulkan(CGPUDeviceId device, const struct CGPUDescriptorSetDescriptor* desc);
-CGPU_API void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGPUDescriptorData* datas, uint32_t count);
+CGPU_API void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, uint32_t count, const struct CGPUDescriptorData* datas);
 CGPU_API void cgpu_free_descriptor_set_vulkan(CGPUDeviceId device, CGPUDescriptorSetId set);
 CGPU_API CGPUComputePipelineId cgpu_create_compute_pipeline_vulkan(CGPUDeviceId device, const struct CGPUComputePipelineDescriptor* desc);
 CGPU_API void cgpu_free_compute_pipeline_vulkan(CGPUDeviceId device, CGPUComputePipelineId pipeline);

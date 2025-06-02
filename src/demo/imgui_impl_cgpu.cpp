@@ -402,7 +402,7 @@ bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId ro
         .count = 1,
     };
 
-    cgpu_descriptor_set_update(bd->FontDescriptorSet, datas, 2);
+    cgpu_descriptor_set_update(bd->FontDescriptorSet, 2, datas);
 
     return true;
 }

@@ -497,7 +497,7 @@ CGPUDescriptorSetId cgpu_create_descriptor_set_vulkan(CGPUDeviceId device, const
     return &Set->super;
 }
 
-void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, const struct CGPUDescriptorData* datas, uint32_t count)
+void cgpu_update_descriptor_set_vulkan(CGPUDescriptorSetId set, uint32_t count, const struct CGPUDescriptorData* datas)
 {
     CGPUDescriptorSet_Vulkan* Set = (CGPUDescriptorSet_Vulkan*)set;
     CGPURootSignature_Vulkan* RS = (CGPURootSignature_Vulkan*)set->root_signature;
@@ -1045,27 +1045,18 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
     };
     // Color blending state
     CGPU_DECLARE_ZERO(VkPipelineColorBlendAttachmentState, cb_attachments[CGPU_MAX_MRT_COUNT])
-	int blendDescIndex = 0;
     const CGPUBlendStateDescriptor* pDesc = desc->blend_state;
-    for (int i = 0; i < CGPU_MAX_MRT_COUNT; ++i)
+    for (int i = 0; i < cgpu_min(pDesc->attachment_count, CGPU_MAX_MRT_COUNT); ++i)
 	{
-        VkBool32 blendEnable =
-            (gVkBlendConstantTranslator[pDesc->src_factors[blendDescIndex]] != VK_BLEND_FACTOR_ONE ||
-                gVkBlendConstantTranslator[pDesc->dst_factors[blendDescIndex]] != VK_BLEND_FACTOR_ZERO ||
-                gVkBlendConstantTranslator[pDesc->src_alpha_factors[blendDescIndex]] != VK_BLEND_FACTOR_ONE ||
-                gVkBlendConstantTranslator[pDesc->dst_alpha_factors[blendDescIndex]] != VK_BLEND_FACTOR_ZERO);
-
+        VkBool32 blendEnable = pDesc->p_attachments[i].enable ? VK_TRUE : VK_FALSE;
         cb_attachments[i].blendEnable = blendEnable;
-        cb_attachments[i].colorWriteMask = pDesc->masks[blendDescIndex];
-        cb_attachments[i].srcColorBlendFactor = gVkBlendConstantTranslator[pDesc->src_factors[blendDescIndex]];
-        cb_attachments[i].dstColorBlendFactor = gVkBlendConstantTranslator[pDesc->dst_factors[blendDescIndex]];
-        cb_attachments[i].colorBlendOp = gVkBlendOpTranslator[pDesc->blend_ops[blendDescIndex]];
-        cb_attachments[i].srcAlphaBlendFactor = gVkBlendConstantTranslator[pDesc->src_alpha_factors[blendDescIndex]];
-        cb_attachments[i].dstAlphaBlendFactor = gVkBlendConstantTranslator[pDesc->dst_alpha_factors[blendDescIndex]];
-        cb_attachments[i].alphaBlendOp = gVkBlendOpTranslator[pDesc->blend_alpha_ops[blendDescIndex]];
-
-		if (desc->blend_state->independent_blend)
-			++blendDescIndex;
+        cb_attachments[i].colorWriteMask = pDesc->p_attachments[i].color_mask;
+        cb_attachments[i].srcColorBlendFactor = gVkBlendConstantTranslator[pDesc->p_attachments[i].src_factor];
+        cb_attachments[i].dstColorBlendFactor = gVkBlendConstantTranslator[pDesc->p_attachments[i].dst_factor];
+        cb_attachments[i].colorBlendOp = gVkBlendOpTranslator[pDesc->p_attachments[i].blend_op];
+        cb_attachments[i].srcAlphaBlendFactor = gVkBlendConstantTranslator[pDesc->p_attachments[i].src_alpha_factor];
+        cb_attachments[i].dstAlphaBlendFactor = gVkBlendConstantTranslator[pDesc->p_attachments[i].dst_alpha_factor];
+        cb_attachments[i].alphaBlendOp = gVkBlendOpTranslator[pDesc->p_attachments[i].blend_alpha_op];
 	}
     VkPipelineColorBlendStateCreateInfo cbs = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,

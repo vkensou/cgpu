@@ -359,7 +359,7 @@ typedef enum ECGPUFillMode
 
 typedef enum ECGPUFrontFace
 {
-    CGPU_FRONT_FACE_COUNTER_CLOCK_WISE,       /** ( 0)                                */
+    CGPU_FRONT_FACE_COUNTER_CLOCKWISE,        /** ( 0)                                */
     CGPU_FRONT_FACE_CLOCK_WISE,               /** ( 1)                                */
 
     CGPU_FRONT_FACE_COUNT
@@ -929,7 +929,7 @@ typedef void (*CGPUProcFreeRootSignaturePool)(CGPUDeviceId device, CGPURootSigna
 typedef CGPURootSignatureId (*CGPUProcCreateRootSignature)(CGPUDeviceId device, const CGPURootSignatureDescriptor* desc);
 typedef void (*CGPUProcFreeRootSignature)(CGPUDeviceId device, CGPURootSignatureId signature);
 typedef CGPUDescriptorSetId (*CGPUProcCreateDescriptorSet)(CGPUDeviceId device, const CGPUDescriptorSetDescriptor* desc);
-typedef void (*CGPUProcUpdateDescriptorSet)(CGPUDescriptorSetId set, const CGPUDescriptorData* datas, uint32_t count);
+typedef void (*CGPUProcUpdateDescriptorSet)(CGPUDescriptorSetId set, uint32_t data_count, const CGPUDescriptorData* p_datas);
 typedef void (*CGPUProcFreeDescriptorSet)(CGPUDeviceId device, CGPUDescriptorSetId set);
 typedef CGPUComputePipelineId (*CGPUProcCreateComputePipeline)(CGPUDeviceId device, const CGPUComputePipelineDescriptor* desc);
 typedef void (*CGPUProcFreeComputePipeline)(CGPUDeviceId device, CGPUComputePipelineId pipeline);
@@ -1404,7 +1404,7 @@ typedef struct CGPUDescriptorSet
 
 typedef struct CGPUVertexAttribute
 {
-    char                 semantic_name[64];
+    const char*          semantic_name;
     uint32_t             array_size;
     ECGPUVertexFormat    format;
     uint32_t             binding;
@@ -1417,19 +1417,27 @@ typedef struct CGPUVertexAttribute
 typedef struct CGPUVertexLayout
 {
     uint32_t             attribute_count;
-    CGPUVertexAttribute  p_attributes[15];
+    const CGPUVertexAttribute* p_attributes;
 
 } CGPUVertexLayout;
 
+typedef struct CGPUBlendAttachmentState
+{
+    bool                 enable;
+    ECGPUBlendFactor     src_factor;
+    ECGPUBlendFactor     dst_factor;
+    ECGPUBlendFactor     src_alpha_factor;
+    ECGPUBlendFactor     dst_alpha_factor;
+    ECGPUBlendOp         blend_op;
+    ECGPUBlendOp         blend_alpha_op;
+    ECGPUColorMaskFlags  color_mask;
+
+} CGPUBlendAttachmentState;
+
 typedef struct CGPUBlendStateDescriptor
 {
-    ECGPUBlendFactor     src_factors[CGPU_MAX_MRT_COUNT];
-    ECGPUBlendFactor     dst_factors[CGPU_MAX_MRT_COUNT];
-    ECGPUBlendFactor     src_alpha_factors[CGPU_MAX_MRT_COUNT];
-    ECGPUBlendFactor     dst_alpha_factors[CGPU_MAX_MRT_COUNT];
-    ECGPUBlendOp         blend_ops[CGPU_MAX_MRT_COUNT];
-    ECGPUBlendOp         blend_alpha_ops[CGPU_MAX_MRT_COUNT];
-    ECGPUColorMaskFlags  masks[CGPU_MAX_MRT_COUNT];
+    uint32_t             attachment_count;
+    const CGPUBlendAttachmentState* p_attachments;
     bool                 alpha_to_coverage;
     bool                 independent_blend;
 
@@ -2312,7 +2320,7 @@ CGPU_API void cgpu_queue_map_packed_mips(CGPUQueueId _this, const CGPUTiledTextu
 CGPU_API void cgpu_queue_unmap_packed_mips(CGPUQueueId _this, const CGPUTiledTexturePackedMips* desc);
 CGPU_API CGPUCommandPoolId cgpu_queue_create_command_pool(CGPUQueueId _this, const CGPUCommandPoolDescriptor* desc);
 CGPU_API void cgpu_queue_free_command_pool(CGPUQueueId _this, CGPUCommandPoolId pool);
-CGPU_API void cgpu_descriptor_set_update(CGPUDescriptorSetId _this, const CGPUDescriptorData* datas, uint32_t count);
+CGPU_API void cgpu_descriptor_set_update(CGPUDescriptorSetId _this, uint32_t data_count, const CGPUDescriptorData* p_datas);
 CGPU_API CGPUCommandBufferId cgpu_command_pool_create_command_buffer(CGPUCommandPoolId _this, const CGPUCommandBufferDescriptor* desc);
 CGPU_API void cgpu_command_pool_reset(CGPUCommandPoolId _this);
 CGPU_API void cgpu_command_pool_free_command_buffer(CGPUCommandPoolId _this, CGPUCommandBufferId cmd);
