@@ -9,7 +9,7 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
         .link_libc = true,
         .link_libcpp = true,
-        .root_source_file = b.path("idl/cgpu.zig"),
+        .root_source_file = b.path("bindings/zig/cgpu.zig"),
     });
 
     const cgpu_lib = b.addLibrary(.{

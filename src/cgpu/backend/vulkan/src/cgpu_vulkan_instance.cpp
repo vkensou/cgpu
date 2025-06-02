@@ -426,7 +426,7 @@ CGPUDeviceId cgpu_create_device_vulkan(CGPUAdapterId adapter, const CGPUDeviceDe
     for (uint32_t i = 0; i < desc->queue_group_count; i++)
     {
         VkDeviceQueueCreateInfo& info = queueCreateInfos[i];
-        CGPUQueueGroupDescriptor& descriptor = desc->p_queue_groups[i];
+        const CGPUQueueGroupDescriptor& descriptor = desc->p_queue_groups[i];
         info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         info.queueCount = descriptor.queue_count;
         info.queueFamilyIndex = (uint32_t)A->mQueueFamilyIndices[descriptor.queue_type];

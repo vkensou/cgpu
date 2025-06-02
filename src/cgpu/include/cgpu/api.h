@@ -1160,7 +1160,7 @@ typedef struct CGPUDeviceDescriptor
 {
     bool                 disable_pipeline_cache;
     uint32_t             queue_group_count;
-    CGPUQueueGroupDescriptor* p_queue_groups;
+    const CGPUQueueGroupDescriptor* p_queue_groups;
 
 } CGPUDeviceDescriptor;
 
@@ -1354,15 +1354,15 @@ typedef struct CGPUShaderEntryDescriptor
     CGPUShaderLibraryId  library;
     const char*          entry;
     ECGPUShaderStageFlags stage;
-    const CGPUConstantSpecialization* constants;
-    uint32_t             num_constants;
+    uint32_t             constant_count;
+    const CGPUConstantSpecialization* p_constants;
 
 } CGPUShaderEntryDescriptor;
 
 typedef struct CGPURootSignatureDescriptor
 {
     uint32_t             shader_count;
-    CGPUShaderEntryDescriptor* p_shaders;
+    const CGPUShaderEntryDescriptor* p_shaders;
     uint32_t             static_sampler_count;
     const CGPUSamplerId* p_static_samplers;
     const char**         p_static_sampler_names;
@@ -1954,7 +1954,7 @@ typedef struct CGPUCommandBufferDescriptor
 typedef struct CGPUSwapChainDescriptor
 {
     uint32_t             present_queue_count;
-    CGPUQueueId*         p_present_queues;
+    const CGPUQueueId*   p_present_queues;
     CGPUSurfaceId        surface;
     uint32_t             image_count;
     uint32_t             width;
@@ -1982,8 +1982,8 @@ typedef struct CGPUCompiledShaderDescriptor
 typedef struct CGPUShaderLibraryDescriptor
 {
     const char*          name;
-    const uint32_t*      code;
-    uint32_t             code_size;
+    size_t               code_size;
+    const uint8_t*       p_code;
     ECGPUShaderStageFlags stage;
     bool                 reflection_only;
 
@@ -1992,14 +1992,14 @@ typedef struct CGPUShaderLibraryDescriptor
 typedef struct CGPUBufferDescriptor
 {
     uint64_t             size;
-    CGPUBuffer*          count_buffer;
+    CGPUBufferId         count_buffer;
     const char*          name;
     ECGPUResourceTypeFlags descriptors;
     ECGPUMemoryUsage     memory_usage;
     ECGPUTextureFormat   format;
     ECGPUBufferCreationUsageFlags flags;
     uint64_t             first_element;
-    uint64_t             elemet_count;
+    uint64_t             element_count;
     uint64_t             element_stride;
     CGPUQueueId          owner_queue;
     ECGPUResourceStateFlags start_state;

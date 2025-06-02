@@ -321,7 +321,7 @@ struct RenderWindow
 
 static void ImGui_ImplArena_InitPlatformInterface();
 
-std::vector<char> readFile(const std::string& filename)
+std::vector<uint8_t> readFile(const std::string& filename)
 {
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
@@ -331,10 +331,10 @@ std::vector<char> readFile(const std::string& filename)
 	}
 
 	size_t fileSize = (size_t)file.tellg();
-	std::vector<char> buffer(fileSize);
+	std::vector<uint8_t> buffer(fileSize);
 
 	file.seekg(0);
-	file.read(buffer.data(), fileSize);
+	file.read((char*)buffer.data(), fileSize);
 
 	file.close();
 	return buffer;
@@ -346,14 +346,14 @@ std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGP
 	auto fragShaderCode = readFile(fragPath);
 	CGPUShaderLibraryDescriptor vs_desc = {
 		.name = "VertexShaderLibrary",
-		.code = reinterpret_cast<const uint32_t*>(vertShaderCode.data()),
-		.code_size = (uint32_t)vertShaderCode.size(),
+		.code_size = vertShaderCode.size(),
+		.p_code = vertShaderCode.data(),
 		.stage = CGPU_SHADER_STAGE_VERTEX,
 	};
 	CGPUShaderLibraryDescriptor ps_desc = {
 		.name = "FragmentShaderLibrary",
-		.code = reinterpret_cast<const uint32_t*>(fragShaderCode.data()),
-		.code_size = (uint32_t)fragShaderCode.size(),
+		.code_size = fragShaderCode.size(),
+		.p_code = fragShaderCode.data(),
 		.stage = CGPU_SHADER_STAGE_FRAGMENT,
 	};
 	CGPUShaderLibraryId vertex_shader = cgpu_device_create_shader_library(device, &vs_desc);

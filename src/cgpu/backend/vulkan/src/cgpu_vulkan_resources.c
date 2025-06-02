@@ -189,7 +189,7 @@ CGPUBufferId cgpu_create_buffer_vulkan(CGPUDeviceId device, const struct CGPUBuf
             .buffer = B->pVkBuffer,
             .format = texel_format,
             .offset = desc->first_element * desc->element_stride,
-            .range = desc->elemet_count * desc->element_stride
+            .range = desc->element_count * desc->element_stride
         };
         if (add_info.usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT)
         {
@@ -1572,7 +1572,7 @@ CGPUShaderLibraryId cgpu_create_shader_library_vulkan(CGPUDeviceId device, const
     VkShaderModuleCreateInfo info = {
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         .codeSize = desc->code_size,
-        .pCode = desc->code
+        .pCode = (uint32_t*)desc->p_code,
     };
     CGPUShaderLibrary_Vulkan* S = cgpu_calloc(allocator, 1, sizeof(CGPUShaderLibrary_Vulkan));
     if (!desc->reflection_only)

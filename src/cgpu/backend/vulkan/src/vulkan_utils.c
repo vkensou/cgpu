@@ -345,7 +345,7 @@ void VkUtil_InitializeShaderReflection(CGPUDeviceId device, CGPUShaderLibrary_Vu
 {
     const CGPUAllocator* allocator = &device->adapter->instance->allocator;
     S->pReflect = cgpu_calloc(allocator, 1, sizeof(SpvReflectShaderModule));
-    SpvReflectResult spvRes = spvReflectCreateShaderModule(desc->code_size, desc->code, S->pReflect);
+    SpvReflectResult spvRes = spvReflectCreateShaderModule(desc->code_size, desc->p_code, S->pReflect);
     (void)spvRes;
     cgpu_assert(spvRes == SPV_REFLECT_RESULT_SUCCESS && "Failed to Reflect Shader!");
     uint32_t entry_count = S->pReflect->entry_point_count;

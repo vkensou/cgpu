@@ -1548,7 +1548,7 @@ struct.QueueGroupDescriptor
 struct.DeviceDescriptor
     .disablePipelineCache   "bool"
     .queueGroupCount    "uint32_t"
-    .pQueueGroups       "QueueGroupDescriptor*"
+    .pQueueGroups       "const QueueGroupDescriptor*"
 
 struct.Device
     .Adapter            "AdapterId"
@@ -1664,12 +1664,12 @@ struct.ShaderEntryDescriptor
     .library            "ShaderLibraryId"
     .entry              "const char*"
     .stage              "ShaderStage"
-    .constants          "const ConstantSpecialization*"
-    .numConstants       "uint32_t"
+    .constantCount      "uint32_t"
+    .pConstants         "const ConstantSpecialization*"
 
 struct.RootSignatureDescriptor
     .shaderCount        "uint32_t"
-    .pShaders           "ShaderEntryDescriptor*"
+    .pShaders           "const ShaderEntryDescriptor*"
     .staticSamplerCount "uint32_t"
     .pStaticSamplers    "const SamplerId*"
     .pStaticSamplerNames"const char**"
@@ -2077,7 +2077,7 @@ struct.CommandBufferDescriptor
 
 struct.SwapChainDescriptor 
     .presentQueueCount  "uint32_t" 
-    .pPresentQueues     "QueueId*" 
+    .pPresentQueues     "const QueueId*" 
     .surface            "SurfaceId" 
     .imageCount         "uint32_t" 
     .width              "uint32_t" 
@@ -2096,21 +2096,21 @@ struct.CompiledShaderDescriptor
 
 struct.ShaderLibraryDescriptor 
     .name               "const char*" 
-    .code               "const uint32_t*" 
-    .codeSize           "uint32_t" 
+    .codeSize           "size_t" 
+    .pCode              "const uint8_t*" 
     .stage              "ShaderStage" 
     .reflectionOnly     "bool"
 
 struct.BufferDescriptor 
     .size               "uint64_t" 
-    .countBuffer        "Buffer*" 
+    .countBuffer        "BufferId" 
     .name               "const char*" 
     .descriptors        "ResourceType" 
     .memoryUsage        "MemoryUsage::Enum" 
     .format             "TextureFormat::Enum" 
     .flags              "BufferCreationUsage" 
     .firstElement       "uint64_t" 
-    .elemetCount        "uint64_t" 
+    .elementCount       "uint64_t" 
     .elementStride      "uint64_t" 
     .ownerQueue         "QueueId" 
     .startState         "ResourceState" 
