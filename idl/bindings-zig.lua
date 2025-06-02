@@ -79,6 +79,10 @@ local function isFuncPtr(str)
 	return idl.types[str] ~= nil and idl.types[str].args
 end
 
+local function isId(str)
+	return idl.types[str] ~= nil and idl.types[str].id
+end
+
 local enum = {}
 
 local function convert_array(member)
@@ -127,6 +131,8 @@ local function convert_type_0(arg)
 		return arg.ctype:gsub("size_t", "usize")
 	elseif hasSuffix(arg.fulltype, "Handle") then
 		return arg.fulltype
+	elseif hasSuffix(arg.fulltype, "Id") then
+		return arg.fulltype
 	elseif arg.ctype == "..." then
 		return "..."
 	elseif arg.ctype == "va_list" or arg.fulltype == "bx::AllocatorI*" or arg.fulltype == "CallbackI*" or arg.fulltype ==
@@ -146,6 +152,8 @@ local function convert_type(arg)
 		return "[*c]?*anyopaque", "null"
 	elseif isFuncPtr(arg.fulltype) then
 		return "?*const " .. arg.fulltype, "null"
+	elseif isId(arg.fulltype) then
+		return "?" .. arg.fulltype
 	end 
 	
 	ctype = ctype:gsub("::Enum", "")

@@ -33,7 +33,7 @@ fn loadShader(device: cgpu.DeviceId, allocator: std.mem.Allocator, vs_filepath: 
         cgpu.ShaderEntryDescriptor{ .entry = "main", .stage = .{ .fragment = true }, .library = ps_shader, .p_constants = null, .constant_count = 0 },
     };
     const root_sig_descriptor = cgpu.RootSignatureDescriptor{ .shader_count = 0, .p_shaders = &shader_entries, .static_sampler_count = 0, .p_static_samplers = null, .p_static_sampler_names = null, .push_constant_count = 0, .p_push_constant_names = null, .pool = null };
-    const root_sig = device.createRootSignature(&root_sig_descriptor);
+    const root_sig = device.createRootSignature(&root_sig_descriptor).?;
     return .{
         .root_sig = root_sig,
         .vs_shader = shader_entries[0],
@@ -109,8 +109,8 @@ const WaitUploadTextureQueue = struct {
             .prefer_on_device = false,
             .prefer_on_host = false,
         };
-        const buffer = self.device.createBuffer(&stage_descriptor);
-        @memcpy(@as([*]u8, @ptrCast(buffer.info.cpu_mapped_address.?)), data);
+        const buffer = self.device.createBuffer(&stage_descriptor).?;
+        @memcpy(@as([*]u8, @ptrCast(buffer.info.*.cpu_mapped_address.?)), data);
         try self.queue.writeItem(.{ .stage_buffer = buffer, .texture = texture });
     }
 
@@ -205,7 +205,7 @@ pub fn main() !void {
 
     const instance_descriptor = cgpu.InstanceDescriptor{ .backend = .vulkan, .enable_debug_layer = true, .enable_gpu_based_validation = true, .enable_set_name = true, .logger = .{}, .allocator = .{} };
 
-    const instance = cgpu.createInstance(&instance_descriptor);
+    const instance = cgpu.createInstance(&instance_descriptor).?;
     defer cgpu.freeInstance(instance);
 
     var adapters_count: u32 = 0;
@@ -226,10 +226,10 @@ pub fn main() !void {
         .p_queue_groups = &queue_group_descriptor,
     };
 
-    const device = adapter.createDevice(&device_descriptor);
+    const device = adapter.createDevice(&device_descriptor).?;
     defer adapter.freeDevice(device);
 
-    const queue = device.getQueue(.graphics, 0);
+    const queue = device.getQueue(.graphics, 0).?;
     defer device.freeQueue(queue);
 
     const windowProperties = try window.getProperties();
@@ -280,13 +280,47 @@ pub fn main() !void {
         .start_state = .{},
         .descriptors = .{ .texture = true },
         .is_restrict_dedicated = 0,
-    });
+    }).?;
     defer device.freeTexture(imgui_font_texture);
 
     const uploaded_data_32: [*]const u32 = font_tex_info.pixels.?;
     const uploaded_data: [*]const u8 = @ptrCast(uploaded_data_32);
     const uploaded_data_slice = uploaded_data[0..@intCast(font_tex_info.width * font_tex_info.height * 4)];
     try texture_upload_queue.upload(imgui_font_texture, uploaded_data_slice);
+
+    const imgui_font_texture_view = device.createTextureView(&.{
+        .name = "",
+        .texture = imgui_font_texture,
+        .format = imgui_font_texture.info.*.format,
+        .usages = .{ .srv = true },
+        .aspects = .{ .color = true },
+        .dims = .@"2d",
+        .base_array_layer = 0,
+        .array_layer_count = 1,
+        .base_mip_level = 0,
+        .mip_level_count = @intCast(imgui_font_texture.info.*.mip_levels),
+    }).?;
+    defer device.freeTextureView(imgui_font_texture_view);
+
+    const imgui_font_texture_sampler = device.createSampler(&.{
+        .min_filter = .linear,
+        .mag_filter = .linear,
+        .mipmap_mode = .linear,
+        .address_u = .clamp_to_edge,
+        .address_v = .clamp_to_edge,
+        .address_w = .clamp_to_edge,
+        .mip_lod_bias = 0,
+        .max_anisotropy = 1,
+        .compare_func = .always,
+    }).?;
+    defer device.freeSampler(imgui_font_texture_sampler);
+
+    var imgui_vertex_buffers = [3]?cgpu.BufferId{ null, null, null };
+    var imgui_index_buffers = [3]?cgpu.BufferId{ null, null, null };
+    for (0..3) |i| {
+        imgui_vertex_buffers[i] = null;
+        imgui_index_buffers[i] = null;
+    }
 
     _ = fw;
     _ = fh;
