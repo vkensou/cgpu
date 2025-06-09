@@ -32,7 +32,7 @@ fn loadShader(device: cgpu.DeviceId, allocator: std.mem.Allocator, vs_filepath: 
         cgpu.ShaderEntryDescriptor{ .entry = "main", .stage = .{ .vertex = true }, .library = vs_shader, .p_constants = null, .constant_count = 0 },
         cgpu.ShaderEntryDescriptor{ .entry = "main", .stage = .{ .fragment = true }, .library = ps_shader, .p_constants = null, .constant_count = 0 },
     };
-    const root_sig_descriptor = cgpu.RootSignatureDescriptor{ .shader_count = 0, .p_shaders = &shader_entries, .static_sampler_count = 0, .p_static_samplers = null, .p_static_sampler_names = null, .push_constant_count = 0, .p_push_constant_names = null, .pool = null };
+    const root_sig_descriptor = cgpu.RootSignatureDescriptor{ .shader_count = shader_entries.len, .p_shaders = &shader_entries, .static_sampler_count = 0, .p_static_samplers = null, .p_static_sampler_names = null, .push_constant_count = 0, .p_push_constant_names = null, .pool = null };
     const root_sig = device.createRootSignature(&root_sig_descriptor).?;
     return .{
         .root_sig = root_sig,
@@ -131,14 +131,14 @@ const WaitUploadTextureQueue = struct {
             const item = self.queue.readItem().?;
             const buffer_barrier: cgpu.BufferBarrier = .{ .buffer = item.stage_buffer, .src_state = cgpu.ResourceState{}, .dst_state = cgpu.ResourceState{ .copy_source = true }, .queue_acquire = 0, .queue_release = 0, .queue_type = .graphics };
             const texture_barrier: cgpu.TextureBarrier = .{ .texture = item.texture, .src_state = cgpu.ResourceState{}, .dst_state = cgpu.ResourceState{ .copy_dest = true }, .queue_acquire = 0, .queue_release = 0, .queue_type = .graphics, .subresource_barrier = 0, .mip_level = 0, .array_layer = 0 };
-            const barrier_descriptor: cgpu.ResourceBarrierDescriptor = .{ .buffer_barriers = &[_]cgpu.BufferBarrier{buffer_barrier}, .texture_barriers = &[_]cgpu.TextureBarrier{texture_barrier} };
-            try cmd.placeResourceBarrier(&barrier_descriptor);
+            const barrier_descriptor: cgpu.ResourceBarrierDescriptor = .{ .buffer_barrier_count = 1, .p_buffer_barriers = @constCast(@ptrCast(&buffer_barrier)), .texture_barrier_count = 1, .p_texture_barriers = @constCast(@ptrCast(&texture_barrier)) };
+            cmd.resourceBarrier(&barrier_descriptor);
 
             cmd.transferBufferToTexture(&.{ .src = item.stage_buffer, .src_offset = 0, .dst = item.texture, .dst_subresource = .{ .aspects = .{ .color = true }, .mip_level = 0, .base_array_layer = 0, .layer_count = 1 } });
 
-            const texture_barrier2: cgpu.TextureBarrier = .{ .texture = item.texture, .src_state = cgpu.ResourceState{ .copy_dest = true }, .dst_state = cgpu.ResourceState{ .shader_resource = true }, .queue_acquire = 0, .queue_release = 0, .queue_type = .graphics, .subresource_barrier = 0, .mip_level = 0, .array_layer = 0 };
-            const barrier_descriptor2: cgpu.ResourceBarrierDescriptor = .{ .texture_barriers = &[_]cgpu.TextureBarrier{texture_barrier2} };
-            try cmd.placeResourceBarrier(&barrier_descriptor2);
+            const texture_barrier2: cgpu.TextureBarrier = .{ .texture = item.texture, .src_state = cgpu.ResourceState{ .copy_dest = true }, .dst_state = cgpu.ResourceState.shader_resource, .queue_acquire = 0, .queue_release = 0, .queue_type = .graphics, .subresource_barrier = 0, .mip_level = 0, .array_layer = 0 };
+            const barrier_descriptor2: cgpu.ResourceBarrierDescriptor = .{ .buffer_barrier_count = 0, .p_buffer_barriers = null, .texture_barrier_count = 1, .p_texture_barriers = @constCast(@ptrCast(&texture_barrier2)) };
+            cmd.resourceBarrier(&barrier_descriptor2);
 
             try self.wait_to_frees.append(.{ .buffer = item.stage_buffer, .wait_frame = 3 });
         }
@@ -405,9 +405,10 @@ pub fn main() !void {
 
     const imgui_font_descriptor_set = device.createDescriptorSet(&.{ .root_signature = imgui_shader.root_sig, .set_index = 0 }).?;
     imgui_font_descriptor_set.update(2, &[_]cgpu.DescriptorData{
-        .{ .name = "", .binding = 0, .binding_type = .{ .texture = true }, .count = 0, .params = .{ .enable_stencil_resource = false }, .resources = .{ .textures = &[_]cgpu.TextureViewId{imgui_font_texture_view} } },
-        .{ .name = "", .binding = 1, .binding_type = .{ .sampler = true }, .count = 0, .params = .{ .enable_stencil_resource = false }, .resources = .{ .samplers = &[_]cgpu.SamplerId{imgui_font_texture_sampler} } },
+        .{ .name = null, .binding = 0, .binding_type = .{ .texture = true }, .count = 1, .params = .{ .enable_stencil_resource = false }, .resources = .{ .textures = &[_]cgpu.TextureViewId{imgui_font_texture_view} } },
+        .{ .name = null, .binding = 1, .binding_type = .{ .sampler = true }, .count = 1, .params = .{ .enable_stencil_resource = false }, .resources = .{ .samplers = &[_]cgpu.SamplerId{imgui_font_texture_sampler} } },
     });
+    defer device.freeDescriptorSet(imgui_font_descriptor_set);
     var frame_datas: [3]FrameData = undefined;
     for (0..frame_datas.len) |i| {
         const cmdpool = queue.createCommandPool(&.{ .name = "" }).?;
@@ -419,10 +420,50 @@ pub fn main() !void {
             .cmd = cmd,
         };
     }
+    defer {
+        for (frame_datas) |frame_data| {
+            device.freeFence(frame_data.inflight_fence);
+            device.freeSemaphore(frame_data.swapchain_prepared_semaphore);
+            frame_data.cmdpool.freeCommandBuffer(frame_data.cmd);
+            queue.freeCommandPool(frame_data.cmdpool);
+        }
+    }
 
-    _ = fw;
-    _ = fh;
+    var swapchain_infos = std.ArrayList(SwapchainInfo).init(allocator);
+    try swapchain_infos.ensureTotalCapacity(swapchain.buffer_count);
+    for (0..swapchain.buffer_count) |i| {
+        const back_buffer_texture = swapchain.back_buffers[i];
+        const back_buffer_texture_view = device.createTextureView(&.{ .name = null, .texture = back_buffer_texture, .format = swapchain.back_buffers[i].*.info.*.format, .usages = .{ .rtv_dsv = true }, .aspects = .{ .color = true }, .dims = .@"2d", .base_array_layer = 0, .array_layer_count = 1, .base_mip_level = 0, .mip_level_count = 1 }).?;
+        swapchain_infos.appendAssumeCapacity(.{
+            .back_buffer_texture = back_buffer_texture,
+            .back_buffer_texture_view = back_buffer_texture_view,
+            .framebuffer = device.createFramebuffer(&.{ .renderpass = render_pass, .width = w, .height = h, .layers = 1, .attachment_count = 1, .p_attachments = [cgpu.MaxAttachmentCount]cgpu.TextureViewId{ back_buffer_texture_view, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined } }).?,
+        });
+    }
+    defer {
+        for (swapchain_infos.items) |info| {
+            device.freeTextureView(info.back_buffer_texture_view);
+            device.freeFramebuffer(info.framebuffer);
+        }
+        swapchain_infos.deinit();
+    }
+    var render_finished_semaphore = device.createSemaphore().?;
+    defer device.freeSemaphore(render_finished_semaphore);
+    const sampler = device.createSampler(&.{
+        .min_filter = .linear,
+        .mag_filter = .linear,
+        .mipmap_mode = .linear,
+        .address_u = .clamp_to_edge,
+        .address_v = .clamp_to_edge,
+        .address_w = .clamp_to_edge,
+        .mip_lod_bias = 0,
+        .max_anisotropy = 1,
+        .compare_func = .always,
+    }).?;
+    defer device.freeSampler(sampler);
 
+    var current_frame_index: usize = 0;
+    var resource_index: usize = 0;
     var quit = false;
     while (!quit) {
         var event: sdl.Event = undefined;
@@ -440,5 +481,159 @@ pub fn main() !void {
         imgui.endFrame();
 
         imgui.render();
+
+        current_frame_index = (current_frame_index + 1) % frame_datas.len;
+        resource_index = (resource_index + 1) % 3;
+        const current_frame_data = &frame_datas[current_frame_index];
+        cgpu.waitFences(&current_frame_data.inflight_fence, 1);
+        const next_swapchain_index_result = swapchain.acquireNextImage(&.{ .signal_semaphore = current_frame_data.swapchain_prepared_semaphore, .fence = null });
+        if (next_swapchain_index_result == -1) break;
+        const current_swapchain_index = next_swapchain_index_result;
+        const current_swapchain_info = swapchain_infos.items[current_swapchain_index];
+
+        current_frame_data.cmdpool.reset();
+        var cmd = current_frame_data.cmd;
+        cmd.begin();
+
+        texture_upload_queue.do_upload(cmd) catch {};
+        const imgui_draw_data = imgui.getDrawData();
+        if (imgui_draw_data.total_vtx_count > 0) {
+            const vertex_buffer_size: u64 = @intCast(imgui_draw_data.total_vtx_count * @sizeOf(imgui.DrawVert));
+            if (imgui_vertex_buffers[resource_index] != null and imgui_vertex_buffers[resource_index].?.info.*.size < vertex_buffer_size) {
+                device.freeBuffer(imgui_vertex_buffers[resource_index].?);
+                imgui_vertex_buffers[resource_index] = null;
+            }
+            if (imgui_vertex_buffers[resource_index] == null) {
+                imgui_vertex_buffers[resource_index] = device.createBuffer(&.{
+                    .size = vertex_buffer_size,
+                    .count_buffer = null,
+                    .name = null,
+                    .descriptors = .{ .vertex_buffer = true },
+                    .memory_usage = .gpu_only,
+                    .format = .undefined,
+                    .flags = .{ .host_visible = true },
+                    .first_element = 0,
+                    .element_count = 0,
+                    .element_stride = 0,
+                    .owner_queue = null,
+                    .start_state = cgpu.ResourceState{},
+                    .prefer_on_device = false,
+                    .prefer_on_host = false,
+                }).?;
+            }
+
+            const index_buffer_size: u64 = @intCast(imgui_draw_data.total_idx_count * @sizeOf(imgui.DrawIdx));
+            if (imgui_index_buffers[resource_index] != null and imgui_index_buffers[resource_index].?.info.*.size < index_buffer_size) {
+                device.freeBuffer(imgui_index_buffers[resource_index].?);
+                imgui_index_buffers[resource_index] = null;
+            }
+            if (imgui_index_buffers[resource_index] == null) {
+                imgui_index_buffers[resource_index] = device.createBuffer(&.{
+                    .size = index_buffer_size,
+                    .count_buffer = null,
+                    .name = null,
+                    .descriptors = .{ .index_buffer = true },
+                    .memory_usage = .gpu_only,
+                    .format = .undefined,
+                    .flags = .{ .host_visible = true },
+                    .first_element = 0,
+                    .element_count = 0,
+                    .element_stride = 0,
+                    .owner_queue = null,
+                    .start_state = cgpu.ResourceState{},
+                    .prefer_on_device = false,
+                    .prefer_on_host = false,
+                }).?;
+            }
+
+            var imgui_vertex_buffer = imgui_vertex_buffers[resource_index].?;
+            var imgui_index_buffer = imgui_index_buffers[resource_index].?;
+            imgui_vertex_buffer.map(null);
+            imgui_index_buffer.map(null);
+            var vertex_buffer_offset: u64 = 0;
+            var index_buffer_offset: u64 = 0;
+            for (0..@intCast(imgui_draw_data.cmd_lists_count)) |i| {
+                const cmd_list = imgui_draw_data.cmd_lists.items[i];
+                const ori_vertex_buffer = cmd_list.getVertexBuffer();
+                const ori_index_buffer = cmd_list.getIndexBuffer();
+
+                const copied_vertex_buffer_size: u64 = ori_vertex_buffer.len * @sizeOf(imgui.DrawVert);
+                const copied_index_buffer_size: u64 = ori_index_buffer.len * @sizeOf(imgui.DrawIdx);
+
+                const imgui_vertex_buffer_mapped_address: [*]u8 = @ptrCast(imgui_vertex_buffer.info.*.cpu_mapped_address.?);
+                @memcpy(imgui_vertex_buffer_mapped_address[vertex_buffer_offset .. vertex_buffer_offset + copied_vertex_buffer_size], @as([*]u8, @ptrCast(ori_vertex_buffer.ptr)));
+                const imgui_index_buffer_mapped_address: [*]u8 = @ptrCast(imgui_index_buffer.info.*.cpu_mapped_address.?);
+                @memcpy(imgui_index_buffer_mapped_address[index_buffer_offset .. index_buffer_offset + copied_index_buffer_size], @as([*]u8, @ptrCast(ori_index_buffer.ptr)));
+
+                vertex_buffer_offset += copied_vertex_buffer_size;
+                index_buffer_offset += copied_index_buffer_size;
+            }
+            imgui_vertex_buffer.unmap();
+            imgui_index_buffer.unmap();
+
+            const buffer_barrier1: cgpu.BufferBarrier = .{ .buffer = imgui_vertex_buffer, .src_state = cgpu.ResourceState{}, .dst_state = cgpu.ResourceState{ .vertex_and_constant_buffer = true }, .queue_acquire = 0, .queue_release = 0, .queue_type = .graphics };
+            const buffer_barrier2: cgpu.BufferBarrier = .{ .buffer = imgui_index_buffer, .src_state = cgpu.ResourceState{}, .dst_state = cgpu.ResourceState{ .index_buffer = true }, .queue_acquire = 0, .queue_release = 0, .queue_type = .graphics };
+            const barrier_descriptor: cgpu.ResourceBarrierDescriptor = .{ .buffer_barrier_count = 1, .p_buffer_barriers = @constCast(@ptrCast(&[_]cgpu.BufferBarrier{ buffer_barrier1, buffer_barrier2 })), .texture_barrier_count = 0, .p_texture_barriers = null };
+            cmd.resourceBarrier(&barrier_descriptor);
+        }
+
+        const texture_barrier: cgpu.TextureBarrier = .{ .texture = current_swapchain_info.back_buffer_texture, .src_state = .{}, .dst_state = cgpu.ResourceState{ .render_target = true }, .queue_acquire = 0, .queue_release = 0, .queue_type = queue._type, .subresource_barrier = 0, .mip_level = 0, .array_layer = 0 };
+        const barrier_descriptor: cgpu.ResourceBarrierDescriptor = .{ .buffer_barrier_count = 0, .p_buffer_barriers = null, .texture_barrier_count = 1, .p_texture_barriers = @constCast(@ptrCast(&[_]cgpu.TextureBarrier{texture_barrier})) };
+        cmd.resourceBarrier(&barrier_descriptor);
+
+        const encoder = cmd.beginRenderPass(&.{ .render_pass = render_pass, .framebuffer = current_swapchain_info.framebuffer, .clear_value_count = 1, .p_clear_values = &[_]cgpu.ClearValue{cgpu.ClearValue{ .color = [4]f32{ 0, 0, 0, 1 }, .depth = 1, .stencil = 0, .is_color = true }} }).?;
+
+        encoder.setViewport(0, 0, fw, fh, 0, 1);
+        encoder.setScissor(0, 0, w, h);
+        encoder.bindRenderPipeline(render_pipeline);
+        encoder.draw(3, 0);
+
+        if (imgui_draw_data.total_vtx_count > 0) {
+            encoder.bindRenderPipeline(imgui_render_pipeline);
+            encoder.bindVertexBuffers(1, &(imgui_vertex_buffers[resource_index].?), @sizeOf(imgui.DrawVert), 0);
+            encoder.bindIndexBuffer(imgui_index_buffers[resource_index].?, @sizeOf(imgui.DrawIdx), 0);
+            encoder.bindDescriptorSet(imgui_font_descriptor_set);
+            const Data = struct { scale_x: f32, scale_y: f32, translate_x: f32, translate_y: f32 };
+            const scale_x = 2 / imgui_draw_data.display_size[0];
+            const scale_y = -2 / imgui_draw_data.display_size[1];
+            const data = Data{ .scale_x = scale_x, .scale_y = scale_y, .translate_x = -1 - imgui_draw_data.display_pos[0] * scale_x, .translate_y = 1 - imgui_draw_data.display_pos[1] * scale_y };
+            encoder.pushConstants(imgui_shader.root_sig, "pc", &data);
+            var global_idx_offset: u32 = 0;
+            var global_vtx_offset: u32 = 0;
+            const clip_offset_x: f32 = imgui_draw_data.display_pos[0];
+            const clip_offset_y: f32 = imgui_draw_data.display_pos[1];
+            const clip_scale_x: f32 = imgui_draw_data.framebuffer_scale[0];
+            const clip_scale_y: f32 = imgui_draw_data.framebuffer_scale[1];
+            for (0..@intCast(imgui_draw_data.cmd_lists_count)) |i| {
+                const cmd_list = imgui_draw_data.cmd_lists.items[i];
+                const imgui_cmd_buffer = cmd_list.getCmdBuffer();
+                for (imgui_cmd_buffer) |imgui_cmd| {
+                    const clip_min_x: u32 = @intFromFloat(@max(0, (imgui_cmd.clip_rect[0] - clip_offset_x) * clip_scale_x));
+                    const clip_min_y: u32 = @intFromFloat(@max(0, (imgui_cmd.clip_rect[1] - clip_offset_y) * clip_scale_y));
+                    const clip_max_x: u32 = @intFromFloat(@min(fw, (imgui_cmd.clip_rect[2] - clip_offset_x) * clip_scale_x));
+                    const clip_max_y: u32 = @intFromFloat(@min(fh, (imgui_cmd.clip_rect[3] - clip_offset_y) * clip_scale_y));
+                    if (clip_min_x > clip_max_x or clip_min_y > clip_max_y) continue;
+                    const clip_width: u32 = clip_max_x - clip_min_x;
+                    const clip_height: u32 = clip_max_y - clip_min_y;
+                    encoder.setScissor(clip_min_x, clip_min_y, clip_width, clip_height);
+                    encoder.drawIndexed(@intCast(imgui_cmd.elem_count), imgui_cmd.idx_offset + global_idx_offset, imgui_cmd.vtx_offset + global_vtx_offset);
+                }
+                global_idx_offset += @intCast(cmd_list.getIndexBufferLength());
+                global_vtx_offset += @intCast(cmd_list.getVertexBufferLength());
+            }
+            encoder.setScissor(0, 0, w, h);
+        }
+
+        cmd.endRenderPass(encoder);
+
+        const texture_barrier2: cgpu.TextureBarrier = .{ .texture = current_swapchain_info.back_buffer_texture, .src_state = .{ .render_target = true }, .dst_state = cgpu.ResourceState{ .present = true }, .queue_acquire = 0, .queue_release = 0, .queue_type = queue._type, .subresource_barrier = 0, .mip_level = 0, .array_layer = 0 };
+        const barrier_descriptor2: cgpu.ResourceBarrierDescriptor = .{ .buffer_barrier_count = 0, .p_buffer_barriers = null, .texture_barrier_count = 1, .p_texture_barriers = @constCast(@ptrCast(&[_]cgpu.TextureBarrier{texture_barrier2})) };
+        cmd.resourceBarrier(&barrier_descriptor2);
+
+        cmd.end();
+
+        queue.submit(&.{ .cmd_count = 1, .p_cmds = @ptrCast(&cmd), .signal_fence = current_frame_data.inflight_fence, .wait_semaphore_count = 1, .p_wait_semaphores = @ptrCast(&current_frame_data.swapchain_prepared_semaphore), .signal_semaphore_count = 1, .p_signal_semaphores = @ptrCast(&render_finished_semaphore) });
+
+        queue.present(&.{ .swapchain = swapchain, .wait_semaphore_count = 1, .p_wait_semaphores = @ptrCast(&render_finished_semaphore), .index = @intCast(next_swapchain_index_result) });
     }
 }

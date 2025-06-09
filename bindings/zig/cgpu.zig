@@ -413,7 +413,7 @@ pub const ResourceState = packed struct(u32) {
     shading_rate_source: bool = false, // (15)
     resolve_dest: bool = false, // (16)
     padding: u15 = 0,
-    const shader_resource: ResourceState = .{ .pixel_shader_resource = true, .non_pixel_shader_resource = true };
+    pub const shader_resource: ResourceState = .{ .pixel_shader_resource = true, .non_pixel_shader_resource = true };
     const generic_read: ResourceState = .{ .pixel_shader_resource = true, .index_buffer = true, .copy_source = true, .indirect_argument = true, .vertex_and_constant_buffer = true, .non_pixel_shader_resource = true };
 };
 
@@ -2007,7 +2007,7 @@ pub const RenderPassDescriptor = extern struct {
 pub const FramebufferDescriptor = extern struct {
     renderpass: ?RenderPassId,
     attachment_count: u32,
-    p_attachments: ?TextureViewId,
+    p_attachments: [MaxAttachmentCount]TextureViewId,
     width: u32,
     height: u32,
     layers: u32,
@@ -2079,8 +2079,8 @@ pub const BufferBarrier = extern struct {
     queue_acquire: u8,
     queue_release: u8,
     queue_type: QueueType,
-    d3d12_begin_only: u8,
-    d3d12_end_only: u8,
+    d3d12_begin_only: u8 = 0,
+    d3d12_end_only: u8 = 0,
 };
 
 pub const TextureBarrier = extern struct {
@@ -2093,8 +2093,8 @@ pub const TextureBarrier = extern struct {
     subresource_barrier: u8,
     mip_level: u8,
     array_layer: u16,
-    d3d12_begin_only: u8,
-    d3d12_end_only: u8,
+    d3d12_begin_only: u8 = 0,
+    d3d12_end_only: u8 = 0,
 };
 
 pub const ResourceBarrierDescriptor = extern struct {
