@@ -321,6 +321,14 @@ pub fn main() !void {
         imgui_vertex_buffers[i] = null;
         imgui_index_buffers[i] = null;
     }
+    defer {
+        for (0..3) |i| {
+            if (imgui_vertex_buffers[i] != null)
+                device.freeBuffer(imgui_vertex_buffers[i]);
+            if (imgui_index_buffers[i] != null)
+                device.freeBuffer(imgui_index_buffers[i]);
+        }
+    }
 
     const invalid_color_attachment = std.mem.zeroes(cgpu.ColorAttachment);
 
@@ -331,6 +339,22 @@ pub fn main() !void {
     };
     const render_pass = device.createRenderPass(&render_pass_descriptor).?;
     defer device.freeRenderPass(render_pass);
+
+    const blend_mode = cgpu.BlendStateDescriptor{
+        .attachment_count = 1,
+        .p_attachments = &[_]cgpu.BlendAttachmentState{.{
+            .enable = true,
+            .src_factor = .src_alpha,
+            .dst_factor = .one_minus_src_alpha,
+            .src_alpha_factor = .src_alpha,
+            .dst_alpha_factor = .one_minus_src_alpha,
+            .blend_op = .add,
+            .blend_alpha_op = .add,
+            .color_mask = .{ .r = true, .g = true, .b = true, .a = true },
+        }},
+        .alpha_to_coverage = false,
+        .independent_blend = true,
+    };
     const render_pipeline = device.createRenderPipeline(&.{
         .dynamic_state = 0,
         .root_signature = shader.root_sig,
@@ -340,7 +364,7 @@ pub fn main() !void {
         .geom_shader = null,
         .fragment_shader = &shader.ps_shader,
         .vertex_layout = null,
-        .blend_state = null,
+        .blend_state = &blend_mode,
         .depth_state = null,
         .rasterizer_state = null,
         .render_pass = render_pass,
@@ -361,9 +385,9 @@ pub fn main() !void {
         .p_attachments = &[_]cgpu.BlendAttachmentState{.{
             .enable = true,
             .src_factor = .src_alpha,
-            .dst_factor = .src_alpha,
+            .dst_factor = .one_minus_src_alpha,
             .src_alpha_factor = .src_alpha,
-            .dst_alpha_factor = .src_alpha,
+            .dst_alpha_factor = .one_minus_src_alpha,
             .blend_op = .add,
             .blend_alpha_op = .add,
             .color_mask = .{ .r = true, .g = true, .b = true, .a = true },
@@ -636,4 +660,6 @@ pub fn main() !void {
 
         queue.present(&.{ .swapchain = swapchain, .wait_semaphore_count = 1, .p_wait_semaphores = @ptrCast(&render_finished_semaphore), .index = @intCast(next_swapchain_index_result) });
     }
+
+    queue.waitIdle();
 }
