@@ -606,7 +606,7 @@ pub fn main() !void {
         cmd.resourceBarrier(&barrier_descriptor);
 
         const encoder = cmd.beginRenderPass(&.{ .render_pass = render_pass, .framebuffer = current_swapchain_info.framebuffer, .clear_value_count = 1, .p_clear_values = &[_]cgpu.ClearValue{cgpu.ClearValue{ .color = [4]f32{ 0, 0, 0, 1 }, .depth = 1, .stencil = 0, .is_color = true }} }).?;
-
+        encoder.setShadingRate(.full, .pass_through, .pass_through);
         encoder.setViewport(0, 0, fw, fh, 0, 1);
         encoder.setScissor(0, 0, w, h);
         encoder.bindRenderPipeline(render_pipeline);

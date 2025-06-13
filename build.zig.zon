@@ -5,7 +5,7 @@
     .minimum_zig_version = "0.14.0",
     .dependencies = .{
         .xxhash = .{
-            .url = "https://github.com/Cyan4973/xxHash/archive/refs/tags/xxHash v0.8.3.tar.gz",
+            .url = "https://github.com/Cyan4973/xxHash/archive/refs/tags/v0.8.3.tar.gz",
             .hash = "N-V-__8AABgCUwB4fhP90zPC1u1U84-BEirnJ0dxOPi5ZM7Z",
         },
         .phmap = .{
