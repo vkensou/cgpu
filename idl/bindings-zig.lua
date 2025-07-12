@@ -354,6 +354,7 @@ local function FlagBlock(typ)
         if #flag > 0 then
             local sets = {}
             local flat_flag = flat_flags[idx]
+			table.sort(flat_flag)
             for _, v in ipairs(flat_flag) do
                 local zv = upperCamelcase_to_underscorecase(v)
                 sets[#sets + 1] = "." .. zv .. " = true"

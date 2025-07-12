@@ -115,7 +115,7 @@ const WaitUploadTextureQueue = struct {
     }
 
     pub fn do_upload(self: *WaitUploadTextureQueue, cmd: cgpu.CommandBufferId) !void {
-        var i: i32 = @as(i32, @intCast(self.wait_to_frees.items.len)) - 1;
+        var i = @as(i32, @intCast(self.wait_to_frees.items.len)) - 1;
         while (i >= 0) : (i -= 1) {
             var wait_to_free = self.wait_to_frees.items[@intCast(i)];
             if (wait_to_free.wait_frame <= 0) {

@@ -52,8 +52,8 @@ pub const ColorMask = packed struct(u32) {
     b: bool = false, // ( 2)
     a: bool = false, // ( 3)
     padding: u28 = 0,
-    pub const rgb: ColorMask = .{ .b = true, .r = true, .g = true };
-    pub const rgba: ColorMask = .{ .b = true, .a = true, .r = true, .g = true };
+    pub const rgb: ColorMask = .{ .b = true, .g = true, .r = true };
+    pub const rgba: ColorMask = .{ .a = true, .b = true, .g = true, .r = true };
 };
 
 pub const LogSeverity = enum(u32) {
@@ -365,7 +365,7 @@ pub const ShaderStage = packed struct(u32) {
     compute: bool = false, // ( 5)
     ray_tracing: bool = false, // ( 6)
     padding: u25 = 0,
-    pub const all_graphics: ShaderStage = .{ .tessellation_evaluation = true, .geometry = true, .tessellation_control = true, .fragment = true, .vertex = true };
+    pub const all_graphics: ShaderStage = .{ .fragment = true, .geometry = true, .tessellation_control = true, .tessellation_evaluation = true, .vertex = true };
 };
 
 pub const PipelineStage = packed struct(u32) {
@@ -413,8 +413,8 @@ pub const ResourceState = packed struct(u32) {
     shading_rate_source: bool = false, // (15)
     resolve_dest: bool = false, // (16)
     padding: u15 = 0,
-    pub const shader_resource: ResourceState = .{ .pixel_shader_resource = true, .non_pixel_shader_resource = true };
-    pub const generic_read: ResourceState = .{ .copy_source = true, .non_pixel_shader_resource = true, .pixel_shader_resource = true, .vertex_and_constant_buffer = true, .indirect_argument = true, .index_buffer = true };
+    pub const shader_resource: ResourceState = .{ .non_pixel_shader_resource = true, .pixel_shader_resource = true };
+    pub const generic_read: ResourceState = .{ .copy_source = true, .index_buffer = true, .indirect_argument = true, .non_pixel_shader_resource = true, .pixel_shader_resource = true, .vertex_and_constant_buffer = true };
 };
 
 pub const MemoryUsage = enum(u32) {
@@ -620,9 +620,9 @@ pub const DynamicStateFeatures = packed struct(u64) {
     representative_fragment_test_enable: bool = false, // (43)
     shading_rate_image_enable: bool = false, // (44)
     padding: u19 = 0,
-    pub const tier1: DynamicStateFeatures = .{ .depth_compare = true, .depth_test = true, .front_face = true, .primitive_topology = true, .depth_bounds_test = true, .cull_mode = true, .depth_write = true, .stencil_test = true, .stencil_op = true };
-    pub const tier2: DynamicStateFeatures = .{ .depth_compare = true, .depth_test = true, .front_face = true, .patch_control_points = true, .primitive_topology = true, .primitive_restart = true, .depth_bounds_test = true, .logic_op = true, .depth_bias = true, .cull_mode = true, .raster_discard = true, .depth_write = true, .stencil_test = true, .stencil_op = true };
-    pub const tier3: DynamicStateFeatures = .{ .depth_compare = true, .front_face = true, .coverage_modulation_table = true, .tessellation_domain_origin = true, .logic_op = true, .depth_clamp_enable = true, .raster_stream = true, .conservative_raster_mode = true, .color_blend_equation = true, .depth_bias = true, .viewport_swizzle = true, .depth_clip_enable = true, .line_stipple_enable = true, .primitive_topology = true, .alpha_to_coverage_enable = true, .patch_control_points = true, .coverage_modulation_table_enable = true, .alpha_to_one_enable = true, .logic_op_enable = true, .color_write_mask = true, .extra_primitive_overestimation_size = true, .color_blend_enable = true, .color_blend_advanced = true, .depth_bounds_test = true, .shading_rate_image_enable = true, .coverage_to_color_enable = true, .line_rasterization_mode = true, .representative_fragment_test_enable = true, .coverage_reduction_mode = true, .primitive_restart = true, .raster_discard = true, .viewport_wscaling_enable = true, .coverage_to_color_location = true, .depth_write = true, .sample_locations_enable = true, .stencil_test = true, .depth_clip_negative_one_to_one = true, .sample_mask = true, .cull_mode = true, .polygon_mode = true, .provoking_vertex_mode = true, .coverage_modulation_mode = true, .sample_count = true, .depth_test = true, .stencil_op = true };
+    pub const tier1: DynamicStateFeatures = .{ .cull_mode = true, .depth_bounds_test = true, .depth_compare = true, .depth_test = true, .depth_write = true, .front_face = true, .primitive_topology = true, .stencil_op = true, .stencil_test = true };
+    pub const tier2: DynamicStateFeatures = .{ .cull_mode = true, .depth_bias = true, .depth_bounds_test = true, .depth_compare = true, .depth_test = true, .depth_write = true, .front_face = true, .logic_op = true, .patch_control_points = true, .primitive_restart = true, .primitive_topology = true, .raster_discard = true, .stencil_op = true, .stencil_test = true };
+    pub const tier3: DynamicStateFeatures = .{ .alpha_to_coverage_enable = true, .alpha_to_one_enable = true, .color_blend_advanced = true, .color_blend_enable = true, .color_blend_equation = true, .color_write_mask = true, .conservative_raster_mode = true, .coverage_modulation_mode = true, .coverage_modulation_table = true, .coverage_modulation_table_enable = true, .coverage_reduction_mode = true, .coverage_to_color_enable = true, .coverage_to_color_location = true, .cull_mode = true, .depth_bias = true, .depth_bounds_test = true, .depth_clamp_enable = true, .depth_clip_enable = true, .depth_clip_negative_one_to_one = true, .depth_compare = true, .depth_test = true, .depth_write = true, .extra_primitive_overestimation_size = true, .front_face = true, .line_rasterization_mode = true, .line_stipple_enable = true, .logic_op = true, .logic_op_enable = true, .patch_control_points = true, .polygon_mode = true, .primitive_restart = true, .primitive_topology = true, .provoking_vertex_mode = true, .raster_discard = true, .raster_stream = true, .representative_fragment_test_enable = true, .sample_count = true, .sample_locations_enable = true, .sample_mask = true, .shading_rate_image_enable = true, .stencil_op = true, .stencil_test = true, .tessellation_domain_origin = true, .viewport_swizzle = true, .viewport_wscaling_enable = true };
 };
 
 pub const LogCallback = fn (user_data: ?*anyopaque, severity: LogSeverity, fmt: [*c]const u8, ...) callconv(.C) void;
