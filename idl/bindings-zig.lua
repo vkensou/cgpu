@@ -15,10 +15,7 @@ pub const HWND = *anyopaque;
 pub const ANativeWindowPtr = *anyopaque;
 
 $types
-
-$funcs
-
-]]
+$funcs]]
 
 local function upperCamelcase_to_underscorecase(name)
 	local tmp = {}
@@ -57,6 +54,10 @@ end
 local function namealign(name, align)
     align = align or DEFAULT_NAME_ALIGN
     return string.rep(" ", align - #name)
+end
+
+function trimRight(s)
+    return s:gsub("%s*$", "")
 end
 
 local function isempty(s)
@@ -323,6 +324,7 @@ local function FlagBlock(typ)
 
             local zname = handle_embed_keyword(upperCamelcase_to_underscorecase(flag.name))
             local code = string.format("    %s: bool = false, // (%2d) %s%s", zname, used, namealign(comment, 30), comment)
+			code = trimRight(code)
             yield(code)
             used = used + 1
         end
@@ -405,7 +407,9 @@ function converter.types(params)
                 comment = table.concat(enum.comment, " ")
             end
             local iname = handle_embed_keyword(upperCamelcase_to_underscorecase(enum.name))
-            yield(string.format("    %s, // (%2d) %s%s", iname, idx - 1, namealign(comment, 30), comment))
+			local code = string.format("    %s, // (%2d) %s%s", iname, idx - 1, namealign(comment, 30), comment)
+			code = trimRight(code)
+            yield(code)
 		end
 		yield("};")
 
@@ -429,27 +433,35 @@ function converter.types(params)
 			skip = true
 		end
 
-		if not skip then
+		if #typ.struct > 0 then
+			if not skip then
+				if typ.union then
+					yield(string.rep("    ", indent) .. "pub const " .. typ.name .. " = extern union {")
+				else	
+					yield(string.rep("    ", indent) .. "pub const " .. typ.name .. " = extern struct {")
+				end
+			end
+
+			for _, member in ipairs(typ.struct) do
+				yield(string.rep("    ", indent + 1) .. convert_struct_member(member, typ.union) .. ",")
+			end
+			if funcs ~= nil then
+				for _, func in ipairs(funcs) do
+					converter.funcs({
+						obj = func,
+						asMethod = true
+					})
+				end
+			end
+
+			yield(string.rep("    ", indent) .. "};")
+		else
 			if typ.union then
-				yield(string.rep("    ", indent) .. "pub const " .. typ.name .. " = extern union {")
+				yield(string.rep("    ", indent) .. "pub const " .. typ.name .. " = extern union {};")
 			else	
-				yield(string.rep("    ", indent) .. "pub const " .. typ.name .. " = extern struct {")
+				yield(string.rep("    ", indent) .. "pub const " .. typ.name .. " = extern struct {};")
 			end
 		end
-
-		for _, member in ipairs(typ.struct) do
-			yield(string.rep("    ", indent + 1) .. convert_struct_member(member, typ.union) .. ",")
-		end
-		if funcs ~= nil then
-			for _, func in ipairs(funcs) do
-				converter.funcs({
-					obj = func,
-					asMethod = true
-				})
-			end
-		end
-
-		yield(string.rep("    ", indent) .. "};")
 	elseif typ.args then
 		local args = {}
 		local argNames = {}
