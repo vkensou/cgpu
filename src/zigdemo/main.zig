@@ -110,7 +110,7 @@ const WaitUploadTextureQueue = struct {
             .prefer_on_host = false,
         };
         const buffer = self.device.createBuffer(&stage_descriptor).?;
-        @memcpy(@as([*]u8, @ptrCast(buffer.info.*.cpu_mapped_address.?)), data);
+        @memcpy(buffer.info.*.cpu_mapped_address, data);
         try self.queue.writeItem(.{ .stage_buffer = buffer, .texture = texture });
     }
 
@@ -131,13 +131,13 @@ const WaitUploadTextureQueue = struct {
             const item = self.queue.readItem().?;
             const buffer_barrier: cgpu.BufferBarrier = .{ .buffer = item.stage_buffer, .src_state = cgpu.ResourceState{}, .dst_state = cgpu.ResourceState{ .copy_source = true }, .queue_acquire = 0, .queue_release = 0, .queue_type = .graphics };
             const texture_barrier: cgpu.TextureBarrier = .{ .texture = item.texture, .src_state = cgpu.ResourceState{}, .dst_state = cgpu.ResourceState{ .copy_dest = true }, .queue_acquire = 0, .queue_release = 0, .queue_type = .graphics, .subresource_barrier = 0, .mip_level = 0, .array_layer = 0 };
-            const barrier_descriptor: cgpu.ResourceBarrierDescriptor = .{ .buffer_barrier_count = 1, .p_buffer_barriers = @constCast(@ptrCast(&buffer_barrier)), .texture_barrier_count = 1, .p_texture_barriers = @constCast(@ptrCast(&texture_barrier)) };
+            const barrier_descriptor: cgpu.ResourceBarrierDescriptor = .{ .buffer_barrier_count = 1, .p_buffer_barriers = &[_]cgpu.BufferBarrier{buffer_barrier}, .texture_barrier_count = 1, .p_texture_barriers = &[_]cgpu.TextureBarrier{texture_barrier} };
             cmd.resourceBarrier(&barrier_descriptor);
 
             cmd.transferBufferToTexture(&.{ .src = item.stage_buffer, .src_offset = 0, .dst = item.texture, .dst_subresource = .{ .aspects = .{ .color = true }, .mip_level = 0, .base_array_layer = 0, .layer_count = 1 } });
 
             const texture_barrier2: cgpu.TextureBarrier = .{ .texture = item.texture, .src_state = cgpu.ResourceState{ .copy_dest = true }, .dst_state = cgpu.ResourceState.shader_resource, .queue_acquire = 0, .queue_release = 0, .queue_type = .graphics, .subresource_barrier = 0, .mip_level = 0, .array_layer = 0 };
-            const barrier_descriptor2: cgpu.ResourceBarrierDescriptor = .{ .buffer_barrier_count = 0, .p_buffer_barriers = null, .texture_barrier_count = 1, .p_texture_barriers = @constCast(@ptrCast(&texture_barrier2)) };
+            const barrier_descriptor2: cgpu.ResourceBarrierDescriptor = .{ .buffer_barrier_count = 0, .p_buffer_barriers = &[_]cgpu.BufferBarrier{}, .texture_barrier_count = 1, .p_texture_barriers = &[_]cgpu.TextureBarrier{texture_barrier2} };
             cmd.resourceBarrier(&barrier_descriptor2);
 
             try self.wait_to_frees.append(.{ .buffer = item.stage_buffer, .wait_frame = 3 });
@@ -242,7 +242,7 @@ pub fn main() !void {
 
     const swap_chain_descriptor = cgpu.SwapChainDescriptor{
         .present_queue_count = 1,
-        .p_present_queues = @ptrCast(&queue),
+        .p_present_queues = &[_]cgpu.QueueId{queue},
         .surface = surface,
         .image_count = 3,
         .width = w,
@@ -471,7 +471,7 @@ pub fn main() !void {
         }
         swapchain_infos.deinit();
     }
-    var render_finished_semaphore = device.createSemaphore().?;
+    const render_finished_semaphore = device.createSemaphore().?;
     defer device.freeSemaphore(render_finished_semaphore);
     const sampler = device.createSampler(&.{
         .min_filter = .linear,
@@ -584,9 +584,9 @@ pub fn main() !void {
                 const copied_vertex_buffer_size: u64 = ori_vertex_buffer.len * @sizeOf(imgui.DrawVert);
                 const copied_index_buffer_size: u64 = ori_index_buffer.len * @sizeOf(imgui.DrawIdx);
 
-                const imgui_vertex_buffer_mapped_address: [*]u8 = @ptrCast(imgui_vertex_buffer.info.*.cpu_mapped_address.?);
+                const imgui_vertex_buffer_mapped_address: [*]u8 = imgui_vertex_buffer.info.*.cpu_mapped_address;
                 @memcpy(imgui_vertex_buffer_mapped_address[vertex_buffer_offset .. vertex_buffer_offset + copied_vertex_buffer_size], @as([*]u8, @ptrCast(ori_vertex_buffer.ptr)));
-                const imgui_index_buffer_mapped_address: [*]u8 = @ptrCast(imgui_index_buffer.info.*.cpu_mapped_address.?);
+                const imgui_index_buffer_mapped_address: [*]u8 = imgui_index_buffer.info.*.cpu_mapped_address;
                 @memcpy(imgui_index_buffer_mapped_address[index_buffer_offset .. index_buffer_offset + copied_index_buffer_size], @as([*]u8, @ptrCast(ori_index_buffer.ptr)));
 
                 vertex_buffer_offset += copied_vertex_buffer_size;
@@ -597,12 +597,12 @@ pub fn main() !void {
 
             const buffer_barrier1: cgpu.BufferBarrier = .{ .buffer = imgui_vertex_buffer, .src_state = cgpu.ResourceState{}, .dst_state = cgpu.ResourceState{ .vertex_and_constant_buffer = true }, .queue_acquire = 0, .queue_release = 0, .queue_type = .graphics };
             const buffer_barrier2: cgpu.BufferBarrier = .{ .buffer = imgui_index_buffer, .src_state = cgpu.ResourceState{}, .dst_state = cgpu.ResourceState{ .index_buffer = true }, .queue_acquire = 0, .queue_release = 0, .queue_type = .graphics };
-            const barrier_descriptor: cgpu.ResourceBarrierDescriptor = .{ .buffer_barrier_count = 1, .p_buffer_barriers = @constCast(@ptrCast(&[_]cgpu.BufferBarrier{ buffer_barrier1, buffer_barrier2 })), .texture_barrier_count = 0, .p_texture_barriers = null };
+            const barrier_descriptor: cgpu.ResourceBarrierDescriptor = .{ .buffer_barrier_count = 1, .p_buffer_barriers = &[_]cgpu.BufferBarrier{ buffer_barrier1, buffer_barrier2 }, .texture_barrier_count = 0, .p_texture_barriers = &[_]cgpu.TextureBarrier{} };
             cmd.resourceBarrier(&barrier_descriptor);
         }
 
         const texture_barrier: cgpu.TextureBarrier = .{ .texture = current_swapchain_info.back_buffer_texture, .src_state = .{}, .dst_state = cgpu.ResourceState{ .render_target = true }, .queue_acquire = 0, .queue_release = 0, .queue_type = queue._type, .subresource_barrier = 0, .mip_level = 0, .array_layer = 0 };
-        const barrier_descriptor: cgpu.ResourceBarrierDescriptor = .{ .buffer_barrier_count = 0, .p_buffer_barriers = null, .texture_barrier_count = 1, .p_texture_barriers = @constCast(@ptrCast(&[_]cgpu.TextureBarrier{texture_barrier})) };
+        const barrier_descriptor: cgpu.ResourceBarrierDescriptor = .{ .buffer_barrier_count = 0, .p_buffer_barriers = &[_]cgpu.BufferBarrier{}, .texture_barrier_count = 1, .p_texture_barriers = &[_]cgpu.TextureBarrier{texture_barrier} };
         cmd.resourceBarrier(&barrier_descriptor);
 
         const encoder = cmd.beginRenderPass(&.{ .render_pass = render_pass, .framebuffer = current_swapchain_info.framebuffer, .clear_value_count = 1, .p_clear_values = &[_]cgpu.ClearValue{cgpu.ClearValue{ .color = [4]f32{ 0, 0, 0, 1 }, .depth = 1, .stencil = 0, .is_color = true }} }).?;
@@ -651,14 +651,14 @@ pub fn main() !void {
         cmd.endRenderPass(encoder);
 
         const texture_barrier2: cgpu.TextureBarrier = .{ .texture = current_swapchain_info.back_buffer_texture, .src_state = .{ .render_target = true }, .dst_state = cgpu.ResourceState{ .present = true }, .queue_acquire = 0, .queue_release = 0, .queue_type = queue._type, .subresource_barrier = 0, .mip_level = 0, .array_layer = 0 };
-        const barrier_descriptor2: cgpu.ResourceBarrierDescriptor = .{ .buffer_barrier_count = 0, .p_buffer_barriers = null, .texture_barrier_count = 1, .p_texture_barriers = @constCast(@ptrCast(&[_]cgpu.TextureBarrier{texture_barrier2})) };
+        const barrier_descriptor2: cgpu.ResourceBarrierDescriptor = .{ .buffer_barrier_count = 0, .p_buffer_barriers = &[_]cgpu.BufferBarrier{}, .texture_barrier_count = 1, .p_texture_barriers = &[_]cgpu.TextureBarrier{texture_barrier2} };
         cmd.resourceBarrier(&barrier_descriptor2);
 
         cmd.end();
 
-        queue.submit(&.{ .cmd_count = 1, .p_cmds = @ptrCast(&cmd), .signal_fence = current_frame_data.inflight_fence, .wait_semaphore_count = 1, .p_wait_semaphores = @ptrCast(&current_frame_data.swapchain_prepared_semaphore), .signal_semaphore_count = 1, .p_signal_semaphores = @ptrCast(&render_finished_semaphore) });
+        queue.submit(&.{ .cmd_count = 1, .p_cmds = &[_]cgpu.CommandBufferId{cmd}, .signal_fence = current_frame_data.inflight_fence, .wait_semaphore_count = 1, .p_wait_semaphores = &[_]cgpu.SemaphoreId{current_frame_data.swapchain_prepared_semaphore}, .signal_semaphore_count = 1, .p_signal_semaphores = &[_]cgpu.SemaphoreId{render_finished_semaphore} });
 
-        queue.present(&.{ .swapchain = swapchain, .wait_semaphore_count = 1, .p_wait_semaphores = @ptrCast(&render_finished_semaphore), .index = @intCast(next_swapchain_index_result) });
+        queue.present(&.{ .swapchain = swapchain, .wait_semaphore_count = 1, .p_wait_semaphores = &[_]cgpu.SemaphoreId{render_finished_semaphore}, .index = @intCast(next_swapchain_index_result) });
     }
 
     queue.waitIdle();

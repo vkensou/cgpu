@@ -152,7 +152,7 @@ local function convert_type(arg)
 		return "[*c]?*anyopaque", "null"
 	elseif isFuncPtr(arg.fulltype) then
 		return "?*const " .. arg.fulltype, "null"
-	elseif isId(arg.fulltype) then
+	elseif isId(arg.fulltype) and arg.array == nil then
 		return "?" .. arg.fulltype
 	end 
 	
@@ -171,7 +171,7 @@ local function convert_type(arg)
 	end
 
 	if arg.array ~= nil then
-		ctype = ctype:gsub("const ", "")
+		-- ctype = ctype:gsub("const ", "")
 		ctype = convert_array(arg) .. ctype
 	end
 
@@ -359,7 +359,7 @@ local function FlagBlock(typ)
                 sets[#sets + 1] = "." .. zv .. " = true"
             end
             local zname = handle_embed_keyword(upperCamelcase_to_underscorecase(flag.name))
-            yield(string.format("    const %s: %s = .{ %s };", zname, name, table.concat(sets, ", ")))
+            yield(string.format("    pub const %s: %s = .{ %s };", zname, name, table.concat(sets, ", ")))
         end
     end
 
@@ -373,11 +373,11 @@ local function convert_member_name(name)
 	return lowerCamelcase_to_underscorecase(name)
 end
 
-local function convert_struct_member(member)
+local function convert_struct_member(member, union)
 	local name = convert_member_name(member.name)
 	local type, default = convert_struct_type(member)
 	local q = name .. ": " .. type
-	if default == nil then
+	if default == nil or union then
 		return q
 	else
 		return q .. " = " .. default
@@ -429,11 +429,15 @@ function converter.types(params)
 		end
 
 		if not skip then
-            yield(string.rep("    ", indent) .. "pub const " .. typ.name .. " = extern struct {")
+			if typ.union then
+				yield(string.rep("    ", indent) .. "pub const " .. typ.name .. " = extern union {")
+			else	
+				yield(string.rep("    ", indent) .. "pub const " .. typ.name .. " = extern struct {")
+			end
 		end
 
 		for _, member in ipairs(typ.struct) do
-			yield(string.rep("    ", indent + 1) .. convert_struct_member(member) .. ",")
+			yield(string.rep("    ", indent + 1) .. convert_struct_member(member, typ.union) .. ",")
 		end
 		if funcs ~= nil then
 			for _, func in ipairs(funcs) do

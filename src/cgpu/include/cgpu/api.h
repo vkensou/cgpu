@@ -1563,8 +1563,8 @@ typedef union CGPUDescriptorDataParams
 typedef union CGPUDescriptorDataResource
 {
     void**               ptrs;
-    CGPUTextureViewId*   textures;
-    CGPUSamplerId*       samplers;
+    const CGPUTextureViewId* textures;
+    const CGPUSamplerId* samplers;
     CGPUBufferId*        buffers;
     CGPURenderPipelineId* render_pipelines;
     CGPUComputePipelineId* compute_pipelines;
@@ -1586,7 +1586,7 @@ typedef struct CGPUDescriptorData
 typedef struct CGPUBufferInfo
 {
     uint64_t             size;
-    void*                cpu_mapped_address;
+    uint8_t*             cpu_mapped_address;
     ECGPUResourceTypeFlags descriptors;
     ECGPUMemoryUsage     memory_usage;
 
@@ -1731,12 +1731,12 @@ typedef struct CGPUMemoryPool
 typedef struct CGPUQueueSubmitDescriptor
 {
     uint32_t             cmd_count;
-    CGPUCommandBufferId* p_cmds;
+    const CGPUCommandBufferId* p_cmds;
     CGPUFenceId          signal_fence;
     uint32_t             wait_semaphore_count;
-    CGPUSemaphoreId*     p_wait_semaphores;
+    const CGPUSemaphoreId* p_wait_semaphores;
     uint32_t             signal_semaphore_count;
-    CGPUSemaphoreId*     p_signal_semaphores;
+    const CGPUSemaphoreId* p_signal_semaphores;
 
 } CGPUQueueSubmitDescriptor;
 
@@ -1744,7 +1744,7 @@ typedef struct CGPUQueuePresentDescriptor
 {
     CGPUSwapChainId      swapchain;
     uint32_t             wait_semaphore_count;
-    CGPUSemaphoreId*     p_wait_semaphores;
+    const CGPUSemaphoreId* p_wait_semaphores;
     uint8_t              index;
 
 } CGPUQueuePresentDescriptor;
@@ -1777,7 +1777,7 @@ typedef struct CGPUTiledTextureRegions
 {
     CGPUTextureId        texture;
     uint32_t             region_count;
-    CGPUTextureCoordinateRegion* p_regions;
+    const CGPUTextureCoordinateRegion* p_regions;
 
 } CGPUTiledTextureRegions;
 
@@ -1791,7 +1791,7 @@ typedef struct CGPUTiledTexturePackedMip
 typedef struct CGPUTiledTexturePackedMips
 {
     uint32_t             packed_mip_count;
-    CGPUTiledTexturePackedMip* p_packed_mips;
+    const CGPUTiledTexturePackedMip* p_packed_mips;
 
 } CGPUTiledTexturePackedMips;
 
@@ -1836,7 +1836,7 @@ typedef struct CGPUPipelineReflection
 {
     CGPUShaderReflection* stages[CGPU_SHADER_STAGE_COUNT];
     uint32_t             shader_resources_count;
-    CGPUShaderResource*  p_shader_resources;
+    const CGPUShaderResource* p_shader_resources;
 
 } CGPUPipelineReflection;
 
@@ -1917,8 +1917,6 @@ typedef struct CGPUBufferBarrier
     uint8_t              queue_acquire;
     uint8_t              queue_release;
     ECGPUQueueType       queue_type;
-    uint8_t              d3d12_begin_only;
-    uint8_t              d3d12_end_only;
 
 } CGPUBufferBarrier;
 
@@ -1933,17 +1931,15 @@ typedef struct CGPUTextureBarrier
     uint8_t              subresource_barrier;
     uint8_t              mip_level;
     uint16_t             array_layer;
-    uint8_t              d3d12_begin_only;
-    uint8_t              d3d12_end_only;
 
 } CGPUTextureBarrier;
 
 typedef struct CGPUResourceBarrierDescriptor
 {
     uint32_t             buffer_barrier_count;
-    CGPUBufferBarrier*   p_buffer_barriers;
+    const CGPUBufferBarrier* p_buffer_barriers;
     uint32_t             texture_barrier_count;
-    CGPUTextureBarrier*  p_texture_barriers;
+    const CGPUTextureBarrier* p_texture_barriers;
 
 } CGPUResourceBarrierDescriptor;
 

@@ -71,13 +71,14 @@ local function find_enum_item(all_types, enum_name, item_name)
 end
 
 local function convert_arg(all_types, arg, namespace)
-	local fulltype, array = arg.fulltype:match "(.-)%s*(%[%s*[%d%a_:]*%s*%])"
+	array, fulltype = arg.fulltype:match "(%[%s*[%d%a_:%*]*%s*%])%s*(.*)"
 	if array then
 		arg.fulltype = fulltype
 		arg.array = array
 		local number = array:match "%[(%d+)%]"
 		local enum, value = array:match "%[%s*([%a%d]+)::([%a%d]+)%]"
 		local const_value = array:match "%[(%s*[%d%a_:]*)%]"
+		local indefinite = array:match "%[(%*)%]"
 		if number then
 			arg.array_at = { number = number }
 			arg.carray = "[" .. tostring(number) .. "]"
@@ -90,7 +91,9 @@ local function convert_arg(all_types, arg, namespace)
 				error ("Unknown Enum " .. const_value)
 			end
 			arg.array_at = { const_value = const_value }
-			arg.carray = "[" .. typedef.cname .. "]"			
+			arg.carray = "[" .. typedef.cname .. "]"
+		elseif indefinite then
+			arg.array_at = { indefinite = true }
 		end
 	end
 	local t, postfix = arg.fulltype:match "(%a[%a%d_:]*)%s*([*&]+)%s*$"
@@ -1002,7 +1005,7 @@ end
 
 local function text_with_comments(items, item, cstyle, is_classmember)
 	local name = item.cname
-	if item.array then
+	if item.array and not item.array_at.indefinite then
 		if cstyle then
 			name = name .. (item.carray or item.array)
 		else
@@ -1014,6 +1017,9 @@ local function text_with_comments(items, item, cstyle, is_classmember)
 		typename = item.ctype
 	else
 		typename = item.fulltype
+	end
+	if item.array and item.array_at.indefinite then
+		typename = typename .. "*"
 	end
 	if is_classmember then
 		name = "m_" .. name

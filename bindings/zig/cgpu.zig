@@ -52,8 +52,8 @@ pub const ColorMask = packed struct(u32) {
     b: bool = false, // ( 2)
     a: bool = false, // ( 3)
     padding: u28 = 0,
-    const rgb: ColorMask = .{ .r = true, .g = true, .b = true };
-    const rgba: ColorMask = .{ .a = true, .r = true, .g = true, .b = true };
+    pub const rgb: ColorMask = .{ .b = true, .r = true, .g = true };
+    pub const rgba: ColorMask = .{ .b = true, .a = true, .r = true, .g = true };
 };
 
 pub const LogSeverity = enum(u32) {
@@ -301,7 +301,7 @@ pub const CullMode = packed struct(u32) {
     back: bool = false, // ( 0)
     front: bool = false, // ( 1)
     padding: u30 = 0,
-    const both: CullMode = .{ .back = true, .front = true };
+    pub const both: CullMode = .{ .back = true, .front = true };
 };
 
 pub const FillMode = enum(u32) {
@@ -323,7 +323,7 @@ pub const StencilFace = packed struct(u32) {
     front: bool = false, // ( 0)
     back: bool = false, // ( 1)
     padding: u30 = 0,
-    const both: StencilFace = .{ .back = true, .front = true };
+    pub const both: StencilFace = .{ .back = true, .front = true };
 };
 
 pub const StencilOp = enum(u32) {
@@ -365,7 +365,7 @@ pub const ShaderStage = packed struct(u32) {
     compute: bool = false, // ( 5)
     ray_tracing: bool = false, // ( 6)
     padding: u25 = 0,
-    const all_graphics: ShaderStage = .{ .geometry = true, .tessellation_control = true, .vertex = true, .tessellation_evaluation = true, .fragment = true };
+    pub const all_graphics: ShaderStage = .{ .tessellation_evaluation = true, .geometry = true, .tessellation_control = true, .fragment = true, .vertex = true };
 };
 
 pub const PipelineStage = packed struct(u32) {
@@ -414,7 +414,7 @@ pub const ResourceState = packed struct(u32) {
     resolve_dest: bool = false, // (16)
     padding: u15 = 0,
     pub const shader_resource: ResourceState = .{ .pixel_shader_resource = true, .non_pixel_shader_resource = true };
-    const generic_read: ResourceState = .{ .pixel_shader_resource = true, .index_buffer = true, .copy_source = true, .indirect_argument = true, .vertex_and_constant_buffer = true, .non_pixel_shader_resource = true };
+    pub const generic_read: ResourceState = .{ .copy_source = true, .non_pixel_shader_resource = true, .pixel_shader_resource = true, .vertex_and_constant_buffer = true, .indirect_argument = true, .index_buffer = true };
 };
 
 pub const MemoryUsage = enum(u32) {
@@ -620,9 +620,9 @@ pub const DynamicStateFeatures = packed struct(u64) {
     representative_fragment_test_enable: bool = false, // (43)
     shading_rate_image_enable: bool = false, // (44)
     padding: u19 = 0,
-    const tier1: DynamicStateFeatures = .{ .front_face = true, .cull_mode = true, .depth_bounds_test = true, .primitive_topology = true, .stencil_test = true, .depth_test = true, .stencil_op = true, .depth_compare = true, .depth_write = true };
-    const tier2: DynamicStateFeatures = .{ .front_face = true, .depth_bias = true, .cull_mode = true, .patch_control_points = true, .depth_bounds_test = true, .primitive_topology = true, .raster_discard = true, .logic_op = true, .primitive_restart = true, .stencil_test = true, .depth_test = true, .stencil_op = true, .depth_compare = true, .depth_write = true };
-    const tier3: DynamicStateFeatures = .{ .coverage_reduction_mode = true, .patch_control_points = true, .coverage_to_color_location = true, .logic_op = true, .stencil_op = true, .raster_stream = true, .sample_count = true, .color_blend_advanced = true, .cull_mode = true, .depth_bounds_test = true, .primitive_topology = true, .alpha_to_coverage_enable = true, .color_blend_equation = true, .shading_rate_image_enable = true, .depth_clamp_enable = true, .tessellation_domain_origin = true, .coverage_modulation_mode = true, .representative_fragment_test_enable = true, .coverage_modulation_table = true, .depth_compare = true, .raster_discard = true, .provoking_vertex_mode = true, .conservative_raster_mode = true, .extra_primitive_overestimation_size = true, .depth_write = true, .coverage_to_color_enable = true, .alpha_to_one_enable = true, .viewport_swizzle = true, .primitive_restart = true, .front_face = true, .depth_bias = true, .line_rasterization_mode = true, .depth_clip_negative_one_to_one = true, .sample_locations_enable = true, .line_stipple_enable = true, .sample_mask = true, .depth_test = true, .coverage_modulation_table_enable = true, .polygon_mode = true, .depth_clip_enable = true, .logic_op_enable = true, .stencil_test = true, .color_write_mask = true, .color_blend_enable = true, .viewport_wscaling_enable = true };
+    pub const tier1: DynamicStateFeatures = .{ .depth_compare = true, .depth_test = true, .front_face = true, .primitive_topology = true, .depth_bounds_test = true, .cull_mode = true, .depth_write = true, .stencil_test = true, .stencil_op = true };
+    pub const tier2: DynamicStateFeatures = .{ .depth_compare = true, .depth_test = true, .front_face = true, .patch_control_points = true, .primitive_topology = true, .primitive_restart = true, .depth_bounds_test = true, .logic_op = true, .depth_bias = true, .cull_mode = true, .raster_discard = true, .depth_write = true, .stencil_test = true, .stencil_op = true };
+    pub const tier3: DynamicStateFeatures = .{ .depth_compare = true, .front_face = true, .coverage_modulation_table = true, .tessellation_domain_origin = true, .logic_op = true, .depth_clamp_enable = true, .raster_stream = true, .conservative_raster_mode = true, .color_blend_equation = true, .depth_bias = true, .viewport_swizzle = true, .depth_clip_enable = true, .line_stipple_enable = true, .primitive_topology = true, .alpha_to_coverage_enable = true, .patch_control_points = true, .coverage_modulation_table_enable = true, .alpha_to_one_enable = true, .logic_op_enable = true, .color_write_mask = true, .extra_primitive_overestimation_size = true, .color_blend_enable = true, .color_blend_advanced = true, .depth_bounds_test = true, .shading_rate_image_enable = true, .coverage_to_color_enable = true, .line_rasterization_mode = true, .representative_fragment_test_enable = true, .coverage_reduction_mode = true, .primitive_restart = true, .raster_discard = true, .viewport_wscaling_enable = true, .coverage_to_color_location = true, .depth_write = true, .sample_locations_enable = true, .stencil_test = true, .depth_clip_negative_one_to_one = true, .sample_mask = true, .cull_mode = true, .polygon_mode = true, .provoking_vertex_mode = true, .coverage_modulation_mode = true, .sample_count = true, .depth_test = true, .stencil_op = true };
 };
 
 pub const LogCallback = fn (user_data: ?*anyopaque, severity: LogSeverity, fmt: [*c]const u8, ...) callconv(.C) void;
@@ -1594,7 +1594,7 @@ pub const ShaderLibrary = extern struct {
     p_entry_reflections: [*c]ShaderReflection,
 };
 
-pub const ConstantSpecializationImpl = extern struct {
+pub const ConstantSpecializationImpl = extern union {
     u: u64,
     i: i64,
     f: f64,
@@ -1810,7 +1810,7 @@ pub const DescriptorData = extern struct {
 
 pub const BufferInfo = extern struct {
     size: u64,
-    cpu_mapped_address: ?*anyopaque = null,
+    cpu_mapped_address: [*]u8,
     descriptors: ResourceType,
     memory_usage: MemoryUsage,
 };
@@ -1935,18 +1935,18 @@ pub const MemoryPool = extern struct {
 
 pub const QueueSubmitDescriptor = extern struct {
     cmd_count: u32,
-    p_cmds: [*c]CommandBufferId,
+    p_cmds: [*]const CommandBufferId,
     signal_fence: ?FenceId,
     wait_semaphore_count: u32,
-    p_wait_semaphores: [*c]SemaphoreId,
+    p_wait_semaphores: [*]const SemaphoreId,
     signal_semaphore_count: u32,
-    p_signal_semaphores: [*c]SemaphoreId,
+    p_signal_semaphores: [*]const SemaphoreId,
 };
 
 pub const QueuePresentDescriptor = extern struct {
     swapchain: ?SwapChainId,
     wait_semaphore_count: u32,
-    p_wait_semaphores: [*c]SemaphoreId,
+    p_wait_semaphores: [*]const SemaphoreId,
     index: u8,
 };
 
@@ -1971,7 +1971,7 @@ pub const TextureCoordinateRegion = extern struct {
 pub const TiledTextureRegions = extern struct {
     texture: ?TextureId,
     region_count: u32,
-    p_regions: [*c]TextureCoordinateRegion,
+    p_regions: [*]const TextureCoordinateRegion,
 };
 
 pub const TiledTexturePackedMip = extern struct {
@@ -1981,7 +1981,7 @@ pub const TiledTexturePackedMip = extern struct {
 
 pub const TiledTexturePackedMips = extern struct {
     packed_mip_count: u32,
-    p_packed_mips: [*c]TiledTexturePackedMip,
+    p_packed_mips: [*]const TiledTexturePackedMip,
 };
 
 pub const ColorAttachment = extern struct {
@@ -2016,7 +2016,7 @@ pub const FramebufferDescriptor = extern struct {
 pub const PipelineReflection = extern struct {
     stages: [ShaderStageCount][*c]ShaderReflection,
     shader_resources_count: u32,
-    p_shader_resources: [*c]ShaderResource,
+    p_shader_resources: [*]const ShaderResource,
 };
 
 pub const ClearValue = extern struct {
@@ -2079,8 +2079,6 @@ pub const BufferBarrier = extern struct {
     queue_acquire: u8,
     queue_release: u8,
     queue_type: QueueType,
-    d3d12_begin_only: u8 = 0,
-    d3d12_end_only: u8 = 0,
 };
 
 pub const TextureBarrier = extern struct {
@@ -2093,15 +2091,13 @@ pub const TextureBarrier = extern struct {
     subresource_barrier: u8,
     mip_level: u8,
     array_layer: u16,
-    d3d12_begin_only: u8 = 0,
-    d3d12_end_only: u8 = 0,
 };
 
 pub const ResourceBarrierDescriptor = extern struct {
     buffer_barrier_count: u32,
-    p_buffer_barriers: [*c]BufferBarrier,
+    p_buffer_barriers: [*]const BufferBarrier,
     texture_barrier_count: u32,
-    p_texture_barriers: [*c]TextureBarrier,
+    p_texture_barriers: [*]const TextureBarrier,
 };
 
 pub const CommandPoolDescriptor = extern struct {
@@ -2114,7 +2110,7 @@ pub const CommandBufferDescriptor = extern struct {
 
 pub const SwapChainDescriptor = extern struct {
     present_queue_count: u32,
-    p_present_queues: [*c]const QueueId,
+    p_present_queues: [*]const QueueId,
     surface: ?SurfaceId,
     image_count: u32,
     width: u32,

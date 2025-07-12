@@ -1506,7 +1506,7 @@ struct.VendorPreset
     .deviceId           "uint32_t"
     .vendorId           "uint32_t"
     .driverVersion      "uint32_t"
-    .gpuName            "char[64]"
+    .gpuName            "[64]char"
 
 struct.FormatSupport
     .shaderRead         "bool"
@@ -1534,7 +1534,7 @@ struct.AdapterDetail
     .supportShadingRate                     "bool"
     .supportShadingRateMask                 "bool"
     .supportShadingRateSv                   "bool"
-    .formatSupports                         "FormatSupport[TextureFormat::Count]"
+    .formatSupports                         "[TextureFormat::Count]FormatSupport"
     .vendorPreset                           "VendorPreset"
 
 struct.Adapter
@@ -1643,7 +1643,7 @@ struct.ShaderReflection
     .pVertexInputs      "VertexInput*"
     .shaderResourceCount   "uint32_t"
     .pShaderResources   "ShaderResource*"
-    .threadGroupSizes   "uint32_t[3]"
+    .threadGroupSizes   "[3]uint32_t"
 
 struct.ShaderLibrary
     .device             "DeviceId"
@@ -1810,8 +1810,8 @@ struct.DescriptorDataParams { union }
 
 struct.DescriptorDataResource { union }
     .ptrs               "void**"
-    .textures           "TextureViewId*"
-    .samplers           "SamplerId*"
+    .textures           "const TextureViewId*"
+    .samplers           "const SamplerId*"
     .buffers            "BufferId*"
     .renderPipelines    "RenderPipelineId*"
     .computePipelines   "ComputePipelineId*"
@@ -1827,7 +1827,7 @@ struct.DescriptorData
 
 struct.BufferInfo
     .size               "uint64_t"
-    .cpuMappedAddress   "void*"
+    .cpuMappedAddress   "[*]uint8_t"
     .descriptors        "ResourceType"
     .memoryUsage        "MemoryUsage::Enum"
 
@@ -1929,17 +1929,17 @@ struct.MemoryPool
 
 struct.QueueSubmitDescriptor
     .cmdCount           "uint32_t"
-    .pCmds              "CommandBufferId*"
+    .pCmds              "[*]const CommandBufferId"
     .signalFence        "FenceId"
     .waitSemaphoreCount "uint32_t"
-    .pWaitSemaphores    "SemaphoreId*"
+    .pWaitSemaphores    "[*]const SemaphoreId"
     .signalSemaphoreCount   "uint32_t"
-    .pSignalSemaphores  "SemaphoreId*"
+    .pSignalSemaphores  "[*]const SemaphoreId"
 
 struct.QueuePresentDescriptor
     .swapchain          "SwapChainId"
     .waitSemaphoreCount "uint32_t"
-    .pWaitSemaphores    "SemaphoreId*"
+    .pWaitSemaphores    "[*]const SemaphoreId"
     .index              "uint8_t"
 
 struct.Coordinate
@@ -1960,7 +1960,7 @@ struct.TextureCoordinateRegion
 struct.TiledTextureRegions
     .texture            "TextureId"
     .regionCount        "uint32_t"
-    .pRegions           "TextureCoordinateRegion*"
+    .pRegions           "[*]const TextureCoordinateRegion"
 
 struct.TiledTexturePackedMip
     .texture            "TextureId"
@@ -1968,7 +1968,7 @@ struct.TiledTexturePackedMip
 
 struct.TiledTexturePackedMips
     .packedMipCount     "uint32_t"
-    .pPackedMips         "TiledTexturePackedMip*"
+    .pPackedMips        "[*]const TiledTexturePackedMip"
 
 struct.ColorAttachment
     .format             "TextureFormat::Enum" 
@@ -1984,24 +1984,24 @@ struct.DepthStencilAttachment
 
 struct.RenderPassDescriptor
     .sampleCount        "SampleCount"
-    .colorAttachments   "ColorAttachment[MaxMrtCount]"
+    .colorAttachments   "[MaxMrtCount]ColorAttachment"
     .depthStencil       "DepthStencilAttachment" 
 
 struct.FramebufferDescriptor
     .renderpass         "RenderPassId" 
     .attachmentCount    "uint32_t" 
-    .pAttachments       "TextureViewId[MaxAttachmentCount]"
+    .pAttachments       "[MaxAttachmentCount]TextureViewId"
     .width              "uint32_t" 
     .height             "uint32_t" 
     .layers             "uint32_t" 
 
 struct.PipelineReflection 
-    .stages             "ShaderReflection*[ShaderStageCount]" 
+    .stages             "[ShaderStageCount]ShaderReflection*" 
     .shaderResourcesCount   "uint32_t"
-    .pShaderResources    "ShaderResource*" 
+    .pShaderResources   "[*]const ShaderResource" 
 
 struct.ClearValue 
-    .color              "float[4]" 
+    .color              "[4]float" 
     .depth              "float" 
     .stencil            "uint8_t" 
     .isColor            "bool"
@@ -2052,8 +2052,6 @@ struct.BufferBarrier
     .queueAcquire       "uint8_t" 
     .queueRelease       "uint8_t" 
     .queueType          "QueueType::Enum" 
-    .d3d12BeginOnly     "uint8_t" 
-    .d3d12EndOnly       "uint8_t"
 
 struct.TextureBarrier 
     .texture            "TextureId" 
@@ -2065,14 +2063,12 @@ struct.TextureBarrier
     .subresourceBarrier "uint8_t" 
     .mipLevel           "uint8_t" 
     .arrayLayer         "uint16_t" 
-    .d3d12BeginOnly     "uint8_t" 
-    .d3d12EndOnly       "uint8_t"
 
 struct.ResourceBarrierDescriptor 
     .bufferBarrierCount "uint32_t" 
-    .pBufferBarriers    "BufferBarrier*" 
+    .pBufferBarriers    "[*]const BufferBarrier" 
     .textureBarrierCount"uint32_t"
-    .pTextureBarriers   "TextureBarrier*" 
+    .pTextureBarriers   "[*]const TextureBarrier" 
 
 struct.CommandPoolDescriptor 
     .name               "const char*"
@@ -2082,7 +2078,7 @@ struct.CommandBufferDescriptor
 
 struct.SwapChainDescriptor 
     .presentQueueCount  "uint32_t" 
-    .pPresentQueues     "const QueueId*" 
+    .pPresentQueues     "[*]const QueueId" 
     .surface            "SurfaceId" 
     .imageCount         "uint32_t" 
     .width              "uint32_t" 
@@ -2176,11 +2172,11 @@ struct.BeginRenderPassInfo
 
 struct.EventInfo 
     .name               "const char*" 
-    .color              "float[4]"
+    .color              "[4]float"
 
 struct.MarkerInfo 
     .name               "const char*" 
-    .color              "float[4]"
+    .color              "[4]float"
 
 struct.StateBufferDescriptor {}
 
