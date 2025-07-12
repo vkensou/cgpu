@@ -14,6 +14,10 @@ const std = @import("std");
 pub const HWND = *anyopaque;
 pub const ANativeWindowPtr = *anyopaque;
 
+pub const Error = error{
+    CreateFailed,
+};
+
 $types
 $funcs]]
 
@@ -144,7 +148,7 @@ local function convert_type_0(arg)
 	return arg.fulltype
 end
 
-local function convert_type(arg)
+local function convert_type(arg, not_optional)
 	local ctype = convert_type_0(arg)
 
 	if ctype == "void*" then
@@ -154,7 +158,7 @@ local function convert_type(arg)
 	elseif isFuncPtr(arg.fulltype) then
 		return "?*const " .. arg.fulltype, "null"
 	elseif isId(arg.fulltype) and arg.array == nil then
-		return "?" .. arg.fulltype
+		return not_optional and arg.fulltype or "?" .. arg.fulltype
 	end 
 	
 	ctype = ctype:gsub("::Enum", "")
@@ -193,15 +197,31 @@ local function wrap_simple_func(func, args, argNames)
     return $cfunc($args);
 }]]
 
+	local zigCreateFuncTemplate = [[pub inline fn $func($params) Error!$ret {
+    const result = $cfunc($args);
+    return if (result) |result_object|
+        result_object
+    else
+        Error.CreateFailed;
+}]]
+
 	-- transform name to camelCase from snake_case
 	zigFunc.func = func.cname:gsub("_(.)", func.cname.upper)
 	-- make 2d/3d upper case 2D/3D
 	zigFunc.func = zigFunc.func:gsub("%dd", zigFunc.func.upper);
 	zigFunc.params = table.concat(args, ", ")
 	zigFunc.ret = convert_ret_type(func.ret)
+	local createFunc = zigFunc.ret:match("^?(.*)") ~= nil
+	if createFunc then
+		zigFunc.ret = zigFunc.ret:gsub("^?", "")
+	end
 	zigFunc.cfunc = "cgpu_" .. func.cname
 	zigFunc.args = table.concat(argNames, ", ")
-	return zigFuncTemplate:gsub("$(%l+)", zigFunc)
+	if createFunc then
+		return zigCreateFuncTemplate:gsub("$(%l+)", zigFunc)
+	else
+		return zigFuncTemplate:gsub("$(%l+)", zigFunc)
+	end
 end
 
 local function wrap_method(func, type, args, argNames, indent)
@@ -210,7 +230,16 @@ local function wrap_method(func, type, args, argNames, indent)
     %sreturn $cfunc($args);
 %s}]]
 
+	local zigCreateFuncTemplate = [[%spub inline fn $func($params) Error!$ret {
+    %sconst result = $cfunc($args);
+    %sreturn if (result) |result_object|
+        %sresult_object
+    %selse
+        %sError.CreateFailed;
+%s}]]
+
 	zigFuncTemplate = string.format(zigFuncTemplate, indent, indent, indent);
+	zigCreateFuncTemplate = string.format(zigCreateFuncTemplate, indent, indent, indent, indent, indent, indent, indent);
 
 	-- transform name to camelCase from snake_case
 	zigFunc.func = func.cname:gsub("_(.)", func.cname.upper)
@@ -226,9 +255,17 @@ local function wrap_method(func, type, args, argNames, indent)
 	if zigFunc.ret == ("[*c]" .. type) then
 		zigFunc.ret = zigFunc.ret:gsub("%[%*c%]", "*")
 	end
+	local createFunc = zigFunc.ret:match("^?(.*)") ~= nil
+	if createFunc then
+		zigFunc.ret = zigFunc.ret:gsub("^?", "")
+	end
 	zigFunc.cfunc = "cgpu_" .. func.cname
 	zigFunc.args = table.concat(argNames, ", ")
-	return zigFuncTemplate:gsub("$(%l+)", zigFunc)
+	if createFunc then
+		return zigCreateFuncTemplate:gsub("$(%l+)", zigFunc)
+	else
+		return zigFuncTemplate:gsub("$(%l+)", zigFunc)
+	end
 end
 
 local converter = {}
@@ -474,9 +511,9 @@ function converter.types(params)
 			-- argName = argName:gsub("type_", '@"type"')
 			if not isempty(argName) then
 				table.insert(argNames, argName)
-				table.insert(args, convert_member_name(argName) .. ": " .. convert_type(arg))
+				table.insert(args, convert_member_name(argName) .. ": " .. convert_type(arg, true))
 			else
-				table.insert(args, convert_type(arg))
+				table.insert(args, convert_type(arg, true))
 			end
 		end
 
@@ -552,9 +589,9 @@ function converter.funcs(params)
 		-- argName = argName:gsub("type_", '@"type"')
 		if not isempty(argName) then
 			table.insert(argNames, argName)
-			table.insert(args, argName .. ": " .. convert_type(arg))
+			table.insert(args, argName .. ": " .. convert_type(arg, true))
 		else
-			table.insert(args, convert_type(arg))
+			table.insert(args, convert_type(arg, true))
 		end
 	end
 

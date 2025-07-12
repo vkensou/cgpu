@@ -22,18 +22,20 @@ fn readFile(allocator: std.mem.Allocator, filepath: [:0]const u8) !std.ArrayList
 fn loadShader(device: cgpu.DeviceId, allocator: std.mem.Allocator, vs_filepath: [:0]const u8, ps_filepath: [:0]const u8) !Shader {
     const vs_content = try readFile(allocator, vs_filepath);
     defer vs_content.deinit();
-    const vs_shader = device.createShaderLibrary(&.{ .name = "VertexShaderLibrary", .code_size = vs_content.items.len, .p_code = vs_content.items.ptr, .stage = .{ .vertex = true }, .reflection_only = false });
+    const vs_shader = try device.createShaderLibrary(&.{ .name = "VertexShaderLibrary", .code_size = vs_content.items.len, .p_code = vs_content.items.ptr, .stage = .{ .vertex = true }, .reflection_only = false });
+    errdefer device.freeShaderLibrary(vs_shader);
 
     const ps_content = try readFile(allocator, ps_filepath);
     defer ps_content.deinit();
-    const ps_shader = device.createShaderLibrary(&.{ .name = "FragmentShaderLibrary", .code_size = ps_content.items.len, .p_code = ps_content.items.ptr, .stage = .{ .fragment = true }, .reflection_only = false });
+    const ps_shader = try device.createShaderLibrary(&.{ .name = "FragmentShaderLibrary", .code_size = ps_content.items.len, .p_code = ps_content.items.ptr, .stage = .{ .fragment = true }, .reflection_only = false });
+    errdefer device.freeShaderLibrary(ps_shader);
 
     const shader_entries = [_]cgpu.ShaderEntryDescriptor{
         cgpu.ShaderEntryDescriptor{ .entry = "main", .stage = .{ .vertex = true }, .library = vs_shader, .p_constants = null, .constant_count = 0 },
         cgpu.ShaderEntryDescriptor{ .entry = "main", .stage = .{ .fragment = true }, .library = ps_shader, .p_constants = null, .constant_count = 0 },
     };
     const root_sig_descriptor = cgpu.RootSignatureDescriptor{ .shader_count = shader_entries.len, .p_shaders = &shader_entries, .static_sampler_count = 0, .p_static_samplers = null, .p_static_sampler_names = null, .push_constant_count = 0, .p_push_constant_names = null, .pool = null };
-    const root_sig = device.createRootSignature(&root_sig_descriptor).?;
+    const root_sig = try device.createRootSignature(&root_sig_descriptor);
     return .{
         .root_sig = root_sig,
         .vs_shader = shader_entries[0],
@@ -48,8 +50,8 @@ const Shader = struct {
 };
 
 fn freeShader(device: cgpu.DeviceId, shader: *const Shader) void {
-    device.freeShaderLibrary(shader.vs_shader.library);
-    device.freeShaderLibrary(shader.ps_shader.library);
+    if (shader.vs_shader.library) |library| device.freeShaderLibrary(library);
+    if (shader.ps_shader.library) |library| device.freeShaderLibrary(library);
     device.freeRootSignature(shader.root_sig);
 }
 
@@ -109,7 +111,7 @@ const WaitUploadTextureQueue = struct {
             .prefer_on_device = false,
             .prefer_on_host = false,
         };
-        const buffer = self.device.createBuffer(&stage_descriptor).?;
+        const buffer = try self.device.createBuffer(&stage_descriptor);
         @memcpy(buffer.info.*.cpu_mapped_address, data);
         try self.queue.writeItem(.{ .stage_buffer = buffer, .texture = texture });
     }
@@ -205,7 +207,7 @@ pub fn main() !void {
 
     const instance_descriptor = cgpu.InstanceDescriptor{ .backend = .vulkan, .enable_debug_layer = true, .enable_gpu_based_validation = true, .enable_set_name = true, .logger = .{}, .allocator = .{} };
 
-    const instance = cgpu.createInstance(&instance_descriptor).?;
+    const instance = try cgpu.createInstance(&instance_descriptor);
     defer cgpu.freeInstance(instance);
 
     var adapters_count: u32 = 0;
@@ -226,10 +228,10 @@ pub fn main() !void {
         .p_queue_groups = &queue_group_descriptor,
     };
 
-    const device = adapter.createDevice(&device_descriptor).?;
+    const device = try adapter.createDevice(&device_descriptor);
     defer adapter.freeDevice(device);
 
-    const queue = device.getQueue(.graphics, 0).?;
+    const queue = try device.getQueue(.graphics, 0);
     defer device.freeQueue(queue);
 
     const windowProperties = try window.getProperties();
@@ -237,7 +239,7 @@ pub fn main() !void {
     if (hwnd == null)
         return error.InitFailed;
 
-    const surface = device.createSurfaceFromNativeView(hwnd.?);
+    const surface = try device.createSurfaceFromNativeView(hwnd.?);
     defer device.freeSurface(surface);
 
     const swap_chain_descriptor = cgpu.SwapChainDescriptor{
@@ -251,7 +253,7 @@ pub fn main() !void {
         .use_flip_swap_effect = false,
         .format = .r8g8b8a8_unorm,
     };
-    const swapchain = device.createSwapChain(&swap_chain_descriptor).?;
+    const swapchain = try device.createSwapChain(&swap_chain_descriptor);
     defer device.freeSwapChain(swapchain);
 
     var texture_upload_queue = WaitUploadTextureQueue.init(allocator, device);
@@ -264,7 +266,7 @@ pub fn main() !void {
     defer freeShader(device, &imgui_shader);
 
     const font_tex_info = imgui.io.getFontsTextDataAsRgba32();
-    const imgui_font_texture = device.createTexture(&.{
+    const imgui_font_texture = try device.createTexture(&.{
         .name = "",
         .native_handle = null,
         .flags = .{},
@@ -280,7 +282,7 @@ pub fn main() !void {
         .start_state = .{},
         .descriptors = .{ .texture = true },
         .is_restrict_dedicated = 0,
-    }).?;
+    });
     defer device.freeTexture(imgui_font_texture);
 
     const uploaded_data_32: [*]const u32 = font_tex_info.pixels.?;
@@ -288,7 +290,7 @@ pub fn main() !void {
     const uploaded_data_slice = uploaded_data[0..@intCast(font_tex_info.width * font_tex_info.height * 4)];
     try texture_upload_queue.upload(imgui_font_texture, uploaded_data_slice);
 
-    const imgui_font_texture_view = device.createTextureView(&.{
+    const imgui_font_texture_view = try device.createTextureView(&.{
         .name = "",
         .texture = imgui_font_texture,
         .format = imgui_font_texture.info.*.format,
@@ -299,10 +301,10 @@ pub fn main() !void {
         .array_layer_count = 1,
         .base_mip_level = 0,
         .mip_level_count = @intCast(imgui_font_texture.info.*.mip_levels),
-    }).?;
+    });
     defer device.freeTextureView(imgui_font_texture_view);
 
-    const imgui_font_texture_sampler = device.createSampler(&.{
+    const imgui_font_texture_sampler = try device.createSampler(&.{
         .min_filter = .linear,
         .mag_filter = .linear,
         .mipmap_mode = .linear,
@@ -312,7 +314,7 @@ pub fn main() !void {
         .mip_lod_bias = 0,
         .max_anisotropy = 1,
         .compare_func = .always,
-    }).?;
+    });
     defer device.freeSampler(imgui_font_texture_sampler);
 
     var imgui_vertex_buffers = [3]?cgpu.BufferId{ null, null, null };
@@ -323,10 +325,10 @@ pub fn main() !void {
     }
     defer {
         for (0..3) |i| {
-            if (imgui_vertex_buffers[i] != null)
-                device.freeBuffer(imgui_vertex_buffers[i]);
-            if (imgui_index_buffers[i] != null)
-                device.freeBuffer(imgui_index_buffers[i]);
+            if (imgui_vertex_buffers[i]) |buffer|
+                device.freeBuffer(buffer);
+            if (imgui_index_buffers[i]) |buffer|
+                device.freeBuffer(buffer);
         }
     }
 
@@ -337,7 +339,7 @@ pub fn main() !void {
         .color_attachments = [_]cgpu.ColorAttachment{ .{ .format = swapchain.back_buffers[0].info.*.format, .load_action = .clear, .store_action = .store }, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment },
         .depth_stencil = .{ .format = .undefined, .depth_load_action = .load, .depth_store_action = .store, .stencil_load_action = .load, .stencil_store_action = .store },
     };
-    const render_pass = device.createRenderPass(&render_pass_descriptor).?;
+    const render_pass = try device.createRenderPass(&render_pass_descriptor);
     defer device.freeRenderPass(render_pass);
 
     const blend_mode = cgpu.BlendStateDescriptor{
@@ -355,7 +357,7 @@ pub fn main() !void {
         .alpha_to_coverage = false,
         .independent_blend = true,
     };
-    const render_pipeline = device.createRenderPipeline(&.{
+    const render_pipeline = try device.createRenderPipeline(&.{
         .dynamic_state = 0,
         .root_signature = shader.root_sig,
         .vertex_shader = &shader.vs_shader,
@@ -372,7 +374,7 @@ pub fn main() !void {
         .render_target_count = 1,
         .sample_count = .{ .@"1" = true },
         .prim_topology = .triangle_list,
-    }).?;
+    });
     defer device.freeRenderPipeline(render_pipeline);
     const imgui_vertex_layout = cgpu.VertexLayout{ .attribute_count = 3, .p_attributes = &[_]cgpu.VertexAttribute{
         cgpu.VertexAttribute{ .semantic_name = "POSITION", .array_size = 1, .format = .float32x2, .binding = 0, .offset = 0, .elem_stride = @sizeOf(f32) * 2, .rate = .vertex },
@@ -407,7 +409,7 @@ pub fn main() !void {
         .enable_depth_clamp = true,
     };
 
-    const imgui_render_pipeline = device.createRenderPipeline(&.{
+    const imgui_render_pipeline = try device.createRenderPipeline(&.{
         .dynamic_state = 0,
         .root_signature = imgui_shader.root_sig,
         .vertex_shader = &imgui_shader.vs_shader,
@@ -424,10 +426,10 @@ pub fn main() !void {
         .render_target_count = 1,
         .sample_count = .{ .@"1" = true },
         .prim_topology = .triangle_list,
-    }).?;
+    });
     defer device.freeRenderPipeline(imgui_render_pipeline);
 
-    const imgui_font_descriptor_set = device.createDescriptorSet(&.{ .root_signature = imgui_shader.root_sig, .set_index = 0 }).?;
+    const imgui_font_descriptor_set = try device.createDescriptorSet(&.{ .root_signature = imgui_shader.root_sig, .set_index = 0 });
     imgui_font_descriptor_set.update(2, &[_]cgpu.DescriptorData{
         .{ .name = null, .binding = 0, .binding_type = .{ .texture = true }, .count = 1, .params = .{ .enable_stencil_resource = false }, .resources = .{ .textures = &[_]cgpu.TextureViewId{imgui_font_texture_view} } },
         .{ .name = null, .binding = 1, .binding_type = .{ .sampler = true }, .count = 1, .params = .{ .enable_stencil_resource = false }, .resources = .{ .samplers = &[_]cgpu.SamplerId{imgui_font_texture_sampler} } },
@@ -435,11 +437,11 @@ pub fn main() !void {
     defer device.freeDescriptorSet(imgui_font_descriptor_set);
     var frame_datas: [3]FrameData = undefined;
     for (0..frame_datas.len) |i| {
-        const cmdpool = queue.createCommandPool(&.{ .name = "" }).?;
-        const cmd = cmdpool.createCommandBuffer(&.{ .is_secondary = false }).?;
+        const cmdpool = try queue.createCommandPool(&.{ .name = "" });
+        const cmd = try cmdpool.createCommandBuffer(&.{ .is_secondary = false });
         frame_datas[i] = .{
-            .inflight_fence = device.createFence().?,
-            .swapchain_prepared_semaphore = device.createSemaphore().?,
+            .inflight_fence = try device.createFence(),
+            .swapchain_prepared_semaphore = try device.createSemaphore(),
             .cmdpool = cmdpool,
             .cmd = cmd,
         };
@@ -457,11 +459,11 @@ pub fn main() !void {
     try swapchain_infos.ensureTotalCapacity(swapchain.buffer_count);
     for (0..swapchain.buffer_count) |i| {
         const back_buffer_texture = swapchain.back_buffers[i];
-        const back_buffer_texture_view = device.createTextureView(&.{ .name = null, .texture = back_buffer_texture, .format = swapchain.back_buffers[i].*.info.*.format, .usages = .{ .rtv_dsv = true }, .aspects = .{ .color = true }, .dims = .@"2d", .base_array_layer = 0, .array_layer_count = 1, .base_mip_level = 0, .mip_level_count = 1 }).?;
+        const back_buffer_texture_view = try device.createTextureView(&.{ .name = null, .texture = back_buffer_texture, .format = swapchain.back_buffers[i].*.info.*.format, .usages = .{ .rtv_dsv = true }, .aspects = .{ .color = true }, .dims = .@"2d", .base_array_layer = 0, .array_layer_count = 1, .base_mip_level = 0, .mip_level_count = 1 });
         swapchain_infos.appendAssumeCapacity(.{
             .back_buffer_texture = back_buffer_texture,
             .back_buffer_texture_view = back_buffer_texture_view,
-            .framebuffer = device.createFramebuffer(&.{ .renderpass = render_pass, .width = w, .height = h, .layers = 1, .attachment_count = 1, .p_attachments = [cgpu.MaxAttachmentCount]cgpu.TextureViewId{ back_buffer_texture_view, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined } }).?,
+            .framebuffer = try device.createFramebuffer(&.{ .renderpass = render_pass, .width = w, .height = h, .layers = 1, .attachment_count = 1, .p_attachments = [cgpu.MaxAttachmentCount]cgpu.TextureViewId{ back_buffer_texture_view, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined } }),
         });
     }
     defer {
@@ -471,9 +473,9 @@ pub fn main() !void {
         }
         swapchain_infos.deinit();
     }
-    const render_finished_semaphore = device.createSemaphore().?;
+    const render_finished_semaphore = try device.createSemaphore();
     defer device.freeSemaphore(render_finished_semaphore);
-    const sampler = device.createSampler(&.{
+    const sampler = try device.createSampler(&.{
         .min_filter = .linear,
         .mag_filter = .linear,
         .mipmap_mode = .linear,
@@ -483,7 +485,7 @@ pub fn main() !void {
         .mip_lod_bias = 0,
         .max_anisotropy = 1,
         .compare_func = .always,
-    }).?;
+    });
     defer device.freeSampler(sampler);
 
     var current_frame_index: usize = 0;
@@ -528,7 +530,7 @@ pub fn main() !void {
                 imgui_vertex_buffers[resource_index] = null;
             }
             if (imgui_vertex_buffers[resource_index] == null) {
-                imgui_vertex_buffers[resource_index] = device.createBuffer(&.{
+                imgui_vertex_buffers[resource_index] = try device.createBuffer(&.{
                     .size = vertex_buffer_size,
                     .count_buffer = null,
                     .name = null,
@@ -543,7 +545,7 @@ pub fn main() !void {
                     .start_state = cgpu.ResourceState{},
                     .prefer_on_device = false,
                     .prefer_on_host = false,
-                }).?;
+                });
             }
 
             const index_buffer_size: u64 = @intCast(imgui_draw_data.total_idx_count * @sizeOf(imgui.DrawIdx));
@@ -552,7 +554,7 @@ pub fn main() !void {
                 imgui_index_buffers[resource_index] = null;
             }
             if (imgui_index_buffers[resource_index] == null) {
-                imgui_index_buffers[resource_index] = device.createBuffer(&.{
+                imgui_index_buffers[resource_index] = try device.createBuffer(&.{
                     .size = index_buffer_size,
                     .count_buffer = null,
                     .name = null,
@@ -567,7 +569,7 @@ pub fn main() !void {
                     .start_state = cgpu.ResourceState{},
                     .prefer_on_device = false,
                     .prefer_on_host = false,
-                }).?;
+                });
             }
 
             var imgui_vertex_buffer = imgui_vertex_buffers[resource_index].?;
@@ -605,7 +607,8 @@ pub fn main() !void {
         const barrier_descriptor: cgpu.ResourceBarrierDescriptor = .{ .buffer_barrier_count = 0, .p_buffer_barriers = &[_]cgpu.BufferBarrier{}, .texture_barrier_count = 1, .p_texture_barriers = &[_]cgpu.TextureBarrier{texture_barrier} };
         cmd.resourceBarrier(&barrier_descriptor);
 
-        const encoder = cmd.beginRenderPass(&.{ .render_pass = render_pass, .framebuffer = current_swapchain_info.framebuffer, .clear_value_count = 1, .p_clear_values = &[_]cgpu.ClearValue{cgpu.ClearValue{ .color = [4]f32{ 0, 0, 0, 1 }, .depth = 1, .stencil = 0, .is_color = true }} }).?;
+        const encoder = try cmd.beginRenderPass(&.{ .render_pass = render_pass, .framebuffer = current_swapchain_info.framebuffer, .clear_value_count = 1, .p_clear_values = &[_]cgpu.ClearValue{cgpu.ClearValue{ .color = [4]f32{ 0, 0, 0, 1 }, .depth = 1, .stencil = 0, .is_color = true }} });
+
         encoder.setShadingRate(.full, .pass_through, .pass_through);
         encoder.setViewport(0, 0, fw, fh, 0, 1);
         encoder.setScissor(0, 0, w, h);

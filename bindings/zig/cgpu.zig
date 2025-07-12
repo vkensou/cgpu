@@ -10,6 +10,10 @@ const std = @import("std");
 pub const HWND = *anyopaque;
 pub const ANativeWindowPtr = *anyopaque;
 
+pub const Error = error{
+    CreateFailed,
+};
+
 pub const MaxMrtCount: u32 = 8;
 
 pub const MaxAttachmentCount: u32 = 9;
@@ -645,281 +649,281 @@ pub const FreeAligned = fn (user_data: ?*anyopaque, ptr: ?*anyopaque, pool: ?*co
 
 pub const CreateInstance = fn (desc: [*c]const InstanceDescriptor) callconv(.C) ?InstanceId;
 
-pub const FreeInstance = fn (instance: ?InstanceId) callconv(.C) void;
+pub const FreeInstance = fn (instance: InstanceId) callconv(.C) void;
 
-pub const QueryInstanceFeatures = fn (instance: ?InstanceId, features: [*c]InstanceFeatures) callconv(.C) void;
+pub const QueryInstanceFeatures = fn (instance: InstanceId, features: [*c]InstanceFeatures) callconv(.C) void;
 
-pub const EnumAdapters = fn (instance: ?InstanceId, p_adapters_count: [*c]u32, p_adapters: [*c]AdapterId) callconv(.C) void;
+pub const EnumAdapters = fn (instance: InstanceId, p_adapters_count: [*c]u32, p_adapters: [*c]AdapterId) callconv(.C) void;
 
-pub const QueryAdapterDetail = fn (adapter: ?AdapterId) callconv(.C) [*c]const AdapterDetail;
+pub const QueryAdapterDetail = fn (adapter: AdapterId) callconv(.C) [*c]const AdapterDetail;
 
-pub const QueryQueueCount = fn (adapter: ?AdapterId, _type: QueueType) callconv(.C) u32;
+pub const QueryQueueCount = fn (adapter: AdapterId, _type: QueueType) callconv(.C) u32;
 
-pub const CreateDevice = fn (adapter: ?AdapterId, desc: [*c]const DeviceDescriptor) callconv(.C) ?DeviceId;
+pub const CreateDevice = fn (adapter: AdapterId, desc: [*c]const DeviceDescriptor) callconv(.C) ?DeviceId;
 
-pub const FreeDevice = fn (adapter: ?AdapterId, device: ?DeviceId) callconv(.C) void;
+pub const FreeDevice = fn (adapter: AdapterId, device: DeviceId) callconv(.C) void;
 
-pub const QueryVideoMemoryInfo = fn (device: ?DeviceId, total: [*c]u64, used_bytes: [*c]u64) callconv(.C) void;
+pub const QueryVideoMemoryInfo = fn (device: DeviceId, total: [*c]u64, used_bytes: [*c]u64) callconv(.C) void;
 
-pub const QuerySharedMemoryInfo = fn (device: ?DeviceId, total: [*c]u64, used_bytes: [*c]u64) callconv(.C) void;
+pub const QuerySharedMemoryInfo = fn (device: DeviceId, total: [*c]u64, used_bytes: [*c]u64) callconv(.C) void;
 
-pub const CreateFence = fn (device: ?DeviceId) callconv(.C) ?FenceId;
+pub const CreateFence = fn (device: DeviceId) callconv(.C) ?FenceId;
 
 pub const WaitFences = fn (fences: [*c]const FenceId, fence_count: u32) callconv(.C) void;
 
-pub const QueryFenceStatus = fn (fence: ?FenceId) callconv(.C) FenceStatus;
+pub const QueryFenceStatus = fn (fence: FenceId) callconv(.C) FenceStatus;
 
-pub const FreeFence = fn (device: ?DeviceId, fence: ?FenceId) callconv(.C) void;
+pub const FreeFence = fn (device: DeviceId, fence: FenceId) callconv(.C) void;
 
-pub const CreateSemaphore = fn (device: ?DeviceId) callconv(.C) ?SemaphoreId;
+pub const CreateSemaphore = fn (device: DeviceId) callconv(.C) ?SemaphoreId;
 
-pub const FreeSemaphore = fn (device: ?DeviceId, semaphore: ?SemaphoreId) callconv(.C) void;
+pub const FreeSemaphore = fn (device: DeviceId, semaphore: SemaphoreId) callconv(.C) void;
 
-pub const CreateRootSignaturePool = fn (device: ?DeviceId, desc: [*c]const RootSignaturePoolDescriptor) callconv(.C) ?RootSignaturePoolId;
+pub const CreateRootSignaturePool = fn (device: DeviceId, desc: [*c]const RootSignaturePoolDescriptor) callconv(.C) ?RootSignaturePoolId;
 
-pub const FreeRootSignaturePool = fn (device: ?DeviceId, pool: ?RootSignaturePoolId) callconv(.C) void;
+pub const FreeRootSignaturePool = fn (device: DeviceId, pool: RootSignaturePoolId) callconv(.C) void;
 
-pub const CreateRootSignature = fn (device: ?DeviceId, desc: [*c]const RootSignatureDescriptor) callconv(.C) ?RootSignatureId;
+pub const CreateRootSignature = fn (device: DeviceId, desc: [*c]const RootSignatureDescriptor) callconv(.C) ?RootSignatureId;
 
-pub const FreeRootSignature = fn (device: ?DeviceId, signature: ?RootSignatureId) callconv(.C) void;
+pub const FreeRootSignature = fn (device: DeviceId, signature: RootSignatureId) callconv(.C) void;
 
-pub const CreateDescriptorSet = fn (device: ?DeviceId, desc: [*c]const DescriptorSetDescriptor) callconv(.C) ?DescriptorSetId;
+pub const CreateDescriptorSet = fn (device: DeviceId, desc: [*c]const DescriptorSetDescriptor) callconv(.C) ?DescriptorSetId;
 
-pub const UpdateDescriptorSet = fn (set: ?DescriptorSetId, data_count: u32, p_datas: [*c]const DescriptorData) callconv(.C) void;
+pub const UpdateDescriptorSet = fn (set: DescriptorSetId, data_count: u32, p_datas: [*c]const DescriptorData) callconv(.C) void;
 
-pub const FreeDescriptorSet = fn (device: ?DeviceId, set: ?DescriptorSetId) callconv(.C) void;
+pub const FreeDescriptorSet = fn (device: DeviceId, set: DescriptorSetId) callconv(.C) void;
 
-pub const CreateComputePipeline = fn (device: ?DeviceId, desc: [*c]const ComputePipelineDescriptor) callconv(.C) ?ComputePipelineId;
+pub const CreateComputePipeline = fn (device: DeviceId, desc: [*c]const ComputePipelineDescriptor) callconv(.C) ?ComputePipelineId;
 
-pub const FreeComputePipeline = fn (device: ?DeviceId, pipeline: ?ComputePipelineId) callconv(.C) void;
+pub const FreeComputePipeline = fn (device: DeviceId, pipeline: ComputePipelineId) callconv(.C) void;
 
-pub const CreateRenderPipeline = fn (device: ?DeviceId, desc: [*c]const RenderPipelineDescriptor) callconv(.C) ?RenderPipelineId;
+pub const CreateRenderPipeline = fn (device: DeviceId, desc: [*c]const RenderPipelineDescriptor) callconv(.C) ?RenderPipelineId;
 
-pub const FreeRenderPipeline = fn (device: ?DeviceId, pipeline: ?RenderPipelineId) callconv(.C) void;
+pub const FreeRenderPipeline = fn (device: DeviceId, pipeline: RenderPipelineId) callconv(.C) void;
 
-pub const CreateQueryPool = fn (device: ?DeviceId, desc: [*c]const QueryPoolDescriptor) callconv(.C) ?QueryPoolId;
+pub const CreateQueryPool = fn (device: DeviceId, desc: [*c]const QueryPoolDescriptor) callconv(.C) ?QueryPoolId;
 
-pub const FreeQueryPool = fn (device: ?DeviceId, pool: ?QueryPoolId) callconv(.C) void;
+pub const FreeQueryPool = fn (device: DeviceId, pool: QueryPoolId) callconv(.C) void;
 
-pub const CreateMemoryPool = fn (device: ?DeviceId, desc: [*c]const MemoryPoolDescriptor) callconv(.C) ?MemoryPoolId;
+pub const CreateMemoryPool = fn (device: DeviceId, desc: [*c]const MemoryPoolDescriptor) callconv(.C) ?MemoryPoolId;
 
-pub const FreeMemoryPool = fn (device: ?DeviceId, pool: ?MemoryPoolId) callconv(.C) void;
+pub const FreeMemoryPool = fn (device: DeviceId, pool: MemoryPoolId) callconv(.C) void;
 
-pub const GetQueue = fn (device: ?DeviceId, _type: QueueType, index: u32) callconv(.C) ?QueueId;
+pub const GetQueue = fn (device: DeviceId, _type: QueueType, index: u32) callconv(.C) ?QueueId;
 
-pub const SubmitQueue = fn (queue: ?QueueId, desc: [*c]const QueueSubmitDescriptor) callconv(.C) void;
+pub const SubmitQueue = fn (queue: QueueId, desc: [*c]const QueueSubmitDescriptor) callconv(.C) void;
 
-pub const QueuePresent = fn (queue: ?QueueId, desc: [*c]const QueuePresentDescriptor) callconv(.C) void;
+pub const QueuePresent = fn (queue: QueueId, desc: [*c]const QueuePresentDescriptor) callconv(.C) void;
 
-pub const WaitQueueIdle = fn (queue: ?QueueId) callconv(.C) void;
+pub const WaitQueueIdle = fn (queue: QueueId) callconv(.C) void;
 
-pub const QueueGetTimestampPeriodNS = fn (queue: ?QueueId) callconv(.C) f32;
+pub const QueueGetTimestampPeriodNS = fn (queue: QueueId) callconv(.C) f32;
 
-pub const QueueMapTiledTexture = fn (queue: ?QueueId, desc: [*c]const TiledTextureRegions) callconv(.C) void;
+pub const QueueMapTiledTexture = fn (queue: QueueId, desc: [*c]const TiledTextureRegions) callconv(.C) void;
 
-pub const QueueUnmapTiledTexture = fn (queue: ?QueueId, desc: [*c]const TiledTextureRegions) callconv(.C) void;
+pub const QueueUnmapTiledTexture = fn (queue: QueueId, desc: [*c]const TiledTextureRegions) callconv(.C) void;
 
-pub const QueueMapPackedMips = fn (queue: ?QueueId, desc: [*c]const TiledTexturePackedMips) callconv(.C) void;
+pub const QueueMapPackedMips = fn (queue: QueueId, desc: [*c]const TiledTexturePackedMips) callconv(.C) void;
 
-pub const QueueUnmapPackedMips = fn (queue: ?QueueId, desc: [*c]const TiledTexturePackedMips) callconv(.C) void;
+pub const QueueUnmapPackedMips = fn (queue: QueueId, desc: [*c]const TiledTexturePackedMips) callconv(.C) void;
 
-pub const FreeQueue = fn (device: ?DeviceId, queue: ?QueueId) callconv(.C) void;
+pub const FreeQueue = fn (device: DeviceId, queue: QueueId) callconv(.C) void;
 
-pub const CreateRenderPass = fn (device: ?DeviceId, desc: [*c]const RenderPassDescriptor) callconv(.C) ?RenderPassId;
+pub const CreateRenderPass = fn (device: DeviceId, desc: [*c]const RenderPassDescriptor) callconv(.C) ?RenderPassId;
 
-pub const CreateFramebuffer = fn (device: ?DeviceId, desc: [*c]const FramebufferDescriptor) callconv(.C) ?FramebufferId;
+pub const CreateFramebuffer = fn (device: DeviceId, desc: [*c]const FramebufferDescriptor) callconv(.C) ?FramebufferId;
 
-pub const FreeRenderPass = fn (device: ?DeviceId, render_pass: ?RenderPassId) callconv(.C) void;
+pub const FreeRenderPass = fn (device: DeviceId, render_pass: RenderPassId) callconv(.C) void;
 
-pub const FreeFramebuffer = fn (device: ?DeviceId, framebuffer: ?FramebufferId) callconv(.C) void;
+pub const FreeFramebuffer = fn (device: DeviceId, framebuffer: FramebufferId) callconv(.C) void;
 
-pub const CreateCommandPool = fn (queue: ?QueueId, desc: [*c]const CommandPoolDescriptor) callconv(.C) ?CommandPoolId;
+pub const CreateCommandPool = fn (queue: QueueId, desc: [*c]const CommandPoolDescriptor) callconv(.C) ?CommandPoolId;
 
-pub const CreateCommandBuffer = fn (pool: ?CommandPoolId, desc: [*c]const CommandBufferDescriptor) callconv(.C) ?CommandBufferId;
+pub const CreateCommandBuffer = fn (pool: CommandPoolId, desc: [*c]const CommandBufferDescriptor) callconv(.C) ?CommandBufferId;
 
-pub const ResetCommandPool = fn (pool: ?CommandPoolId) callconv(.C) void;
+pub const ResetCommandPool = fn (pool: CommandPoolId) callconv(.C) void;
 
-pub const FreeCommandBuffer = fn (pool: ?CommandPoolId, cmd: ?CommandBufferId) callconv(.C) void;
+pub const FreeCommandBuffer = fn (pool: CommandPoolId, cmd: CommandBufferId) callconv(.C) void;
 
-pub const FreeCommandPool = fn (queue: ?QueueId, pool: ?CommandPoolId) callconv(.C) void;
+pub const FreeCommandPool = fn (queue: QueueId, pool: CommandPoolId) callconv(.C) void;
 
-pub const CreateShaderLibrary = fn (device: ?DeviceId, desc: [*c]const ShaderLibraryDescriptor) callconv(.C) ?ShaderLibraryId;
+pub const CreateShaderLibrary = fn (device: DeviceId, desc: [*c]const ShaderLibraryDescriptor) callconv(.C) ?ShaderLibraryId;
 
-pub const FreeShaderLibrary = fn (device: ?DeviceId, library: ?ShaderLibraryId) callconv(.C) void;
+pub const FreeShaderLibrary = fn (device: DeviceId, library: ShaderLibraryId) callconv(.C) void;
 
-pub const CreateBuffer = fn (device: ?DeviceId, desc: [*c]const BufferDescriptor) callconv(.C) ?BufferId;
+pub const CreateBuffer = fn (device: DeviceId, desc: [*c]const BufferDescriptor) callconv(.C) ?BufferId;
 
-pub const MapBuffer = fn (buffer: ?BufferId, range: [*c]const BufferRange) callconv(.C) void;
+pub const MapBuffer = fn (buffer: BufferId, range: [*c]const BufferRange) callconv(.C) void;
 
-pub const UnmapBuffer = fn (buffer: ?BufferId) callconv(.C) void;
+pub const UnmapBuffer = fn (buffer: BufferId) callconv(.C) void;
 
-pub const FreeBuffer = fn (device: ?DeviceId, buffer: ?BufferId) callconv(.C) void;
+pub const FreeBuffer = fn (device: DeviceId, buffer: BufferId) callconv(.C) void;
 
-pub const CreateSampler = fn (device: ?DeviceId, desc: [*c]const SamplerDescriptor) callconv(.C) ?SamplerId;
+pub const CreateSampler = fn (device: DeviceId, desc: [*c]const SamplerDescriptor) callconv(.C) ?SamplerId;
 
-pub const FreeSampler = fn (device: ?DeviceId, sampler: ?SamplerId) callconv(.C) void;
+pub const FreeSampler = fn (device: DeviceId, sampler: SamplerId) callconv(.C) void;
 
-pub const CreateTexture = fn (device: ?DeviceId, desc: [*c]const TextureDescriptor) callconv(.C) ?TextureId;
+pub const CreateTexture = fn (device: DeviceId, desc: [*c]const TextureDescriptor) callconv(.C) ?TextureId;
 
-pub const FreeTexture = fn (device: ?DeviceId, texture: ?TextureId) callconv(.C) void;
+pub const FreeTexture = fn (device: DeviceId, texture: TextureId) callconv(.C) void;
 
-pub const CreateTextureView = fn (device: ?DeviceId, desc: [*c]const TextureViewDescriptor) callconv(.C) ?TextureViewId;
+pub const CreateTextureView = fn (device: DeviceId, desc: [*c]const TextureViewDescriptor) callconv(.C) ?TextureViewId;
 
-pub const FreeTextureView = fn (device: ?DeviceId, render_target: ?TextureViewId) callconv(.C) void;
+pub const FreeTextureView = fn (device: DeviceId, render_target: TextureViewId) callconv(.C) void;
 
-pub const TryBindAliasingTexture = fn (device: ?DeviceId, desc: [*c]const TextureAliasingBindDescriptor) callconv(.C) bool;
+pub const TryBindAliasingTexture = fn (device: DeviceId, desc: [*c]const TextureAliasingBindDescriptor) callconv(.C) bool;
 
-pub const ExportSharedTextureHandle = fn (device: ?DeviceId, desc: [*c]const ExportTextureDescriptor) callconv(.C) u64;
+pub const ExportSharedTextureHandle = fn (device: DeviceId, desc: [*c]const ExportTextureDescriptor) callconv(.C) u64;
 
-pub const ImportSharedTextureHandle = fn (device: ?DeviceId, desc: [*c]const ImportTextureDescriptor) callconv(.C) ?TextureId;
+pub const ImportSharedTextureHandle = fn (device: DeviceId, desc: [*c]const ImportTextureDescriptor) callconv(.C) ?TextureId;
 
-pub const CreateSwapChain = fn (device: ?DeviceId, desc: [*c]const SwapChainDescriptor) callconv(.C) ?SwapChainId;
+pub const CreateSwapChain = fn (device: DeviceId, desc: [*c]const SwapChainDescriptor) callconv(.C) ?SwapChainId;
 
-pub const AcquireNextImage = fn (swapchain: ?SwapChainId, desc: [*c]const AcquireNextDescriptor) callconv(.C) u32;
+pub const AcquireNextImage = fn (swapchain: SwapChainId, desc: [*c]const AcquireNextDescriptor) callconv(.C) u32;
 
-pub const FreeSwapChain = fn (device: ?DeviceId, swapchain: ?SwapChainId) callconv(.C) void;
+pub const FreeSwapChain = fn (device: DeviceId, swapchain: SwapChainId) callconv(.C) void;
 
-pub const CmdBegin = fn (cmd: ?CommandBufferId) callconv(.C) void;
+pub const CmdBegin = fn (cmd: CommandBufferId) callconv(.C) void;
 
-pub const CmdTransferBufferToBuffer = fn (cmd: ?CommandBufferId, desc: [*c]const BufferToBufferTransfer) callconv(.C) void;
+pub const CmdTransferBufferToBuffer = fn (cmd: CommandBufferId, desc: [*c]const BufferToBufferTransfer) callconv(.C) void;
 
-pub const CmdTransferTextureToTexture = fn (cmd: ?CommandBufferId, desc: [*c]const TextureToTextureTransfer) callconv(.C) void;
+pub const CmdTransferTextureToTexture = fn (cmd: CommandBufferId, desc: [*c]const TextureToTextureTransfer) callconv(.C) void;
 
-pub const CmdTransferBufferToTexture = fn (cmd: ?CommandBufferId, desc: [*c]const BufferToTextureTransfer) callconv(.C) void;
+pub const CmdTransferBufferToTexture = fn (cmd: CommandBufferId, desc: [*c]const BufferToTextureTransfer) callconv(.C) void;
 
-pub const CmdTransferBufferToTiles = fn (cmd: ?CommandBufferId, desc: [*c]const BufferToTilesTransfer) callconv(.C) void;
+pub const CmdTransferBufferToTiles = fn (cmd: CommandBufferId, desc: [*c]const BufferToTilesTransfer) callconv(.C) void;
 
-pub const CmdResourceBarrier = fn (cmd: ?CommandBufferId, desc: [*c]const ResourceBarrierDescriptor) callconv(.C) void;
+pub const CmdResourceBarrier = fn (cmd: CommandBufferId, desc: [*c]const ResourceBarrierDescriptor) callconv(.C) void;
 
-pub const CmdBeginQuery = fn (cmd: ?CommandBufferId, pool: ?QueryPoolId, desc: [*c]const QueryDescriptor) callconv(.C) void;
+pub const CmdBeginQuery = fn (cmd: CommandBufferId, pool: QueryPoolId, desc: [*c]const QueryDescriptor) callconv(.C) void;
 
-pub const CmdEndQuery = fn (cmd: ?CommandBufferId, pool: ?QueryPoolId, desc: [*c]const QueryDescriptor) callconv(.C) void;
+pub const CmdEndQuery = fn (cmd: CommandBufferId, pool: QueryPoolId, desc: [*c]const QueryDescriptor) callconv(.C) void;
 
-pub const CmdResetQueryPool = fn (cmd: ?CommandBufferId, pool: ?QueryPoolId, start_query: u32, query_count: u32) callconv(.C) void;
+pub const CmdResetQueryPool = fn (cmd: CommandBufferId, pool: QueryPoolId, start_query: u32, query_count: u32) callconv(.C) void;
 
-pub const CmdResolveQuery = fn (cmd: ?CommandBufferId, pool: ?QueryPoolId, readback: ?BufferId, start_query: u32, query_count: u32) callconv(.C) void;
+pub const CmdResolveQuery = fn (cmd: CommandBufferId, pool: QueryPoolId, readback: BufferId, start_query: u32, query_count: u32) callconv(.C) void;
 
-pub const CmdEnd = fn (cmd: ?CommandBufferId) callconv(.C) void;
+pub const CmdEnd = fn (cmd: CommandBufferId) callconv(.C) void;
 
-pub const CmdBeginComputePass = fn (cmd: ?CommandBufferId, desc: [*c]const ComputePassDescriptor) callconv(.C) ?ComputePassEncoderId;
+pub const CmdBeginComputePass = fn (cmd: CommandBufferId, desc: [*c]const ComputePassDescriptor) callconv(.C) ?ComputePassEncoderId;
 
-pub const ComputeEncoderBindDescriptorSet = fn (encoder: ?ComputePassEncoderId, set: ?DescriptorSetId) callconv(.C) void;
+pub const ComputeEncoderBindDescriptorSet = fn (encoder: ComputePassEncoderId, set: DescriptorSetId) callconv(.C) void;
 
-pub const ComputeEncoderBindPipeline = fn (encoder: ?ComputePassEncoderId, pipeline: ?ComputePipelineId) callconv(.C) void;
+pub const ComputeEncoderBindPipeline = fn (encoder: ComputePassEncoderId, pipeline: ComputePipelineId) callconv(.C) void;
 
-pub const ComputeEncoderDispatch = fn (encoder: ?ComputePassEncoderId, x: u32, y: u32, z: u32) callconv(.C) void;
+pub const ComputeEncoderDispatch = fn (encoder: ComputePassEncoderId, x: u32, y: u32, z: u32) callconv(.C) void;
 
-pub const CmdEndComputePass = fn (cmd: ?CommandBufferId, encoder: ?ComputePassEncoderId) callconv(.C) void;
+pub const CmdEndComputePass = fn (cmd: CommandBufferId, encoder: ComputePassEncoderId) callconv(.C) void;
 
-pub const CmdBeginRenderPass = fn (cmd: ?CommandBufferId, begin_info: [*c]const BeginRenderPassInfo) callconv(.C) ?RenderPassEncoderId;
+pub const CmdBeginRenderPass = fn (cmd: CommandBufferId, begin_info: [*c]const BeginRenderPassInfo) callconv(.C) ?RenderPassEncoderId;
 
-pub const RenderEncoderSetShadingRate = fn (encoder: ?RenderPassEncoderId, shading_rate: ShadingRate, post_rasterize_rate: ShadingRateCombiner, final_rate: ShadingRateCombiner) callconv(.C) void;
+pub const RenderEncoderSetShadingRate = fn (encoder: RenderPassEncoderId, shading_rate: ShadingRate, post_rasterize_rate: ShadingRateCombiner, final_rate: ShadingRateCombiner) callconv(.C) void;
 
-pub const RenderEncoderBindDescriptorSet = fn (encoder: ?RenderPassEncoderId, set: ?DescriptorSetId) callconv(.C) void;
+pub const RenderEncoderBindDescriptorSet = fn (encoder: RenderPassEncoderId, set: DescriptorSetId) callconv(.C) void;
 
-pub const RenderEncoderSetViewport = fn (encoder: ?RenderPassEncoderId, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) callconv(.C) void;
+pub const RenderEncoderSetViewport = fn (encoder: RenderPassEncoderId, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) callconv(.C) void;
 
-pub const RenderEncoderSetScissor = fn (encoder: ?RenderPassEncoderId, x: u32, y: u32, width: u32, height: u32) callconv(.C) void;
+pub const RenderEncoderSetScissor = fn (encoder: RenderPassEncoderId, x: u32, y: u32, width: u32, height: u32) callconv(.C) void;
 
-pub const RenderEncoderBindPipeline = fn (encoder: ?RenderPassEncoderId, pipeline: ?RenderPipelineId) callconv(.C) void;
+pub const RenderEncoderBindPipeline = fn (encoder: RenderPassEncoderId, pipeline: RenderPipelineId) callconv(.C) void;
 
-pub const RenderEncoderBindVertexBuffers = fn (encoder: ?RenderPassEncoderId, buffer_count: u32, buffers: [*c]const BufferId, strides: [*c]const u32, offsets: [*c]const u32) callconv(.C) void;
+pub const RenderEncoderBindVertexBuffers = fn (encoder: RenderPassEncoderId, buffer_count: u32, buffers: [*c]const BufferId, strides: [*c]const u32, offsets: [*c]const u32) callconv(.C) void;
 
-pub const RenderEncoderBindIndexBuffer = fn (encoder: ?RenderPassEncoderId, buffer: ?BufferId, index_stride: u32, offset: u64) callconv(.C) void;
+pub const RenderEncoderBindIndexBuffer = fn (encoder: RenderPassEncoderId, buffer: BufferId, index_stride: u32, offset: u64) callconv(.C) void;
 
-pub const RenderEncoderPushConstants = fn (encoder: ?RenderPassEncoderId, rs: ?RootSignatureId, name: [*c]const u8, data: ?*const anyopaque) callconv(.C) void;
+pub const RenderEncoderPushConstants = fn (encoder: RenderPassEncoderId, rs: RootSignatureId, name: [*c]const u8, data: ?*const anyopaque) callconv(.C) void;
 
-pub const ComputeEncoderPushConstants = fn (encoder: ?ComputePassEncoderId, rs: ?RootSignatureId, name: [*c]const u8, data: ?*const anyopaque) callconv(.C) void;
+pub const ComputeEncoderPushConstants = fn (encoder: ComputePassEncoderId, rs: RootSignatureId, name: [*c]const u8, data: ?*const anyopaque) callconv(.C) void;
 
-pub const RenderEncoderDraw = fn (encoder: ?RenderPassEncoderId, vertex_count: u32, first_vertex: u32) callconv(.C) void;
+pub const RenderEncoderDraw = fn (encoder: RenderPassEncoderId, vertex_count: u32, first_vertex: u32) callconv(.C) void;
 
-pub const RenderEncoderDrawInstanced = fn (encoder: ?RenderPassEncoderId, vertex_count: u32, first_vertex: u32, instance_count: u32, first_instance: u32) callconv(.C) void;
+pub const RenderEncoderDrawInstanced = fn (encoder: RenderPassEncoderId, vertex_count: u32, first_vertex: u32, instance_count: u32, first_instance: u32) callconv(.C) void;
 
-pub const RenderEncoderDrawIndexed = fn (encoder: ?RenderPassEncoderId, index_count: u32, first_index: u32, first_vertex: u32) callconv(.C) void;
+pub const RenderEncoderDrawIndexed = fn (encoder: RenderPassEncoderId, index_count: u32, first_index: u32, first_vertex: u32) callconv(.C) void;
 
-pub const RenderEncoderDrawIndexedInstanced = fn (encoder: ?RenderPassEncoderId, index_count: u32, first_index: u32, instance_count: u32, first_instance: u32, first_vertex: u32) callconv(.C) void;
+pub const RenderEncoderDrawIndexedInstanced = fn (encoder: RenderPassEncoderId, index_count: u32, first_index: u32, instance_count: u32, first_instance: u32, first_vertex: u32) callconv(.C) void;
 
-pub const CmdEndRenderPass = fn (cmd: ?CommandBufferId, encoder: ?RenderPassEncoderId) callconv(.C) void;
+pub const CmdEndRenderPass = fn (cmd: CommandBufferId, encoder: RenderPassEncoderId) callconv(.C) void;
 
-pub const CmdBeginEvent = fn (cmd: ?CommandBufferId, event: [*c]const EventInfo) callconv(.C) void;
+pub const CmdBeginEvent = fn (cmd: CommandBufferId, event: [*c]const EventInfo) callconv(.C) void;
 
-pub const CmdSetMarker = fn (cmd: ?CommandBufferId, marker: [*c]const MarkerInfo) callconv(.C) void;
+pub const CmdSetMarker = fn (cmd: CommandBufferId, marker: [*c]const MarkerInfo) callconv(.C) void;
 
-pub const CmdEndEvent = fn (cmd: ?CommandBufferId) callconv(.C) void;
+pub const CmdEndEvent = fn (cmd: CommandBufferId) callconv(.C) void;
 
-pub const CompileAndLinkShaders = fn (signature: ?RootSignatureId, count: u32, desc: [*c]const CompiledShaderDescriptor) callconv(.C) ?LinkedShaderId;
+pub const CompileAndLinkShaders = fn (signature: RootSignatureId, count: u32, desc: [*c]const CompiledShaderDescriptor) callconv(.C) ?LinkedShaderId;
 
-pub const CompileShaders = fn (signature: ?RootSignatureId, count: u32, desc: [*c]const CompiledShaderDescriptor, out_isas: [*c]CompiledShaderId) callconv(.C) void;
+pub const CompileShaders = fn (signature: RootSignatureId, count: u32, desc: [*c]const CompiledShaderDescriptor, out_isas: [*c]CompiledShaderId) callconv(.C) void;
 
-pub const FreeCompiledShader = fn (shader: ?CompiledShaderId) callconv(.C) void;
+pub const FreeCompiledShader = fn (shader: CompiledShaderId) callconv(.C) void;
 
-pub const FreeLinkedShader = fn (shader: ?LinkedShaderId) callconv(.C) void;
+pub const FreeLinkedShader = fn (shader: LinkedShaderId) callconv(.C) void;
 
-pub const CreateStateBuffer = fn (cmd: ?CommandBufferId, desc: [*c]const StateBufferDescriptor) callconv(.C) ?StateBufferId;
+pub const CreateStateBuffer = fn (cmd: CommandBufferId, desc: [*c]const StateBufferDescriptor) callconv(.C) ?StateBufferId;
 
-pub const RenderEncoderBindStateBuffer = fn (encoder: ?RenderPassEncoderId, stream: ?StateBufferId) callconv(.C) void;
+pub const RenderEncoderBindStateBuffer = fn (encoder: RenderPassEncoderId, stream: StateBufferId) callconv(.C) void;
 
-pub const ComputeEncoderBindStateBuffer = fn (encoder: ?ComputePassEncoderId, stream: ?StateBufferId) callconv(.C) void;
+pub const ComputeEncoderBindStateBuffer = fn (encoder: ComputePassEncoderId, stream: StateBufferId) callconv(.C) void;
 
-pub const FreeStateBuffer = fn (stream: ?StateBufferId) callconv(.C) void;
+pub const FreeStateBuffer = fn (stream: StateBufferId) callconv(.C) void;
 
-pub const OpenRasterStateEncoder = fn (stream: ?StateBufferId, encoder: ?RenderPassEncoderId) callconv(.C) ?RasterStateEncoderId;
+pub const OpenRasterStateEncoder = fn (stream: StateBufferId, encoder: RenderPassEncoderId) callconv(.C) ?RasterStateEncoderId;
 
-pub const RasterStateEncoderSetViewport = fn (encoder: ?RasterStateEncoderId, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) callconv(.C) void;
+pub const RasterStateEncoderSetViewport = fn (encoder: RasterStateEncoderId, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) callconv(.C) void;
 
-pub const RasterStateEncoderSetScissor = fn (encoder: ?RasterStateEncoderId, x: u32, y: u32, width: u32, height: u32) callconv(.C) void;
+pub const RasterStateEncoderSetScissor = fn (encoder: RasterStateEncoderId, x: u32, y: u32, width: u32, height: u32) callconv(.C) void;
 
-pub const RasterStateEncoderSetCullMode = fn (encoder: ?RasterStateEncoderId, cull_mode: CullMode) callconv(.C) void;
+pub const RasterStateEncoderSetCullMode = fn (encoder: RasterStateEncoderId, cull_mode: CullMode) callconv(.C) void;
 
-pub const RasterStateEncoderSetFrontFace = fn (encoder: ?RasterStateEncoderId, front_face: FrontFace) callconv(.C) void;
+pub const RasterStateEncoderSetFrontFace = fn (encoder: RasterStateEncoderId, front_face: FrontFace) callconv(.C) void;
 
-pub const RasterStateEncoderSetPrimitiveTopology = fn (encoder: ?RasterStateEncoderId, topology: PrimitiveTopology) callconv(.C) void;
+pub const RasterStateEncoderSetPrimitiveTopology = fn (encoder: RasterStateEncoderId, topology: PrimitiveTopology) callconv(.C) void;
 
-pub const RasterStateEncoderSetDepthTestEnabled = fn (encoder: ?RasterStateEncoderId, enabled: bool) callconv(.C) void;
+pub const RasterStateEncoderSetDepthTestEnabled = fn (encoder: RasterStateEncoderId, enabled: bool) callconv(.C) void;
 
-pub const RasterStateEncoderSetDepthWriteEnabled = fn (encoder: ?RasterStateEncoderId, enabled: bool) callconv(.C) void;
+pub const RasterStateEncoderSetDepthWriteEnabled = fn (encoder: RasterStateEncoderId, enabled: bool) callconv(.C) void;
 
-pub const RasterStateEncoderSetDepthCompareOp = fn (encoder: ?RasterStateEncoderId, compare_op: CompareOp) callconv(.C) void;
+pub const RasterStateEncoderSetDepthCompareOp = fn (encoder: RasterStateEncoderId, compare_op: CompareOp) callconv(.C) void;
 
-pub const RasterStateEncoderSetStencilTestEnabled = fn (encoder: ?RasterStateEncoderId, enabled: bool) callconv(.C) void;
+pub const RasterStateEncoderSetStencilTestEnabled = fn (encoder: RasterStateEncoderId, enabled: bool) callconv(.C) void;
 
-pub const RasterStateEncoderSetStencilCompareOp = fn (encoder: ?RasterStateEncoderId, faces: StencilFace, fail_op: StencilOp, pass_op: StencilOp, depth_fail_op: StencilOp, compare_op: CompareOp) callconv(.C) void;
+pub const RasterStateEncoderSetStencilCompareOp = fn (encoder: RasterStateEncoderId, faces: StencilFace, fail_op: StencilOp, pass_op: StencilOp, depth_fail_op: StencilOp, compare_op: CompareOp) callconv(.C) void;
 
-pub const RasterStateEncoderSetFillMode = fn (encoder: ?RasterStateEncoderId, fill_mode: FillMode) callconv(.C) void;
+pub const RasterStateEncoderSetFillMode = fn (encoder: RasterStateEncoderId, fill_mode: FillMode) callconv(.C) void;
 
-pub const RasterStateEncoderSetSampleCount = fn (encoder: ?RasterStateEncoderId, sample_count: SampleCount) callconv(.C) void;
+pub const RasterStateEncoderSetSampleCount = fn (encoder: RasterStateEncoderId, sample_count: SampleCount) callconv(.C) void;
 
-pub const CloseRasterStateEncoder = fn (encoder: ?RasterStateEncoderId) callconv(.C) void;
+pub const CloseRasterStateEncoder = fn (encoder: RasterStateEncoderId) callconv(.C) void;
 
-pub const OpenShaderStateEncoderR = fn (stream: ?StateBufferId, encoder: ?RenderPassEncoderId) callconv(.C) ?ShaderStateEncoderId;
+pub const OpenShaderStateEncoderR = fn (stream: StateBufferId, encoder: RenderPassEncoderId) callconv(.C) ?ShaderStateEncoderId;
 
-pub const OpenShaderStateEncoderC = fn (stream: ?StateBufferId, encoder: ?ComputePassEncoderId) callconv(.C) ?ShaderStateEncoderId;
+pub const OpenShaderStateEncoderC = fn (stream: StateBufferId, encoder: ComputePassEncoderId) callconv(.C) ?ShaderStateEncoderId;
 
-pub const ShaderStateEncoderBindShaders = fn (encoder: ?ShaderStateEncoderId, stage_count: u32, stages: [*c]const ShaderStage, shaders: [*c]const CompiledShaderId) callconv(.C) void;
+pub const ShaderStateEncoderBindShaders = fn (encoder: ShaderStateEncoderId, stage_count: u32, stages: [*c]const ShaderStage, shaders: [*c]const CompiledShaderId) callconv(.C) void;
 
-pub const ShaderStateEncoderBindLinkedShader = fn (encoder: ?ShaderStateEncoderId, linked: ?LinkedShaderId) callconv(.C) void;
+pub const ShaderStateEncoderBindLinkedShader = fn (encoder: ShaderStateEncoderId, linked: LinkedShaderId) callconv(.C) void;
 
-pub const CloseShaderStateEncoder = fn (encoder: ?ShaderStateEncoderId) callconv(.C) void;
+pub const CloseShaderStateEncoder = fn (encoder: ShaderStateEncoderId) callconv(.C) void;
 
-pub const OpenUserStateEncoder = fn (stream: ?StateBufferId, encoder: ?RenderPassEncoderId) callconv(.C) ?UserStateEncoderId;
+pub const OpenUserStateEncoder = fn (stream: StateBufferId, encoder: RenderPassEncoderId) callconv(.C) ?UserStateEncoderId;
 
-pub const CloseUserStateEncoder = fn (encoder: ?UserStateEncoderId) callconv(.C) void;
+pub const CloseUserStateEncoder = fn (encoder: UserStateEncoderId) callconv(.C) void;
 
-pub const CreateBinder = fn (cmd: ?CommandBufferId) callconv(.C) ?BinderId;
+pub const CreateBinder = fn (cmd: CommandBufferId) callconv(.C) ?BinderId;
 
-pub const BinderBindVertexLayout = fn (binder: ?BinderId, layout: [*c]const VertexLayout) callconv(.C) void;
+pub const BinderBindVertexLayout = fn (binder: BinderId, layout: [*c]const VertexLayout) callconv(.C) void;
 
-pub const BinderBindVertexBuffer = fn (binder: ?BinderId, first_binding: u32, binding_count: u32, buffers: [*c]const BufferId, offsets: [*c]const u64, sizes: [*c]const u64, strides: [*c]const u64) callconv(.C) void;
+pub const BinderBindVertexBuffer = fn (binder: BinderId, first_binding: u32, binding_count: u32, buffers: [*c]const BufferId, offsets: [*c]const u64, sizes: [*c]const u64, strides: [*c]const u64) callconv(.C) void;
 
-pub const FreeBinder = fn (binder: ?BinderId) callconv(.C) void;
+pub const FreeBinder = fn (binder: BinderId) callconv(.C) void;
 
-pub const CreateSurfaceFromNativeView = fn (device: ?DeviceId, view: ?*anyopaque) callconv(.C) ?SurfaceId;
+pub const CreateSurfaceFromNativeView = fn (device: DeviceId, view: ?*anyopaque) callconv(.C) ?SurfaceId;
 
-pub const CreateSurfaceFromHwnd = fn (device: ?DeviceId, window: HWND) callconv(.C) ?SurfaceId;
+pub const CreateSurfaceFromHwnd = fn (device: DeviceId, window: HWND) callconv(.C) ?SurfaceId;
 
-pub const CreateSurfaceFromNativeWindow = fn (device: ?DeviceId, window: ANativeWindowPtr) callconv(.C) ?SurfaceId;
+pub const CreateSurfaceFromNativeWindow = fn (device: DeviceId, window: ANativeWindowPtr) callconv(.C) ?SurfaceId;
 
-pub const FreeSurface = fn (device: ?DeviceId, surface: ?SurfaceId) callconv(.C) void;
+pub const FreeSurface = fn (device: DeviceId, surface: SurfaceId) callconv(.C) void;
 
 pub const InstanceId = *Instance;
 
@@ -1085,10 +1089,14 @@ pub const Adapter = extern struct {
     pub inline fn queryQueueCount(self: *const Adapter, _type: QueueType) u32 {
         return cgpu_adapter_query_queue_count(self, _type);
     }
-    pub inline fn createDevice(self: *Adapter, desc: [*c]const DeviceDescriptor) ?DeviceId {
-        return cgpu_adapter_create_device(self, desc);
+    pub inline fn createDevice(self: *Adapter, desc: [*c]const DeviceDescriptor) Error!DeviceId {
+        const result = cgpu_adapter_create_device(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeDevice(self: *Adapter, device: ?DeviceId) void {
+    pub inline fn freeDevice(self: *Adapter, device: DeviceId) void {
         return cgpu_adapter_free_device(self, device);
     }
 };
@@ -1115,106 +1123,174 @@ pub const Device = extern struct {
     pub inline fn querySharedMemoryInfo(self: *Device, total: [*c]u64, used_bytes: [*c]u64) void {
         return cgpu_device_query_shared_memory_info(self, total, used_bytes);
     }
-    pub inline fn createFence(self: *Device) ?FenceId {
-        return cgpu_device_create_fence(self);
+    pub inline fn createFence(self: *Device) Error!FenceId {
+        const result = cgpu_device_create_fence(self);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeFence(self: *Device, fence: ?FenceId) void {
+    pub inline fn freeFence(self: *Device, fence: FenceId) void {
         return cgpu_device_free_fence(self, fence);
     }
-    pub inline fn createSemaphore(self: *Device) ?SemaphoreId {
-        return cgpu_device_create_semaphore(self);
+    pub inline fn createSemaphore(self: *Device) Error!SemaphoreId {
+        const result = cgpu_device_create_semaphore(self);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeSemaphore(self: *Device, semaphore: ?SemaphoreId) void {
+    pub inline fn freeSemaphore(self: *Device, semaphore: SemaphoreId) void {
         return cgpu_device_free_semaphore(self, semaphore);
     }
-    pub inline fn createRootSignaturePool(self: *Device, desc: [*c]const RootSignaturePoolDescriptor) ?RootSignaturePoolId {
-        return cgpu_device_create_root_signature_pool(self, desc);
+    pub inline fn createRootSignaturePool(self: *Device, desc: [*c]const RootSignaturePoolDescriptor) Error!RootSignaturePoolId {
+        const result = cgpu_device_create_root_signature_pool(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeRootSignaturePool(self: *Device, pool: ?RootSignaturePoolId) void {
+    pub inline fn freeRootSignaturePool(self: *Device, pool: RootSignaturePoolId) void {
         return cgpu_device_free_root_signature_pool(self, pool);
     }
-    pub inline fn createRootSignature(self: *Device, desc: [*c]const RootSignatureDescriptor) ?RootSignatureId {
-        return cgpu_device_create_root_signature(self, desc);
+    pub inline fn createRootSignature(self: *Device, desc: [*c]const RootSignatureDescriptor) Error!RootSignatureId {
+        const result = cgpu_device_create_root_signature(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeRootSignature(self: *Device, signature: ?RootSignatureId) void {
+    pub inline fn freeRootSignature(self: *Device, signature: RootSignatureId) void {
         return cgpu_device_free_root_signature(self, signature);
     }
-    pub inline fn createDescriptorSet(self: *Device, desc: [*c]const DescriptorSetDescriptor) ?DescriptorSetId {
-        return cgpu_device_create_descriptor_set(self, desc);
+    pub inline fn createDescriptorSet(self: *Device, desc: [*c]const DescriptorSetDescriptor) Error!DescriptorSetId {
+        const result = cgpu_device_create_descriptor_set(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeDescriptorSet(self: *Device, set: ?DescriptorSetId) void {
+    pub inline fn freeDescriptorSet(self: *Device, set: DescriptorSetId) void {
         return cgpu_device_free_descriptor_set(self, set);
     }
-    pub inline fn createComputePipeline(self: *Device, desc: [*c]const ComputePipelineDescriptor) ?ComputePipelineId {
-        return cgpu_device_create_compute_pipeline(self, desc);
+    pub inline fn createComputePipeline(self: *Device, desc: [*c]const ComputePipelineDescriptor) Error!ComputePipelineId {
+        const result = cgpu_device_create_compute_pipeline(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeComputePipeline(self: *Device, pipeline: ?ComputePipelineId) void {
+    pub inline fn freeComputePipeline(self: *Device, pipeline: ComputePipelineId) void {
         return cgpu_device_free_compute_pipeline(self, pipeline);
     }
-    pub inline fn createRenderPipeline(self: *Device, desc: [*c]const RenderPipelineDescriptor) ?RenderPipelineId {
-        return cgpu_device_create_render_pipeline(self, desc);
+    pub inline fn createRenderPipeline(self: *Device, desc: [*c]const RenderPipelineDescriptor) Error!RenderPipelineId {
+        const result = cgpu_device_create_render_pipeline(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeRenderPipeline(self: *Device, pipeline: ?RenderPipelineId) void {
+    pub inline fn freeRenderPipeline(self: *Device, pipeline: RenderPipelineId) void {
         return cgpu_device_free_render_pipeline(self, pipeline);
     }
-    pub inline fn createQueryPool(self: *Device, desc: [*c]const QueryPoolDescriptor) ?QueryPoolId {
-        return cgpu_device_create_query_pool(self, desc);
+    pub inline fn createQueryPool(self: *Device, desc: [*c]const QueryPoolDescriptor) Error!QueryPoolId {
+        const result = cgpu_device_create_query_pool(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeQueryPool(self: *Device, pool: ?QueryPoolId) void {
+    pub inline fn freeQueryPool(self: *Device, pool: QueryPoolId) void {
         return cgpu_device_free_query_pool(self, pool);
     }
-    pub inline fn createMemoryPool(self: *Device, desc: [*c]const MemoryPoolDescriptor) ?MemoryPoolId {
-        return cgpu_device_create_memory_pool(self, desc);
+    pub inline fn createMemoryPool(self: *Device, desc: [*c]const MemoryPoolDescriptor) Error!MemoryPoolId {
+        const result = cgpu_device_create_memory_pool(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeMemoryPool(self: *Device, pool: ?MemoryPoolId) void {
+    pub inline fn freeMemoryPool(self: *Device, pool: MemoryPoolId) void {
         return cgpu_device_free_memory_pool(self, pool);
     }
-    pub inline fn getQueue(self: *Device, _type: QueueType, index: u32) ?QueueId {
-        return cgpu_device_get_queue(self, _type, index);
+    pub inline fn getQueue(self: *Device, _type: QueueType, index: u32) Error!QueueId {
+        const result = cgpu_device_get_queue(self, _type, index);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeQueue(self: *Device, queue: ?QueueId) void {
+    pub inline fn freeQueue(self: *Device, queue: QueueId) void {
         return cgpu_device_free_queue(self, queue);
     }
-    pub inline fn createRenderPass(self: *Device, desc: [*c]const RenderPassDescriptor) ?RenderPassId {
-        return cgpu_device_create_render_pass(self, desc);
+    pub inline fn createRenderPass(self: *Device, desc: [*c]const RenderPassDescriptor) Error!RenderPassId {
+        const result = cgpu_device_create_render_pass(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn createFramebuffer(self: *Device, desc: [*c]const FramebufferDescriptor) ?FramebufferId {
-        return cgpu_device_create_framebuffer(self, desc);
+    pub inline fn createFramebuffer(self: *Device, desc: [*c]const FramebufferDescriptor) Error!FramebufferId {
+        const result = cgpu_device_create_framebuffer(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeRenderPass(self: *Device, render_pass: ?RenderPassId) void {
+    pub inline fn freeRenderPass(self: *Device, render_pass: RenderPassId) void {
         return cgpu_device_free_render_pass(self, render_pass);
     }
-    pub inline fn freeFramebuffer(self: *Device, framebuffer: ?FramebufferId) void {
+    pub inline fn freeFramebuffer(self: *Device, framebuffer: FramebufferId) void {
         return cgpu_device_free_framebuffer(self, framebuffer);
     }
-    pub inline fn createShaderLibrary(self: *Device, desc: [*c]const ShaderLibraryDescriptor) ?ShaderLibraryId {
-        return cgpu_device_create_shader_library(self, desc);
+    pub inline fn createShaderLibrary(self: *Device, desc: [*c]const ShaderLibraryDescriptor) Error!ShaderLibraryId {
+        const result = cgpu_device_create_shader_library(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeShaderLibrary(self: *Device, library: ?ShaderLibraryId) void {
+    pub inline fn freeShaderLibrary(self: *Device, library: ShaderLibraryId) void {
         return cgpu_device_free_shader_library(self, library);
     }
-    pub inline fn createBuffer(self: *Device, desc: [*c]const BufferDescriptor) ?BufferId {
-        return cgpu_device_create_buffer(self, desc);
+    pub inline fn createBuffer(self: *Device, desc: [*c]const BufferDescriptor) Error!BufferId {
+        const result = cgpu_device_create_buffer(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeBuffer(self: *Device, buffer: ?BufferId) void {
+    pub inline fn freeBuffer(self: *Device, buffer: BufferId) void {
         return cgpu_device_free_buffer(self, buffer);
     }
-    pub inline fn createSampler(self: *Device, desc: [*c]const SamplerDescriptor) ?SamplerId {
-        return cgpu_device_create_sampler(self, desc);
+    pub inline fn createSampler(self: *Device, desc: [*c]const SamplerDescriptor) Error!SamplerId {
+        const result = cgpu_device_create_sampler(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeSampler(self: *Device, sampler: ?SamplerId) void {
+    pub inline fn freeSampler(self: *Device, sampler: SamplerId) void {
         return cgpu_device_free_sampler(self, sampler);
     }
-    pub inline fn createTexture(self: *Device, desc: [*c]const TextureDescriptor) ?TextureId {
-        return cgpu_device_create_texture(self, desc);
+    pub inline fn createTexture(self: *Device, desc: [*c]const TextureDescriptor) Error!TextureId {
+        const result = cgpu_device_create_texture(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeTexture(self: *Device, texture: ?TextureId) void {
+    pub inline fn freeTexture(self: *Device, texture: TextureId) void {
         return cgpu_device_free_texture(self, texture);
     }
-    pub inline fn createTextureView(self: *Device, desc: [*c]const TextureViewDescriptor) ?TextureViewId {
-        return cgpu_device_create_texture_view(self, desc);
+    pub inline fn createTextureView(self: *Device, desc: [*c]const TextureViewDescriptor) Error!TextureViewId {
+        const result = cgpu_device_create_texture_view(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeTextureView(self: *Device, render_target: ?TextureViewId) void {
+    pub inline fn freeTextureView(self: *Device, render_target: TextureViewId) void {
         return cgpu_device_free_texture_view(self, render_target);
     }
     pub inline fn tryBindAliasingTexture(self: *Device, desc: [*c]const TextureAliasingBindDescriptor) bool {
@@ -1223,25 +1299,45 @@ pub const Device = extern struct {
     pub inline fn exportSharedTextureHandle(self: *Device, desc: [*c]const ExportTextureDescriptor) u64 {
         return cgpu_device_export_shared_texture_handle(self, desc);
     }
-    pub inline fn importSharedTextureHandle(self: *Device, desc: [*c]const ImportTextureDescriptor) ?TextureId {
-        return cgpu_device_import_shared_texture_handle(self, desc);
+    pub inline fn importSharedTextureHandle(self: *Device, desc: [*c]const ImportTextureDescriptor) Error!TextureId {
+        const result = cgpu_device_import_shared_texture_handle(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn createSwapChain(self: *Device, desc: [*c]const SwapChainDescriptor) ?SwapChainId {
-        return cgpu_device_create_swap_chain(self, desc);
+    pub inline fn createSwapChain(self: *Device, desc: [*c]const SwapChainDescriptor) Error!SwapChainId {
+        const result = cgpu_device_create_swap_chain(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeSwapChain(self: *Device, swapchain: ?SwapChainId) void {
+    pub inline fn freeSwapChain(self: *Device, swapchain: SwapChainId) void {
         return cgpu_device_free_swap_chain(self, swapchain);
     }
-    pub inline fn createSurfaceFromNativeView(self: *Device, view: ?*anyopaque) ?SurfaceId {
-        return cgpu_device_create_surface_from_native_view(self, view);
+    pub inline fn createSurfaceFromNativeView(self: *Device, view: ?*anyopaque) Error!SurfaceId {
+        const result = cgpu_device_create_surface_from_native_view(self, view);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn createSurfaceFromHwnd(self: *Device, window: HWND) ?SurfaceId {
-        return cgpu_device_create_surface_from_hwnd(self, window);
+    pub inline fn createSurfaceFromHwnd(self: *Device, window: HWND) Error!SurfaceId {
+        const result = cgpu_device_create_surface_from_hwnd(self, window);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn createSurfaceFromNativeWindow(self: *Device, window: ANativeWindowPtr) ?SurfaceId {
-        return cgpu_device_create_surface_from_native_window(self, window);
+    pub inline fn createSurfaceFromNativeWindow(self: *Device, window: ANativeWindowPtr) Error!SurfaceId {
+        const result = cgpu_device_create_surface_from_native_window(self, window);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeSurface(self: *Device, surface: ?SurfaceId) void {
+    pub inline fn freeSurface(self: *Device, surface: SurfaceId) void {
         return cgpu_device_free_surface(self, surface);
     }
 };
@@ -1274,10 +1370,14 @@ pub const Queue = extern struct {
     pub inline fn unmapPackedMips(self: *Queue, desc: [*c]const TiledTexturePackedMips) void {
         return cgpu_queue_unmap_packed_mips(self, desc);
     }
-    pub inline fn createCommandPool(self: *Queue, desc: [*c]const CommandPoolDescriptor) ?CommandPoolId {
-        return cgpu_queue_create_command_pool(self, desc);
+    pub inline fn createCommandPool(self: *Queue, desc: [*c]const CommandPoolDescriptor) Error!CommandPoolId {
+        const result = cgpu_queue_create_command_pool(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeCommandPool(self: *Queue, pool: ?CommandPoolId) void {
+    pub inline fn freeCommandPool(self: *Queue, pool: CommandPoolId) void {
         return cgpu_queue_free_command_pool(self, pool);
     }
 };
@@ -1295,13 +1395,17 @@ pub const Semaphore = extern struct {
 
 pub const CommandPool = extern struct {
     queue: ?QueueId,
-    pub inline fn createCommandBuffer(self: *CommandPool, desc: [*c]const CommandBufferDescriptor) ?CommandBufferId {
-        return cgpu_command_pool_create_command_buffer(self, desc);
+    pub inline fn createCommandBuffer(self: *CommandPool, desc: [*c]const CommandBufferDescriptor) Error!CommandBufferId {
+        const result = cgpu_command_pool_create_command_buffer(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
     pub inline fn reset(self: *CommandPool) void {
         return cgpu_command_pool_reset(self);
     }
-    pub inline fn freeCommandBuffer(self: *CommandPool, cmd: ?CommandBufferId) void {
+    pub inline fn freeCommandBuffer(self: *CommandPool, cmd: CommandBufferId) void {
         return cgpu_command_pool_free_command_buffer(self, cmd);
     }
 };
@@ -1328,31 +1432,39 @@ pub const CommandBuffer = extern struct {
     pub inline fn resourceBarrier(self: *CommandBuffer, desc: [*c]const ResourceBarrierDescriptor) void {
         return cgpu_command_buffer_resource_barrier(self, desc);
     }
-    pub inline fn beginQuery(self: *CommandBuffer, pool: ?QueryPoolId, desc: [*c]const QueryDescriptor) void {
+    pub inline fn beginQuery(self: *CommandBuffer, pool: QueryPoolId, desc: [*c]const QueryDescriptor) void {
         return cgpu_command_buffer_begin_query(self, pool, desc);
     }
-    pub inline fn endQuery(self: *CommandBuffer, pool: ?QueryPoolId, desc: [*c]const QueryDescriptor) void {
+    pub inline fn endQuery(self: *CommandBuffer, pool: QueryPoolId, desc: [*c]const QueryDescriptor) void {
         return cgpu_command_buffer_end_query(self, pool, desc);
     }
-    pub inline fn resetQueryPool(self: *CommandBuffer, pool: ?QueryPoolId, start_query: u32, query_count: u32) void {
+    pub inline fn resetQueryPool(self: *CommandBuffer, pool: QueryPoolId, start_query: u32, query_count: u32) void {
         return cgpu_command_buffer_reset_query_pool(self, pool, start_query, query_count);
     }
-    pub inline fn resolveQuery(self: *CommandBuffer, pool: ?QueryPoolId, readback: ?BufferId, start_query: u32, query_count: u32) void {
+    pub inline fn resolveQuery(self: *CommandBuffer, pool: QueryPoolId, readback: BufferId, start_query: u32, query_count: u32) void {
         return cgpu_command_buffer_resolve_query(self, pool, readback, start_query, query_count);
     }
     pub inline fn end(self: *CommandBuffer) void {
         return cgpu_command_buffer_end(self);
     }
-    pub inline fn beginComputePass(self: *CommandBuffer, desc: [*c]const ComputePassDescriptor) ?ComputePassEncoderId {
-        return cgpu_command_buffer_begin_compute_pass(self, desc);
+    pub inline fn beginComputePass(self: *CommandBuffer, desc: [*c]const ComputePassDescriptor) Error!ComputePassEncoderId {
+        const result = cgpu_command_buffer_begin_compute_pass(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn endComputePass(self: *CommandBuffer, encoder: ?ComputePassEncoderId) void {
+    pub inline fn endComputePass(self: *CommandBuffer, encoder: ComputePassEncoderId) void {
         return cgpu_command_buffer_end_compute_pass(self, encoder);
     }
-    pub inline fn beginRenderPass(self: *CommandBuffer, begin_info: [*c]const BeginRenderPassInfo) ?RenderPassEncoderId {
-        return cgpu_command_buffer_begin_render_pass(self, begin_info);
+    pub inline fn beginRenderPass(self: *CommandBuffer, begin_info: [*c]const BeginRenderPassInfo) Error!RenderPassEncoderId {
+        const result = cgpu_command_buffer_begin_render_pass(self, begin_info);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn endRenderPass(self: *CommandBuffer, encoder: ?RenderPassEncoderId) void {
+    pub inline fn endRenderPass(self: *CommandBuffer, encoder: RenderPassEncoderId) void {
         return cgpu_command_buffer_end_render_pass(self, encoder);
     }
     pub inline fn beginEvent(self: *CommandBuffer, event: [*c]const EventInfo) void {
@@ -1364,16 +1476,24 @@ pub const CommandBuffer = extern struct {
     pub inline fn endEvent(self: *CommandBuffer) void {
         return cgpu_command_buffer_end_event(self);
     }
-    pub inline fn createStateBuffer(self: *CommandBuffer, desc: [*c]const StateBufferDescriptor) ?StateBufferId {
-        return cgpu_command_buffer_create_state_buffer(self, desc);
+    pub inline fn createStateBuffer(self: *CommandBuffer, desc: [*c]const StateBufferDescriptor) Error!StateBufferId {
+        const result = cgpu_command_buffer_create_state_buffer(self, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeStateBuffer(self: *CommandBuffer, stream: ?StateBufferId) void {
+    pub inline fn freeStateBuffer(self: *CommandBuffer, stream: StateBufferId) void {
         return cgpu_command_buffer_free_state_buffer(self, stream);
     }
-    pub inline fn createBinder(self: *CommandBuffer) ?BinderId {
-        return cgpu_command_buffer_create_binder(self);
+    pub inline fn createBinder(self: *CommandBuffer) Error!BinderId {
+        const result = cgpu_command_buffer_create_binder(self);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn freeBinder(self: *CommandBuffer, binder: ?BinderId) void {
+    pub inline fn freeBinder(self: *CommandBuffer, binder: BinderId) void {
         return cgpu_command_buffer_free_binder(self, binder);
     }
 };
@@ -1385,19 +1505,19 @@ pub const QueryPool = extern struct {
 
 pub const ComputePassEncoder = extern struct {
     device: ?DeviceId,
-    pub inline fn bindDescriptorSet(self: *ComputePassEncoder, set: ?DescriptorSetId) void {
+    pub inline fn bindDescriptorSet(self: *ComputePassEncoder, set: DescriptorSetId) void {
         return cgpu_compute_pass_encoder_bind_descriptor_set(self, set);
     }
-    pub inline fn bindComputePipeline(self: *ComputePassEncoder, pipeline: ?ComputePipelineId) void {
+    pub inline fn bindComputePipeline(self: *ComputePassEncoder, pipeline: ComputePipelineId) void {
         return cgpu_compute_pass_encoder_bind_compute_pipeline(self, pipeline);
     }
     pub inline fn dispatch(self: *ComputePassEncoder, x: u32, y: u32, z: u32) void {
         return cgpu_compute_pass_encoder_dispatch(self, x, y, z);
     }
-    pub inline fn pushConstants(self: *ComputePassEncoder, rs: ?RootSignatureId, name: [*c]const u8, data: ?*const anyopaque) void {
+    pub inline fn pushConstants(self: *ComputePassEncoder, rs: RootSignatureId, name: [*c]const u8, data: ?*const anyopaque) void {
         return cgpu_compute_pass_encoder_push_constants(self, rs, name, data);
     }
-    pub inline fn bindStateBuffer(self: *ComputePassEncoder, stream: ?StateBufferId) void {
+    pub inline fn bindStateBuffer(self: *ComputePassEncoder, stream: StateBufferId) void {
         return cgpu_compute_pass_encoder_bind_state_buffer(self, stream);
     }
 };
@@ -1407,7 +1527,7 @@ pub const RenderPassEncoder = extern struct {
     pub inline fn setShadingRate(self: *RenderPassEncoder, shading_rate: ShadingRate, post_rasterize_rate: ShadingRateCombiner, final_rate: ShadingRateCombiner) void {
         return cgpu_render_pass_encoder_set_shading_rate(self, shading_rate, post_rasterize_rate, final_rate);
     }
-    pub inline fn bindDescriptorSet(self: *RenderPassEncoder, set: ?DescriptorSetId) void {
+    pub inline fn bindDescriptorSet(self: *RenderPassEncoder, set: DescriptorSetId) void {
         return cgpu_render_pass_encoder_bind_descriptor_set(self, set);
     }
     pub inline fn setViewport(self: *RenderPassEncoder, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void {
@@ -1416,16 +1536,16 @@ pub const RenderPassEncoder = extern struct {
     pub inline fn setScissor(self: *RenderPassEncoder, x: u32, y: u32, width: u32, height: u32) void {
         return cgpu_render_pass_encoder_set_scissor(self, x, y, width, height);
     }
-    pub inline fn bindRenderPipeline(self: *RenderPassEncoder, pipeline: ?RenderPipelineId) void {
+    pub inline fn bindRenderPipeline(self: *RenderPassEncoder, pipeline: RenderPipelineId) void {
         return cgpu_render_pass_encoder_bind_render_pipeline(self, pipeline);
     }
     pub inline fn bindVertexBuffers(self: *RenderPassEncoder, buffer_count: u32, p_buffers: [*c]const BufferId, p_strides: [*c]const u32, p_offsets: [*c]const u32) void {
         return cgpu_render_pass_encoder_bind_vertex_buffers(self, buffer_count, p_buffers, p_strides, p_offsets);
     }
-    pub inline fn bindIndexBuffer(self: *RenderPassEncoder, buffer: ?BufferId, index_stride: u32, offset: u64) void {
+    pub inline fn bindIndexBuffer(self: *RenderPassEncoder, buffer: BufferId, index_stride: u32, offset: u64) void {
         return cgpu_render_pass_encoder_bind_index_buffer(self, buffer, index_stride, offset);
     }
-    pub inline fn pushConstants(self: *RenderPassEncoder, rs: ?RootSignatureId, name: [*c]const u8, data: ?*const anyopaque) void {
+    pub inline fn pushConstants(self: *RenderPassEncoder, rs: RootSignatureId, name: [*c]const u8, data: ?*const anyopaque) void {
         return cgpu_render_pass_encoder_push_constants(self, rs, name, data);
     }
     pub inline fn draw(self: *RenderPassEncoder, vertex_count: u32, first_vertex: u32) void {
@@ -1440,7 +1560,7 @@ pub const RenderPassEncoder = extern struct {
     pub inline fn drawIndexedInstanced(self: *RenderPassEncoder, index_count: u32, first_index: u32, instance_count: u32, first_instance: u32, first_vertex: u32) void {
         return cgpu_render_pass_encoder_draw_indexed_instanced(self, index_count, first_index, instance_count, first_instance, first_vertex);
     }
-    pub inline fn bindStateBuffer(self: *RenderPassEncoder, stream: ?StateBufferId) void {
+    pub inline fn bindStateBuffer(self: *RenderPassEncoder, stream: StateBufferId) void {
         return cgpu_render_pass_encoder_bind_state_buffer(self, stream);
     }
 };
@@ -1462,25 +1582,41 @@ pub const Framebuffer = extern struct {
 pub const StateBuffer = extern struct {
     device: ?DeviceId,
     cmd: ?CommandBufferId,
-    pub inline fn openRasterStateEncoder(self: *StateBuffer, encoder: ?RenderPassEncoderId) ?RasterStateEncoderId {
-        return cgpu_state_buffer_open_raster_state_encoder(self, encoder);
+    pub inline fn openRasterStateEncoder(self: *StateBuffer, encoder: RenderPassEncoderId) Error!RasterStateEncoderId {
+        const result = cgpu_state_buffer_open_raster_state_encoder(self, encoder);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn closeRasterStateEncoder(self: *StateBuffer, encoder: ?RasterStateEncoderId) void {
+    pub inline fn closeRasterStateEncoder(self: *StateBuffer, encoder: RasterStateEncoderId) void {
         return cgpu_state_buffer_close_raster_state_encoder(self, encoder);
     }
-    pub inline fn openShaderStateEncoderR(self: *StateBuffer, encoder: ?RenderPassEncoderId) ?ShaderStateEncoderId {
-        return cgpu_state_buffer_open_shader_state_encoder_r(self, encoder);
+    pub inline fn openShaderStateEncoderR(self: *StateBuffer, encoder: RenderPassEncoderId) Error!ShaderStateEncoderId {
+        const result = cgpu_state_buffer_open_shader_state_encoder_r(self, encoder);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn openShaderStateEncoderC(self: *StateBuffer, encoder: ?ComputePassEncoderId) ?ShaderStateEncoderId {
-        return cgpu_state_buffer_open_shader_state_encoder_c(self, encoder);
+    pub inline fn openShaderStateEncoderC(self: *StateBuffer, encoder: ComputePassEncoderId) Error!ShaderStateEncoderId {
+        const result = cgpu_state_buffer_open_shader_state_encoder_c(self, encoder);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn closeShaderStateEncoder(self: *StateBuffer, encoder: ?ShaderStateEncoderId) void {
+    pub inline fn closeShaderStateEncoder(self: *StateBuffer, encoder: ShaderStateEncoderId) void {
         return cgpu_state_buffer_close_shader_state_encoder(self, encoder);
     }
-    pub inline fn openUserStateEncoder(self: *StateBuffer, encoder: ?RenderPassEncoderId) ?UserStateEncoderId {
-        return cgpu_state_buffer_open_user_state_encoder(self, encoder);
+    pub inline fn openUserStateEncoder(self: *StateBuffer, encoder: RenderPassEncoderId) Error!UserStateEncoderId {
+        const result = cgpu_state_buffer_open_user_state_encoder(self, encoder);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
-    pub inline fn closeUserStateEncoder(self: *StateBuffer, encoder: ?UserStateEncoderId) void {
+    pub inline fn closeUserStateEncoder(self: *StateBuffer, encoder: UserStateEncoderId) void {
         return cgpu_state_buffer_close_user_state_encoder(self, encoder);
     }
 };
@@ -1530,7 +1666,7 @@ pub const ShaderStateEncoder = extern struct {
     pub inline fn bindShaders(self: *ShaderStateEncoder, stage_count: u32, p_stages: [*c]const ShaderStage, shaders: [*c]const CompiledShaderId) void {
         return cgpu_shader_state_encoder_bind_shaders(self, stage_count, p_stages, shaders);
     }
-    pub inline fn bindLinkedShader(self: *ShaderStateEncoder, linked: ?LinkedShaderId) void {
+    pub inline fn bindLinkedShader(self: *ShaderStateEncoder, linked: LinkedShaderId) void {
         return cgpu_shader_state_encoder_bind_linked_shader(self, linked);
     }
 };
@@ -1641,16 +1777,20 @@ pub const RootSignature = extern struct {
     pipeline_type: PipelineType,
     pool: ?RootSignaturePoolId,
     pool_sig: ?RootSignatureId,
-    pub inline fn compileAndLinkShaders(self: *RootSignature, count: u32, desc: [*c]const CompiledShaderDescriptor) ?LinkedShaderId {
-        return cgpu_root_signature_compile_and_link_shaders(self, count, desc);
+    pub inline fn compileAndLinkShaders(self: *RootSignature, count: u32, desc: [*c]const CompiledShaderDescriptor) Error!LinkedShaderId {
+        const result = cgpu_root_signature_compile_and_link_shaders(self, count, desc);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
     }
     pub inline fn compileShaders(self: *RootSignature, count: u32, desc: [*c]const CompiledShaderDescriptor, out_isas: [*c]CompiledShaderId) void {
         return cgpu_root_signature_compile_shaders(self, count, desc, out_isas);
     }
-    pub inline fn freeCompiledShader(self: *RootSignature, shader: ?CompiledShaderId) void {
+    pub inline fn freeCompiledShader(self: *RootSignature, shader: CompiledShaderId) void {
         return cgpu_root_signature_free_compiled_shader(self, shader);
     }
-    pub inline fn freeLinkedShader(self: *RootSignature, shader: ?LinkedShaderId) void {
+    pub inline fn freeLinkedShader(self: *RootSignature, shader: LinkedShaderId) void {
         return cgpu_root_signature_free_linked_shader(self, shader);
     }
 };
@@ -2370,15 +2510,19 @@ pub const SurfacesProcTable = extern struct {
 
 pub const RuntimeTable = extern struct {};
 
-pub inline fn createInstance(desc: [*c]const InstanceDescriptor) ?InstanceId {
-    return cgpu_create_instance(desc);
+pub inline fn createInstance(desc: [*c]const InstanceDescriptor) Error!InstanceId {
+    const result = cgpu_create_instance(desc);
+    return if (result) |result_object|
+        result_object
+    else
+        Error.CreateFailed;
 }
 extern fn cgpu_create_instance(desc: [*c]const InstanceDescriptor) ?InstanceId;
 
-pub inline fn freeInstance(instance: ?InstanceId) void {
+pub inline fn freeInstance(instance: InstanceId) void {
     return cgpu_free_instance(instance);
 }
-extern fn cgpu_free_instance(instance: ?InstanceId) void;
+extern fn cgpu_free_instance(instance: InstanceId) void;
 
 extern fn cgpu_instance_get_backend(self: [*c]const Instance) Backend;
 
@@ -2392,7 +2536,7 @@ extern fn cgpu_adapter_query_queue_count(self: [*c]const Adapter, _type: QueueTy
 
 extern fn cgpu_adapter_create_device(self: [*c]Adapter, desc: [*c]const DeviceDescriptor) ?DeviceId;
 
-extern fn cgpu_adapter_free_device(self: [*c]Adapter, device: ?DeviceId) void;
+extern fn cgpu_adapter_free_device(self: [*c]Adapter, device: DeviceId) void;
 
 extern fn cgpu_device_query_video_memory_info(self: [*c]Device, total: [*c]u64, used_bytes: [*c]u64) void;
 
@@ -2400,71 +2544,71 @@ extern fn cgpu_device_query_shared_memory_info(self: [*c]Device, total: [*c]u64,
 
 extern fn cgpu_device_create_fence(self: [*c]Device) ?FenceId;
 
-extern fn cgpu_device_free_fence(self: [*c]Device, fence: ?FenceId) void;
+extern fn cgpu_device_free_fence(self: [*c]Device, fence: FenceId) void;
 
 extern fn cgpu_device_create_semaphore(self: [*c]Device) ?SemaphoreId;
 
-extern fn cgpu_device_free_semaphore(self: [*c]Device, semaphore: ?SemaphoreId) void;
+extern fn cgpu_device_free_semaphore(self: [*c]Device, semaphore: SemaphoreId) void;
 
 extern fn cgpu_device_create_root_signature_pool(self: [*c]Device, desc: [*c]const RootSignaturePoolDescriptor) ?RootSignaturePoolId;
 
-extern fn cgpu_device_free_root_signature_pool(self: [*c]Device, pool: ?RootSignaturePoolId) void;
+extern fn cgpu_device_free_root_signature_pool(self: [*c]Device, pool: RootSignaturePoolId) void;
 
 extern fn cgpu_device_create_root_signature(self: [*c]Device, desc: [*c]const RootSignatureDescriptor) ?RootSignatureId;
 
-extern fn cgpu_device_free_root_signature(self: [*c]Device, signature: ?RootSignatureId) void;
+extern fn cgpu_device_free_root_signature(self: [*c]Device, signature: RootSignatureId) void;
 
 extern fn cgpu_device_create_descriptor_set(self: [*c]Device, desc: [*c]const DescriptorSetDescriptor) ?DescriptorSetId;
 
-extern fn cgpu_device_free_descriptor_set(self: [*c]Device, set: ?DescriptorSetId) void;
+extern fn cgpu_device_free_descriptor_set(self: [*c]Device, set: DescriptorSetId) void;
 
 extern fn cgpu_device_create_compute_pipeline(self: [*c]Device, desc: [*c]const ComputePipelineDescriptor) ?ComputePipelineId;
 
-extern fn cgpu_device_free_compute_pipeline(self: [*c]Device, pipeline: ?ComputePipelineId) void;
+extern fn cgpu_device_free_compute_pipeline(self: [*c]Device, pipeline: ComputePipelineId) void;
 
 extern fn cgpu_device_create_render_pipeline(self: [*c]Device, desc: [*c]const RenderPipelineDescriptor) ?RenderPipelineId;
 
-extern fn cgpu_device_free_render_pipeline(self: [*c]Device, pipeline: ?RenderPipelineId) void;
+extern fn cgpu_device_free_render_pipeline(self: [*c]Device, pipeline: RenderPipelineId) void;
 
 extern fn cgpu_device_create_query_pool(self: [*c]Device, desc: [*c]const QueryPoolDescriptor) ?QueryPoolId;
 
-extern fn cgpu_device_free_query_pool(self: [*c]Device, pool: ?QueryPoolId) void;
+extern fn cgpu_device_free_query_pool(self: [*c]Device, pool: QueryPoolId) void;
 
 extern fn cgpu_device_create_memory_pool(self: [*c]Device, desc: [*c]const MemoryPoolDescriptor) ?MemoryPoolId;
 
-extern fn cgpu_device_free_memory_pool(self: [*c]Device, pool: ?MemoryPoolId) void;
+extern fn cgpu_device_free_memory_pool(self: [*c]Device, pool: MemoryPoolId) void;
 
 extern fn cgpu_device_get_queue(self: [*c]Device, _type: QueueType, index: u32) ?QueueId;
 
-extern fn cgpu_device_free_queue(self: [*c]Device, queue: ?QueueId) void;
+extern fn cgpu_device_free_queue(self: [*c]Device, queue: QueueId) void;
 
 extern fn cgpu_device_create_render_pass(self: [*c]Device, desc: [*c]const RenderPassDescriptor) ?RenderPassId;
 
 extern fn cgpu_device_create_framebuffer(self: [*c]Device, desc: [*c]const FramebufferDescriptor) ?FramebufferId;
 
-extern fn cgpu_device_free_render_pass(self: [*c]Device, render_pass: ?RenderPassId) void;
+extern fn cgpu_device_free_render_pass(self: [*c]Device, render_pass: RenderPassId) void;
 
-extern fn cgpu_device_free_framebuffer(self: [*c]Device, framebuffer: ?FramebufferId) void;
+extern fn cgpu_device_free_framebuffer(self: [*c]Device, framebuffer: FramebufferId) void;
 
 extern fn cgpu_device_create_shader_library(self: [*c]Device, desc: [*c]const ShaderLibraryDescriptor) ?ShaderLibraryId;
 
-extern fn cgpu_device_free_shader_library(self: [*c]Device, library: ?ShaderLibraryId) void;
+extern fn cgpu_device_free_shader_library(self: [*c]Device, library: ShaderLibraryId) void;
 
 extern fn cgpu_device_create_buffer(self: [*c]Device, desc: [*c]const BufferDescriptor) ?BufferId;
 
-extern fn cgpu_device_free_buffer(self: [*c]Device, buffer: ?BufferId) void;
+extern fn cgpu_device_free_buffer(self: [*c]Device, buffer: BufferId) void;
 
 extern fn cgpu_device_create_sampler(self: [*c]Device, desc: [*c]const SamplerDescriptor) ?SamplerId;
 
-extern fn cgpu_device_free_sampler(self: [*c]Device, sampler: ?SamplerId) void;
+extern fn cgpu_device_free_sampler(self: [*c]Device, sampler: SamplerId) void;
 
 extern fn cgpu_device_create_texture(self: [*c]Device, desc: [*c]const TextureDescriptor) ?TextureId;
 
-extern fn cgpu_device_free_texture(self: [*c]Device, texture: ?TextureId) void;
+extern fn cgpu_device_free_texture(self: [*c]Device, texture: TextureId) void;
 
 extern fn cgpu_device_create_texture_view(self: [*c]Device, desc: [*c]const TextureViewDescriptor) ?TextureViewId;
 
-extern fn cgpu_device_free_texture_view(self: [*c]Device, render_target: ?TextureViewId) void;
+extern fn cgpu_device_free_texture_view(self: [*c]Device, render_target: TextureViewId) void;
 
 extern fn cgpu_device_try_bind_aliasing_texture(self: [*c]Device, desc: [*c]const TextureAliasingBindDescriptor) bool;
 
@@ -2474,7 +2618,7 @@ extern fn cgpu_device_import_shared_texture_handle(self: [*c]Device, desc: [*c]c
 
 extern fn cgpu_device_create_swap_chain(self: [*c]Device, desc: [*c]const SwapChainDescriptor) ?SwapChainId;
 
-extern fn cgpu_device_free_swap_chain(self: [*c]Device, swapchain: ?SwapChainId) void;
+extern fn cgpu_device_free_swap_chain(self: [*c]Device, swapchain: SwapChainId) void;
 
 extern fn cgpu_device_create_surface_from_native_view(self: [*c]Device, view: ?*anyopaque) ?SurfaceId;
 
@@ -2482,7 +2626,7 @@ extern fn cgpu_device_create_surface_from_hwnd(self: [*c]Device, window: HWND) ?
 
 extern fn cgpu_device_create_surface_from_native_window(self: [*c]Device, window: ANativeWindowPtr) ?SurfaceId;
 
-extern fn cgpu_device_free_surface(self: [*c]Device, surface: ?SurfaceId) void;
+extern fn cgpu_device_free_surface(self: [*c]Device, surface: SurfaceId) void;
 
 pub inline fn waitFences(fences: [*c]const FenceId, fence_count: u32) void {
     return cgpu_wait_fences(fences, fence_count);
@@ -2509,7 +2653,7 @@ extern fn cgpu_queue_unmap_packed_mips(self: [*c]Queue, desc: [*c]const TiledTex
 
 extern fn cgpu_queue_create_command_pool(self: [*c]Queue, desc: [*c]const CommandPoolDescriptor) ?CommandPoolId;
 
-extern fn cgpu_queue_free_command_pool(self: [*c]Queue, pool: ?CommandPoolId) void;
+extern fn cgpu_queue_free_command_pool(self: [*c]Queue, pool: CommandPoolId) void;
 
 extern fn cgpu_descriptor_set_update(self: [*c]DescriptorSet, data_count: u32, p_datas: [*c]const DescriptorData) void;
 
@@ -2517,7 +2661,7 @@ extern fn cgpu_command_pool_create_command_buffer(self: [*c]CommandPool, desc: [
 
 extern fn cgpu_command_pool_reset(self: [*c]CommandPool) void;
 
-extern fn cgpu_command_pool_free_command_buffer(self: [*c]CommandPool, cmd: ?CommandBufferId) void;
+extern fn cgpu_command_pool_free_command_buffer(self: [*c]CommandPool, cmd: CommandBufferId) void;
 
 extern fn cgpu_buffer_map(self: [*c]Buffer, range: [*c]const BufferRange) void;
 
@@ -2537,23 +2681,23 @@ extern fn cgpu_command_buffer_transfer_buffer_to_tiles(self: [*c]CommandBuffer, 
 
 extern fn cgpu_command_buffer_resource_barrier(self: [*c]CommandBuffer, desc: [*c]const ResourceBarrierDescriptor) void;
 
-extern fn cgpu_command_buffer_begin_query(self: [*c]CommandBuffer, pool: ?QueryPoolId, desc: [*c]const QueryDescriptor) void;
+extern fn cgpu_command_buffer_begin_query(self: [*c]CommandBuffer, pool: QueryPoolId, desc: [*c]const QueryDescriptor) void;
 
-extern fn cgpu_command_buffer_end_query(self: [*c]CommandBuffer, pool: ?QueryPoolId, desc: [*c]const QueryDescriptor) void;
+extern fn cgpu_command_buffer_end_query(self: [*c]CommandBuffer, pool: QueryPoolId, desc: [*c]const QueryDescriptor) void;
 
-extern fn cgpu_command_buffer_reset_query_pool(self: [*c]CommandBuffer, pool: ?QueryPoolId, start_query: u32, query_count: u32) void;
+extern fn cgpu_command_buffer_reset_query_pool(self: [*c]CommandBuffer, pool: QueryPoolId, start_query: u32, query_count: u32) void;
 
-extern fn cgpu_command_buffer_resolve_query(self: [*c]CommandBuffer, pool: ?QueryPoolId, readback: ?BufferId, start_query: u32, query_count: u32) void;
+extern fn cgpu_command_buffer_resolve_query(self: [*c]CommandBuffer, pool: QueryPoolId, readback: BufferId, start_query: u32, query_count: u32) void;
 
 extern fn cgpu_command_buffer_end(self: [*c]CommandBuffer) void;
 
 extern fn cgpu_command_buffer_begin_compute_pass(self: [*c]CommandBuffer, desc: [*c]const ComputePassDescriptor) ?ComputePassEncoderId;
 
-extern fn cgpu_command_buffer_end_compute_pass(self: [*c]CommandBuffer, encoder: ?ComputePassEncoderId) void;
+extern fn cgpu_command_buffer_end_compute_pass(self: [*c]CommandBuffer, encoder: ComputePassEncoderId) void;
 
 extern fn cgpu_command_buffer_begin_render_pass(self: [*c]CommandBuffer, begin_info: [*c]const BeginRenderPassInfo) ?RenderPassEncoderId;
 
-extern fn cgpu_command_buffer_end_render_pass(self: [*c]CommandBuffer, encoder: ?RenderPassEncoderId) void;
+extern fn cgpu_command_buffer_end_render_pass(self: [*c]CommandBuffer, encoder: RenderPassEncoderId) void;
 
 extern fn cgpu_command_buffer_begin_event(self: [*c]CommandBuffer, event: [*c]const EventInfo) void;
 
@@ -2563,37 +2707,37 @@ extern fn cgpu_command_buffer_end_event(self: [*c]CommandBuffer) void;
 
 extern fn cgpu_command_buffer_create_state_buffer(self: [*c]CommandBuffer, desc: [*c]const StateBufferDescriptor) ?StateBufferId;
 
-extern fn cgpu_command_buffer_free_state_buffer(self: [*c]CommandBuffer, stream: ?StateBufferId) void;
+extern fn cgpu_command_buffer_free_state_buffer(self: [*c]CommandBuffer, stream: StateBufferId) void;
 
 extern fn cgpu_command_buffer_create_binder(self: [*c]CommandBuffer) ?BinderId;
 
-extern fn cgpu_command_buffer_free_binder(self: [*c]CommandBuffer, binder: ?BinderId) void;
+extern fn cgpu_command_buffer_free_binder(self: [*c]CommandBuffer, binder: BinderId) void;
 
-extern fn cgpu_compute_pass_encoder_bind_descriptor_set(self: [*c]ComputePassEncoder, set: ?DescriptorSetId) void;
+extern fn cgpu_compute_pass_encoder_bind_descriptor_set(self: [*c]ComputePassEncoder, set: DescriptorSetId) void;
 
-extern fn cgpu_compute_pass_encoder_bind_compute_pipeline(self: [*c]ComputePassEncoder, pipeline: ?ComputePipelineId) void;
+extern fn cgpu_compute_pass_encoder_bind_compute_pipeline(self: [*c]ComputePassEncoder, pipeline: ComputePipelineId) void;
 
 extern fn cgpu_compute_pass_encoder_dispatch(self: [*c]ComputePassEncoder, x: u32, y: u32, z: u32) void;
 
-extern fn cgpu_compute_pass_encoder_push_constants(self: [*c]ComputePassEncoder, rs: ?RootSignatureId, name: [*c]const u8, data: ?*const anyopaque) void;
+extern fn cgpu_compute_pass_encoder_push_constants(self: [*c]ComputePassEncoder, rs: RootSignatureId, name: [*c]const u8, data: ?*const anyopaque) void;
 
-extern fn cgpu_compute_pass_encoder_bind_state_buffer(self: [*c]ComputePassEncoder, stream: ?StateBufferId) void;
+extern fn cgpu_compute_pass_encoder_bind_state_buffer(self: [*c]ComputePassEncoder, stream: StateBufferId) void;
 
 extern fn cgpu_render_pass_encoder_set_shading_rate(self: [*c]RenderPassEncoder, shading_rate: ShadingRate, post_rasterize_rate: ShadingRateCombiner, final_rate: ShadingRateCombiner) void;
 
-extern fn cgpu_render_pass_encoder_bind_descriptor_set(self: [*c]RenderPassEncoder, set: ?DescriptorSetId) void;
+extern fn cgpu_render_pass_encoder_bind_descriptor_set(self: [*c]RenderPassEncoder, set: DescriptorSetId) void;
 
 extern fn cgpu_render_pass_encoder_set_viewport(self: [*c]RenderPassEncoder, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void;
 
 extern fn cgpu_render_pass_encoder_set_scissor(self: [*c]RenderPassEncoder, x: u32, y: u32, width: u32, height: u32) void;
 
-extern fn cgpu_render_pass_encoder_bind_render_pipeline(self: [*c]RenderPassEncoder, pipeline: ?RenderPipelineId) void;
+extern fn cgpu_render_pass_encoder_bind_render_pipeline(self: [*c]RenderPassEncoder, pipeline: RenderPipelineId) void;
 
 extern fn cgpu_render_pass_encoder_bind_vertex_buffers(self: [*c]RenderPassEncoder, buffer_count: u32, p_buffers: [*c]const BufferId, p_strides: [*c]const u32, p_offsets: [*c]const u32) void;
 
-extern fn cgpu_render_pass_encoder_bind_index_buffer(self: [*c]RenderPassEncoder, buffer: ?BufferId, index_stride: u32, offset: u64) void;
+extern fn cgpu_render_pass_encoder_bind_index_buffer(self: [*c]RenderPassEncoder, buffer: BufferId, index_stride: u32, offset: u64) void;
 
-extern fn cgpu_render_pass_encoder_push_constants(self: [*c]RenderPassEncoder, rs: ?RootSignatureId, name: [*c]const u8, data: ?*const anyopaque) void;
+extern fn cgpu_render_pass_encoder_push_constants(self: [*c]RenderPassEncoder, rs: RootSignatureId, name: [*c]const u8, data: ?*const anyopaque) void;
 
 extern fn cgpu_render_pass_encoder_draw(self: [*c]RenderPassEncoder, vertex_count: u32, first_vertex: u32) void;
 
@@ -2603,29 +2747,29 @@ extern fn cgpu_render_pass_encoder_draw_indexed(self: [*c]RenderPassEncoder, ind
 
 extern fn cgpu_render_pass_encoder_draw_indexed_instanced(self: [*c]RenderPassEncoder, index_count: u32, first_index: u32, instance_count: u32, first_instance: u32, first_vertex: u32) void;
 
-extern fn cgpu_render_pass_encoder_bind_state_buffer(self: [*c]RenderPassEncoder, stream: ?StateBufferId) void;
+extern fn cgpu_render_pass_encoder_bind_state_buffer(self: [*c]RenderPassEncoder, stream: StateBufferId) void;
 
 extern fn cgpu_root_signature_compile_and_link_shaders(self: [*c]RootSignature, count: u32, desc: [*c]const CompiledShaderDescriptor) ?LinkedShaderId;
 
 extern fn cgpu_root_signature_compile_shaders(self: [*c]RootSignature, count: u32, desc: [*c]const CompiledShaderDescriptor, out_isas: [*c]CompiledShaderId) void;
 
-extern fn cgpu_root_signature_free_compiled_shader(self: [*c]RootSignature, shader: ?CompiledShaderId) void;
+extern fn cgpu_root_signature_free_compiled_shader(self: [*c]RootSignature, shader: CompiledShaderId) void;
 
-extern fn cgpu_root_signature_free_linked_shader(self: [*c]RootSignature, shader: ?LinkedShaderId) void;
+extern fn cgpu_root_signature_free_linked_shader(self: [*c]RootSignature, shader: LinkedShaderId) void;
 
-extern fn cgpu_state_buffer_open_raster_state_encoder(self: [*c]StateBuffer, encoder: ?RenderPassEncoderId) ?RasterStateEncoderId;
+extern fn cgpu_state_buffer_open_raster_state_encoder(self: [*c]StateBuffer, encoder: RenderPassEncoderId) ?RasterStateEncoderId;
 
-extern fn cgpu_state_buffer_close_raster_state_encoder(self: [*c]StateBuffer, encoder: ?RasterStateEncoderId) void;
+extern fn cgpu_state_buffer_close_raster_state_encoder(self: [*c]StateBuffer, encoder: RasterStateEncoderId) void;
 
-extern fn cgpu_state_buffer_open_shader_state_encoder_r(self: [*c]StateBuffer, encoder: ?RenderPassEncoderId) ?ShaderStateEncoderId;
+extern fn cgpu_state_buffer_open_shader_state_encoder_r(self: [*c]StateBuffer, encoder: RenderPassEncoderId) ?ShaderStateEncoderId;
 
-extern fn cgpu_state_buffer_open_shader_state_encoder_c(self: [*c]StateBuffer, encoder: ?ComputePassEncoderId) ?ShaderStateEncoderId;
+extern fn cgpu_state_buffer_open_shader_state_encoder_c(self: [*c]StateBuffer, encoder: ComputePassEncoderId) ?ShaderStateEncoderId;
 
-extern fn cgpu_state_buffer_close_shader_state_encoder(self: [*c]StateBuffer, encoder: ?ShaderStateEncoderId) void;
+extern fn cgpu_state_buffer_close_shader_state_encoder(self: [*c]StateBuffer, encoder: ShaderStateEncoderId) void;
 
-extern fn cgpu_state_buffer_open_user_state_encoder(self: [*c]StateBuffer, encoder: ?RenderPassEncoderId) ?UserStateEncoderId;
+extern fn cgpu_state_buffer_open_user_state_encoder(self: [*c]StateBuffer, encoder: RenderPassEncoderId) ?UserStateEncoderId;
 
-extern fn cgpu_state_buffer_close_user_state_encoder(self: [*c]StateBuffer, encoder: ?UserStateEncoderId) void;
+extern fn cgpu_state_buffer_close_user_state_encoder(self: [*c]StateBuffer, encoder: UserStateEncoderId) void;
 
 extern fn cgpu_raster_state_encoder_set_viewport(self: [*c]RasterStateEncoder, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void;
 
@@ -2653,7 +2797,7 @@ extern fn cgpu_raster_state_encoder_set_sample_count(self: [*c]RasterStateEncode
 
 extern fn cgpu_shader_state_encoder_bind_shaders(self: [*c]ShaderStateEncoder, stage_count: u32, p_stages: [*c]const ShaderStage, shaders: [*c]const CompiledShaderId) void;
 
-extern fn cgpu_shader_state_encoder_bind_linked_shader(self: [*c]ShaderStateEncoder, linked: ?LinkedShaderId) void;
+extern fn cgpu_shader_state_encoder_bind_linked_shader(self: [*c]ShaderStateEncoder, linked: LinkedShaderId) void;
 
 extern fn cgpu_binder_bind_vertex_layout(self: [*c]Binder, layout: [*c]const VertexLayout) void;
 
