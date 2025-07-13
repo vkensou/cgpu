@@ -189,68 +189,6 @@ local function convert_arg(all_types, arg, namespace)
 	arg.cpptype = arg.ctype
 end
 
-local function convert_arg2(all_types, arg, namespace)
-	array, fulltype = arg.fulltype:match "(%[%s*[%d%a_:%*]*%s*%])%s*(.*)"
-	if array then
-		arg.fulltype = fulltype
-		arg.array = array
-		local number = array:match "%[(%d+)%]"
-		local enum, value = array:match "%[%s*([%a%d]+)::([%a%d]+)%]"
-		local const_value = array:match "%[(%s*[%d%a_:]*)%]"
-		local indefinite = array:match "%[(%*)%]"
-		if number then
-			arg.array_at = { number = number }
-			arg.carray = "[" .. tostring(number) .. "]"
-		elseif enum then
-			arg.array_at = { enum = enum, value = value }
-			arg.carray = "[" .. find_enum_item(all_types, enum .. "::Enum", value).cname  .. "]"
-		elseif const_value then
-			local typedef = all_types[ const_value ]
-			if typedef == nil then
-				error ("Unknown Enum " .. const_value)
-			end
-			arg.array_at = { const_value = const_value }
-			arg.carray = "[" .. typedef.cname .. "]"
-		elseif indefinite then
-			arg.array_at = { indefinite = true }
-		end
-	end
-	local t, postfix = arg.fulltype:match "(%a[%a%d_:]*)%s*([*&]+)%s*$"
-	if t then
-		arg.type = t
-		if postfix == "&" then
-			arg.ref = true
-		end
-	else
-		local prefix, t = arg.fulltype:match "^%s*(%a+)%s+(%S+)"
-		if prefix then
-			arg.type = t
-		else
-			arg.type = arg.fulltype
-		end
-	end
-	local ctype
-	local substruct = namespace.substruct
-	if substruct then
-		ctype = substruct[arg.type]
-	end
-	if not ctype then
-		ctype = all_types[arg.type]
-	end
-	if not ctype then
-		error ("Undefined type " .. arg.fulltype .. " in " .. namespace.name)
-	end
-	arg.ctype = arg.fulltype:gsub(arg.type, ctype.cname):gsub("&", "*")
-	if ctype.cname ~= arg.type then
-		arg.cpptype = arg.fulltype:gsub(arg.type, "bgfx::"..arg.type)
-	else
-		arg.cpptype = arg.fulltype
-	end
-	if arg.ref then
-		arg.ptype = arg.cpptype:gsub("&", "*")
-	end
-end
-
 local function alternative_name(name)
 	if name:sub(1,1) == "_" then
 		return name:sub(2)

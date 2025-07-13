@@ -60,7 +60,7 @@ local function namealign(name, align)
     return string.rep(" ", align - #name)
 end
 
-function trimRight(s)
+local function trimRight(s)
     return s:gsub("%s*$", "")
 end
 
@@ -89,7 +89,6 @@ local function isId(str)
 end
 
 local enum = {}
-local funcptr = {}
 
 local function convert_array(member)
 	if string.find(member.array, "::") then
@@ -108,45 +107,6 @@ local function gisub(s, pat, repl, n)
 	else
 		return string.gsub(s, pat, repl)
 	end
-end
-
-local function convert_type_02(arg)
-	if isMatch(arg.ctype, "uint64_t") then
-		return arg.ctype:gsub("uint64_t", "u64")
-	elseif isMatch(arg.ctype, "int64_t") then
-		return arg.ctype:gsub("int64_t", "i64")
-	elseif isMatch(arg.ctype, "uint32_t") then
-		return arg.ctype:gsub("uint32_t", "u32")
-	elseif isMatch(arg.ctype, "int32_t") then
-		return arg.ctype:gsub("int32_t", "i32")
-	elseif isMatch(arg.ctype, "uint16_t") then
-		return arg.ctype:gsub("uint16_t", "u16")
-	elseif isMatch(arg.ctype, "uint8_t") then
-		return arg.ctype:gsub("uint8_t", "u8")
-	elseif isMatch(arg.ctype, "uintptr_t") then
-		return arg.ctype:gsub("uintptr_t", "usize")
-	elseif isMatch(arg.ctype, "float") then
-		return arg.ctype:gsub("float", "f32")
-	elseif isMatch(arg.ctype, "double") then
-		return arg.ctype:gsub("double", "f64")
-	elseif arg.ctype == "const char*" then
-		return "[*c]const u8"
-	elseif isMatch(arg.ctype, "char") then
-		return arg.ctype:gsub("char", "u8")
-	elseif isMatch(arg.ctype, "size_t") then
-		return arg.ctype:gsub("size_t", "usize")
-	elseif hasSuffix(arg.fulltype, "Handle") then
-		return arg.fulltype
-	elseif hasSuffix(arg.fulltype, "Id") then
-		return arg.fulltype
-	elseif arg.ctype == "..." then
-		return "..."
-	elseif arg.ctype == "va_list" or arg.fulltype == "bx::AllocatorI*" or arg.fulltype == "CallbackI*" or arg.fulltype ==
-		"ReleaseFn" then
-		return "?*anyopaque"
-	end
-
-	return arg.fulltype
 end
 
 local function convert_type_0(arg)
@@ -176,7 +136,7 @@ local function convert_type_0(arg)
 		return "usize"
 	elseif arg == "char" then
 		return "u8"
-	elseif funcptr[arg] ~= nil then
+	elseif isFuncPtr(arg) then
 		return "?*const " .. arg, "null"
 	else
 		arg = arg:gsub("::Enum", "")
@@ -184,27 +144,31 @@ local function convert_type_0(arg)
 	end
 end
 
+local function return0(r0, ...)
+	return r0
+end
+
 local function convert_type(arg)
 	if arg.optional then
-		return "?" .. convert_type(arg.fulltype), "null"
+		return return0("?" .. convert_type(arg.fulltype)), "null"
 	elseif arg.ptr then
-		return "*" .. convert_type(arg.fulltype)
+		return return0("*" .. convert_type(arg.fulltype))
 	elseif arg.array then
 		if arg.array_at then
 			if arg.array_at.number then
-				return "[" .. tostring(arg.array_at.number) .. "]" .. convert_type(arg.fulltype)		
+				return return0("[" .. tostring(arg.array_at.number) .. "]" .. convert_type(arg.fulltype))
 			elseif arg.array_at.enum then
 				local array_count = convert_array(arg)
-				return "[" .. tostring(array_count) .. "]" .. convert_type(arg.fulltype)		
+				return return0("[" .. tostring(array_count) .. "]" .. convert_type(arg.fulltype))
 			elseif arg.array_at.const_value then
-				return "[" .. arg.array_at.const_value .. "]" .. convert_type(arg.fulltype)
+				return return0("[" .. arg.array_at.const_value .. "]" .. convert_type(arg.fulltype))
 			elseif arg.array_at.indefinite then
-				return "[*]" .. convert_type(arg.fulltype)
+				return return0("[*]" .. convert_type(arg.fulltype))
 			end
 		end
 		error("no array_at")
 	elseif arg.const then
-		return "const " .. convert_type(arg.fulltype)
+		return return0("const " .. convert_type(arg.fulltype))
 	else
 		local fulltype
 		if type(arg.fulltype) == "string" then
@@ -217,45 +181,6 @@ local function convert_type(arg)
 		end
 
 		error("catch")
-	end
-end
-
-local function convert_type2(arg, not_optional)
-	local ctype = convert_type_0(arg)
-
-	if ctype == "void*" then
-		return "?*anyopaque", "null"
-	elseif ctype == "void**" then
-		return "[*c]?*anyopaque", "null"
-	elseif isFuncPtr(arg.fulltype) then
-		return "?*const " .. arg.fulltype, "null"
-	elseif isId(arg.fulltype) and arg.array == nil then
-		return not_optional and arg.fulltype or "?" .. arg.fulltype
-	end 
-	
-	ctype = ctype:gsub("::Enum", "")
-	ctype = ctype:gsub(" &", "*")
-	ctype = ctype:gsub("&", "*")
-	ctype = ctype:gsub("char", "u8")
-	ctype = ctype:gsub("float", "f32")
-	ctype = ctype:gsub("const void%*", "?*const anyopaque")
-	ctype = ctype:gsub("Encoder%*", "?*Encoder")
-
-	if hasSuffix(ctype, "void*") then
-		ctype = ctype:gsub("void%*", "?*anyopaque");
-	elseif hasSuffix(ctype, "*") then
-		ctype = "[*c]" .. ctype:gsub("*", "")
-	end
-
-	if arg.array ~= nil then
-		-- ctype = ctype:gsub("const ", "")
-		ctype = convert_array(arg) .. ctype
-	end
-
-	if arg.optional then
-		return "?" .. ctype, "null"
-	else
-		return ctype
 	end
 end
 
@@ -601,8 +526,6 @@ function converter.types(params)
 				"pub const " .. typ.name .. " = fn (" .. table.concat(args, ", ") .. ") callconv(.C) " .. convert_ret_type(typ.ret) ..
 				";")
 		end
-
-		funcptr[typ.name] = typ
 	elseif typ.const_value then
 		yield("pub const " .. typ.name .. ": u32 = " .. tostring(typ.value) .. ";")
 	end
