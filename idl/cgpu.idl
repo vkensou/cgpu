@@ -2100,7 +2100,7 @@ struct.CompiledShaderDescriptor
 struct.ShaderLibraryDescriptor 
     .name               "?cstring" 
     .codeSize           "size_t" 
-    .pCode              "[*]const uint8_t" 
+    .pCodes             "[*]const uint8_t" 
     .stage              "ShaderStage" 
     .reflectionOnly     "bool"
 

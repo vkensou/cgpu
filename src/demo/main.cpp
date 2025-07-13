@@ -347,13 +347,13 @@ std::tuple<CGPURootSignatureId, CGPURenderPipelineId> create_render_pipeline(CGP
 	CGPUShaderLibraryDescriptor vs_desc = {
 		.name = "VertexShaderLibrary",
 		.code_size = vertShaderCode.size(),
-		.p_code = vertShaderCode.data(),
+		.p_codes = vertShaderCode.data(),
 		.stage = CGPU_SHADER_STAGE_VERTEX,
 	};
 	CGPUShaderLibraryDescriptor ps_desc = {
 		.name = "FragmentShaderLibrary",
 		.code_size = fragShaderCode.size(),
-		.p_code = fragShaderCode.data(),
+		.p_codes = fragShaderCode.data(),
 		.stage = CGPU_SHADER_STAGE_FRAGMENT,
 	};
 	CGPUShaderLibraryId vertex_shader = cgpu_device_create_shader_library(device, &vs_desc);

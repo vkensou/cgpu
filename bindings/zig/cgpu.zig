@@ -2273,7 +2273,7 @@ pub const CompiledShaderDescriptor = extern struct {
 pub const ShaderLibraryDescriptor = extern struct {
     name: ?[*:0]const u8 = null,
     code_size: usize,
-    p_code: [*]const u8,
+    p_codes: [*]const u8,
     stage: ShaderStage,
     reflection_only: bool,
 };

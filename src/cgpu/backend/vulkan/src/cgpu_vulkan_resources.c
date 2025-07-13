@@ -1572,7 +1572,7 @@ CGPUShaderLibraryId cgpu_create_shader_library_vulkan(CGPUDeviceId device, const
     VkShaderModuleCreateInfo info = {
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         .codeSize = desc->code_size,
-        .pCode = (uint32_t*)desc->p_code,
+        .pCode = (uint32_t*)desc->p_codes,
     };
     CGPUShaderLibrary_Vulkan* S = cgpu_calloc(allocator, 1, sizeof(CGPUShaderLibrary_Vulkan));
     if (!desc->reflection_only)

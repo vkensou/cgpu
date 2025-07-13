@@ -22,12 +22,12 @@ fn readFile(allocator: std.mem.Allocator, filepath: [:0]const u8) !std.ArrayList
 fn loadShader(device: cgpu.DeviceId, allocator: std.mem.Allocator, vs_filepath: [:0]const u8, ps_filepath: [:0]const u8) !Shader {
     const vs_content = try readFile(allocator, vs_filepath);
     defer vs_content.deinit();
-    const vs_shader = try device.createShaderLibrary(&.{ .name = "VertexShaderLibrary", .code_size = vs_content.items.len, .p_code = vs_content.items.ptr, .stage = .{ .vertex = true }, .reflection_only = false });
+    const vs_shader = try device.createShaderLibrary(&.{ .name = "VertexShaderLibrary", .code_size = vs_content.items.len, .p_codes = vs_content.items.ptr, .stage = .{ .vertex = true }, .reflection_only = false });
     errdefer device.freeShaderLibrary(vs_shader);
 
     const ps_content = try readFile(allocator, ps_filepath);
     defer ps_content.deinit();
-    const ps_shader = try device.createShaderLibrary(&.{ .name = "FragmentShaderLibrary", .code_size = ps_content.items.len, .p_code = ps_content.items.ptr, .stage = .{ .fragment = true }, .reflection_only = false });
+    const ps_shader = try device.createShaderLibrary(&.{ .name = "FragmentShaderLibrary", .code_size = ps_content.items.len, .p_codes = ps_content.items.ptr, .stage = .{ .fragment = true }, .reflection_only = false });
     errdefer device.freeShaderLibrary(ps_shader);
 
     const shader_entries = [_]cgpu.ShaderEntryDescriptor{
