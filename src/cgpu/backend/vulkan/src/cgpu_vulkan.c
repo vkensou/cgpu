@@ -141,7 +141,7 @@ CGPUFenceId cgpu_create_fence_vulkan(CGPUDeviceId device)
     return &F->super;
 }
 
-void cgpu_wait_fences_vulkan(const CGPUFenceId* fences, uint32_t fence_count)
+void cgpu_wait_fences_vulkan(uint32_t fence_count, const CGPUFenceId* fences)
 {
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)fences[0]->device;
     CGPU_DECLARE_ZERO_VLA(VkFence, vfences, fence_count)

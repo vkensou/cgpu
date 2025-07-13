@@ -919,7 +919,7 @@ typedef void (*CGPUProcFreeDevice)(CGPUAdapterId adapter, CGPUDeviceId device);
 typedef void (*CGPUProcQueryVideoMemoryInfo)(CGPUDeviceId device, uint64_t* total, uint64_t* used);
 typedef void (*CGPUProcQuerySharedMemoryInfo)(CGPUDeviceId device, uint64_t* total, uint64_t* used);
 typedef CGPUFenceId (*CGPUProcCreateFence)(CGPUDeviceId device);
-typedef void (*CGPUProcWaitFences)(const CGPUFenceId* fences, uint32_t fence);
+typedef void (*CGPUProcWaitFences)(uint32_t fence, const CGPUFenceId* fences);
 typedef ECGPUFenceStatus (*CGPUProcQueryFenceStatus)(CGPUFenceId fence);
 typedef void (*CGPUProcFreeFence)(CGPUDeviceId device, CGPUFenceId fence);
 typedef CGPUSemaphoreId (*CGPUProcCreateSemaphore)(CGPUDeviceId device);
@@ -2304,7 +2304,7 @@ CGPU_API CGPUSurfaceId cgpu_device_create_surface_from_native_view(CGPUDeviceId 
 CGPU_API CGPUSurfaceId cgpu_device_create_surface_from_hwnd(CGPUDeviceId _this, HWND window);
 CGPU_API CGPUSurfaceId cgpu_device_create_surface_from_native_window(CGPUDeviceId _this, ANativeWindowPtr window);
 CGPU_API void cgpu_device_free_surface(CGPUDeviceId _this, CGPUSurfaceId surface);
-CGPU_API void cgpu_wait_fences(const CGPUFenceId* fences, uint32_t fence);
+CGPU_API void cgpu_wait_fences(uint32_t fence, const CGPUFenceId* fences);
 CGPU_API ECGPUFenceStatus cgpu_fence_query_status(CGPUFenceId _this);
 CGPU_API void cgpu_queue_submit(CGPUQueueId _this, const CGPUQueueSubmitDescriptor* desc);
 CGPU_API void cgpu_queue_present(CGPUQueueId _this, const CGPUQueuePresentDescriptor* desc);

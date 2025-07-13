@@ -244,7 +244,7 @@ CGPUBufferId cgpu_create_buffer_vulkan(CGPUDeviceId device, const struct CGPUBuf
             .signal_fence = Q->pInnerFence,
         };
         cgpu_queue_submit(&Q->super, &barrier_submit);
-        cgpu_wait_fences(&Q->pInnerFence, 1);
+        cgpu_wait_fences(1, &Q->pInnerFence);
 #ifdef CGPU_THREAD_SAFETY
         if (Q->pMutex) skr_mutex_release(Q->pMutex);
 #endif
@@ -982,7 +982,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
             .signal_fence = Q->pInnerFence,
         };
         cgpu_queue_submit(&Q->super, &barrier_submit);
-        cgpu_wait_fences(&Q->pInnerFence, 1);
+        cgpu_wait_fences(1, &Q->pInnerFence);
 #ifdef CGPU_THREAD_SAFETY
         if (Q->pMutex) skr_mutex_release(Q->pMutex);
 #endif

@@ -92,9 +92,9 @@ local enum = {}
 
 local function convert_array(member)
 	if string.find(member.array, "::") then
-		return string.format("[%s]", enum[member.array])
+		return enum[member.array]
 	else
-		return member.array
+		return member.array:match "%[(.*)%]"
 	end
 end
 
@@ -109,7 +109,7 @@ local function gisub(s, pat, repl, n)
 	end
 end
 
-local function convert_type_0(arg)
+local function convert_type_02(arg)
 	if isMatch(arg.ctype, "uint64_t") then
 		return arg.ctype:gsub("uint64_t", "u64")
 	elseif isMatch(arg.ctype, "int64_t") then
@@ -148,7 +148,76 @@ local function convert_type_0(arg)
 	return arg.fulltype
 end
 
-local function convert_type(arg, not_optional)
+local function convert_type_0(arg)
+	if arg == "cstring" then
+		return "[*:0]const u8"
+	elseif arg == "uint64_t" then
+		return "u64"
+	elseif arg == "int64_t" then
+		return "i64"
+	elseif arg == "uint32_t" then
+		return "u32"
+	elseif arg == "int32_t" then
+		return "i32"
+	elseif arg == "uint16_t" then
+		return "u16"
+	elseif arg == "int16_t" then
+		return "i16"
+	elseif arg == "uint8_t" then
+		return "u8"
+	elseif arg == "int8_t" then
+		return "i8"
+	elseif arg == "float" then
+		return "f32"
+	elseif arg == "double" then
+		return "f64"
+	elseif arg == "size_t" then
+		return "usize"
+	elseif arg == "char" then
+		return "u8"
+	else
+		arg = arg:gsub("::Enum", "")
+		return arg
+	end
+end
+
+local function convert_type(arg)
+	if arg.optional then
+		return "?" .. convert_type(arg.fulltype), "null"
+	elseif arg.ptr then
+		return "*" .. convert_type(arg.fulltype)
+	elseif arg.array then
+		if arg.array_at then
+			if arg.array_at.number then
+				return "[" .. tostring(arg.array_at.number) .. "]" .. convert_type(arg.fulltype)		
+			elseif arg.array_at.enum then
+				local array_count = convert_array(arg)
+				return "[" .. tostring(array_count) .. "]" .. convert_type(arg.fulltype)		
+			elseif arg.array_at.const_value then
+				return "[" .. arg.array_at.const_value .. "]" .. convert_type(arg.fulltype)
+			elseif arg.array_at.indefinite then
+				return "[*]" .. convert_type(arg.fulltype)
+			end
+		end
+		error("no array_at")
+	elseif arg.const then
+		return "const " .. convert_type(arg.fulltype)
+	else
+		local fulltype
+		if type(arg.fulltype) == "string" then
+			fulltype = arg.fulltype 
+		elseif type(arg) == "string" then
+			fulltype = arg
+		end
+		if type(fulltype) == "string" then
+			return convert_type_0(fulltype)
+		end
+
+		error("catch")
+	end
+end
+
+local function convert_type2(arg, not_optional)
 	local ctype = convert_type_0(arg)
 
 	if ctype == "void*" then
@@ -180,7 +249,11 @@ local function convert_type(arg, not_optional)
 		ctype = convert_array(arg) .. ctype
 	end
 
-	return ctype
+	if arg.optional then
+		return "?" .. ctype, "null"
+	else
+		return ctype
+	end
 end
 
 local function convert_struct_type(arg)
@@ -513,7 +586,8 @@ function converter.types(params)
 				table.insert(argNames, argName)
 				table.insert(args, convert_member_name(argName) .. ": " .. convert_type(arg, true))
 			else
-				table.insert(args, convert_type(arg, true))
+				local q = convert_type(arg, true)
+				table.insert(args, q)
 			end
 		end
 

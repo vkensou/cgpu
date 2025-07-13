@@ -225,7 +225,7 @@ pub fn main() !void {
     const device_descriptor = cgpu.DeviceDescriptor{
         .disable_pipeline_cache = false,
         .queue_group_count = 1,
-        .p_queue_groups = &queue_group_descriptor,
+        .p_queue_groups = &[_]cgpu.QueueGroupDescriptor{queue_group_descriptor},
     };
 
     const device = try adapter.createDevice(&device_descriptor);
@@ -511,7 +511,7 @@ pub fn main() !void {
         current_frame_index = (current_frame_index + 1) % frame_datas.len;
         resource_index = (resource_index + 1) % 3;
         const current_frame_data = &frame_datas[current_frame_index];
-        cgpu.waitFences(&current_frame_data.inflight_fence, 1);
+        cgpu.waitFences(1, &[_]cgpu.FenceId{current_frame_data.inflight_fence});
         const next_swapchain_index_result = swapchain.acquireNextImage(&.{ .signal_semaphore = current_frame_data.swapchain_prepared_semaphore, .fence = null });
         if (next_swapchain_index_result == -1) break;
         const current_swapchain_index = next_swapchain_index_result;
@@ -617,7 +617,7 @@ pub fn main() !void {
 
         if (imgui_draw_data.total_vtx_count > 0) {
             encoder.bindRenderPipeline(imgui_render_pipeline);
-            encoder.bindVertexBuffers(1, &(imgui_vertex_buffers[resource_index].?), @sizeOf(imgui.DrawVert), 0);
+            encoder.bindVertexBuffers(1, &[_]cgpu.BufferId{imgui_vertex_buffers[resource_index].?}, &[_]u32{@sizeOf(imgui.DrawVert)}, null);
             encoder.bindIndexBuffer(imgui_index_buffers[resource_index].?, @sizeOf(imgui.DrawIdx), 0);
             encoder.bindDescriptorSet(imgui_font_descriptor_set);
             const Data = struct { scale_x: f32, scale_y: f32, translate_x: f32, translate_y: f32 };

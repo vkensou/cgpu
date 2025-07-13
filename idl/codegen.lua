@@ -70,7 +70,125 @@ local function find_enum_item(all_types, enum_name, item_name)
 	error ("Unkown Enum" .. enum_name .. " item: ".. item_name)
 end
 
+local function match_arg(all_types, namespace, _fulltype)
+	local fulltype = _fulltype:match "^%s*(.*)%s*$"	-- trim
+	local optional, optional_fulltype = fulltype:match "(?)%s*(.*)"
+	local array, array_fulltype = fulltype:match "(%[%s*[%d%a_:%*]*%s*%])%s*(.*)"
+	local ptr, ptr_fulltype = fulltype:match "(*)%s*(.*)"
+	local const, const_fulltype = fulltype:match "(const)%s*(.*)"
+	if optional then
+		local arg = {}
+		arg.optional = true
+		arg.fulltype = match_arg(all_types, namespace, optional_fulltype)
+		return arg
+	elseif array then
+		local arg = {}
+		arg.array = array
+		local number = array:match "%[(%d+)%]"
+		local enum, value = array:match "%[%s*([%a%d]+)::([%a%d]+)%]"
+		local const_value = array:match "%[(%s*[%d%a_:]*)%]"
+		local indefinite = array:match "%[(%*)%]"
+		if number then
+			arg.array_at = { number = number }
+			arg.carray = "[" .. tostring(number) .. "]"
+		elseif enum then
+			arg.array_at = { enum = enum, value = value }
+			arg.carray = "[" .. find_enum_item(all_types, enum .. "::Enum", value).cname  .. "]"
+		elseif const_value then
+			local typedef = all_types[ const_value ]
+			if typedef == nil then
+				error ("Unknown Enum " .. const_value)
+			end
+			arg.array_at = { const_value = const_value }
+			arg.carray = "[" .. typedef.cname .. "]"
+		elseif indefinite then
+			arg.array_at = { indefinite = true }
+		end
+		arg.fulltype = match_arg(all_types, namespace, array_fulltype)
+		return arg
+	elseif ptr then
+		local arg = {}
+		arg.ptr = true
+		arg.fulltype = match_arg(all_types, namespace, ptr_fulltype)
+		return arg
+	elseif const then
+		local arg = {}
+		arg.const = true
+		arg.fulltype = match_arg(all_types, namespace, const_fulltype)
+		return arg
+	else
+		return fulltype
+	end
+end
+
+local function get_arg_type(arg)
+	if type(arg.fulltype) == "string" then
+		return arg.fulltype
+	else
+		return get_arg_type(arg.fulltype)
+	end
+end
+
+local function to_ctype(all_types, arg)
+	if arg.optional then
+		return to_ctype(all_types, arg.fulltype)
+	elseif arg.ptr then
+		return to_ctype(all_types, arg.fulltype) .. "*"
+	elseif arg.array then
+		if arg.carray then
+			return to_ctype(all_types, arg.fulltype)
+		else
+			return to_ctype(all_types, arg.fulltype) .. "*"
+		end
+	elseif arg.const then
+		return "const" .. to_ctype(all_types, arg.fulltype)
+	else
+		local fulltype
+		if type(arg.fulltype) == "string" then
+			fulltype = arg.fulltype 
+		elseif type(arg) == "string" then
+			fulltype = arg
+		end
+		if type(fulltype) == "string" then
+			if fulltype == "anyopaque" then
+				return "void"
+			else
+				return fulltype
+			end
+		end
+
+		error("catch")
+	end
+end
+
 local function convert_arg(all_types, arg, namespace)
+	local oldtype = arg.fulltype
+	local marg = match_arg(all_types, namespace, arg.fulltype)
+	if type(marg) == "table" then
+		for k, v in pairs(marg) do
+			arg[k] = v
+		end
+	else
+		arg.fulltype = marg	
+	end
+
+	arg.type = get_arg_type(arg)
+	local ctype
+	local substruct = namespace.substruct
+	if substruct then
+		ctype = substruct[arg.type]
+	end
+	if not ctype then
+		ctype = all_types[arg.type]
+	end
+	if not ctype then
+		error ("Undefined type " .. oldtype .. " in " .. namespace.name)
+	end
+	arg.ctype = to_ctype(all_types, arg)
+	arg.cpptype = arg.ctype
+end
+
+local function convert_arg2(all_types, arg, namespace)
 	array, fulltype = arg.fulltype:match "(%[%s*[%d%a_:%*]*%s*%])%s*(.*)"
 	if array then
 		arg.fulltype = fulltype
@@ -488,7 +606,7 @@ function codegen.nameconversion(all_types, all_funcs)
 			if v.const then
 				classname = "const " .. classname
 			end
-			local classtype = { fulltype = classname .. "*" }
+			local classtype = { fulltype = "*" .. classname }
 			convert_arg(all_types, classtype, v)	
 			v.this = classtype.ctype
 			v.this_type = classtype

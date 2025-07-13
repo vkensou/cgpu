@@ -190,7 +190,7 @@ CGPUFenceId cgpu_device_create_fence(CGPUDeviceId device)
     return fence;
 }
 
-void cgpu_wait_fences(const CGPUFenceId* fences, uint32_t fence_count)
+void cgpu_wait_fences(uint32_t fence_count, const CGPUFenceId* fences)
 {
     if (fences == CGPU_NULLPTR || fence_count <= 0)
     {
@@ -201,7 +201,7 @@ void cgpu_wait_fences(const CGPUFenceId* fences, uint32_t fence_count)
     cgpu_assert(fence->device != CGPU_NULLPTR && "fatal: call on NULL device!");
     const CGPUProcWaitFences fn_wait_fences = fence->device->proc_table_cache->wait_fences;
     cgpu_assert(fn_wait_fences && "wait_fences Proc Missing!");
-    fn_wait_fences(fences, fence_count);
+    fn_wait_fences(fence_count, fences);
 }
 
 ECGPUFenceStatus cgpu_fence_query_status(CGPUFenceId fence)
