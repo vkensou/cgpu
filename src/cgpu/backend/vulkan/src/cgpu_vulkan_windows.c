@@ -28,7 +28,7 @@ CGPU_EXTERN_C CGPUTextureId cgpu_import_shared_texture_handle_vulkan_win32(CGPUD
 {
     CGPU_DECLARE_ZERO(CGPUTextureDescriptor, tex_desc);
     tex_desc.descriptors = CGPU_RESOURCE_TYPE_TEXTURE;
-    tex_desc.flags = CGPU_INNER_TCF_IMPORT_SHARED_HANDLE;
+    tex_desc.flags = CGPU_TEXTURE_CREATION_USAGE_IMPORT_SHARED;
     tex_desc.width = desc->width;
     tex_desc.height = desc->height;
     tex_desc.depth = desc->depth;
@@ -41,5 +41,5 @@ CGPU_EXTERN_C CGPUTextureId cgpu_import_shared_texture_handle_vulkan_win32(CGPUD
     cgpu_trace(&device->adapter->instance->logger, u8"Vulkan Win32 Imported shared texture handle %llu %dx%dx%d backend: %d\n",
         desc->shared_handle, desc->width, desc->height, desc->depth, desc->backend);
 
-    return cgpu_create_texture(device, &tex_desc);
+    return cgpu_device_create_texture(device, &tex_desc);
 }

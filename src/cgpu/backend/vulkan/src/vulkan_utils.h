@@ -4,12 +4,10 @@
         #define WIN32_LEAN_AND_MEAN
     #endif
 #endif
-#include "cgpu/flags.h"
 #include "cgpu/api.h"
 #include "cgpu_vulkan.h"
 #include "internal/vk_mem_alloc.h"
 #include "common_utils.h"
-#include "cgpu/flags.h"
 
 #include "vulkan/vulkan_core.h"
 
@@ -21,7 +19,7 @@
 #include "vulkan/vulkan_macos.h"
 #endif
 
-#define CGPU_INNER_TCF_IMPORT_SHARED_HANDLE (CGPU_TCF_USABLE_MAX << 1)
+#define CGPU_INNER_TCF_IMPORT_SHARED_HANDLE (0x40000 << 1)
 #define USE_EXTERNAL_MEMORY_EXTENSIONS
 #define VK_SPARSE_PAGE_STANDARD_SIZE ( 65536 )
 
@@ -74,14 +72,6 @@ void VkUtil_SelectPhysicalDeviceLayers(struct CGPUAdapter_Vulkan* VkAdapter,
 const char* const* device_layers, uint32_t device_layers_count, const CGPUAllocator* allocator);
 void VkUtil_SelectPhysicalDeviceExtensions(struct CGPUAdapter_Vulkan* VkAdapter,
 const char* const* device_extensions, uint32_t device_extension_count, const CGPUAllocator* allocator);
-
-// Table Helpers
-struct VkUtil_RenderPassDesc;
-struct VkUtil_FramebufferDesc;
-VkRenderPass VkUtil_RenderPassTableTryFind(struct CGPUVkPassTable* table, const struct VkUtil_RenderPassDesc* desc);
-void VkUtil_RenderPassTableAdd(struct CGPUVkPassTable* table, const struct VkUtil_RenderPassDesc* desc, VkRenderPass pass);
-VkFramebuffer VkUtil_FramebufferTableTryFind(struct CGPUVkPassTable* table, const struct VkUtil_FramebufferDesc* desc);
-void VkUtil_FramebufferTableAdd(struct CGPUVkPassTable* table, const struct VkUtil_FramebufferDesc* desc, VkFramebuffer framebuffer);
 
 // Debug Helpers
 VKAPI_ATTR VkBool32 VKAPI_CALL VkUtil_DebugUtilsCallback(
@@ -145,37 +135,12 @@ typedef struct VkUtil_DescriptorPool {
     struct SMutex* pMutex;
 } VkUtil_DescriptorPool;
 
-typedef struct VkUtil_RenderPassDesc {
-    ECGPUFormat pColorFormats[CGPU_MAX_MRT_COUNT];
-    ECGPULoadAction pLoadActionsColor[CGPU_MAX_MRT_COUNT];
-    ECGPUStoreAction pStoreActionsColor[CGPU_MAX_MRT_COUNT];
-    ECGPULoadAction pLoadActionsColorResolve[CGPU_MAX_MRT_COUNT];
-    ECGPUStoreAction pStoreActionsColorResolve[CGPU_MAX_MRT_COUNT];
-    bool pResolveMasks[CGPU_MAX_MRT_COUNT];
-    uint32_t mColorAttachmentCount;
-    ECGPUSampleCount mSampleCount;
-    ECGPUFormat mDepthStencilFormat;
-    ECGPULoadAction mLoadActionDepth;
-    ECGPUStoreAction mStoreActionDepth;
-    ECGPULoadAction mLoadActionStencil;
-    ECGPUStoreAction mStoreActionStencil;
-} VkUtil_RenderPassDesc;
-
-typedef struct VkUtil_FramebufferDesc {
-    VkRenderPass pRenderPass;
-    uint32_t mAttachmentCount;
-    VkImageView pImageViews[CGPU_MAX_MRT_COUNT * 2 + 1];
-    uint32_t mWidth;
-    uint32_t mHeight;
-    uint32_t mLayers;
-} VkUtil_FramebufferDesc;
-
 #define CHECK_VKRESULT(logger, exp)                                                             \
     {                                                                                   \
         VkResult vkres = (exp);                                                         \
         if (VK_SUCCESS != vkres)                                                        \
         {                                                                               \
-            cgpu_error(logger, (const char8_t*)"VKRESULT %s: FAILED with VkResult: %d\n", #exp, (uint32_t)vkres); \
+            cgpu_error(logger, (const char*)"VKRESULT %s: FAILED with VkResult: %d\n", #exp, (uint32_t)vkres); \
             cgpu_assert(0);                                                             \
         }                                                                               \
     }

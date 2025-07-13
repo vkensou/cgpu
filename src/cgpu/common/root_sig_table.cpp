@@ -10,7 +10,7 @@ bool CGPUUtil_ShaderResourceIsStaticSampler(CGPUShaderResource* resource, const 
 {
     for (uint32_t i = 0; i < desc->static_sampler_count; i++)
     {
-        if (strcmp((const char*)resource->name, (const char*)desc->static_sampler_names[i]) == 0)
+        if (strcmp((const char*)resource->name, (const char*)desc->p_static_sampler_names[i]) == 0)
         {
             return resource->type == CGPU_RESOURCE_TYPE_SAMPLER;
         }
@@ -23,18 +23,18 @@ bool CGPUUtil_ShaderResourceIsRootConst(CGPUShaderResource* resource, const stru
     if (resource->type == CGPU_RESOURCE_TYPE_PUSH_CONSTANT) return true;
     for (uint32_t i = 0; i < desc->push_constant_count; i++)
     {
-        if (strcmp((const char*)resource->name, (const char*)desc->push_constant_names[i]) == 0)
+        if (strcmp((const char*)resource->name, (const char*)desc->p_push_constant_names[i]) == 0)
             return true;
     }
     return false;
 }
 
-inline static char8_t* duplicate_string(const char8_t* src_string, const CGPUAllocator* allocator)
+inline static char* duplicate_string(const char* src_string, const CGPUAllocator* allocator)
 {
     if (src_string != CGPU_NULLPTR)
     {
         const size_t source_len = strlen((const char*)src_string);
-        char8_t* result = (char8_t*)cgpu_malloc(allocator, sizeof(char8_t) * (1 + source_len));
+        char* result = (char*)cgpu_malloc(allocator, sizeof(char) * (1 + source_len));
 #ifdef _WIN32
         strcpy_s((char*)result, source_len + 1, (const char*)src_string);
 #else
@@ -59,11 +59,11 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
     // Pick shader reflection data
     for (uint32_t i = 0; i < desc->shader_count; i++)
     {
-        const CGPUShaderEntryDescriptor* shader_desc = &desc->shaders[i];
+        const CGPUShaderEntryDescriptor* shader_desc = &desc->p_shaders[i];
         // Find shader reflection
-        for (uint32_t j = 0; j < shader_desc->library->entrys_count; j++)
+        for (uint32_t j = 0; j < shader_desc->library->entry_count; j++)
         {
-            CGPUShaderReflection* temp_entry_reflcetion = &shader_desc->library->entry_reflections[j];
+            CGPUShaderReflection* temp_entry_reflcetion = &shader_desc->library->p_entry_reflections[j];
             if (temp_entry_reflcetion->entry_name)
             {
                 if (strcmp((const char*)shader_desc->entry, (const char*)temp_entry_reflcetion->entry_name) == 0)
@@ -75,7 +75,7 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
         }
         if (entry_reflections[i] == CGPU_NULLPTR)
         {
-            entry_reflections[i] = &shader_desc->library->entry_reflections[0];
+            entry_reflections[i] = &shader_desc->library->p_entry_reflections[0];
         }
     }
     // Collect all resources
@@ -86,9 +86,9 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
     for (uint32_t i = 0; i < desc->shader_count; i++)
     {
         CGPUShaderReflection* reflection = entry_reflections[i];
-        for (uint32_t j = 0; j < reflection->shader_resources_count; j++)
+        for (uint32_t j = 0; j < reflection->shader_resource_count; j++)
         {
-            CGPUShaderResource& resource = reflection->shader_resources[j];
+            CGPUShaderResource& resource = reflection->p_shader_resources[j];
             if (CGPUUtil_ShaderResourceIsRootConst(&resource, desc))
             {
                 bool coincided = false;
@@ -130,8 +130,8 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
         // Pipeline Type
         if (reflection->stage & CGPU_SHADER_STAGE_COMPUTE)
             RS->pipeline_type = CGPU_PIPELINE_TYPE_COMPUTE;
-        else if (reflection->stage & CGPU_SHADER_STAGE_RAYTRACING)
-            RS->pipeline_type = CGPU_PIPELINE_TYPE_RAYTRACING;
+        else if (reflection->stage & CGPU_SHADER_STAGE_RAY_TRACING)
+            RS->pipeline_type = CGPU_PIPELINE_TYPE_RAY_TRACING;
         else
             RS->pipeline_type = CGPU_PIPELINE_TYPE_GRAPHICS;
     }
@@ -166,11 +166,11 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
     });
     // Slice
     RS->table_count = (uint32_t)valid_sets.size();
-    RS->tables = (CGPUParameterTable*)cgpu_calloc(allocator, RS->table_count, sizeof(CGPUParameterTable));
+    RS->p_tables = (CGPUParameterTable*)cgpu_calloc(allocator, RS->table_count, sizeof(CGPUParameterTable));
     uint32_t table_index = 0;
     for (auto&set_index : valid_sets)
     {
-        CGPUParameterTable& table = RS->tables[table_index];
+        CGPUParameterTable& table = RS->p_tables[table_index];
         table.set_index = set_index;
         table.resources_count = 0;
         for (auto&& RST_resource : RST_resources)
@@ -178,14 +178,14 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
             if (RST_resource.set == set_index)
                 table.resources_count++;
         }
-        table.resources = (CGPUShaderResource*)cgpu_calloc(allocator,
+        table.p_resources = (CGPUShaderResource*)cgpu_calloc(allocator,
         table.resources_count, sizeof(CGPUShaderResource));
         uint32_t slot_index = 0;
         for (auto&& RST_resource : RST_resources)
         {
             if (RST_resource.set == set_index)
             {
-                table.resources[slot_index] = RST_resource;
+                table.p_resources[slot_index] = RST_resource;
                 slot_index++;
             }
         }
@@ -193,11 +193,11 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
     }
     // push constants
     RS->push_constant_count = (uint32_t)all_push_constants.size();
-    RS->push_constants = (CGPUShaderResource*)cgpu_calloc(allocator,
+    RS->p_push_constants = (CGPUShaderResource*)cgpu_calloc(allocator,
     RS->push_constant_count, sizeof(CGPUShaderResource));
     for (uint32_t i = 0; i < all_push_constants.size(); i++)
     {
-        RS->push_constants[i] = all_push_constants[i];
+        RS->p_push_constants[i] = all_push_constants[i];
     }
     // static samplers
     std::stable_sort(all_static_samplers.begin(), all_static_samplers.end(),
@@ -207,29 +207,29 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
             return lhs.binding < rhs.binding;
     });
     RS->static_sampler_count = (uint32_t)all_static_samplers.size();
-    RS->static_samplers = (CGPUShaderResource*)cgpu_calloc(allocator,
+    RS->p_static_samplers = (CGPUShaderResource*)cgpu_calloc(allocator,
     RS->static_sampler_count, sizeof(CGPUShaderResource));
     for (uint32_t i = 0; i < all_static_samplers.size(); i++)
     {
-        RS->static_samplers[i] = all_static_samplers[i];
+        RS->p_static_samplers[i] = all_static_samplers[i];
     }
     // copy names
     for (uint32_t i = 0; i < RS->push_constant_count; i++)
     {
-        CGPUShaderResource* dst = RS->push_constants + i;
+        CGPUShaderResource* dst = RS->p_push_constants + i;
         dst->name = duplicate_string(dst->name, allocator);
     }
     for (uint32_t i = 0; i < RS->static_sampler_count; i++)
     {
-        CGPUShaderResource* dst = RS->static_samplers + i;
+        CGPUShaderResource* dst = RS->p_static_samplers + i;
         dst->name = duplicate_string(dst->name, allocator);
     }
     for (uint32_t i = 0; i < RS->table_count; i++)
     {
-        CGPUParameterTable* set_to_record = &RS->tables[i];
+        CGPUParameterTable* set_to_record = &RS->p_tables[i];
         for (uint32_t j = 0; j < set_to_record->resources_count; j++)
         {
-            CGPUShaderResource* dst = &set_to_record->resources[j];
+            CGPUShaderResource* dst = &set_to_record->p_resources[j];
             dst->name = duplicate_string(dst->name, allocator);
         }
     }
@@ -238,49 +238,49 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
 void CGPUUtil_FreeRSParamTables(CGPURootSignature* RS)
 {
     const CGPUAllocator* allocator = &RS->device->adapter->instance->allocator;
-    if (RS->tables != CGPU_NULLPTR)
+    if (RS->p_tables != CGPU_NULLPTR)
     {
         for (uint32_t i_set = 0; i_set < RS->table_count; i_set++)
         {
-            CGPUParameterTable* param_table = &RS->tables[i_set];
-            if (param_table->resources != CGPU_NULLPTR)
+            CGPUParameterTable* param_table = &RS->p_tables[i_set];
+            if (param_table->p_resources != CGPU_NULLPTR)
             {
                 for (uint32_t i_binding = 0; i_binding < param_table->resources_count; i_binding++)
                 {
-                    CGPUShaderResource* binding_to_free = &param_table->resources[i_binding];
+                    CGPUShaderResource* binding_to_free = &param_table->p_resources[i_binding];
                     if (binding_to_free->name != CGPU_NULLPTR)
                     {
-                        cgpu_free(allocator, (char8_t*)binding_to_free->name);
+                        cgpu_free(allocator, (char*)binding_to_free->name);
                     }
                 }
-                cgpu_free(allocator, param_table->resources);
+                cgpu_free(allocator, param_table->p_resources);
             }
         }
-        cgpu_free(allocator, RS->tables);
+        cgpu_free(allocator, RS->p_tables);
     }
-    if (RS->push_constants != CGPU_NULLPTR)
+    if (RS->p_push_constants != CGPU_NULLPTR)
     {
         for (uint32_t i = 0; i < RS->push_constant_count; i++)
         {
-            CGPUShaderResource* binding_to_free = RS->push_constants + i;
+            CGPUShaderResource* binding_to_free = RS->p_push_constants + i;
             if (binding_to_free->name != CGPU_NULLPTR)
             {
-                cgpu_free(allocator, (char8_t*)binding_to_free->name);
+                cgpu_free(allocator, (char*)binding_to_free->name);
             }
         }
-        cgpu_free(allocator, RS->push_constants);
+        cgpu_free(allocator, RS->p_push_constants);
     }
-    if (RS->static_samplers != CGPU_NULLPTR)
+    if (RS->p_static_samplers != CGPU_NULLPTR)
     {
         for (uint32_t i = 0; i < RS->static_sampler_count; i++)
         {
-            CGPUShaderResource* binding_to_free = RS->static_samplers + i;
+            CGPUShaderResource* binding_to_free = RS->p_static_samplers + i;
             if (binding_to_free->name != CGPU_NULLPTR)
             {
-                cgpu_free(allocator, (char8_t*)binding_to_free->name);
+                cgpu_free(allocator, (char*)binding_to_free->name);
             }
         }
-        cgpu_free(allocator, RS->static_samplers);
+        cgpu_free(allocator, RS->p_static_samplers);
     }
 }
 }
