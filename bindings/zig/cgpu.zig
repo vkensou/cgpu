@@ -2297,7 +2297,7 @@ pub const BufferDescriptor = extern struct {
 
 pub const TextureDescriptor = extern struct {
     name: ?[*:0]const u8 = null,
-    native_handle: ?*anyopaque = null,
+    native_handle: ?*const anyopaque = null,
     flags: TextureCreationUsage,
     width: u64,
     height: u64,

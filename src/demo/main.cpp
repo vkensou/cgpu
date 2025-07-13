@@ -714,7 +714,7 @@ int main(int argc, char** argv)
 
 				current_frame_index = (current_frame_index + 1) % 3;
 				auto& cur_frame_data = frameDatas[current_frame_index];
-				cgpu_wait_fences(&cur_frame_data.inflightFence, 1);
+				cgpu_wait_fences(1, &cur_frame_data.inflightFence);
 
 				prepared_windows.clear();
 				for (auto window : windows)

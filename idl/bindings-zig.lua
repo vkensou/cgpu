@@ -89,6 +89,7 @@ local function isId(str)
 end
 
 local enum = {}
+local funcptr = {}
 
 local function convert_array(member)
 	if string.find(member.array, "::") then
@@ -175,6 +176,8 @@ local function convert_type_0(arg)
 		return "usize"
 	elseif arg == "char" then
 		return "u8"
+	elseif funcptr[arg] ~= nil then
+		return "?*const " .. arg, "null"
 	else
 		arg = arg:gsub("::Enum", "")
 		return arg
@@ -598,6 +601,8 @@ function converter.types(params)
 				"pub const " .. typ.name .. " = fn (" .. table.concat(args, ", ") .. ") callconv(.C) " .. convert_ret_type(typ.ret) ..
 				";")
 		end
+
+		funcptr[typ.name] = typ
 	elseif typ.const_value then
 		yield("pub const " .. typ.name .. ": u32 = " .. tostring(typ.value) .. ";")
 	end

@@ -129,19 +129,19 @@ local function get_arg_type(arg)
 	end
 end
 
-local function to_ctype(all_types, arg)
+local function to_ctype(all_types, namespace, arg)
 	if arg.optional then
-		return to_ctype(all_types, arg.fulltype)
+		return to_ctype(all_types, namespace, arg.fulltype)
 	elseif arg.ptr then
-		return to_ctype(all_types, arg.fulltype) .. "*"
+		return to_ctype(all_types, namespace, arg.fulltype) .. "*"
 	elseif arg.array then
 		if arg.carray then
-			return to_ctype(all_types, arg.fulltype)
+			return to_ctype(all_types, namespace, arg.fulltype)
 		else
-			return to_ctype(all_types, arg.fulltype) .. "*"
+			return to_ctype(all_types, namespace, arg.fulltype) .. "*"
 		end
 	elseif arg.const then
-		return "const" .. to_ctype(all_types, arg.fulltype)
+		return "const " .. to_ctype(all_types, namespace, arg.fulltype)
 	else
 		local fulltype
 		if type(arg.fulltype) == "string" then
@@ -152,8 +152,21 @@ local function to_ctype(all_types, arg)
 		if type(fulltype) == "string" then
 			if fulltype == "anyopaque" then
 				return "void"
+			elseif fulltype == "cstring" then
+				return "const char*"
 			else
-				return fulltype
+				local ctype
+				local substruct = namespace.substruct
+				if substruct then
+					ctype = substruct[fulltype]
+				end
+				if not ctype then
+					ctype = all_types[fulltype]
+				end
+				if not ctype then
+					error ("Undefined type " .. oldtype .. " in " .. namespace.name)
+				end
+				return ctype.cname
 			end
 		end
 
@@ -162,7 +175,6 @@ local function to_ctype(all_types, arg)
 end
 
 local function convert_arg(all_types, arg, namespace)
-	local oldtype = arg.fulltype
 	local marg = match_arg(all_types, namespace, arg.fulltype)
 	if type(marg) == "table" then
 		for k, v in pairs(marg) do
@@ -173,18 +185,7 @@ local function convert_arg(all_types, arg, namespace)
 	end
 
 	arg.type = get_arg_type(arg)
-	local ctype
-	local substruct = namespace.substruct
-	if substruct then
-		ctype = substruct[arg.type]
-	end
-	if not ctype then
-		ctype = all_types[arg.type]
-	end
-	if not ctype then
-		error ("Undefined type " .. oldtype .. " in " .. namespace.name)
-	end
-	arg.ctype = to_ctype(all_types, arg)
+	arg.ctype = to_ctype(all_types, namespace, arg)
 	arg.cpptype = arg.ctype
 end
 
@@ -677,9 +678,9 @@ local function codetemp(func)
 		conversion_c2cpp[#conversion_c2cpp+1] = arg.conversion_back
 		local cname = arg.ctype .. " " .. (arg.cname or arg.name)
 		if arg.array then
-			cname = cname .. (arg.carray)
+			cname = cname .. (arg.carray or "")
 		end
-		local name = arg.fulltype .. " " .. arg.name
+		local name = arg.ctype .. " " .. arg.name
 		if arg.array then
 			name = name .. arg.array
 		end
@@ -740,7 +741,7 @@ local function codetemp(func)
 	end
 
 	return {
-		RET = func.ret.fulltype,
+		RET = func.ret.ctype,
 		CRET = func.ret.ctype,
 		CFUNCNAME = func.cname,
 		CFUNCNAMEUPPER = func.cname:upper(),
@@ -1134,10 +1135,7 @@ local function text_with_comments(items, item, cstyle, is_classmember)
 	if cstyle then
 		typename = item.ctype
 	else
-		typename = item.fulltype
-	end
-	if item.array and item.array_at.indefinite then
-		typename = typename .. "*"
+		typename = item.ctype
 	end
 	if is_classmember then
 		name = "m_" .. name

@@ -658,7 +658,7 @@ static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)
     ImGui_ImplCGPU_ViewportData* vd = (ImGui_ImplCGPU_ViewportData*)viewport->RendererUserData;
     ImGui_ImplCGPU_Window* wd = &vd->Window;
 
-    cgpu_wait_fences(&wd->Fence, 1);
+    cgpu_wait_fences(1, &wd->Fence);
     CGPUAcquireNextDescriptor acquire_desc = {
         .fence = wd->Fence
     };
