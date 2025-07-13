@@ -4,4 +4,4 @@
 local gen = require "bindings-zig"
 
 local codes = gen.gen()
-gen.write(codes, "cgpu.zig")
+gen.write(codes, "../bindings/zig/cgpu.zig")

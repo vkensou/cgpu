@@ -1,5 +1,5 @@
 local codegen = require "codegen"
-local idl = codegen.idl "cgpu2.idl"
+local idl = codegen.idl "cgpu.idl"
 
 local zig_template = [[
 // Copyright 2011-2023 Branimir Karadzic. All rights reserved.

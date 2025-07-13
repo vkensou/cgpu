@@ -1,11 +1,9 @@
--- vim: syntax=lua
--- cgpu interface
-
 version(1)
 
 typedef "bool"
 typedef "char"
 typedef "float"
+typedef "double"
 typedef "int8_t"
 typedef "int32_t"
 typedef "int64_t"
@@ -16,6 +14,14 @@ typedef "uint64_t"
 typedef "uintptr_t"
 typedef "va_list"
 typedef "void"
+typedef "anyopaque"
+typedef "size_t"
+typedef "cstring"
+
+const_value.MaxMrtCount { value = 8 }
+const_value.MaxAttachmentCount { value = 9 }
+const_value.MaxVertexAttributes { value = 15 }
+const_value.ShaderStageCount { value = 6 }
 
 enum.Backend { comment = "Backend:" }
 	.Vulkan		--- Vulkan
@@ -252,7 +258,7 @@ enum.FilterType { comment = "Filter Type:" }
 	.Linear
 	()
 
-enum.AddressMode { comment = "Address Mode:" }
+enum.AddressMode { underscore, comment = "Address Mode:" }
 	.Mirror
 	.Repeat
 	.ClampToEdge
@@ -264,7 +270,7 @@ enum.MipMapMode { comment = "Mip Map Mode:" }
 	.Linear
 	()
 
-enum.LoadAction { comment = "Load Action:" }
+enum.LoadAction { underscore, comment = "Load Action:" }
     .DontCare
     .Load
     .Clear
@@ -275,7 +281,7 @@ enum.StoreAction { comment = "Store Action:" }
     .Discard
     ()
 
-enum.PrimitiveTopology { comment = "Primitive Topology:" }
+enum.PrimitiveTopology { underscore, comment = "Primitive Topology:" }
     .PointList
     .LineList
     .LineStrip
@@ -284,7 +290,7 @@ enum.PrimitiveTopology { comment = "Primitive Topology:" }
     .PatchList
     ()
 
-enum.CompareOp { comment = "Compare Op:" }
+enum.CompareOp { underscore, comment = "Compare Op:" }
     .Never
     .Less
     .Equal
@@ -302,13 +308,13 @@ flag.CullMode { bits = 32, base = 0 }
     .Both { "Back", "Front" }
     ()
 
-enum.FillMode { comment = "Fill Mode:" }
+enum.FillMode { underscore, comment = "Fill Mode:" }
     .Solid
     .WireFrame
     ()
 
-enum.FrontFace { comment = "Front Face:" }
-    .CounterClockWise
+enum.FrontFace { underscore, comment = "Front Face:" }
+    .CounterClockwise
     .ClockWise
     ()
 
@@ -323,7 +329,7 @@ flag.StencilFace { bits = 32, base = 1 }
     .Both { "Front", "Back" }
     ()
 
-enum.StencilOp { comment = "Stencil Op:" }
+enum.StencilOp { underscore, comment = "Stencil Op:" }
     .Keep
     .Zero
     .Replace
@@ -334,7 +340,7 @@ enum.StencilOp { comment = "Stencil Op:" }
     .DecrementAndWrap
     ()
 
-enum.TextureDimension { comment = "Texture Dimension:" }
+enum.TextureDimension { underscore, comment = "Texture Dimension:" }
     .Undefined
     ["1D"]
     ["2D"]
@@ -353,7 +359,7 @@ enum.ShaderBytecodeType { comment = "Shader Bytecode Type:" }
     .Mtl
     ()
 
-flag.ShaderStage { bits = 32, base = 0, comment = "Shader Stage:" }
+flag.ShaderStage { underscore, bits = 32, base = 0, comment = "Shader Stage:" }
     .None
     .Vertex
     .TessellationControl
@@ -365,7 +371,7 @@ flag.ShaderStage { bits = 32, base = 0, comment = "Shader Stage:" }
     .AllGraphics { "Vertex", "TessellationControl", "TessellationEvaluation", "Geometry", "Fragment" }
     ()
 
-flag.PipelineStage { bits = 32, base = 1, comment = "Pipeline Stage:" }
+flag.PipelineStage { underscore, bits = 32, base = 1, comment = "Pipeline Stage:" }
     .Index
     .Vertex
     .Fragment
@@ -378,19 +384,19 @@ flag.PipelineStage { bits = 32, base = 1, comment = "Pipeline Stage:" }
     .ExecuteIndirect
     ()
 
-enum.FenceStatus { comment = "Fence Status:" }
+enum.FenceStatus { underscore, comment = "Fence Status:" }
     .Complete
     .Incomplete
     .NotSubmitted
     ()
 
-enum.QueryType { comment = "Query Type:" }
+enum.QueryType { underscore, comment = "Query Type:" }
     .Timestamp
     .PipelineStatistics
     .Occlusion
     ()
 
-flag.ResourceState { bits = 32, base = 0 }
+flag.ResourceState { underscore, bits = 32, base = 0 }
     .Undefined
     .VertexAndConstantBuffer
     .IndexBuffer
@@ -413,7 +419,7 @@ flag.ResourceState { bits = 32, base = 0 }
     .GenericRead { "VertexAndConstantBuffer", "IndexBuffer", "NonPixelShaderResource", "PixelShaderResource", "IndirectArgument", "CopySource" }
     ()
 
-enum.MemoryUsage { comment = "Memory Usage:" }
+enum.MemoryUsage { underscore, comment = "Memory Usage:" }
     .Unknown
     .GpuOnly
     .CpuOnly
@@ -427,14 +433,14 @@ enum.MemoryPoolType { comment = "Memory Pool Type:" }
     .Tiled
     ()
 
-flag.BufferCreationUsage { bits = 32, base = 0 }
+flag.BufferCreationUsage { underscore, bits = 32, base = 0 }
     .None
     .Dedicated
     .PersistentMap
     .HostVisible
     ()
 
-flag.TextureCreationUsage { bits = 32, base = 0 }
+flag.TextureCreationUsage { underscore, bits = 32, base = 0 }
     .None
     .Dedicated
     .Force2d
@@ -446,21 +452,21 @@ flag.TextureCreationUsage { bits = 32, base = 0 }
     ()
 
 flag.SampleCount { bits = 32, const }
-    ._1 (1)
-    ._2 (2)
-    ._4 (4)
-    ._8 (8)
-    ._16 (16)
+    ["1"] (1)
+    ["2"] (2)
+    ["4"] (4)
+    ["8"] (8)
+    ["16"] (16)
     ()
 
-enum.PipelineType { comment = "Pipeline Type:" }
+enum.PipelineType { underscore, comment = "Pipeline Type:" }
     .None
     .Compute
     .Graphics
     .RayTracing
     ()
 
-flag.ResourceType { bits = 32, base = 0 }
+flag.ResourceType { underscore, bits = 32, base = 0 }
     .None
     .Sampler
     .Texture
@@ -509,7 +515,7 @@ enum.ShadingRate { comment = "Shading Rate:" }
     ["4X2"]
     ()
 
-enum.ShadingRateCombiner { comment = "Shading Rate Combiner:" }
+enum.ShadingRateCombiner { underscore, comment = "Shading Rate Combiner:" }
     .PassThrough
     .Override
     .Min
@@ -517,14 +523,14 @@ enum.ShadingRateCombiner { comment = "Shading Rate Combiner:" }
     .Sum
     ()
 
-enum.QueueType { comment = "Queue Type:" }
+enum.QueueType { underscore, comment = "Queue Type:" }
     .Graphics
     .Compute
     .Transfer
     .TileMapping
     ()
 
-flag.TextureFormmatSupport { bits = 32, base = 1 }
+flag.TextureFormatSupport { underscore, bits = 32, base = 1 }
     .Sample
     .Render
     .LoadStore
@@ -565,21 +571,2781 @@ enum.VertexFormat { comment = "Vertex Format:" }
     .Unorm8x4
     ()
 
+flag.DynamicStateFeatures { underscore, bits = 64, base = 1 }
+    .CullMode
+    .FrontFace
+    .PrimitiveTopology
+    .DepthTest
+    .DepthWrite
+    .DepthCompare
+    .DepthBoundsTest
+    .StencilTest
+    .StencilOp
+
+
+    .RasterDiscard
+    .DepthBias
+    .PrimitiveRestart
+    .LogicOp
+    .PatchControlPoints
+
+    .TessellationDomainOrigin
+    .DepthClampEnable
+    .PolygonMode
+    .SampleCount
+    .SampleMask
+    .AlphaToCoverageEnable
+    .AlphaToOneEnable
+    .LogicOpEnable
+    .ColorBlendEnable
+    .ColorBlendEquation
+    .ColorWriteMask
+    .RasterStream
+    .ConservativeRasterMode
+    .ExtraPrimitiveOverestimationSize
+    .DepthClipEnable
+    .SampleLocationsEnable
+    .ColorBlendAdvanced
+    .ProvokingVertexMode
+    .LineRasterizationMode
+    .LineStippleEnable
+    .DepthClipNegativeOneToOne
+    .ViewportWScalingEnable
+    .ViewportSwizzle
+    .CoverageToColorEnable
+    .CoverageToColorLocation
+    .CoverageModulationMode
+    .CoverageModulationTableEnable
+    .CoverageModulationTable
+    .CoverageReductionMode
+    .RepresentativeFragmentTestEnable
+    .ShadingRateImageEnable
+
+    .Tier1 { "CullMode", "FrontFace", "PrimitiveTopology", "DepthTest", "DepthWrite", "DepthCompare", "DepthBoundsTest", "StencilTest", "StencilOp" }
+    .Tier2 { "Tier1", "RasterDiscard", "DepthBias", "PrimitiveRestart", "LogicOp", "PatchControlPoints" }
+    .Tier3 { "Tier2", "TessellationDomainOrigin", "DepthClampEnable", "PolygonMode", "SampleCount", "SampleMask", "AlphaToCoverageEnable", 
+    "AlphaToOneEnable", "LogicOpEnable", "ColorBlendEnable", "ColorBlendEquation", "ColorWriteMask", "RasterStream", "ConservativeRasterMode", "ExtraPrimitiveOverestimationSize", 
+    "DepthClipEnable", "SampleLocationsEnable", "ColorBlendAdvanced", "ProvokingVertexMode", "LineRasterizationMode", "LineStippleEnable", 
+    "DepthClipNegativeOneToOne", "ViewportWScalingEnable", "ViewportSwizzle", "CoverageToColorEnable", "CoverageToColorLocation", 
+    "CoverageModulationMode", "CoverageModulationTableEnable", "CoverageModulationTable", "CoverageReductionMode", "RepresentativeFragmentTestEnable", "ShadingRateImageEnable" }
+
+
+funcptr.LogCallback {vararg}
+    "void"
+    .userData           "?*anyopaque"
+    .severity           "LogSeverity::Enum"
+    .fmt                "cstring"
+
+funcptr.Malloc
+    "?*anyopaque"
+    .userData           "?*anyopaque"
+    .size               "size_t"
+    .pool               "?*const anyopaque"
+
+funcptr.Realloc
+    "?*anyopaque"
+    .userData           "?*anyopaque"
+    .ptr                "?*anyopaque"
+    .size               "size_t"
+    .pool               "?*const anyopaque"
+
+funcptr.Calloc
+    "?*anyopaque"
+    .userData           "?*anyopaque"
+    .count              "size_t"
+    .size               "size_t"
+    .pool               "?*const anyopaque"
+
+funcptr.Free
+    "void"
+    .userData           "?*anyopaque"
+    .ptr                "?*anyopaque"
+    .pool               "?*const anyopaque"
+
+funcptr.MallocAligned
+    "?*anyopaque"
+    .userData           "?*anyopaque"
+    .size               "size_t"
+    .alignment          "size_t"
+    .pool               "?*const anyopaque"
+
+funcptr.ReallocAligned
+    "?*anyopaque"
+    .userData           "?*anyopaque"
+    .ptr                "?*anyopaque"
+    .size               "size_t"
+    .alignment          "size_t"
+    .pool               "?*const anyopaque"
+
+funcptr.CallocAligned
+    "?*anyopaque"
+    .userData           "?*anyopaque"
+    .count              "size_t"
+    .size               "size_t"
+    .alignment          "size_t"
+    .pool               "?*const anyopaque"
+
+funcptr.FreeAligned
+    "void"
+    .userData           "?*anyopaque"
+    .ptr                "?*anyopaque"
+    .pool               "?*const anyopaque"
+
+funcptr.CreateInstance
+    "?InstanceId"
+    .desc               "*const InstanceDescriptor"
+
+funcptr.FreeInstance
+    "void"
+    .instance           "InstanceId"
+
+funcptr.QueryInstanceFeatures
+    "void"
+    .instance           "InstanceId"
+    .features           "*InstanceFeatures"
+
+funcptr.EnumAdapters
+    "void"
+    .instance           "InstanceId"
+    .pAdaptersCount     "*uint32_t"
+    .pAdapters          "?[*]AdapterId"
+
+funcptr.QueryAdapterDetail
+    "?*const AdapterDetail"
+    .adapter            "AdapterId"
+
+funcptr.QueryQueueCount
+    "uint32_t"
+    .adapter            "AdapterId"
+    .type               "QueueType::Enum"
+
+funcptr.CreateDevice
+    "?DeviceId"
+    .adapter            "AdapterId"
+    .desc               "*const DeviceDescriptor"
+
+funcptr.FreeDevice
+    "void"
+    .adapter            "AdapterId"
+    .device             "DeviceId"
+
+funcptr.QueryVideoMemoryInfo
+    "void"
+    .device             "DeviceId"
+    .total              "*uint64_t"
+    .used_bytes         "*uint64_t"
+
+funcptr.QuerySharedMemoryInfo
+    "void"
+    .device             "DeviceId"
+    .total              "*uint64_t"
+    .used_bytes         "*uint64_t"
+
+funcptr.CreateFence
+    "?FenceId"
+    .device             "DeviceId"
+
+funcptr.WaitFences
+    "void"
+    .fenceCount         "uint32_t"
+    .pFences            "[*]const FenceId"
+
+funcptr.QueryFenceStatus
+    "FenceStatus::Enum"
+    .fence              "FenceId"
+
+funcptr.FreeFence
+    "void"
+    .device             "DeviceId"
+    .fence              "FenceId"
+
+funcptr.CreateSemaphore
+    "?SemaphoreId"
+    .device             "DeviceId"
+
+funcptr.FreeSemaphore
+    "void"
+    .device             "DeviceId"
+    .semaphore          "SemaphoreId"
+
+funcptr.CreateRootSignaturePool
+    "?RootSignaturePoolId"
+    .device             "DeviceId"
+    .desc               "*const RootSignaturePoolDescriptor"
+
+funcptr.FreeRootSignaturePool
+    "void"
+    .device             "DeviceId"
+    .pool               "RootSignaturePoolId"
+
+funcptr.CreateRootSignature
+    "?RootSignatureId"
+    .device             "DeviceId"
+    .desc               "*const RootSignatureDescriptor"
+
+funcptr.FreeRootSignature
+    "void"
+    .device             "DeviceId"
+    .signature          "RootSignatureId"
+
+funcptr.CreateDescriptorSet
+    "?DescriptorSetId"
+    .device             "DeviceId"
+    .desc               "*const DescriptorSetDescriptor"
+
+funcptr.UpdateDescriptorSet
+    "void"
+    .set                "DescriptorSetId"
+    .dataCount          "uint32_t"
+    .pDatas             "*const DescriptorData"
+
+funcptr.FreeDescriptorSet
+    "void"
+    .device             "DeviceId"
+    .set                "DescriptorSetId"
+
+funcptr.CreateComputePipeline
+    "?ComputePipelineId"
+    .device             "DeviceId"
+    .desc               "*const ComputePipelineDescriptor"
+
+funcptr.FreeComputePipeline
+    "void"
+    .device             "DeviceId"
+    .pipeline           "ComputePipelineId"
+
+funcptr.CreateRenderPipeline
+    "?RenderPipelineId"
+    .device             "DeviceId"
+    .desc               "*const RenderPipelineDescriptor"
+
+funcptr.FreeRenderPipeline
+    "void"
+    .device             "DeviceId"
+    .pipeline           "RenderPipelineId"
+
+funcptr.CreateQueryPool
+    "?QueryPoolId"
+    .device             "DeviceId"
+    .desc               "*const QueryPoolDescriptor"
+
+funcptr.FreeQueryPool
+    "void"
+    .device             "DeviceId"
+    .pool               "QueryPoolId"
+
+funcptr.CreateMemoryPool
+    "?MemoryPoolId"
+    .device             "DeviceId"
+    .desc               "*const MemoryPoolDescriptor"
+
+funcptr.FreeMemoryPool
+    "void"
+    .device             "DeviceId"
+    .pool               "MemoryPoolId"
+
+funcptr.GetQueue
+    "?QueueId"
+    .device             "DeviceId"
+    .type               "QueueType::Enum"
+    .index              "uint32_t"
+
+funcptr.SubmitQueue
+    "void"
+    .queue              "QueueId"
+    .desc               "*const QueueSubmitDescriptor"
+
+funcptr.QueuePresent
+    "void"
+    .queue              "QueueId"
+    .desc               "*const QueuePresentDescriptor"
+
+funcptr.WaitQueueIdle
+    "void"
+    .queue              "QueueId"
+
+funcptr.QueueGetTimestampPeriodNS
+    "float"
+    .queue              "QueueId"
+
+funcptr.QueueMapTiledTexture
+    "void"
+    .queue              "QueueId"
+    .desc               "*const TiledTextureRegions"
+
+funcptr.QueueUnmapTiledTexture
+    "void"
+    .queue              "QueueId"
+    .desc               "*const TiledTextureRegions"
+
+funcptr.QueueMapPackedMips
+    "void"
+    .queue              "QueueId"
+    .desc               "*const TiledTexturePackedMips"
+
+funcptr.QueueUnmapPackedMips
+    "void"
+    .queue              "QueueId"
+    .desc               "*const TiledTexturePackedMips"
+
+funcptr.FreeQueue
+    "void"
+    .device             "DeviceId"
+    .queue              "QueueId"
+
+funcptr.CreateRenderPass
+    "?RenderPassId"
+    .device             "DeviceId"
+    .desc               "*const RenderPassDescriptor"
+
+funcptr.CreateFramebuffer
+    "?FramebufferId"
+    .device             "DeviceId"
+    .desc               "*const FramebufferDescriptor"
+
+funcptr.FreeRenderPass
+    "void"
+    .device             "DeviceId"
+    .renderPass         "RenderPassId"
+
+funcptr.FreeFramebuffer
+    "void"
+    .device             "DeviceId"
+    .framebuffer        "FramebufferId"
+
+funcptr.CreateCommandPool
+    "?CommandPoolId"
+    .queue              "QueueId"
+    .desc               "*const CommandPoolDescriptor"
+
+funcptr.CreateCommandBuffer
+    "?CommandBufferId"
+    .pool               "CommandPoolId"
+    .desc               "*const CommandBufferDescriptor"
+
+funcptr.ResetCommandPool
+    "void"
+    .pool               "CommandPoolId"
+
+funcptr.FreeCommandBuffer
+    "void"
+    .pool               "CommandPoolId"
+    .cmd                "CommandBufferId"
+
+funcptr.FreeCommandPool
+    "void"
+    .queue              "QueueId"
+    .pool               "CommandPoolId"
+
+funcptr.CreateShaderLibrary
+    "?ShaderLibraryId"
+    .device             "DeviceId"
+    .desc               "*const ShaderLibraryDescriptor"
+
+funcptr.FreeShaderLibrary
+    "void"
+    .device             "DeviceId"
+    .library            "ShaderLibraryId"
+
+funcptr.CreateBuffer
+    "?BufferId"
+    .device             "DeviceId"
+    .desc               "*const BufferDescriptor"
+
+funcptr.MapBuffer
+    "void"
+    .buffer             "BufferId"
+    .range              "?*const BufferRange"
+
+funcptr.UnmapBuffer
+    "void"
+    .buffer             "BufferId"
+
+funcptr.FreeBuffer
+    "void"
+    .device             "DeviceId"
+    .buffer             "BufferId"
+
+funcptr.CreateSampler
+    "?SamplerId"
+    .device             "DeviceId"
+    .desc               "*const SamplerDescriptor"
+
+funcptr.FreeSampler
+    "void"
+    .device             "DeviceId"
+    .sampler            "SamplerId"
+
+funcptr.CreateTexture
+    "?TextureId"
+    .device             "DeviceId"
+    .desc               "*const TextureDescriptor"
+
+funcptr.FreeTexture
+    "void"
+    .device             "DeviceId"
+    .texture            "TextureId"
+
+funcptr.CreateTextureView
+    "?TextureViewId"
+    .device             "DeviceId"
+    .desc               "*const TextureViewDescriptor"
+
+funcptr.FreeTextureView
+    "void"
+    .device             "DeviceId"
+    .renderTarget       "TextureViewId"
+
+funcptr.TryBindAliasingTexture
+    "bool"
+    .device             "DeviceId"
+    .desc               "*const TextureAliasingBindDescriptor"
+
+funcptr.ExportSharedTextureHandle
+    "uint64_t"
+    .device             "DeviceId"
+    .desc               "*const ExportTextureDescriptor"
+
+funcptr.ImportSharedTextureHandle
+    "?TextureId"
+    .device             "DeviceId"
+    .desc               "*const ImportTextureDescriptor"
+
+funcptr.CreateSwapChain
+    "?SwapChainId"
+    .device             "DeviceId"
+    .desc               "*const SwapChainDescriptor"
+
+funcptr.AcquireNextImage
+    "uint32_t"
+    .swapchain          "SwapChainId"
+    .desc               "*const AcquireNextDescriptor"
+
+funcptr.FreeSwapChain
+    "void"
+    .device             "DeviceId"
+    .swapchain          "SwapChainId"
+
+funcptr.CmdBegin
+    "void"
+    .cmd                "CommandBufferId"
+
+funcptr.CmdTransferBufferToBuffer
+    "void"
+    .cmd                "CommandBufferId"
+    .desc               "*const BufferToBufferTransfer"
+
+funcptr.CmdTransferTextureToTexture
+    "void"
+    .cmd                "CommandBufferId"
+    .desc               "*const TextureToTextureTransfer"
+
+funcptr.CmdTransferBufferToTexture
+    "void"
+    .cmd                "CommandBufferId"
+    .desc               "*const BufferToTextureTransfer"
+
+funcptr.CmdTransferBufferToTiles
+    "void"
+    .cmd                "CommandBufferId"
+    .desc               "*const BufferToTilesTransfer"
+
+funcptr.CmdResourceBarrier
+    "void"
+    .cmd                "CommandBufferId"
+    .desc               "*const ResourceBarrierDescriptor"
+
+funcptr.CmdBeginQuery
+    "void"
+    .cmd                "CommandBufferId"
+    .pool               "QueryPoolId"
+    .desc               "*const QueryDescriptor"
+
+funcptr.CmdEndQuery
+    "void"
+    .cmd                "CommandBufferId"
+    .pool               "QueryPoolId"
+    .desc               "*const QueryDescriptor"
+
+funcptr.CmdResetQueryPool
+    "void"
+    .cmd                "CommandBufferId"
+    .pool               "QueryPoolId"
+    .startQuery         "uint32_t"
+    .queryCount         "uint32_t"
+
+funcptr.CmdResolveQuery
+    "void"
+    .cmd                "CommandBufferId"
+    .pool               "QueryPoolId"
+    .readback           "BufferId"
+    .startQuery         "uint32_t"
+    .queryCount         "uint32_t"
+
+funcptr.CmdEnd
+    "void"
+    .cmd                "CommandBufferId"
+
+funcptr.CmdBeginComputePass
+    "?ComputePassEncoderId"
+    .cmd                "CommandBufferId"
+    .desc               "*const ComputePassDescriptor"
+
+funcptr.ComputeEncoderBindDescriptorSet
+    "void"
+    .encoder            "ComputePassEncoderId"
+    .set                "DescriptorSetId"
+
+funcptr.ComputeEncoderBindPipeline
+    "void"
+    .encoder            "ComputePassEncoderId"
+    .pipeline           "ComputePipelineId"
+
+funcptr.ComputeEncoderDispatch
+    "void"
+    .encoder            "ComputePassEncoderId"
+    .X                  "uint32_t"
+    .Y                  "uint32_t"
+    .Z                  "uint32_t"
+
+funcptr.CmdEndComputePass
+    "void"
+    .cmd                "CommandBufferId"
+    .encoder            "ComputePassEncoderId"
+
+funcptr.CmdBeginRenderPass
+    "?RenderPassEncoderId"
+    .cmd                "CommandBufferId"
+    .beginInfo          "*const BeginRenderPassInfo"
+
+funcptr.RenderEncoderSetShadingRate
+    "void"
+    .encoder            "RenderPassEncoderId"
+    .shadingRate        "ShadingRate::Enum"
+    .postRasterizeRate  "ShadingRateCombiner::Enum"
+    .finalRate          "ShadingRateCombiner::Enum"
+
+funcptr.RenderEncoderBindDescriptorSet
+    "void"
+    .encoder            "RenderPassEncoderId"
+    .set                "DescriptorSetId"
+
+funcptr.RenderEncoderSetViewport
+    "void"
+    .encoder            "RenderPassEncoderId"
+    .x                  "float"
+    .y                  "float"
+    .width              "float"
+    .height             "float"
+    .minDepth           "float"
+    .maxDepth           "float"
+
+funcptr.RenderEncoderSetScissor
+    "void"
+    .encoder            "RenderPassEncoderId"
+    .x                  "uint32_t"
+    .y                  "uint32_t"
+    .width              "uint32_t"
+    .height             "uint32_t"
+
+funcptr.RenderEncoderBindPipeline
+    "void"
+    .encoder            "RenderPassEncoderId"
+    .pipeline           "RenderPipelineId"
+
+funcptr.RenderEncoderBindVertexBuffers
+    "void"
+    .encoder            "RenderPassEncoderId"
+    .bufferCount        "uint32_t"
+    .buffers            "[*]const BufferId"
+    .strides            "[*]const uint32_t"
+    .offsets            "?[*]const uint32_t"
+
+funcptr.RenderEncoderBindIndexBuffer
+    "void"
+    .encoder            "RenderPassEncoderId"
+    .buffer             "BufferId"
+    .indexStride        "uint32_t"
+    .offset             "uint64_t"
+
+funcptr.RenderEncoderPushConstants
+    "void"
+    .encoder            "RenderPassEncoderId"
+    .rs                 "RootSignatureId"
+    .name               "?cstring"
+    .data               "*const void"
+
+funcptr.ComputeEncoderPushConstants
+    "void"
+    .encoder            "ComputePassEncoderId"
+    .rs                 "RootSignatureId"
+    .name               "?cstring"
+    .data               "*const void"
+
+funcptr.RenderEncoderDraw
+    "void"
+    .encoder            "RenderPassEncoderId"
+    .vertexCount        "uint32_t"
+    .firstVertex        "uint32_t"
+
+funcptr.RenderEncoderDrawInstanced
+    "void"
+    .encoder            "RenderPassEncoderId"
+    .vertexCount        "uint32_t"
+    .firstVertex        "uint32_t"
+    .instanceCount      "uint32_t"
+    .firstInstance      "uint32_t"
+
+funcptr.RenderEncoderDrawIndexed
+    "void"
+    .encoder            "RenderPassEncoderId"
+    .indexCount         "uint32_t"
+    .firstIndex         "uint32_t"
+    .firstVertex        "uint32_t"
+
+funcptr.RenderEncoderDrawIndexedInstanced
+    "void"
+    .encoder            "RenderPassEncoderId"
+    .indexCount         "uint32_t"
+    .firstIndex         "uint32_t"
+    .instanceCount      "uint32_t"
+    .firstInstance      "uint32_t"
+    .firstVertex        "uint32_t"
+
+funcptr.CmdEndRenderPass
+    "void"
+    .cmd                "CommandBufferId"
+    .encoder            "RenderPassEncoderId"
+
+funcptr.CmdBeginEvent
+    "void"
+    .cmd                "CommandBufferId"
+    .event              "*const EventInfo"
+
+funcptr.CmdSetMarker
+    "void"
+    .cmd                "CommandBufferId"
+    .marker             "*const MarkerInfo"
+
+funcptr.CmdEndEvent
+    "void"
+    .cmd                "CommandBufferId"
+
+funcptr.CompileAndLinkShaders
+    "?LinkedShaderId"
+    .signature          "RootSignatureId"
+    .count              "uint32_t"
+    .desc               "*const CompiledShaderDescriptor"
+
+funcptr.CompileShaders
+    "void"
+    .signature          "RootSignatureId"
+    .count              "uint32_t"
+    .desc               "*const CompiledShaderDescriptor"
+    .outIsas            "*CompiledShaderId"
+
+funcptr.FreeCompiledShader
+    "void"
+    .shader             "CompiledShaderId"
+
+funcptr.FreeLinkedShader
+    "void"
+    .shader             "LinkedShaderId"
+
+funcptr.CreateStateBuffer
+    "?StateBufferId"
+    .cmd                "CommandBufferId"
+    .desc               "*const StateBufferDescriptor"
+
+funcptr.RenderEncoderBindStateBuffer
+    "void"
+    .encoder            "RenderPassEncoderId"
+    .stream             "StateBufferId"
+
+funcptr.ComputeEncoderBindStateBuffer
+    "void"
+    .encoder            "ComputePassEncoderId"
+    .stream             "StateBufferId"
+
+funcptr.FreeStateBuffer
+    "void"
+    .stream             "StateBufferId"
+
+funcptr.OpenRasterStateEncoder
+    "?RasterStateEncoderId"
+    .stream             "StateBufferId"
+    .encoder            "RenderPassEncoderId"
+
+funcptr.RasterStateEncoderSetViewport
+    "void"
+    .encoder            "RasterStateEncoderId"
+    .x                  "float"
+    .y                  "float"
+    .width              "float"
+    .height             "float"
+    .minDepth           "float"
+    .maxDepth           "float"
+
+funcptr.RasterStateEncoderSetScissor
+    "void"
+    .encoder            "RasterStateEncoderId"
+    .x                  "uint32_t"
+    .y                  "uint32_t"
+    .width              "uint32_t"
+    .height             "uint32_t"
+
+funcptr.RasterStateEncoderSetCullMode
+    "void"
+    .encoder            "RasterStateEncoderId"
+    .cullMode           "CullMode"
+
+funcptr.RasterStateEncoderSetFrontFace
+    "void"
+    .encoder            "RasterStateEncoderId"
+    .frontFace          "FrontFace::Enum"
+
+funcptr.RasterStateEncoderSetPrimitiveTopology
+    "void"
+    .encoder            "RasterStateEncoderId"
+    .topology           "PrimitiveTopology::Enum"
+
+funcptr.RasterStateEncoderSetDepthTestEnabled
+    "void"
+    .encoder            "RasterStateEncoderId"
+    .enabled            "bool"
+
+funcptr.RasterStateEncoderSetDepthWriteEnabled
+    "void"
+    .encoder            "RasterStateEncoderId"
+    .enabled            "bool"
+
+funcptr.RasterStateEncoderSetDepthCompareOp
+    "void"
+    .encoder            "RasterStateEncoderId"
+    .compareOp          "CompareOp::Enum"
+
+funcptr.RasterStateEncoderSetStencilTestEnabled
+    "void"
+    .encoder            "RasterStateEncoderId"
+    .enabled            "bool"
+
+funcptr.RasterStateEncoderSetStencilCompareOp
+    "void"
+    .encoder            "RasterStateEncoderId"
+    .faces              "StencilFace"
+    .failOp             "StencilOp::Enum"
+    .passOp             "StencilOp::Enum"
+    .depthFailOp        "StencilOp::Enum"
+    .compareOp          "CompareOp::Enum"
+
+funcptr.RasterStateEncoderSetFillMode
+    "void"
+    .encoder            "RasterStateEncoderId"
+    .fillMode           "FillMode::Enum"
+
+funcptr.RasterStateEncoderSetSampleCount
+    "void"
+    .encoder            "RasterStateEncoderId"
+    .sampleCount        "SampleCount"
+
+funcptr.CloseRasterStateEncoder
+    "void"
+    .encoder            "RasterStateEncoderId"
+
+funcptr.OpenShaderStateEncoderR
+    "?ShaderStateEncoderId"
+    .stream             "StateBufferId"
+    .encoder            "RenderPassEncoderId"
+
+funcptr.OpenShaderStateEncoderC
+    "?ShaderStateEncoderId"
+    .stream             "StateBufferId"
+    .encoder            "ComputePassEncoderId"
+
+funcptr.ShaderStateEncoderBindShaders
+    "void"
+    .encoder            "ShaderStateEncoderId"
+    .stageCount         "uint32_t"
+    .stages             "*const ShaderStage"
+    .shaders            "*const CompiledShaderId"
+
+funcptr.ShaderStateEncoderBindLinkedShader
+    "void"
+    .encoder            "ShaderStateEncoderId"
+    .linked             "LinkedShaderId"
+
+funcptr.CloseShaderStateEncoder
+    "void"
+    .encoder            "ShaderStateEncoderId"
+
+funcptr.OpenUserStateEncoder
+    "?UserStateEncoderId"
+    .stream             "StateBufferId"
+    .encoder            "RenderPassEncoderId"
+
+funcptr.CloseUserStateEncoder
+    "void"
+    .encoder            "UserStateEncoderId"
+
+funcptr.CreateBinder
+    "?BinderId"
+    .cmd                "CommandBufferId"
+
+funcptr.BinderBindVertexLayout
+    "void"
+    .binder             "BinderId"
+    .layout             "*const VertexLayout"
+
+funcptr.BinderBindVertexBuffer
+    "void"
+    .binder             "BinderId"
+    .firstBinding       "uint32_t"
+    .bindingCount       "uint32_t"
+    .buffers            "*const BufferId"
+    .offsets            "*const uint64_t"
+    .sizes              "*const uint64_t"
+    .strides            "*const uint64_t"
+
+funcptr.FreeBinder
+    "void"
+    .binder             "BinderId"
+
+typedef "HWND"
+
+funcptr.CreateSurfaceFromNativeView
+    "?SurfaceId"
+    .device             "DeviceId"
+    .view               "?*anyopaque"
+
+funcptr.CreateSurfaceFromHwnd
+    "?SurfaceId"
+    .device             "DeviceId"
+    .window             "HWND"
+
+typedef "ANativeWindowPtr"
+
+funcptr.CreateSurfaceFromNativeWindow
+    "?SurfaceId"
+    .device             "DeviceId"
+    .window             "ANativeWindowPtr"
+
+funcptr.FreeSurface
+    "void"
+    .device             "DeviceId"
+    .surface            "SurfaceId"
+
 id "InstanceId"
+id "AdapterId"
+id "DeviceId"
+id "QueueId"
+id "SemaphoreId"
+id "FenceId"
+id "CommandPoolId"
+id "CommandBufferId"
+id "QueryPoolId"
+id "ComputePassEncoderId"
+id "RenderPassEncoderId"
+id "RenderPassId"
+id "FramebufferId"
+id "StateBufferId"
+id "RasterStateEncoderId"
+id "ShaderStateEncoderId"
+id "UserStateEncoderId"
+id "BinderId"
+id "ShaderLibraryId"
+id "RootSignaturePoolId"
+id "RootSignatureId"
+id "DescriptorSetId"
+id "ShaderReflectionId"
+id "CompiledShaderId"
+id "LinkedShaderId"
+id "BufferId"
+id "TextureId"
+id "TextureViewId"
+id "SamplerId"
+id "RenderPipelineId"
+id "ComputePipelineId"
+id "MemoryPoolId"
+id "SwapChainId"
+id "SurfaceId"
+
+struct.Logger
+    .logCallback        "LogCallback"
+    .userData           "?*anyopaque"
+
+struct.Allocator
+    .mallocFn           "Malloc"
+    .reallocFn          "Realloc"
+    .callocFn           "Calloc"
+    .freeFn             "Free"
+    .mallocAlignedFn    "MallocAligned"
+    .reallocAlignedFn   "ReallocAligned"
+    .callocAlignedFn    "CallocAligned"
+    .freeAlignedFn      "FreeAligned"
+    .userData           "?*anyopaque"
 
 struct.InstanceDescriptor
-    .backend            "Backend"
+    .backend            "Backend::Enum"
     .enableDebugLayer   "bool"
     .enableGpuBasedValidation   "bool"
     .enableSetName      "bool"
+    .logger             "Logger"
+    .allocator          "Allocator"
+
+struct.InstanceFeatures
+    .specializationConstant "bool"
 
 struct.Instance 
-    .backend            "Backend"
+    .procTable          "*const ProcTable"
+    .surfacesTable      "*const SurfacesProcTable"
+    .runtimeTable       "*RuntimeTable"
+    .backend            "Backend::Enum"
+    .enableSetName      "bool"
+    .logger             "Logger"
+    .allocator          "Allocator"
+
+struct.VendorPreset
+    .deviceId           "uint32_t"
+    .vendorId           "uint32_t"
+    .driverVersion      "uint32_t"
+    .gpuName            "[64]char"
+
+struct.FormatSupport
+    .shaderRead         "bool"
+    .shaderWrite        "bool"
+    .renderTargetWrite  "bool"
+
+struct.AdapterDetail
+    .uniformBufferAlignment                 "uint32_t"
+    .uploadBufferTextureAlignment           "uint32_t"
+    .uploadBufferTextureRowAlignment        "uint32_t"
+    .maxVertexInputBindings                 "uint32_t"
+    .waveLaneCount                          "uint32_t"
+    .hostVisibleVramBudget                  "uint64_t"
+    .dynamicStateFeatures                   "DynamicStateFeatures"
+    .supportHostVisibleVram                 "bool"
+    .multidrawIndirect                      "bool"
+    .supportGeomShader                      "bool"
+    .supportTessellation                    "bool"
+    .isUma                                  "bool"
+    .isVirtual                              "bool"
+    .isCpu                                  "bool"
+    .supportTiledBuffer                     "bool"
+    .supportTiledTexture                    "bool"
+    .supportTiledVolume                     "bool"
+    .supportShadingRate                     "bool"
+    .supportShadingRateMask                 "bool"
+    .supportShadingRateSv                   "bool"
+    .formatSupports                         "[TextureFormat::Count]FormatSupport"
+    .vendorPreset                           "VendorPreset"
+
+struct.Adapter
+    .instance           "InstanceId"
+    .procTableCache     "*const ProcTable"
+
+struct.QueueGroupDescriptor
+    .queueCount         "uint32_t"
+    .queueType          "QueueType::Enum"
+
+struct.DeviceDescriptor
+    .disablePipelineCache   "bool"
+    .queueGroupCount    "uint32_t"
+    .pQueueGroups       "[*]const QueueGroupDescriptor"
+
+struct.Device
+    .Adapter            "AdapterId"
+    .procTableCache     "*const ProcTable"
+    .nextTextureId      "uint64_t"
+    .isLost             "bool"
+
+struct.Queue
+    .device             "DeviceId"
+    .type               "QueueType::Enum"
+    .index              "uint32_t"
+
+struct.Fence
+    .device             "DeviceId"
+
+struct.Semaphore
+    .device             "DeviceId"
+
+struct.CommandPool
+    .queue              "QueueId"
+
+struct.CommandBuffer
+    .device             "DeviceId"
+    .pool               "CommandPoolId"
+    .currentDispatch    "PipelineType::Enum"
+
+struct.QueryPool
+    .device             "DeviceId"
+    .count              "uint32_t"
+
+struct.ComputePassEncoder
+    .device             "DeviceId"
+
+struct.RenderPassEncoder
+    .device             "DeviceId"
+
+struct.RenderPass
+    .device             "DeviceId"
+
+struct.FramebufferInfo
+    .width              "uint32_t"
+    .height             "uint32_t"
+
+struct.Framebuffer
+    .device             "DeviceId"
+    .Info               "*const FramebufferInfo"
+
+struct.StateBuffer
+    .device             "DeviceId"
+    .cmd                "CommandBufferId"
+
+struct.RasterStateEncoder
+    .device             "DeviceId"
+
+struct.ShaderStateEncoder
+    .device             "DeviceId"
+
+struct.UserStateEncoder
+    .device             "DeviceId"
+
+struct.Binder
+    .device             "DeviceId"
+    .cmd                "CommandBufferId"
+
+struct.RootSignaturePoolDescriptor
+    .name               "?cstring"
+
+struct.RootSignaturePool
+    .device             "DeviceId"
+    .pipelineType       "PipelineType::Enum"
+
+struct.VertexInput
+    .name               "?cstring"
+    .semantics          "?cstring"
+    .format             "VertexFormat::Enum"
+
+struct.ShaderResource
+    .name               "?cstring"
+    .nameHash           "uint64_t"
+    .type               "ResourceType"
+    .dim                "TextureDimension::Enum"
+    .set                "uint32_t"
+    .binding            "uint32_t"
+    .size               "uint32_t"
+    .offset             "uint32_t"
+    .stages             "ShaderStage"
+
+struct.ShaderReflection
+    .entryName          "?cstring"
+    .stage              "ShaderStage"
+    .vertexInputCount   "uint32_t"
+    .pVertexInputs      "[*]VertexInput"
+    .shaderResourceCount   "uint32_t"
+    .pShaderResources   "[*]ShaderResource"
+    .threadGroupSizes   "[3]uint32_t"
+
+struct.ShaderLibrary
+    .device             "DeviceId"
+    .name               "?cstring"
+    .entryCount         "uint32_t"
+    .pEntryReflections  "[*]ShaderReflection"
+
+struct.ConstantSpecializationImpl { union }
+    .u                  "uint64_t"
+    .i                  "int64_t"
+    .f                  "double"
+
+struct.ConstantSpecialization
+    .constantID         "uint32_t"
+    .spec               "ConstantSpecializationImpl"
+
+struct.ShaderEntryDescriptor
+    .library            "?ShaderLibraryId"
+    .entry              "?cstring"
+    .stage              "ShaderStage"
+    .constantCount      "uint32_t"
+    .pConstants         "?[*]const ConstantSpecialization"
+
+struct.RootSignatureDescriptor
+    .shaderCount        "uint32_t"
+    .pShaders           "[*]const ShaderEntryDescriptor"
+    .staticSamplerCount "uint32_t"
+    .pStaticSamplers    "?[*]const SamplerId"
+    .pStaticSamplerNames"?[*]cstring"
+    .pushConstantCount  "uint32_t"
+    .pPushConstantNames "?[*]cstring"
+    .pool               "?RootSignaturePoolId"
+
+struct.ParameterTable
+    .resourcesCount     "uint32_t"
+    .pResources         "*ShaderResource"
+    .setIndex           "uint32_t"
+
+struct.RootSignature
+    .device             "DeviceId"
+    .tableCount         "uint32_t"
+    .pTables            "*ParameterTable"
+    .pushConstantCount  "uint32_t"
+    .pPushConstants     "*ShaderResource"
+    .staticSamplerCount "uint32_t"
+    .pStaticSamplers    "*ShaderResource"
+    .pipelineType       "PipelineType::Enum"
+    .pool               "RootSignaturePoolId"
+    .poolSig            "RootSignatureId"
+
+struct.DescriptorSet
+    .rootSignature      "RootSignatureId"
+    .index              "uint32_t"
+
+struct.VertexAttribute
+    .semanticName       "?cstring"
+    .arraySize          "uint32_t"
+    .format             "VertexFormat::Enum"
+    .binding            "uint32_t"
+    .offset             "uint32_t"
+    .elemStride         "uint32_t"
+    .rate               "VertexInputRate::Enum"
+
+struct.VertexLayout
+    .attributeCount     "uint32_t"
+    .pAttributes        "[*]const VertexAttribute"
+
+struct.BlendAttachmentState
+    .enable             "bool"
+    .srcFactor          "BlendFactor::Enum"
+    .dstFactor          "BlendFactor::Enum"
+    .srcAlphaFactor     "BlendFactor::Enum"
+    .dstAlphaFactor     "BlendFactor::Enum"
+    .blendOp            "BlendOp::Enum"
+    .blendAlphaOp       "BlendOp::Enum"
+    .colorMask          "ColorMask"
+
+struct.BlendStateDescriptor
+    .attachmentCount    "uint32_t"
+    .pAttachments      "[*]const BlendAttachmentState"
+    .alphaToCoverage    "bool"
+    .independentBlend   "bool"
+
+struct.DepthStateDescriptor
+    .depthTest          "bool"
+    .depthWrite         "bool"
+    .depthOp            "CompareOp::Enum"
+    .stencilTest        "bool"
+    .stencilReadMask    "uint8_t"
+    .stencilWriteMask   "uint8_t"
+    .stencilFrontOp     "CompareOp::Enum"
+    .stencilFrontFailOp "StencilOp::Enum"
+    .depthFrontFailOp   "StencilOp::Enum"
+    .stencilFrontPassOp "StencilOp::Enum"
+    .stencilBackOp      "CompareOp::Enum"
+    .stencilBackFailOp  "StencilOp::Enum"
+    .depthBackFailOp    "StencilOp::Enum"
+    .stencilBackPassOp  "StencilOp::Enum"
+
+struct.RasterizerStateDescriptor
+    .cullMode           "CullMode"
+    .depthBias          "int32_t"
+    .slopeScaledDepthBias   "float"
+    .fillMode           "FillMode::Enum"
+    .frontFace          "FrontFace::Enum"
+    .enableMultiSample  "bool"
+    .enableScissor      "bool"
+    .enableDepthClamp   "bool"
+
+struct.RenderPipelineDescriptor
+    .dynamicState       "uint64_t"
+    .rootSignature      "RootSignatureId"
+    .vertexShader       "?*const ShaderEntryDescriptor"
+    .tescShader         "?*const ShaderEntryDescriptor"
+    .teseShader         "?*const ShaderEntryDescriptor"
+    .geomShader         "?*const ShaderEntryDescriptor"
+    .fragmentShader     "?*const ShaderEntryDescriptor"
+    .vertexLayout       "?*const VertexLayout"
+    .blendState         "?*const BlendStateDescriptor"
+    .depthState         "?*const DepthStateDescriptor"
+    .rasterizerState    "?*const RasterizerStateDescriptor"
+    .renderPass         "RenderPassId"
+    .subpass            "uint32_t"
+    .renderTargetCount  "uint32_t"
+    .sampleCount        "SampleCount"
+    .primTopology       "PrimitiveTopology::Enum"
+
+struct.RenderPipeline
+    .device             "DeviceId"
+    .rootSignature      "RootSignatureId"
+
+struct.ComputePipelineDescriptor
+    .rootSignature      "RootSignatureId"
+    .computeShader      "*const ShaderEntryDescriptor"
+
+struct.ComputePipeline
+    .device             "DeviceId"
+    .rootSignature      "RootSignatureId"
+
+struct.CompiledShader
+    .device             "DeviceId"
+    .rootSignature      "RootSignatureId"
+
+struct.LinkedShader
+    .device             "DeviceId"
+    .rootSignature      "RootSignatureId"
+
+struct.DescriptorSetDescriptor
+    .rootSignature      "RootSignatureId"
+    .setIndex           "uint32_t"
+
+struct.BufferParams
+    .offsets            "*const uint64_t"
+    .sizes              "*const uint64_t"
+
+struct.UavParams
+    .uavMipSlice        "uint32_t"
+    .blendMipChain      "bool"
+
+struct.DescriptorDataParams { union }
+    .buffersParams      "BufferParams"
+    .uavParams          "UavParams"
+    .enableStencilResource  "bool"
+
+struct.DescriptorDataResource { union }
+    .ptrs               "[*]*anyopaque"
+    .textures           "[*]const TextureViewId"
+    .samplers           "[*]const SamplerId"
+    .buffers            "[*]BufferId"
+    .renderPipelines    "[*]RenderPipelineId"
+    .computePipelines   "[*]ComputePipelineId"
+    .descriptorSets     "[*]DescriptorSetId"
+
+struct.DescriptorData
+    .name               "?cstring"
+    .binding            "uint32_t"
+    .bindingType        "ResourceType"
+    .params             "DescriptorDataParams"
+    .resources          "DescriptorDataResource"
+    .count              "uint32_t"
+
+struct.BufferInfo
+    .size               "uint64_t"
+    .cpuMappedAddress   "[*]uint8_t"
+    .descriptors        "ResourceType"
+    .memoryUsage        "MemoryUsage::Enum"
+
+struct.Buffer
+    .device             "DeviceId"
+    .info               "*const BufferInfo"
+
+struct.TextureInfo
+    .width              "uint64_t"
+    .height             "uint64_t"
+    .depth              "uint64_t"
+    .mipLevels          "uint32_t"
+    .arraySizeMinusOne  "uint32_t"
+    .sizeInBytes        "uint64_t"
+    .format             "TextureFormat::Enum"
+    .sampleCount        "SampleCount"
+    .uniqueId           "uint64_t"
+    .aspectMask         "TextureViewAspect"
+    .ownsImage          "uint8_t"
+    .isCube             "uint8_t"
+    .isAllocationDedicated  "uint8_t"
+    .isRestrictDedicated    "uint8_t"
+    .isAliasing         "uint8_t"
+    .isTiled            "uint8_t"
+    .isImported         "uint8_t"
+    .canAlias           "uint8_t"
+    .canExport          "uint8_t"
+
+struct.TiledSubresourceInfo
+    .layer              "uint16_t"
+    .mipLevel           "uint16_t"
+    .widthInTiles       "uint32_t"
+    .heightInTiles      "uint16_t"
+    .depthInTiles       "uint16_t"
+
+struct.TiledTextureInfo
+    .tileSize           "uint64_t"
+    .totalTilesCount    "uint64_t"
+    .aliveTilesCount    "uint64_t"
+    .tileWidthInTexels  "uint32_t"
+    .tileHeightInTexels "uint32_t"
+    .tileDepthInTexels  "uint32_t"
+    .subresources       "*const TiledSubresourceInfo"
+    .packedMipStart     "uint32_t"
+    .packedMipCount     "uint32_t"
+    .alivePackCount     "uint64_t"
+    .packUnaligned      "bool"
+
+struct.Texture
+    .device             "DeviceId"
+    .info               "*const TextureInfo"
+    .tiledResource      "*const TiledTextureInfo"
+
+struct.TextureViewDescriptor
+    .name               "?cstring"
+    .texture            "TextureId"
+    .format             "TextureFormat::Enum"
+    .usages             "TextureViewUsage"
+    .aspects            "TextureViewAspect"
+    .dims               "TextureDimension::Enum"
+    .baseArrayLayer     "uint8_t"
+    .arrayLayerCount    "uint8_t"
+    .baseMipLevel       "uint8_t"
+    .MipLevelCount      "uint8_t"
+    
+struct.QueryPoolDescriptor
+    .type               "QueryType::Enum"
+    .queryCount         "uint32_t"
+
+struct.TextureView
+    .device             "DeviceId"
+    .info               "TextureViewDescriptor"
+
+struct.Sampler
+    .device             "DeviceId"
+
+struct.SwapChain
+    .device             "DeviceId"
+    .backBuffers        "[*]const TextureId"
+    .bufferCount        "uint32_t"
+
+struct.Surface {}
 
 struct.BufferRange
     .offset             "uint64_t"
     .size               "uint64_t"
 
+struct.MemoryPoolDescriptor
+    .type               "MemoryPoolType::Enum"
+    .memoryUsage        "MemoryUsage::Enum"
+    .blockSize          "uint64_t"
+    .minBlockCount      "uint32_t"
+    .maxBlockCount      "uint32_t"
+    .minAllocAlignment  "uint64_t"
+
+struct.MemoryPool
+    .device             "DeviceId"
+    .type               "MemoryPoolType::Enum"
+
+struct.QueueSubmitDescriptor
+    .cmdCount           "uint32_t"
+    .pCmds              "[*]const CommandBufferId"
+    .signalFence        "FenceId"
+    .waitSemaphoreCount "uint32_t"
+    .pWaitSemaphores    "[*]const SemaphoreId"
+    .signalSemaphoreCount   "uint32_t"
+    .pSignalSemaphores  "[*]const SemaphoreId"
+
+struct.QueuePresentDescriptor
+    .swapchain          "SwapChainId"
+    .waitSemaphoreCount "uint32_t"
+    .pWaitSemaphores    "[*]const SemaphoreId"
+    .index              "uint8_t"
+
+struct.Coordinate
+    .x                  "uint32_t"
+    .y                  "uint32_t"
+    .z                  "uint32_t"
+
+struct.CoordinateRegion
+    .start              "Coordinate"
+    ["end"]             "Coordinate"
+
+struct.TextureCoordinateRegion
+    .start              "Coordinate"
+    ["end"]             "Coordinate"
+    .mipLevel           "uint32_t"
+    .layer              "uint32_t"
+
+struct.TiledTextureRegions
+    .texture            "TextureId"
+    .regionCount        "uint32_t"
+    .pRegions           "[*]const TextureCoordinateRegion"
+
+struct.TiledTexturePackedMip
+    .texture            "TextureId"
+    .layer              "uint32_t"
+
+struct.TiledTexturePackedMips
+    .packedMipCount     "uint32_t"
+    .pPackedMips        "[*]const TiledTexturePackedMip"
+
+struct.ColorAttachment
+    .format             "TextureFormat::Enum" 
+    .loadAction         "LoadAction::Enum" 
+    .storeAction        "StoreAction::Enum" 
+
+struct.DepthStencilAttachment
+    .format             "TextureFormat::Enum" 
+    .depthLoadAction    "LoadAction::Enum" 
+    .depthStoreAction   "StoreAction::Enum" 
+    .stencilLoadAction  "LoadAction::Enum" 
+    .stencilStoreAction "StoreAction::Enum" 
+
+struct.RenderPassDescriptor
+    .sampleCount        "SampleCount"
+    .colorAttachments   "[MaxMrtCount]ColorAttachment"
+    .depthStencil       "DepthStencilAttachment" 
+
+struct.FramebufferDescriptor
+    .renderpass         "RenderPassId" 
+    .attachmentCount    "uint32_t" 
+    .pAttachments       "[MaxAttachmentCount]TextureViewId"
+    .width              "uint32_t" 
+    .height             "uint32_t" 
+    .layers             "uint32_t" 
+
+struct.PipelineReflection 
+    .stages             "[ShaderStageCount]*ShaderReflection" 
+    .shaderResourcesCount   "uint32_t"
+    .pShaderResources   "[*]const ShaderResource" 
+
+struct.ClearValue 
+    .color              "[4]float" 
+    .depth              "float" 
+    .stencil            "uint8_t" 
+    .isColor            "bool"
+
+struct.QueryDescriptor 
+    .index              "uint32_t" 
+    .stage              "ShaderStage"
+
+struct.AcquireNextDescriptor 
+    .signalSemaphore    "?SemaphoreId" 
+    .fence              "?FenceId"
+
+struct.TextureSubresource 
+    .aspects            "TextureViewAspect" 
+    .mipLevel           "uint32_t" 
+    .baseArrayLayer     "uint32_t" 
+    .layerCount         "uint32_t"
+
+struct.BufferToBufferTransfer 
+    .dst                "BufferId" 
+    .dstOffset          "uint64_t" 
+    .src                "BufferId" 
+    .srcOffset          "uint64_t" 
+    .size               "uint64_t"
+
+struct.BufferToTilesTransfer 
+    .src                "BufferId" 
+    .srcOffset          "uint64_t" 
+    .dst                "TextureId" 
+    .region             "TextureCoordinateRegion"
+
+struct.TextureToTextureTransfer 
+    .src                "TextureId" 
+    .srcSubresource     "TextureSubresource" 
+    .dst                "TextureId" 
+    .dstSubresource     "TextureSubresource"
+
+struct.BufferToTextureTransfer 
+    .dst                "TextureId" 
+    .dstSubresource     "TextureSubresource" 
+    .src                "BufferId" 
+    .srcOffset          "uint64_t"
+
+struct.BufferBarrier
+    .buffer             "BufferId" 
+    .srcState           "ResourceState" 
+    .dstState           "ResourceState" 
+    .queueAcquire       "uint8_t" 
+    .queueRelease       "uint8_t" 
+    .queueType          "QueueType::Enum" 
+
+struct.TextureBarrier 
+    .texture            "TextureId" 
+    .srcState           "ResourceState" 
+    .dstState           "ResourceState" 
+    .queueAcquire       "uint8_t" 
+    .queueRelease       "uint8_t" 
+    .queueType          "QueueType::Enum" 
+    .subresourceBarrier "uint8_t" 
+    .mipLevel           "uint8_t" 
+    .arrayLayer         "uint16_t" 
+
+struct.ResourceBarrierDescriptor 
+    .bufferBarrierCount "uint32_t" 
+    .pBufferBarriers    "[*]const BufferBarrier" 
+    .textureBarrierCount"uint32_t"
+    .pTextureBarriers   "[*]const TextureBarrier" 
+
+struct.CommandPoolDescriptor 
+    .name               "?cstring"
+
+struct.CommandBufferDescriptor 
+    .isSecondary        "bool"
+
+struct.SwapChainDescriptor 
+    .presentQueueCount  "uint32_t" 
+    .pPresentQueues     "[*]const QueueId" 
+    .surface            "SurfaceId" 
+    .imageCount         "uint32_t" 
+    .width              "uint32_t" 
+    .height             "uint32_t" 
+    .enableVsync        "bool" 
+    .useFlipSwapEffect  "bool" 
+    .format             "TextureFormat::Enum"
+
+struct.ComputePassDescriptor 
+    .name               "?cstring"
+
+struct.CompiledShaderDescriptor 
+    .entry              "ShaderEntryDescriptor" 
+    .shaderCode         "*anyopaque" 
+    .codeSize           "uint64_t"
+
+struct.ShaderLibraryDescriptor 
+    .name               "?cstring" 
+    .codeSize           "size_t" 
+    .pCode              "[*]const uint8_t" 
+    .stage              "ShaderStage" 
+    .reflectionOnly     "bool"
+
+struct.BufferDescriptor 
+    .size               "uint64_t" 
+    .countBuffer        "?BufferId" 
+    .name               "?cstring" 
+    .descriptors        "ResourceType" 
+    .memoryUsage        "MemoryUsage::Enum" 
+    .format             "TextureFormat::Enum" 
+    .flags              "BufferCreationUsage" 
+    .firstElement       "uint64_t" 
+    .elementCount       "uint64_t" 
+    .elementStride      "uint64_t" 
+    .ownerQueue         "?QueueId" 
+    .startState         "ResourceState" 
+    .preferOnDevice     "bool" 
+    .preferOnHost       "bool"
+
+struct.TextureDescriptor 
+    .name               "?cstring" 
+    .nativeHandle       "?*const anyopaque" 
+    .flags              "TextureCreationUsage" 
+    .width              "uint64_t" 
+    .height             "uint64_t" 
+    .depth              "uint64_t" 
+    .arraySize          "uint32_t" 
+    .format             "TextureFormat::Enum" 
+    .mipLevels          "uint32_t" 
+    .sampleCount        "SampleCount" 
+    .sampleQuality      "uint32_t" 
+    .ownerQueue         "?QueueId" 
+    .startState         "ResourceState" 
+    .descriptors        "ResourceType" 
+    .isRestrictDedicated    "uint32_t"
+
+struct.ExportTextureDescriptor 
+    .texture            "TextureId"
+
+struct.ImportTextureDescriptor 
+    .backend            "Backend::Enum" 
+    .sharedHandle       "uint64_t" 
+    .width              "uint64_t" 
+    .height             "uint64_t" 
+    .depth              "uint64_t" 
+    .sizeInBytes        "uint64_t" 
+    .format             "TextureFormat::Enum" 
+    .mipLevels          "uint32_t"
+
+struct.TextureAliasingBindDescriptor 
+    .aliased            "TextureId" 
+    .aliasing           "TextureId"
+
+struct.SamplerDescriptor 
+    .minFilter          "FilterType::Enum" 
+    .magFilter          "FilterType::Enum" 
+    .mipmapMode         "MipMapMode::Enum" 
+    .addressU           "AddressMode::Enum" 
+    .addressV           "AddressMode::Enum" 
+    .addressW           "AddressMode::Enum" 
+    .mipLodBias         "float" 
+    .maxAnisotropy      "float" 
+    .compareFunc        "CompareOp::Enum"
+
+
+struct.BeginRenderPassInfo
+    .renderPass         "RenderPassId" 
+    .framebuffer        "FramebufferId" 
+    .clearValueCount    "uint32_t" 
+    .pClearValues       "?[*]const ClearValue"
+
+struct.EventInfo 
+    .name               "?cstring" 
+    .color              "[4]float"
+
+struct.MarkerInfo 
+    .name               "?cstring" 
+    .color              "[4]float"
+
+struct.StateBufferDescriptor {}
+
+struct.ProcTable 
+    -- Instance APIs 
+    .createInstance                 "CreateInstance" 
+    .queryInstanceFeatures          "QueryInstanceFeatures" 
+    .freeInstance                   "FreeInstance"
+
+    -- Adapter APIs 
+    .enumAdapters                   "EnumAdapters"
+    .queryAdapterDetail             "QueryAdapterDetail"
+    .queryVideoMemoryInfo           "QueryVideoMemoryInfo"
+    .querySharedMemoryInfo          "QuerySharedMemoryInfo"
+    .queryQueueCount                "QueryQueueCount"
+
+    -- Device APIs
+    .createDevice                   "CreateDevice"
+    .freeDevice                     "FreeDevice"
+
+    -- API Objects
+    .createFence                    "CreateFence"
+    .waitFences                     "WaitFences"
+    .queryFenceStatus               "QueryFenceStatus"
+    .freeFence                      "FreeFence"
+    .createSemaphore                "CreateSemaphore"
+    .freeSemaphore                  "FreeSemaphore"
+    .createRootSignaturePool        "CreateRootSignaturePool"
+    .freeRootSignaturePool          "FreeRootSignaturePool"
+    .createRootSignature            "CreateRootSignature"
+    .freeRootSignature              "FreeRootSignature"
+    .createDescriptorSet            "CreateDescriptorSet"
+    .freeDescriptorSet              "FreeDescriptorSet"
+    .updateDescriptorSet            "UpdateDescriptorSet"
+    .createComputePipeline          "CreateComputePipeline"
+    .freeComputePipeline            "FreeComputePipeline"
+    .createRenderPipeline           "CreateRenderPipeline"
+    .freeRenderPipeline             "FreeRenderPipeline"
+    .createMemoryPool               "CreateMemoryPool"
+    .freeMemoryPool                 "FreeMemoryPool"
+    .createQueryPool                "CreateQueryPool"
+    .freeQueryPool                  "FreeQueryPool"
+
+    -- Queue APIs
+    .getQueue                       "GetQueue"
+    .submitQueue                    "SubmitQueue"
+    .waitQueueIdle                  "WaitQueueIdle"
+    .queuePresent                   "QueuePresent"
+    .queueGetTimestampPeriod        "QueueGetTimestampPeriodNS"
+    .queueMapTiledTexture           "QueueMapTiledTexture"
+    .queueUnmapTiledTexture         "QueueUnmapTiledTexture"
+    .queueMapPackedMips             "QueueMapPackedMips"
+    .queueUnmapPackedMips           "QueueUnmapPackedMips"
+    .freeQueue                      "FreeQueue"
+
+    -- RenderPass APIs
+    .createRenderPass               "CreateRenderPass"
+    .createFramebuffer              "CreateFramebuffer"
+    .freeRenderPass                 "FreeRenderPass"
+    .freeFramebuffer                "FreeFramebuffer"
+
+    -- Command APIs
+    .createCommandPool              "CreateCommandPool"
+    .createCommandBuffer            "CreateCommandBuffer"
+    .resetCommandPool               "ResetCommandPool"
+    .freeCommandBuffer              "FreeCommandBuffer"
+    .freeCommandPool                "FreeCommandPool"
+
+    -- Shader APIs
+    .createShaderLibrary            "CreateShaderLibrary"
+    .freeShaderLibrary              "FreeShaderLibrary"
+
+    -- Buffer APIs
+    .createBuffer                   "CreateBuffer"
+    .mapBuffer                      "MapBuffer"
+    .unmapBuffer                    "UnmapBuffer"
+    .freeBuffer                     "FreeBuffer"
+
+    -- Sampler APIs
+    .createSampler                  "CreateSampler"
+    .freeSampler                    "FreeSampler"
+
+    -- Texture/TextureView APIs
+    .createTexture                  "CreateTexture"
+    .freeTexture                    "FreeTexture"
+    .createTextureView              "CreateTextureView"
+    .freeTextureView                "FreeTextureView"
+    .tryBindAliasingTexture         "TryBindAliasingTexture"
+
+    -- Shared Resource APIs
+    .exportSharedTextureHandle      "ExportSharedTextureHandle"
+    .importSharedTextureHandle      "ImportSharedTextureHandle"
+
+    -- Swapchain APIs
+    .createSwapchain                "CreateSwapChain"
+    .acquireNextImage               "AcquireNextImage"
+    .freeSwapchain                  "FreeSwapChain"
+
+    -- CMDs
+    .cmdBegin                       "CmdBegin"
+    .cmdTransferBufferToBuffer      "CmdTransferBufferToBuffer"
+    .cmdTransferBufferToTexture     "CmdTransferBufferToTexture"
+    .cmdTransferBufferToTiles       "CmdTransferBufferToTiles"
+    .cmdTransferTextureToTexture    "CmdTransferTextureToTexture"
+    .cmdResourceBarrier             "CmdResourceBarrier"
+    .cmdBeginQuery                  "CmdBeginQuery"
+    .cmdEndQuery                    "CmdEndQuery"
+    .cmdResetQueryPool              "CmdResetQueryPool"
+    .cmdResolveQuery                "CmdResolveQuery"
+    .cmdEnd                         "CmdEnd"
+
+    -- Compute CMDs
+    .cmdBeginComputePass            "CmdBeginComputePass"
+    .computeEncoderBindDescriptorSet "ComputeEncoderBindDescriptorSet"
+    .computeEncoderPushConstants    "ComputeEncoderPushConstants"
+    .computeEncoderBindPipeline     "ComputeEncoderBindPipeline"
+    .computeEncoderDispatch         "ComputeEncoderDispatch"
+    .cmdEndComputePass              "CmdEndComputePass"
+
+    -- Render CMDs
+    .cmdBeginRenderPass             "CmdBeginRenderPass"
+    .renderEncoderSetShadingRate    "RenderEncoderSetShadingRate"
+    .renderEncoderBindDescriptorSet "RenderEncoderBindDescriptorSet"
+    .renderEncoderBindPipeline      "RenderEncoderBindPipeline"
+    .renderEncoderBindVertexBuffers "RenderEncoderBindVertexBuffers"
+    .renderEncoderBindIndexBuffer   "RenderEncoderBindIndexBuffer"
+    .renderEncoderPushConstants     "RenderEncoderPushConstants"
+    .renderEncoderSetViewport       "RenderEncoderSetViewport"
+    .renderEncoderSetScissor        "RenderEncoderSetScissor"
+    .renderEncoderDraw              "RenderEncoderDraw"
+    .renderEncoderDrawInstanced     "RenderEncoderDrawInstanced"
+    .renderEncoderDrawIndexed       "RenderEncoderDrawIndexed"
+    .renderEncoderDrawIndexedInstanced "RenderEncoderDrawIndexedInstanced"
+    .cmdEndRenderPass               "CmdEndRenderPass"
+
+    -- Events & Markers
+    .cmdBeginEvent                  "CmdBeginEvent"
+    .cmdSetMarker                   "CmdSetMarker"
+    .cmdEndEvent                    "CmdEndEvent"
+
+    -- Compiled/Linked ISA APIs
+    .compileAndLinkShaders          "CompileAndLinkShaders"
+    .compileShaders                 "CompileShaders"
+    .freeCompiledShader             "FreeCompiledShader"
+    .freeLinkedShader               "FreeLinkedShader"
+
+    -- StateBuffer APIs
+    .createStateBuffer              "CreateStateBuffer"
+    .renderEncoderBindStateBuffer   "RenderEncoderBindStateBuffer"
+    .computeEncoderBindStateBuffer  "ComputeEncoderBindStateBuffer"
+    .freeStateBuffer                "FreeStateBuffer"
+
+    -- Raster State Encoder APIs
+    .openRasterStateEncoder         "OpenRasterStateEncoder"
+    .rasterStateEncoderSetViewport  "RasterStateEncoderSetViewport"
+    .rasterStateEncoderSetScissor   "RasterStateEncoderSetScissor"
+    .rasterStateEncoderSetCullMode  "RasterStateEncoderSetCullMode"
+    .rasterStateEncoderSetFrontFace "RasterStateEncoderSetFrontFace"
+    .rasterStateEncoderSetPrimitiveTopology "RasterStateEncoderSetPrimitiveTopology"
+    .rasterStateEncoderSetDepthTestEnabled  "RasterStateEncoderSetDepthTestEnabled"
+    .rasterStateEncoderSetDepthWriteEnabled "RasterStateEncoderSetDepthWriteEnabled"
+    .rasterStateEncoderSetDepthCompareOp    "RasterStateEncoderSetDepthCompareOp"
+    .rasterStateEncoderSetStencilTestEnabled    "RasterStateEncoderSetStencilTestEnabled"
+    .rasterStateEncoderSetStencilCompareOp  "RasterStateEncoderSetStencilCompareOp"
+    .rasterStateEncoderSetFillMode  "RasterStateEncoderSetFillMode"
+    .rasterStateEncoderSetSampleCount "RasterStateEncoderSetSampleCount"
+    .closeRasterStateEncoder        "CloseRasterStateEncoder"
+
+    -- Shader State Encoder APIs
+    .openShaderStateEncoderR        "OpenShaderStateEncoderR"
+    .openShaderStateEncoderC        "OpenShaderStateEncoderC"
+    .shaderStateEncoderBindShaders  "ShaderStateEncoderBindShaders"
+    .shaderStateEncoderBindLinkedShader "ShaderStateEncoderBindLinkedShader"
+    .closeShaderStateEncoder        "CloseShaderStateEncoder"
+
+    -- User State Encoder APIs
+    .openUserStateEncoder           "OpenUserStateEncoder"
+    .closeUserStateEncoder          "CloseUserStateEncoder"
+
+    -- Binder APIs
+    .createBinder                   "CreateBinder"
+    .binderBindVertexLayout         "BinderBindVertexLayout"
+    .binderBindVertexBuffer         "BinderBindVertexBuffer"
+    .freeBinder                     "FreeBinder"
+
+struct.SurfacesProcTable
+    .fromHwnd                       "CreateSurfaceFromHwnd"
+    .fromNativeWindow               "CreateSurfaceFromNativeWindow"
+    .freeSurface                    "FreeSurface"
+
+struct.RuntimeTable {}
+
 func.createInstance { cfunc }
-    "InstanceId"
-    .desc "const InstanceDescriptor*"
+    "?InstanceId"
+    .desc               "*const InstanceDescriptor"
+
+func.freeInstance
+    "void"
+    .instance           "InstanceId"
+
+func.Instance.getBackend { const }
+    "Backend::Enum"
+
+func.Instance.queryInstanceFeatures { const }
+    "void"
+    .features           "*InstanceFeatures"
+
+func.Instance.enumAdapters { const }
+    "void"
+    .pAdaptersCount     "*uint32_t"
+    .pAdapters          "?[*]AdapterId"
+
+func.Adapter.queryAdapterDetail { const }
+    "*const AdapterDetail"
+
+func.Adapter.queryQueueCount { const }
+    "uint32_t"
+    .type               "QueueType::Enum"
+
+func.Adapter.createDevice
+    "?DeviceId"
+    .desc               "*const DeviceDescriptor"
+
+func.Adapter.freeDevice
+    "void"
+    .device             "DeviceId"
+
+func.Device.queryVideoMemoryInfo
+    "void"
+    .total              "*uint64_t"
+    .used_bytes         "*uint64_t"
+
+func.Device.querySharedMemoryInfo
+    "void"
+    .total              "*uint64_t"
+    .used_bytes         "*uint64_t"
+
+func.Device.createFence
+    "?FenceId"
+
+func.Device.freeFence
+    "void"
+    .fence              "FenceId"
+
+func.Device.createSemaphore
+    "?SemaphoreId"
+
+func.Device.freeSemaphore
+    "void"
+    .semaphore          "SemaphoreId"
+
+func.Device.CreateRootSignaturePool
+    "?RootSignaturePoolId"
+    .desc               "*const RootSignaturePoolDescriptor"
+
+func.Device.FreeRootSignaturePool
+    "void"
+    .pool               "RootSignaturePoolId"
+
+func.Device.CreateRootSignature
+    "?RootSignatureId"
+    .desc               "*const RootSignatureDescriptor"
+
+func.Device.FreeRootSignature
+    "void"
+    .signature          "RootSignatureId"
+
+func.Device.CreateDescriptorSet
+    "?DescriptorSetId"
+    .desc               "*const DescriptorSetDescriptor"
+
+func.Device.FreeDescriptorSet
+    "void"
+    .set                "DescriptorSetId"
+
+func.Device.CreateComputePipeline
+    "?ComputePipelineId"
+    .desc               "*const ComputePipelineDescriptor"
+
+func.Device.FreeComputePipeline
+    "void"
+    .pipeline           "ComputePipelineId"
+
+func.Device.CreateRenderPipeline
+    "?RenderPipelineId"
+    .desc               "*const RenderPipelineDescriptor"
+
+func.Device.FreeRenderPipeline
+    "void"
+    .pipeline           "RenderPipelineId"
+
+func.Device.CreateQueryPool
+    "?QueryPoolId"
+    .desc               "*const QueryPoolDescriptor"
+
+func.Device.FreeQueryPool
+    "void"
+    .pool               "QueryPoolId"
+
+func.Device.CreateMemoryPool
+    "?MemoryPoolId"
+    .desc               "*const MemoryPoolDescriptor"
+
+func.Device.FreeMemoryPool
+    "void"
+    .pool               "MemoryPoolId"
+
+func.Device.GetQueue
+    "?QueueId"
+    .type               "QueueType::Enum"
+    .index              "uint32_t"
+
+func.Device.FreeQueue
+    "void"
+    .queue              "QueueId"
+
+func.Device.CreateRenderPass
+    "?RenderPassId"
+    .desc               "*const RenderPassDescriptor"
+
+func.Device.CreateFramebuffer
+    "?FramebufferId"
+    .desc               "*const FramebufferDescriptor"
+
+func.Device.FreeRenderPass
+    "void"
+    .renderPass         "RenderPassId"
+
+func.Device.FreeFramebuffer
+    "void"
+    .framebuffer        "FramebufferId"
+
+func.Device.CreateShaderLibrary
+    "?ShaderLibraryId"
+    .desc               "*const ShaderLibraryDescriptor"
+
+func.Device.FreeShaderLibrary
+    "void"
+    .library            "ShaderLibraryId"
+
+func.Device.CreateBuffer
+    "?BufferId"
+    .desc               "*const BufferDescriptor"
+
+func.Device.FreeBuffer
+    "void"
+    .buffer             "BufferId"
+
+func.Device.CreateSampler
+    "?SamplerId"
+    .desc               "*const SamplerDescriptor"
+
+func.Device.FreeSampler
+    "void"
+    .sampler            "SamplerId"
+
+func.Device.CreateTexture
+    "?TextureId"
+    .desc               "*const TextureDescriptor"
+
+func.Device.FreeTexture
+    "void"
+    .texture            "TextureId"
+
+func.Device.CreateTextureView
+    "?TextureViewId"
+    .desc               "*const TextureViewDescriptor"
+
+func.Device.FreeTextureView
+    "void"
+    .renderTarget       "TextureViewId"
+
+func.Device.TryBindAliasingTexture
+    "bool"
+    .desc               "*const TextureAliasingBindDescriptor"
+
+func.Device.ExportSharedTextureHandle
+    "uint64_t"
+    .desc               "*const ExportTextureDescriptor"
+
+func.Device.ImportSharedTextureHandle
+    "?TextureId"
+    .desc               "*const ImportTextureDescriptor"
+
+func.Device.CreateSwapChain
+    "?SwapChainId"
+    .desc               "*const SwapChainDescriptor"
+
+func.Device.FreeSwapChain
+    "void"
+    .swapchain          "SwapChainId"
+
+func.Device.CreateSurfaceFromNativeView
+    "?SurfaceId"
+    .view               "?*anyopaque"
+
+func.Device.CreateSurfaceFromHwnd
+    "?SurfaceId"
+    .window             "HWND"
+
+func.Device.CreateSurfaceFromNativeWindow
+    "?SurfaceId"
+    .window             "ANativeWindowPtr"
+
+func.Device.FreeSurface
+    "void"
+    .surface            "SurfaceId"
+
+func.waitFences
+    "void"
+    .fenceCount         "uint32_t"
+    .pFences            "[*]const FenceId"
+
+func.Fence.queryStatus
+    "FenceStatus::Enum"
+
+func.Queue.Submit
+    "void"
+    .desc               "*const QueueSubmitDescriptor"
+
+func.Queue.Present
+    "void"
+    .desc               "*const QueuePresentDescriptor"
+
+func.Queue.WaitIdle
+    "void"
+
+func.Queue.GetTimestampPeriodNS
+    "float"
+
+func.Queue.MapTiledTexture
+    "void"
+    .desc               "*const TiledTextureRegions"
+
+func.Queue.UnmapTiledTexture
+    "void"
+    .desc               "*const TiledTextureRegions"
+
+func.Queue.MapPackedMips
+    "void"
+    .desc               "*const TiledTexturePackedMips"
+
+func.Queue.UnmapPackedMips
+    "void"
+    .desc               "*const TiledTexturePackedMips"
+
+func.Queue.CreateCommandPool
+    "?CommandPoolId"
+    .desc               "*const CommandPoolDescriptor"
+
+func.Queue.FreeCommandPool
+    "void"
+    .pool               "CommandPoolId"
+
+func.DescriptorSet.Update
+    "void"
+    .dataCount          "uint32_t"
+    .pDatas             "[*]const DescriptorData"
+
+func.CommandPool.CreateCommandBuffer
+    "?CommandBufferId"
+    .desc               "*const CommandBufferDescriptor"
+
+func.CommandPool.Reset
+    "void"
+
+func.CommandPool.FreeCommandBuffer
+    "void"
+    .cmd                "CommandBufferId"
+
+func.Buffer.Map
+    "void"
+    .range              "?*const BufferRange"
+
+func.Buffer.Unmap
+    "void"
+
+func.SwapChain.AcquireNextImage
+    "uint32_t"
+    .desc               "*const AcquireNextDescriptor"
+
+func.CommandBuffer.Begin
+    "void"
+
+func.CommandBuffer.TransferBufferToBuffer
+    "void"
+    .desc               "*const BufferToBufferTransfer"
+
+func.CommandBuffer.TransferTextureToTexture
+    "void"
+    .desc               "*const TextureToTextureTransfer"
+
+func.CommandBuffer.TransferBufferToTexture
+    "void"
+    .desc               "*const BufferToTextureTransfer"
+
+func.CommandBuffer.TransferBufferToTiles
+    "void"
+    .desc               "*const BufferToTilesTransfer"
+
+func.CommandBuffer.ResourceBarrier
+    "void"
+    .desc               "*const ResourceBarrierDescriptor"
+
+func.CommandBuffer.BeginQuery
+    "void"
+    .pool               "QueryPoolId"
+    .desc               "*const QueryDescriptor"
+
+func.CommandBuffer.EndQuery
+    "void"
+    .pool               "QueryPoolId"
+    .desc               "*const QueryDescriptor"
+
+func.CommandBuffer.ResetQueryPool
+    "void"
+    .pool               "QueryPoolId"
+    .startQuery         "uint32_t"
+    .queryCount         "uint32_t"
+
+func.CommandBuffer.ResolveQuery
+    "void"
+    .pool               "QueryPoolId"
+    .readback           "BufferId"
+    .startQuery         "uint32_t"
+    .queryCount         "uint32_t"
+
+func.CommandBuffer.End
+    "void"
+
+func.CommandBuffer.BeginComputePass
+    "?ComputePassEncoderId"
+    .desc               "*const ComputePassDescriptor"
+
+func.CommandBuffer.EndComputePass
+    "void"
+    .encoder            "ComputePassEncoderId"
+
+func.CommandBuffer.BeginRenderPass
+    "?RenderPassEncoderId"
+    .beginInfo          "*const BeginRenderPassInfo"
+
+func.CommandBuffer.EndRenderPass
+    "void"
+    .encoder            "RenderPassEncoderId"
+
+func.CommandBuffer.BeginEvent
+    "void"
+    .event              "*const EventInfo"
+
+func.CommandBuffer.SetMarker
+    "void"
+    .marker             "*const MarkerInfo"
+
+func.CommandBuffer.EndEvent
+    "void"
+
+func.CommandBuffer.CreateStateBuffer
+    "?StateBufferId"
+    .desc               "*const StateBufferDescriptor"
+
+func.CommandBuffer.FreeStateBuffer
+    "void"
+    .stream             "StateBufferId"
+
+func.CommandBuffer.CreateBinder
+    "?BinderId"
+
+func.CommandBuffer.FreeBinder
+    "void"
+    .binder             "BinderId"
+
+func.ComputePassEncoder.BindDescriptorSet
+    "void"
+    .set                "DescriptorSetId"
+
+func.ComputePassEncoder.BindComputePipeline
+    "void"
+    .pipeline           "ComputePipelineId"
+
+func.ComputePassEncoder.Dispatch
+    "void"
+    .X                  "uint32_t"
+    .Y                  "uint32_t"
+    .Z                  "uint32_t"
+
+func.ComputePassEncoder.PushConstants
+    "void"
+    .rs                 "RootSignatureId"
+    .name               "?cstring"
+    .data               "*const anyopaque"
+
+func.ComputePassEncoder.BindStateBuffer
+    "void"
+    .stream             "StateBufferId"
+
+func.RenderPassEncoder.SetShadingRate
+    "void"
+    .shadingRate        "ShadingRate::Enum"
+    .postRasterizeRate  "ShadingRateCombiner::Enum"
+    .finalRate          "ShadingRateCombiner::Enum"
+
+func.RenderPassEncoder.BindDescriptorSet
+    "void"
+    .set                "DescriptorSetId"
+
+func.RenderPassEncoder.SetViewport
+    "void"
+    .x                  "float"
+    .y                  "float"
+    .width              "float"
+    .height             "float"
+    .minDepth           "float"
+    .maxDepth           "float"
+
+func.RenderPassEncoder.SetScissor
+    "void"
+    .x                  "uint32_t"
+    .y                  "uint32_t"
+    .width              "uint32_t"
+    .height             "uint32_t"
+
+func.RenderPassEncoder.BindRenderPipeline
+    "void"
+    .pipeline           "RenderPipelineId"
+
+func.RenderPassEncoder.BindVertexBuffers
+    "void"
+    .bufferCount        "uint32_t"
+    .pBuffers           "[*]const BufferId"
+    .pStrides           "[*]const uint32_t"
+    .pOffsets           "?[*]const uint32_t"
+
+func.RenderPassEncoder.BindIndexBuffer
+    "void"
+    .buffer             "BufferId"
+    .indexStride        "uint32_t"
+    .offset             "uint64_t"
+
+func.RenderPassEncoder.PushConstants
+    "void"
+    .rs                 "RootSignatureId"
+    .name               "?cstring"
+    .data               "*const anyopaque"
+
+func.RenderPassEncoder.Draw
+    "void"
+    .vertexCount        "uint32_t"
+    .firstVertex        "uint32_t"
+
+func.RenderPassEncoder.DrawInstanced
+    "void"
+    .vertexCount        "uint32_t"
+    .firstVertex        "uint32_t"
+    .instanceCount      "uint32_t"
+    .firstInstance      "uint32_t"
+
+func.RenderPassEncoder.DrawIndexed
+    "void"
+    .indexCount         "uint32_t"
+    .firstIndex         "uint32_t"
+    .firstVertex        "uint32_t"
+
+func.RenderPassEncoder.DrawIndexedInstanced
+    "void"
+    .indexCount         "uint32_t"
+    .firstIndex         "uint32_t"
+    .instanceCount      "uint32_t"
+    .firstInstance      "uint32_t"
+    .firstVertex        "uint32_t"
+
+func.RenderPassEncoder.BindStateBuffer
+    "void"
+    .stream             "StateBufferId"
+
+func.RootSignature.CompileAndLinkShaders
+    "?LinkedShaderId"
+    .count              "uint32_t"
+    .desc               "*const CompiledShaderDescriptor"
+
+func.RootSignature.CompileShaders
+    "void"
+    .count              "uint32_t"
+    .desc               "*const CompiledShaderDescriptor"
+    .outIsas            "*CompiledShaderId"
+
+func.RootSignature.FreeCompiledShader
+    "void"
+    .shader             "CompiledShaderId"
+
+func.RootSignature.FreeLinkedShader
+    "void"
+    .shader             "LinkedShaderId"
+
+func.StateBuffer.OpenRasterStateEncoder
+    "?RasterStateEncoderId"
+    .encoder            "RenderPassEncoderId"
+
+func.StateBuffer.CloseRasterStateEncoder
+    "void"
+    .encoder            "RasterStateEncoderId"
+
+func.StateBuffer.OpenShaderStateEncoderR
+    "?ShaderStateEncoderId"
+    .encoder            "RenderPassEncoderId"
+
+func.StateBuffer.OpenShaderStateEncoderC
+    "?ShaderStateEncoderId"
+    .encoder            "ComputePassEncoderId"
+
+func.StateBuffer.CloseShaderStateEncoder
+    "void"
+    .encoder            "ShaderStateEncoderId"
+
+func.StateBuffer.OpenUserStateEncoder
+    "?UserStateEncoderId"
+    .encoder            "RenderPassEncoderId"
+
+func.StateBuffer.CloseUserStateEncoder
+    "void"
+    .encoder            "UserStateEncoderId"
+
+func.RasterStateEncoder.SetViewport
+    "void"
+    .x                  "float"
+    .y                  "float"
+    .width              "float"
+    .height             "float"
+    .minDepth           "float"
+    .maxDepth           "float"
+
+func.RasterStateEncoder.SetScissor
+    "void"
+    .x                  "uint32_t"
+    .y                  "uint32_t"
+    .width              "uint32_t"
+    .height             "uint32_t"
+
+func.RasterStateEncoder.SetCullMode
+    "void"
+    .cullMode           "CullMode"
+
+func.RasterStateEncoder.SetFrontFace
+    "void"
+    .frontFace          "FrontFace::Enum"
+
+func.RasterStateEncoder.SetPrimitiveTopology
+    "void"
+    .topology           "PrimitiveTopology::Enum"
+
+func.RasterStateEncoder.SetDepthTestEnabled
+    "void"
+    .enabled            "bool"
+
+func.RasterStateEncoder.SetDepthWriteEnabled
+    "void"
+    .enabled            "bool"
+
+func.RasterStateEncoder.SetDepthCompareOp
+    "void"
+    .compareOp          "CompareOp::Enum"
+
+func.RasterStateEncoder.SetStencilTestEnabled
+    "void"
+    .enabled            "bool"
+
+func.RasterStateEncoder.SetStencilCompareOp
+    "void"
+    .faces              "StencilFace"
+    .failOp             "StencilOp::Enum"
+    .passOp             "StencilOp::Enum"
+    .depthFailOp        "StencilOp::Enum"
+    .compareOp          "CompareOp::Enum"
+
+func.RasterStateEncoder.SetFillMode
+    "void"
+    .fillMode           "FillMode::Enum"
+
+func.RasterStateEncoder.SetSampleCount
+    "void"
+    .sampleCount        "SampleCount"
+
+func.ShaderStateEncoder.BindShaders
+    "void"
+    .stageCount         "uint32_t"
+    .pStages            "*const ShaderStage"
+    .shaders            "*const CompiledShaderId"
+
+func.ShaderStateEncoder.BindLinkedShader
+    "void"
+    .linked             "LinkedShaderId"
+
+func.Binder.BindVertexLayout
+    "void"
+    .layout             "*const VertexLayout"
+
+func.Binder.BindVertexBuffer
+    "void"
+    .firstBinding       "uint32_t"
+    .bindingCount       "uint32_t"
+    .pBuffers           "*const BufferId"
+    .pOffsets           "*const uint64_t"
+    .pSizes             "*const uint64_t"
+    .pStrides           "*const uint64_t"
+
+switch_table.FormatUtil_IsDepthStencilFormat
+    .arg            "TextureFormat::Enum"
+    .ret            "bool"
+    .cases          ({
+                        { D24_UNorm_S8_UInt = true },
+                        { D32_SFloat_S8_UInt = true },
+                        { D32_SFloat = true },
+                        { X8_D24_UNorm_Pack32 = true },
+                        { D16_UNorm = true },
+                        { D16_UNorm_S8_UInt = true },
+                    })
+    .default        (false)
+
+switch_table.FormatUtil_IsDepthOnlyFormat
+    .arg            "TextureFormat::Enum"
+    .ret            "bool"
+    .cases          ({
+                        { D32_SFloat = true },
+                        { D16_UNorm = true },
+                    })
+    .default        (false)
+
+switch_table.FormatUtil_BitSizeOfBlock
+    .arg            "TextureFormat::Enum"
+    .ret            "uint32_t"
+    .cases          ({
+                        { Undefined = 0 },
+                        { R8_UNorm = 8 },
+                        { R8_SNorm = 8 },
+                        { R8_UInt = 8 },
+                        { R8_SInt = 8 },
+                        { R8_SRGB = 8 },
+                        { R8G8_UNorm = 16 },
+                        { R8G8_SNorm = 16 },
+                        { R8G8_UInt = 16 },
+                        { R8G8_SInt = 16 },
+                        { R8G8_SRGB = 16 },
+                        { R16_UNorm = 16 },
+                        { R16_SNorm = 16 },
+                        { R16_UInt = 16 },
+                        { R16_SInt = 16 },
+                        { R16_SFloat = 16 },
+                        { R8G8B8_UNorm = 24 },
+                        { R8G8B8_SNorm = 24 },
+                        { R8G8B8_UInt = 24 },
+                        { R8G8B8_SInt = 24 },
+                        { R8G8B8_SRGB = 24 },
+                        { B8G8R8_UNorm = 24 },
+                        { B8G8R8_SNorm = 24 },
+                        { B8G8R8_UInt = 24 },
+                        { B8G8R8_SInt = 24 },
+                        { B8G8R8_SRGB = 24 },
+                        { R16G16B16_UNorm = 48 },
+                        { R16G16B16_SNorm = 48 },
+                        { R16G16B16_UInt = 48 },
+                        { R16G16B16_SInt = 48 },
+                        { R16G16B16_SFloat = 48 },
+                        { R16G16B16A16_UNorm = 64 },
+                        { R16G16B16A16_SNorm = 64 },
+                        { R16G16B16A16_UInt = 64 },
+                        { R16G16B16A16_SInt = 64 },
+                        { R16G16B16A16_SFloat = 64 },
+                        { R32G32_UInt = 64 },
+                        { R32G32_SInt = 64 },
+                        { R32G32_SFloat = 64 },
+                        { R32G32B32_UInt = 96 },
+                        { R32G32B32_SInt = 96 },
+                        { R32G32B32_SFloat = 96 },
+                        { R32G32B32A32_UInt = 128 },
+                        { R32G32B32A32_SInt = 128 },
+                        { R32G32B32A32_SFloat = 128 },
+                        { R64_UInt = 64 },
+                        { R64_SInt = 64 },
+                        { R64_SFloat = 64 },
+                        { R64G64_UInt = 128 },
+                        { R64G64_SInt = 128 },
+                        { R64G64_SFloat = 128 },
+                        { R64G64B64_UInt = 192 },
+                        { R64G64B64_SInt = 192 },
+                        { R64G64B64_SFloat = 192 },
+                        { R64G64B64A64_UInt = 256 },
+                        { R64G64B64A64_SInt = 256 },
+                        { R64G64B64A64_SFloat = 256 },
+                        { D16_UNorm = 16 },
+                        { S8_UInt = 8 },
+                        { D32_SFloat_S8_UInt = 64 },
+                        { BC1_RGB_UNorm_Block = 64 },
+                        { BC1_RGB_SRGB_Block = 64 },
+                        { BC1_RGBA_UNorm_Block = 64 },
+                        { BC1_RGBA_SRGB_Block = 64 },
+                        { BC2_UNorm_Block = 128 },
+                        { BC2_SRGB_Block = 128 },
+                        { BC3_UNorm_Block = 128 },
+                        { BC3_SRGB_Block = 128 },
+                        { BC4_UNorm_Block = 64 },
+                        { BC4_SNorm_Block = 64 },
+                        { BC5_UNorm_Block = 128 },
+                        { BC5_SNorm_Block = 128 },
+                        { BC6H_UFloat_Block = 128 },
+                        { BC6H_SFloat_Block = 128 },
+                        { BC7_UNorm_Block = 128 },
+                        { BC7_SRGB_Block = 128 },
+                        { PVRTC1_2BPP_UNorm_Block = 64 },
+                        { PVRTC1_4BPP_UNorm_Block = 64 },
+                        { PVRTC2_2BPP_UNorm_Block = 64 },
+                        { PVRTC2_4BPP_UNorm_Block = 64 },
+                        { PVRTC1_2BPP_SRGB_Block = 64 },
+                        { PVRTC1_4BPP_SRGB_Block = 64 },
+                        { PVRTC2_2BPP_SRGB_Block = 64 },
+                        { PVRTC2_4BPP_SRGB_Block = 64 },
+                        { ETC2_R8G8B8_UNorm_Block = 64 },
+                        { ETC2_R8G8B8_SRGB_Block = 64 },
+                        { ETC2_R8G8B8A1_UNorm_Block = 64 },
+                        { ETC2_R8G8B8A1_SRGB_Block = 64 },
+                        { ETC2_R8G8B8A8_UNorm_Block = 64 },
+                        { ETC2_R8G8B8A8_SRGB_Block = 64 },
+                        { EAC_R11_UNorm_Block = 64 },
+                        { EAC_R11_SNorm_Block = 64 },
+                        { EAC_R11G11_UNorm_Block = 64 },
+                        { EAC_R11G11_SNorm_Block = 64 },
+                        { ASTC_4x4_UNorm_Block = 128 },
+                        { ASTC_4x4_SRGB_Block = 128 },
+                        { ASTC_5x4_UNorm_Block = 128 },
+                        { ASTC_5x4_SRGB_Block = 128 },
+                        { ASTC_5x5_UNorm_Block = 128 },
+                        { ASTC_5x5_SRGB_Block = 128 },
+                        { ASTC_6x5_UNorm_Block = 128 },
+                        { ASTC_6x5_SRGB_Block = 128 },
+                        { ASTC_6x6_UNorm_Block = 128 },
+                        { ASTC_6x6_SRGB_Block = 128 },
+                        { ASTC_8x5_UNorm_Block = 128 },
+                        { ASTC_8x5_SRGB_Block = 128 },
+                        { ASTC_8x6_UNorm_Block = 128 },
+                        { ASTC_8x6_SRGB_Block = 128 },
+                        { ASTC_8x8_UNorm_Block = 128 },
+                        { ASTC_8x8_SRGB_Block = 128 },
+                        { ASTC_10x5_UNorm_Block = 128 },
+                        { ASTC_10x5_SRGB_Block = 128 },
+                        { ASTC_10x6_UNorm_Block = 128 },
+                        { ASTC_10x6_SRGB_Block = 128 },
+                        { ASTC_10x8_UNorm_Block = 128 },
+                        { ASTC_10x8_SRGB_Block = 128 },
+                        { ASTC_10x10_UNorm_Block = 128 },
+                        { ASTC_10x10_SRGB_Block = 128 },
+                        { ASTC_12x10_UNorm_Block = 128 },
+                        { ASTC_12x10_SRGB_Block = 128 },
+                        { ASTC_12x12_UNorm_Block = 128 },
+                        { ASTC_12x12_SRGB_Block = 128 },
+                        { ASTC_4x4_SFloat_Block = 128 },
+                        { ASTC_5x4_SFloat_Block = 128 },
+                        { ASTC_5x5_SFloat_Block = 128 },
+                        { ASTC_6x5_SFloat_Block = 128 },
+                        { ASTC_6x6_SFloat_Block = 128 },
+                        { ASTC_8x5_SFloat_Block = 128 },
+                        { ASTC_8x6_SFloat_Block = 128 },
+                        { ASTC_8x8_SFloat_Block = 128 },
+                        { ASTC_10x5_SFloat_Block = 128 },
+                        { ASTC_10x6_SFloat_Block = 128 },
+                        { ASTC_10x8_SFloat_Block = 128 },
+                        { ASTC_10x10_SFloat_Block = 128 },
+                        { ASTC_12x10_SFloat_Block = 128 },
+                        { ASTC_12x12_SFloat_Block = 128 },
+                    })
+    .default        (32)
+
+switch_table.FormatUtil_WidthOfBlock
+    .arg            "TextureFormat::Enum"
+    .ret            "uint32_t"
+    .cases          ({
+                        { Undefined = 1 },
+                        { BC1_RGB_UNorm_Block = 4 },
+                        { BC1_RGB_SRGB_Block = 4 },
+                        { BC1_RGBA_UNorm_Block = 4 },
+                        { BC1_RGBA_SRGB_Block = 4 },
+                        { BC2_UNorm_Block = 4 },
+                        { BC2_SRGB_Block = 4 },
+                        { BC3_UNorm_Block = 4 },
+                        { BC3_SRGB_Block = 4 },
+                        { BC4_UNorm_Block = 4 },
+                        { BC4_SNorm_Block = 4 },
+                        { BC5_UNorm_Block = 4 },
+                        { BC5_SNorm_Block = 4 },
+                        { BC6H_UFloat_Block = 4 },
+                        { BC6H_SFloat_Block = 4 },
+                        { BC7_UNorm_Block = 4 },
+                        { BC7_SRGB_Block = 4 },
+                        { PVRTC1_2BPP_UNorm_Block = 8 },
+                        { PVRTC1_4BPP_UNorm_Block = 4 },
+                        { PVRTC2_2BPP_UNorm_Block = 8 },
+                        { PVRTC2_4BPP_UNorm_Block = 4 },
+                        { PVRTC1_2BPP_SRGB_Block = 8 },
+                        { PVRTC1_4BPP_SRGB_Block = 4 },
+                        { PVRTC2_2BPP_SRGB_Block = 8 },
+                        { PVRTC2_4BPP_SRGB_Block = 4 },
+                        { ETC2_R8G8B8_UNorm_Block = 4 },
+                        { ETC2_R8G8B8_SRGB_Block = 4 },
+                        { ETC2_R8G8B8A1_UNorm_Block = 4 },
+                        { ETC2_R8G8B8A1_SRGB_Block = 4 },
+                        { ETC2_R8G8B8A8_UNorm_Block = 4 },
+                        { ETC2_R8G8B8A8_SRGB_Block = 4 },
+                        { EAC_R11_UNorm_Block = 4 },
+                        { EAC_R11_SNorm_Block = 4 },
+                        { EAC_R11G11_UNorm_Block = 4 },
+                        { EAC_R11G11_SNorm_Block = 4 },
+                        { ASTC_4x4_UNorm_Block = 4 },
+                        { ASTC_4x4_SRGB_Block = 4 },
+                        { ASTC_5x4_UNorm_Block = 5 },
+                        { ASTC_5x4_SRGB_Block = 5 },
+                        { ASTC_5x5_UNorm_Block = 5 },
+                        { ASTC_5x5_SRGB_Block = 5 },
+                        { ASTC_6x5_UNorm_Block = 6 },
+                        { ASTC_6x5_SRGB_Block = 6 },
+                        { ASTC_6x6_UNorm_Block = 6 },
+                        { ASTC_6x6_SRGB_Block = 6 },
+                        { ASTC_8x5_UNorm_Block = 8 },
+                        { ASTC_8x5_SRGB_Block = 8 },
+                        { ASTC_8x6_UNorm_Block = 8 },
+                        { ASTC_8x6_SRGB_Block = 8 },
+                        { ASTC_8x8_UNorm_Block = 8 },
+                        { ASTC_8x8_SRGB_Block = 8 },
+                        { ASTC_10x5_UNorm_Block = 10 },
+                        { ASTC_10x5_SRGB_Block = 10 },
+                        { ASTC_10x6_UNorm_Block = 10 },
+                        { ASTC_10x6_SRGB_Block = 10 },
+                        { ASTC_10x8_UNorm_Block = 10 },
+                        { ASTC_10x8_SRGB_Block = 10 },
+                        { ASTC_10x10_UNorm_Block = 10 },
+                        { ASTC_10x10_SRGB_Block = 10 },
+                        { ASTC_12x10_UNorm_Block = 12 },
+                        { ASTC_12x10_SRGB_Block = 12 },
+                        { ASTC_12x12_UNorm_Block = 12 },
+                        { ASTC_12x12_SRGB_Block = 12 },
+                        { ASTC_4x4_SFloat_Block = 4 },
+                        { ASTC_5x4_SFloat_Block = 5 },
+                        { ASTC_5x5_SFloat_Block = 5 },
+                        { ASTC_6x5_SFloat_Block = 6 },
+                        { ASTC_6x6_SFloat_Block = 6 },
+                        { ASTC_8x5_SFloat_Block = 8 },
+                        { ASTC_8x6_SFloat_Block = 8 },
+                        { ASTC_8x8_SFloat_Block = 8 },
+                        { ASTC_10x5_SFloat_Block = 10 },
+                        { ASTC_10x6_SFloat_Block = 10 },
+                        { ASTC_10x8_SFloat_Block = 10 },
+                        { ASTC_10x10_SFloat_Block = 10 },
+                        { ASTC_12x10_SFloat_Block = 12 },
+                        { ASTC_12x12_SFloat_Block = 12 },
+                    })
+    .default        (1)
+
+switch_table.FormatUtil_HeightOfBlock
+    .arg            "TextureFormat::Enum"
+    .ret            "uint32_t"
+    .cases          ({
+                        { Undefined = 1 },
+                        { BC1_RGB_UNorm_Block = 4 },
+                        { BC1_RGB_SRGB_Block = 4 },
+                        { BC1_RGBA_UNorm_Block = 4 },
+                        { BC1_RGBA_SRGB_Block = 4 },
+                        { BC2_UNorm_Block = 4 },
+                        { BC2_SRGB_Block = 4 },
+                        { BC3_UNorm_Block = 4 },
+                        { BC3_SRGB_Block = 4 },
+                        { BC4_UNorm_Block = 4 },
+                        { BC4_SNorm_Block = 4 },
+                        { BC5_UNorm_Block = 4 },
+                        { BC5_SNorm_Block = 4 },
+                        { BC6H_UFloat_Block = 4 },
+                        { BC6H_SFloat_Block = 4 },
+                        { BC7_UNorm_Block = 4 },
+                        { BC7_SRGB_Block = 4 },
+                        { PVRTC1_2BPP_UNorm_Block = 4 },
+                        { PVRTC1_4BPP_UNorm_Block = 4 },
+                        { PVRTC2_2BPP_UNorm_Block = 4 },
+                        { PVRTC2_4BPP_UNorm_Block = 4 },
+                        { PVRTC1_2BPP_SRGB_Block = 4 },
+                        { PVRTC1_4BPP_SRGB_Block = 4 },
+                        { PVRTC2_2BPP_SRGB_Block = 4 },
+                        { PVRTC2_4BPP_SRGB_Block = 4 },
+                        { ETC2_R8G8B8_UNorm_Block = 4 },
+                        { ETC2_R8G8B8_SRGB_Block = 4 },
+                        { ETC2_R8G8B8A1_UNorm_Block = 4 },
+                        { ETC2_R8G8B8A1_SRGB_Block = 4 },
+                        { ETC2_R8G8B8A8_UNorm_Block = 4 },
+                        { ETC2_R8G8B8A8_SRGB_Block = 4 },
+                        { EAC_R11_UNorm_Block = 4 },
+                        { EAC_R11_SNorm_Block = 4 },
+                        { EAC_R11G11_UNorm_Block = 4 },
+                        { EAC_R11G11_SNorm_Block = 4 },
+                        { ASTC_4x4_UNorm_Block = 4 },
+                        { ASTC_4x4_SRGB_Block = 4 },
+                        { ASTC_5x4_UNorm_Block = 4 },
+                        { ASTC_5x4_SRGB_Block = 4 },
+                        { ASTC_5x5_UNorm_Block = 5 },
+                        { ASTC_5x5_SRGB_Block = 5 },
+                        { ASTC_6x5_UNorm_Block = 5 },
+                        { ASTC_6x5_SRGB_Block = 5 },
+                        { ASTC_6x6_UNorm_Block = 6 },
+                        { ASTC_6x6_SRGB_Block = 6 },
+                        { ASTC_8x5_UNorm_Block = 5 },
+                        { ASTC_8x5_SRGB_Block = 5 },
+                        { ASTC_8x6_UNorm_Block = 6 },
+                        { ASTC_8x6_SRGB_Block = 6 },
+                        { ASTC_8x8_UNorm_Block = 8 },
+                        { ASTC_8x8_SRGB_Block = 8 },
+                        { ASTC_10x5_UNorm_Block = 5 },
+                        { ASTC_10x5_SRGB_Block = 5 },
+                        { ASTC_10x6_UNorm_Block = 6 },
+                        { ASTC_10x6_SRGB_Block = 6 },
+                        { ASTC_10x8_UNorm_Block = 8 },
+                        { ASTC_10x8_SRGB_Block = 8 },
+                        { ASTC_10x10_UNorm_Block = 10 },
+                        { ASTC_10x10_SRGB_Block = 10 },
+                        { ASTC_12x10_UNorm_Block = 10 },
+                        { ASTC_12x10_SRGB_Block = 10 },
+                        { ASTC_12x12_UNorm_Block = 12 },
+                        { ASTC_12x12_SRGB_Block = 12 },
+                        { ASTC_4x4_SFloat_Block = 4 },
+                        { ASTC_5x4_SFloat_Block = 4 },
+                        { ASTC_5x5_SFloat_Block = 5 },
+                        { ASTC_6x5_SFloat_Block = 5 },
+                        { ASTC_6x6_SFloat_Block = 6 },
+                        { ASTC_8x5_SFloat_Block = 5 },
+                        { ASTC_8x6_SFloat_Block = 6 },
+                        { ASTC_8x8_SFloat_Block = 8 },
+                        { ASTC_10x5_SFloat_Block = 5 },
+                        { ASTC_10x6_SFloat_Block = 6 },
+                        { ASTC_10x8_SFloat_Block = 8 },
+                        { ASTC_10x10_SFloat_Block = 10 },
+                        { ASTC_12x10_SFloat_Block = 10 },
+                        { ASTC_12x12_SFloat_Block = 12 },
+                    })
+    .default        (1)
+
+switch_table.VertexFormatUtil_BitSizeOfBlock
+    .arg            "VertexFormat::Enum"
+    .ret            "uint32_t"
+    .cases          ({
+                        { Float32x1 = 32 },
+                        { Float32x2 = 64 },
+                        { Float32x3 = 96 },
+                        { Float32x4 = 128 },
+                        { Sint32x1 = 32 },
+                        { Sint32x2 = 64 },
+                        { Sint32x3 = 96 },
+                        { Sint32x4 = 128 },
+                        { Uint32x1 = 32 },
+                        { Uint32x2 = 64 },
+                        { Uint32x3 = 96 },
+                        { Uint32x4 = 128 },
+                        { Float16x2 = 32 },
+                        { Float16x4 = 64 },
+                        { Sint16x2 = 32 },
+                        { Sint16x4 = 64 },
+                        { Uint16x2 = 32 },
+                        { Uint16x4 = 64 },
+                        { Snorm16x2 = 32 },
+                        { Snorm16x4 = 64 },
+                        { Unorm16x2 = 32 },
+                        { Unorm16x4 = 64 },
+                        { Sint8x4 = 32 },
+                        { Uint8x4 = 32 },
+                        { Snorm8x4 = 32 },
+                        { Unorm8x4 = 32 },
+                    })
+    .default        (0)

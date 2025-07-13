@@ -6,7 +6,7 @@ local gen = require "cgpu-codegen"
 local path = (...)
 
 local files = {
-	{ temp = "temp.cgpu2.h" , output = "./t1.h", indent = "    " },
+	{ temp = "temp.cgpu.h" , output = "../src/cgpu/include/cgpu/api.h", indent = "    " },
 }
 
 for _, f in ipairs (files) do
