@@ -1102,8 +1102,8 @@ pub const Adapter = extern struct {
 };
 
 pub const QueueGroupDescriptor = extern struct {
-    queue_count: u32,
     queue_type: QueueType,
+    queue_count: u32,
 };
 
 pub const DeviceDescriptor = extern struct {

@@ -1151,8 +1151,8 @@ typedef struct CGPUAdapter
 
 typedef struct CGPUQueueGroupDescriptor
 {
-    uint32_t             queue_count;
     ECGPUQueueType       queue_type;
+    uint32_t             queue_count;
 
 } CGPUQueueGroupDescriptor;
 

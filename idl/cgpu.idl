@@ -1544,8 +1544,8 @@ struct.Adapter
     .procTableCache     "*const ProcTable"
 
 struct.QueueGroupDescriptor
-    .queueCount         "uint32_t"
     .queueType          "QueueType::Enum"
+    .queueCount         "uint32_t"
 
 struct.DeviceDescriptor
     .disablePipelineCache   "bool"
