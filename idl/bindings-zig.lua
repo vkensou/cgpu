@@ -528,6 +528,16 @@ function converter.types(params)
 		end
 	elseif typ.const_value then
 		yield("pub const " .. typ.name .. ": u32 = " .. tostring(typ.value) .. ";")
+	elseif typ.cases then
+		local func_indent = "    "
+		yield(string.format("pub fn %s(arg: %s) %s {", typ.name, convert_type(typ.arg), convert_type(typ.ret)))
+		yield(string.format("%sreturn switch (arg) {", func_indent))
+		for _, item in ipairs(typ.cases) do
+			yield(string.format("%s%s.%s => %s,", func_indent, func_indent, upperCamelcase_to_underscorecase(item.fulltype), item.value))
+		end
+		yield(string.format("%s%selse => %s,", func_indent, func_indent, typ.default))
+		yield(string.format("%s};", func_indent))
+		yield("}")
 	end
 end
 
