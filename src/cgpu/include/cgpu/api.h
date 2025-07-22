@@ -1178,6 +1178,7 @@ typedef struct CGPUQueue
     CGPUDeviceId         device;
     ECGPUQueueType       type;
     uint32_t             index;
+    bool                 support_timestamp;
 
 } CGPUQueue;
 

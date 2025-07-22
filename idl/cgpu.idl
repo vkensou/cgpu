@@ -1562,6 +1562,7 @@ struct.Queue
     .device             "DeviceId"
     .type               "QueueType::Enum"
     .index              "uint32_t"
+    .supportTimestamp   "bool"
 
 struct.Fence
     .device             "DeviceId"

@@ -1190,6 +1190,7 @@ CGPUQueueId cgpu_get_queue_vulkan(CGPUDeviceId device, ECGPUQueueType type, uint
             .device = device,
             .type = type,
             .index = index,
+            .support_timestamp = A->mPhysicalDeviceProps.properties.limits.timestampComputeAndGraphics != VK_FALSE,
         }
     };
     D->mVkDeviceTable.vkGetDeviceQueue(D->pVkDevice, (uint32_t)A->mQueueFamilyIndices[type], index, &Q.pVkQueue);

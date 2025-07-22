@@ -1346,6 +1346,7 @@ pub const Queue = extern struct {
     device: DeviceId,
     _type: QueueType,
     index: u32,
+    support_timestamp: bool,
     pub inline fn submit(self: *Queue, desc: *const QueueSubmitDescriptor) void {
         return cgpu_queue_submit(self, desc);
     }
