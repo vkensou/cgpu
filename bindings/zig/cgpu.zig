@@ -360,6 +360,17 @@ pub const ShaderBytecodeType = enum(u32) {
     mtl, // ( 2)
 };
 
+pub const TextureFormatUsage = enum(u32) {
+    sample, // ( 0)
+    render, // ( 1)
+    load_store, // ( 2)
+    blend, // ( 3)
+    msaa2x, // ( 4)
+    msaa4x, // ( 5)
+    msaa8x, // ( 6)
+    msaa16x, // ( 7)
+};
+
 pub const ShaderStage = packed struct(u32) {
     vertex: bool = false, // ( 0)
     tessellation_control: bool = false, // ( 1)
@@ -1049,12 +1060,6 @@ pub const VendorPreset = extern struct {
     gpu_name: [64]u8,
 };
 
-pub const FormatSupport = extern struct {
-    shader_read: bool,
-    shader_write: bool,
-    render_target_write: bool,
-};
-
 pub const AdapterDetail = extern struct {
     uniform_buffer_alignment: u32,
     upload_buffer_texture_alignment: u32,
@@ -1076,7 +1081,7 @@ pub const AdapterDetail = extern struct {
     support_shading_rate: bool,
     support_shading_rate_mask: bool,
     support_shading_rate_sv: bool,
-    format_supports: [181]FormatSupport,
+    format_supports: [181]TextureFormatSupport,
     vendor_preset: VendorPreset,
 };
 

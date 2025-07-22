@@ -359,6 +359,17 @@ enum.ShaderBytecodeType { comment = "Shader Bytecode Type:" }
     .Mtl
     ()
 
+enum.TextureFormatUsage
+    .Sample
+    .Render
+    .LoadStore
+    .Blend
+    .MSAA2x
+    .MSAA4x
+    .MSAA8x
+    .MSAA16x
+    ()
+
 flag.ShaderStage { underscore, bits = 32, base = 0, comment = "Shader Stage:" }
     .None
     .Vertex
@@ -1510,11 +1521,6 @@ struct.VendorPreset
     .driverVersion      "uint32_t"
     .gpuName            "[64]char"
 
-struct.FormatSupport
-    .shaderRead         "bool"
-    .shaderWrite        "bool"
-    .renderTargetWrite  "bool"
-
 struct.AdapterDetail
     .uniformBufferAlignment                 "uint32_t"
     .uploadBufferTextureAlignment           "uint32_t"
@@ -1536,7 +1542,7 @@ struct.AdapterDetail
     .supportShadingRate                     "bool"
     .supportShadingRateMask                 "bool"
     .supportShadingRateSv                   "bool"
-    .formatSupports                         "[TextureFormat::Count]FormatSupport"
+    .formatSupports                         "[TextureFormat::Count]TextureFormatSupport"
     .vendorPreset                           "VendorPreset"
 
 struct.Adapter

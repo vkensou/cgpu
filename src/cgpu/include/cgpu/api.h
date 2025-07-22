@@ -417,6 +417,21 @@ typedef enum ECGPUShaderBytecodeType
 
 } ECGPUShaderBytecodeType;
 
+typedef enum ECGPUTextureFormatUsage
+{
+    CGPU_TEXTURE_FORMAT_USAGE_SAMPLE,         /** ( 0)                                */
+    CGPU_TEXTURE_FORMAT_USAGE_RENDER,         /** ( 1)                                */
+    CGPU_TEXTURE_FORMAT_USAGE_LOADSTORE,      /** ( 2)                                */
+    CGPU_TEXTURE_FORMAT_USAGE_BLEND,          /** ( 3)                                */
+    CGPU_TEXTURE_FORMAT_USAGE_MSAA2X,         /** ( 4)                                */
+    CGPU_TEXTURE_FORMAT_USAGE_MSAA4X,         /** ( 5)                                */
+    CGPU_TEXTURE_FORMAT_USAGE_MSAA8X,         /** ( 6)                                */
+    CGPU_TEXTURE_FORMAT_USAGE_MSAA16X,        /** ( 7)                                */
+
+    CGPU_TEXTURE_FORMAT_USAGE_COUNT
+
+} ECGPUTextureFormatUsage;
+
 typedef enum ECGPUFenceStatus
 {
     CGPU_FENCE_STATUS_COMPLETE,               /** ( 0)                                */
@@ -1107,14 +1122,6 @@ typedef struct CGPUVendorPreset
 
 } CGPUVendorPreset;
 
-typedef struct CGPUFormatSupport
-{
-    bool                 shader_read;
-    bool                 shader_write;
-    bool                 render_target_write;
-
-} CGPUFormatSupport;
-
 typedef struct CGPUAdapterDetail
 {
     uint32_t             uniform_buffer_alignment;
@@ -1137,7 +1144,7 @@ typedef struct CGPUAdapterDetail
     bool                 support_shading_rate;
     bool                 support_shading_rate_mask;
     bool                 support_shading_rate_sv;
-    CGPUFormatSupport    format_supports[CGPU_TEXTURE_FORMAT_COUNT];
+    ECGPUTextureFormatSupportFlags format_supports[CGPU_TEXTURE_FORMAT_COUNT];
     CGPUVendorPreset     vendor_preset;
 
 } CGPUAdapterDetail;

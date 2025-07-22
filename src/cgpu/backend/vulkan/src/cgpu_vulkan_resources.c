@@ -730,7 +730,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
     uint32_t aspect_mask = 0;
     VmaAllocation vmaAllocation = VK_NULL_HANDLE;
     const bool is_depth_stencil = FormatUtil_IsDepthStencilFormat(desc->format);
-    const CGPUFormatSupport* format_support = &A->adapter_detail.format_supports[desc->format];
+    ECGPUTextureFormatSupportFlags format_support = A->adapter_detail.format_supports[desc->format];
     if (desc->native_handle && !(desc->flags & CGPU_INNER_TCF_IMPORT_SHARED_HANDLE))
     {
         owns_image = false;
@@ -805,7 +805,7 @@ CGPUTextureId cgpu_create_texture_vulkan(CGPUDeviceId device, const struct CGPUT
             // Make it easy to copy to and from textures
             imageCreateInfo.usage |= (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
         }
-        cgpu_assert(format_support->shader_read && "GPU shader can't' read from this format");
+        cgpu_assert((format_support & CGPU_TEXTURE_FORMAT_SUPPORT_SAMPLE) != 0 && "GPU shader can't' sample from this format");
         if (desc->flags & CGPU_TEXTURE_CREATION_USAGE_TILED_RESOURCE)
         {
             imageCreateInfo.flags |= VK_IMAGE_CREATE_SPARSE_BINDING_BIT;

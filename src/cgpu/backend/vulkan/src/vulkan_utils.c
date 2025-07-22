@@ -927,13 +927,38 @@ CGPU_FORCEINLINE void VkUtil_CheckFormatSupport(CGPUAdapter_Vulkan* VkAdapter, C
 
 	VkFormatProperties formatSupport;
 	vkGetPhysicalDeviceFormatProperties(VkAdapter->pPhysicalDevice, fmt, &formatSupport);
-	adapter_detail->format_supports[i].shader_read =
-		(formatSupport.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0;
-	adapter_detail->format_supports[i].shader_write =
-		(formatSupport.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0;
-	adapter_detail->format_supports[i].render_target_write =
-		(formatSupport.optimalTilingFeatures &
-			(VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) != 0;
+	bool sample = (formatSupport.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0
+		|| (formatSupport.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0;
+	bool load_store = (formatSupport.linearTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0
+		|| (formatSupport.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0;
+	bool render = (formatSupport.linearTilingFeatures & (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) != 0
+		|| (formatSupport.optimalTilingFeatures & (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) != 0;
+    bool blend = (formatSupport.linearTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) != 0
+		|| (formatSupport.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) != 0;
+
+    bool msaa2x = false;
+    bool msaa4x = false;
+    bool msaa8x = false;
+    bool msaa16x = false;
+    if (render)
+    {
+        VkImageUsageFlags vkUsage = FormatUtil_IsDepthStencilFormat((ECGPUTextureFormat)i) ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT : VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        VkImageFormatProperties imageFormatProperties;
+        vkGetPhysicalDeviceImageFormatProperties(VkAdapter->pPhysicalDevice, fmt, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL, vkUsage, 0, &imageFormatProperties);
+        msaa2x = (imageFormatProperties.sampleCounts & VK_SAMPLE_COUNT_2_BIT) != 0;
+        msaa4x = (imageFormatProperties.sampleCounts & VK_SAMPLE_COUNT_4_BIT) != 0;
+        msaa8x = (imageFormatProperties.sampleCounts & VK_SAMPLE_COUNT_8_BIT) != 0;
+        msaa16x = (imageFormatProperties.sampleCounts & VK_SAMPLE_COUNT_16_BIT) != 0;
+    }
+
+    adapter_detail->format_supports[i] |= sample ? CGPU_TEXTURE_FORMAT_SUPPORT_SAMPLE : 0;
+    adapter_detail->format_supports[i] |= load_store ? CGPU_TEXTURE_FORMAT_SUPPORT_LOAD_STORE : 0;
+    adapter_detail->format_supports[i] |= render ? CGPU_TEXTURE_FORMAT_SUPPORT_RENDER : 0;
+    adapter_detail->format_supports[i] |= blend ? CGPU_TEXTURE_FORMAT_SUPPORT_BLEND : 0;
+    adapter_detail->format_supports[i] |= msaa2x ? CGPU_TEXTURE_FORMAT_SUPPORT_MSAA2X : 0;
+    adapter_detail->format_supports[i] |= msaa4x ? CGPU_TEXTURE_FORMAT_SUPPORT_MSAA4X : 0;
+    adapter_detail->format_supports[i] |= msaa8x ? CGPU_TEXTURE_FORMAT_SUPPORT_MSAA8X : 0;
+    adapter_detail->format_supports[i] |= msaa16x ? CGPU_TEXTURE_FORMAT_SUPPORT_MSAA16X : 0;
 }
 
 void VkUtil_EnumFormatSupports(CGPUAdapter_Vulkan* VkAdapter)
@@ -945,9 +970,7 @@ void VkUtil_EnumFormatSupports(CGPUAdapter_Vulkan* VkAdapter)
 
     for (uint32_t i = 0; i < CGPU_TEXTURE_FORMAT_COUNT; ++i)
     {
-        adapter_detail->format_supports[i].shader_read = 0;
-        adapter_detail->format_supports[i].shader_write = 0;
-        adapter_detail->format_supports[i].render_target_write = 0;
+        adapter_detail->format_supports[i] = 0;
     }
 
     for (uint32_t i = 0; i < CGPU_TEXTURE_FORMAT_PVRTC1_2BPP_UNORM_BLOCK; ++i)
