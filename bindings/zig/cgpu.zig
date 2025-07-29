@@ -1768,18 +1768,18 @@ pub const RootSignatureDescriptor = extern struct {
 
 pub const ParameterTable = extern struct {
     resources_count: u32,
-    p_resources: *ShaderResource,
+    p_resources: [*]ShaderResource,
     set_index: u32,
 };
 
 pub const RootSignature = extern struct {
     device: DeviceId,
     table_count: u32,
-    p_tables: *ParameterTable,
+    p_tables: [*]ParameterTable,
     push_constant_count: u32,
-    p_push_constants: *ShaderResource,
+    p_push_constants: [*]ShaderResource,
     static_sampler_count: u32,
-    p_static_samplers: *ShaderResource,
+    p_static_samplers: [*]ShaderResource,
     pipeline_type: PipelineType,
     pool: RootSignaturePoolId,
     pool_sig: RootSignatureId,
@@ -1920,8 +1920,8 @@ pub const DescriptorSetDescriptor = extern struct {
 };
 
 pub const BufferParams = extern struct {
-    offsets: *const u64,
-    sizes: *const u64,
+    offsets: [*]const u64,
+    sizes: [*]const u64,
 };
 
 pub const UavParams = extern struct {
@@ -2532,6 +2532,28 @@ pub fn FormatUtil_IsDepthOnlyFormat(arg: TextureFormat) bool {
     return switch (arg) {
         .d32_sfloat => true,
         .d16_unorm => true,
+        else => false,
+    };
+}
+
+pub fn FormatUtil_ContainDepth(arg: TextureFormat) bool {
+    return switch (arg) {
+        .d24_unorm_s8_uint => true,
+        .d32_sfloat_s8_uint => true,
+        .d32_sfloat => true,
+        .x8_d24_unorm_pack32 => true,
+        .d16_unorm => true,
+        .d16_unorm_s8_uint => true,
+        else => false,
+    };
+}
+
+pub fn FormatUtil_ContainStencil(arg: TextureFormat) bool {
+    return switch (arg) {
+        .d24_unorm_s8_uint => true,
+        .d32_sfloat_s8_uint => true,
+        .d16_unorm_s8_uint => true,
+        .s8_uint => true,
         else => false,
     };
 }

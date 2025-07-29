@@ -1688,17 +1688,17 @@ struct.RootSignatureDescriptor
 
 struct.ParameterTable
     .resourcesCount     "uint32_t"
-    .pResources         "*ShaderResource"
+    .pResources         "[*]ShaderResource"
     .setIndex           "uint32_t"
 
 struct.RootSignature
     .device             "DeviceId"
     .tableCount         "uint32_t"
-    .pTables            "*ParameterTable"
+    .pTables            "[*]ParameterTable"
     .pushConstantCount  "uint32_t"
-    .pPushConstants     "*ShaderResource"
+    .pPushConstants     "[*]ShaderResource"
     .staticSamplerCount "uint32_t"
-    .pStaticSamplers    "*ShaderResource"
+    .pStaticSamplers    "[*]ShaderResource"
     .pipelineType       "PipelineType::Enum"
     .pool               "RootSignaturePoolId"
     .poolSig            "RootSignatureId"
@@ -1805,8 +1805,8 @@ struct.DescriptorSetDescriptor
     .setIndex           "uint32_t"
 
 struct.BufferParams
-    .offsets            "*const uint64_t"
-    .sizes              "*const uint64_t"
+    .offsets            "[*]const uint64_t"
+    .sizes              "[*]const uint64_t"
 
 struct.UavParams
     .uavMipSlice        "uint32_t"
@@ -3010,6 +3010,30 @@ switch_table.FormatUtil_IsDepthOnlyFormat
     .cases          ({
                         { D32_SFloat = true },
                         { D16_UNorm = true },
+                    })
+    .default        (false)
+
+switch_table.FormatUtil_ContainDepth
+    .arg            "TextureFormat::Enum"
+    .ret            "bool"
+    .cases          ({
+                        { D24_UNorm_S8_UInt = true },
+                        { D32_SFloat_S8_UInt = true },
+                        { D32_SFloat = true },
+                        { X8_D24_UNorm_Pack32 = true },
+                        { D16_UNorm = true },
+                        { D16_UNorm_S8_UInt = true },
+                    })
+    .default        (false)
+
+switch_table.FormatUtil_ContainStencil
+    .arg            "TextureFormat::Enum"
+    .ret            "bool"
+    .cases          ({
+                        { D24_UNorm_S8_UInt = true },
+                        { D32_SFloat_S8_UInt = true },
+                        { D16_UNorm_S8_UInt = true },
+                        { S8_UInt = true },
                     })
     .default        (false)
 

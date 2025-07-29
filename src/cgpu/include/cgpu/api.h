@@ -2421,6 +2421,30 @@ static CGPU_FORCEINLINE bool FormatUtil_IsDepthOnlyFormat(ECGPUTextureFormat con
     return false;
 }
 
+static CGPU_FORCEINLINE bool FormatUtil_ContainDepth(ECGPUTextureFormat const arg) {
+    switch(arg) {
+        case CGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT: return true;
+        case CGPU_TEXTURE_FORMAT_D32_SFLOAT_S8_UINT: return true;
+        case CGPU_TEXTURE_FORMAT_D32_SFLOAT: return true;
+        case CGPU_TEXTURE_FORMAT_X8_D24_UNORM_PACK32: return true;
+        case CGPU_TEXTURE_FORMAT_D16_UNORM: return true;
+        case CGPU_TEXTURE_FORMAT_D16_UNORM_S8_UINT: return true;
+        default: return false;
+    }
+    return false;
+}
+
+static CGPU_FORCEINLINE bool FormatUtil_ContainStencil(ECGPUTextureFormat const arg) {
+    switch(arg) {
+        case CGPU_TEXTURE_FORMAT_D24_UNORM_S8_UINT: return true;
+        case CGPU_TEXTURE_FORMAT_D32_SFLOAT_S8_UINT: return true;
+        case CGPU_TEXTURE_FORMAT_D16_UNORM_S8_UINT: return true;
+        case CGPU_TEXTURE_FORMAT_S8_UINT: return true;
+        default: return false;
+    }
+    return false;
+}
+
 static CGPU_FORCEINLINE uint32_t FormatUtil_BitSizeOfBlock(ECGPUTextureFormat const arg) {
     switch(arg) {
         case CGPU_TEXTURE_FORMAT_UNDEFINED: return 0;
