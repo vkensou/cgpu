@@ -666,6 +666,14 @@ pub const QueryInstanceFeatures = fn (instance: InstanceId, features: *InstanceF
 
 pub const EnumAdapters = fn (instance: InstanceId, p_adapters_count: *u32, p_adapters: ?[*]AdapterId) callconv(.C) void;
 
+pub const CreateSurfaceFromNativeView = fn (instance: InstanceId, view: ?*anyopaque) callconv(.C) ?SurfaceId;
+
+pub const CreateSurfaceFromHwnd = fn (instance: InstanceId, window: HWND) callconv(.C) ?SurfaceId;
+
+pub const CreateSurfaceFromNativeWindow = fn (instance: InstanceId, window: ANativeWindowPtr) callconv(.C) ?SurfaceId;
+
+pub const FreeSurface = fn (instance: InstanceId, surface: SurfaceId) callconv(.C) void;
+
 pub const QueryAdapterDetail = fn (adapter: AdapterId) callconv(.C) ?*const AdapterDetail;
 
 pub const QueryQueueCount = fn (adapter: AdapterId, _type: QueueType) callconv(.C) u32;
@@ -928,14 +936,6 @@ pub const BinderBindVertexBuffer = fn (binder: BinderId, first_binding: u32, bin
 
 pub const FreeBinder = fn (binder: BinderId) callconv(.C) void;
 
-pub const CreateSurfaceFromNativeView = fn (device: DeviceId, view: ?*anyopaque) callconv(.C) ?SurfaceId;
-
-pub const CreateSurfaceFromHwnd = fn (device: DeviceId, window: HWND) callconv(.C) ?SurfaceId;
-
-pub const CreateSurfaceFromNativeWindow = fn (device: DeviceId, window: ANativeWindowPtr) callconv(.C) ?SurfaceId;
-
-pub const FreeSurface = fn (device: DeviceId, surface: SurfaceId) callconv(.C) void;
-
 pub const InstanceId = *Instance;
 
 pub const AdapterId = *Adapter;
@@ -1050,6 +1050,30 @@ pub const Instance = extern struct {
     }
     pub inline fn enumAdapters(self: *const Instance, p_adapters_count: *u32, p_adapters: ?[*]AdapterId) void {
         return cgpu_instance_enum_adapters(self, p_adapters_count, p_adapters);
+    }
+    pub inline fn createSurfaceFromNativeView(self: *Instance, view: ?*anyopaque) Error!SurfaceId {
+        const result = cgpu_instance_create_surface_from_native_view(self, view);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
+    }
+    pub inline fn createSurfaceFromHwnd(self: *Instance, window: HWND) Error!SurfaceId {
+        const result = cgpu_instance_create_surface_from_hwnd(self, window);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
+    }
+    pub inline fn createSurfaceFromNativeWindow(self: *Instance, window: ANativeWindowPtr) Error!SurfaceId {
+        const result = cgpu_instance_create_surface_from_native_window(self, window);
+        return if (result) |result_object|
+            result_object
+        else
+            Error.CreateFailed;
+    }
+    pub inline fn freeSurface(self: *Instance, surface: SurfaceId) void {
+        return cgpu_instance_free_surface(self, surface);
     }
 };
 
@@ -1320,30 +1344,6 @@ pub const Device = extern struct {
     }
     pub inline fn freeSwapChain(self: *Device, swapchain: SwapChainId) void {
         return cgpu_device_free_swap_chain(self, swapchain);
-    }
-    pub inline fn createSurfaceFromNativeView(self: *Device, view: ?*anyopaque) Error!SurfaceId {
-        const result = cgpu_device_create_surface_from_native_view(self, view);
-        return if (result) |result_object|
-            result_object
-        else
-            Error.CreateFailed;
-    }
-    pub inline fn createSurfaceFromHwnd(self: *Device, window: HWND) Error!SurfaceId {
-        const result = cgpu_device_create_surface_from_hwnd(self, window);
-        return if (result) |result_object|
-            result_object
-        else
-            Error.CreateFailed;
-    }
-    pub inline fn createSurfaceFromNativeWindow(self: *Device, window: ANativeWindowPtr) Error!SurfaceId {
-        const result = cgpu_device_create_surface_from_native_window(self, window);
-        return if (result) |result_object|
-            result_object
-        else
-            Error.CreateFailed;
-    }
-    pub inline fn freeSurface(self: *Device, surface: SurfaceId) void {
-        return cgpu_device_free_surface(self, surface);
     }
 };
 
@@ -2524,6 +2524,7 @@ pub fn FormatUtil_IsDepthStencilFormat(arg: TextureFormat) bool {
         .x8_d24_unorm_pack32 => true,
         .d16_unorm => true,
         .d16_unorm_s8_uint => true,
+        .s8_uint => true,
         else => false,
     };
 }
@@ -2918,6 +2919,14 @@ extern fn cgpu_instance_query_instance_features(self: [*c]const Instance, featur
 
 extern fn cgpu_instance_enum_adapters(self: [*c]const Instance, p_adapters_count: *u32, p_adapters: ?[*]AdapterId) void;
 
+extern fn cgpu_instance_create_surface_from_native_view(self: [*c]Instance, view: ?*anyopaque) ?SurfaceId;
+
+extern fn cgpu_instance_create_surface_from_hwnd(self: [*c]Instance, window: HWND) ?SurfaceId;
+
+extern fn cgpu_instance_create_surface_from_native_window(self: [*c]Instance, window: ANativeWindowPtr) ?SurfaceId;
+
+extern fn cgpu_instance_free_surface(self: [*c]Instance, surface: SurfaceId) void;
+
 extern fn cgpu_adapter_query_adapter_detail(self: [*c]const Adapter) *const AdapterDetail;
 
 extern fn cgpu_adapter_query_queue_count(self: [*c]const Adapter, _type: QueueType) u32;
@@ -3007,14 +3016,6 @@ extern fn cgpu_device_import_shared_texture_handle(self: [*c]Device, desc: *cons
 extern fn cgpu_device_create_swap_chain(self: [*c]Device, desc: *const SwapChainDescriptor) ?SwapChainId;
 
 extern fn cgpu_device_free_swap_chain(self: [*c]Device, swapchain: SwapChainId) void;
-
-extern fn cgpu_device_create_surface_from_native_view(self: [*c]Device, view: ?*anyopaque) ?SurfaceId;
-
-extern fn cgpu_device_create_surface_from_hwnd(self: [*c]Device, window: HWND) ?SurfaceId;
-
-extern fn cgpu_device_create_surface_from_native_window(self: [*c]Device, window: ANativeWindowPtr) ?SurfaceId;
-
-extern fn cgpu_device_free_surface(self: [*c]Device, surface: SurfaceId) void;
 
 pub inline fn waitFences(fence_count: u32, p_fences: [*]const FenceId) void {
     return cgpu_wait_fences(fence_count, p_fences);

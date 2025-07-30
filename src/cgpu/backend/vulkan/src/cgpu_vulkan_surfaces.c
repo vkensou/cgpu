@@ -23,22 +23,22 @@ const CGPUSurfacesProcTable s_tbl_vk = {
 
 const CGPUSurfacesProcTable* CGPU_VulkanSurfacesProcTable() { return &s_tbl_vk; }
 
-void cgpu_free_surface_vulkan(CGPUDeviceId device, CGPUSurfaceId surface)
+void cgpu_free_surface_vulkan(CGPUInstanceId instance, CGPUSurfaceId surface)
 {
     cgpu_assert(surface && "CGPU VULKAN ERROR: NULL surface!");
 
-    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)device->adapter->instance;
+    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)instance;
     VkSurfaceKHR vkSurface = (VkSurfaceKHR)surface;
     vkDestroySurfaceKHR(I->pVkInstance, vkSurface, &I->vkAllocator);
 }
 
 #if defined(_WIN32) || defined(_WIN64)
 
-CGPUSurfaceId cgpu_surface_from_hwnd_vulkan(CGPUDeviceId device, HWND window)
+CGPUSurfaceId cgpu_surface_from_hwnd_vulkan(CGPUInstanceId instance, HWND window)
 {
     cgpu_assert(window && "CGPU VULKAN ERROR: NULL HWND!");
 
-    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)device->adapter->instance;
+    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)instance;
     CGPUSurfaceId surface;
     VkWin32SurfaceCreateInfoKHR create_info = {
         .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
@@ -58,11 +58,11 @@ CGPUSurfaceId cgpu_surface_from_hwnd_vulkan(CGPUDeviceId device, HWND window)
 
 #elif defined(_MACOS)
 
-CGPUSurfaceId cgpu_surface_from_ns_view_vulkan(CGPUDeviceId device, CGPUNSView* window)
+CGPUSurfaceId cgpu_surface_from_ns_view_vulkan(CGPUInstanceId instance, CGPUNSView* window)
 {
     cgpu_assert(window && "CGPU VULKAN ERROR: NULL NSVIEW!");
 
-    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)device->adapter->instance;
+    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)instance;
     CGPUSurfaceId surface;
     VkMacOSSurfaceCreateInfoMVK create_info = {
         .sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK,
@@ -81,11 +81,11 @@ CGPUSurfaceId cgpu_surface_from_ns_view_vulkan(CGPUDeviceId device, CGPUNSView* 
 
 #elif defined(__ANDROID__)
 
-CGPUSurfaceId cgpu_surface_from_native_window_vulkan(CGPUDeviceId device, struct ANativeWindow* window)
+CGPUSurfaceId cgpu_surface_from_native_window_vulkan(CGPUInstanceId instance, struct ANativeWindow* window)
 {
     cgpu_assert(window && "CGPU VULKAN ERROR: NULL HWND!");
 
-    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)device->adapter->instance;
+    CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)instance;
     CGPUSurfaceId surface;
     VkAndroidSurfaceCreateInfoKHR create_info = {
         .sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR,

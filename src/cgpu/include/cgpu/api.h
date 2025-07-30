@@ -927,6 +927,10 @@ typedef CGPUInstanceId (*CGPUProcCreateInstance)(const CGPUInstanceDescriptor* d
 typedef void (*CGPUProcFreeInstance)(CGPUInstanceId instance);
 typedef void (*CGPUProcQueryInstanceFeatures)(CGPUInstanceId instance, CGPUInstanceFeatures* features);
 typedef void (*CGPUProcEnumAdapters)(CGPUInstanceId instance, uint32_t* p_adapters_count, CGPUAdapterId* p_adapters);
+typedef CGPUSurfaceId (*CGPUProcCreateSurfaceFromNativeView)(CGPUInstanceId instance, void* view);
+typedef CGPUSurfaceId (*CGPUProcCreateSurfaceFromHwnd)(CGPUInstanceId instance, HWND window);
+typedef CGPUSurfaceId (*CGPUProcCreateSurfaceFromNativeWindow)(CGPUInstanceId instance, ANativeWindowPtr window);
+typedef void (*CGPUProcFreeSurface)(CGPUInstanceId instance, CGPUSurfaceId surface);
 typedef const CGPUAdapterDetail* (*CGPUProcQueryAdapterDetail)(CGPUAdapterId adapter);
 typedef uint32_t (*CGPUProcQueryQueueCount)(CGPUAdapterId adapter, ECGPUQueueType type);
 typedef CGPUDeviceId (*CGPUProcCreateDevice)(CGPUAdapterId adapter, const CGPUDeviceDescriptor* desc);
@@ -1058,10 +1062,6 @@ typedef CGPUBinderId (*CGPUProcCreateBinder)(CGPUCommandBufferId cmd);
 typedef void (*CGPUProcBinderBindVertexLayout)(CGPUBinderId binder, const CGPUVertexLayout* layout);
 typedef void (*CGPUProcBinderBindVertexBuffer)(CGPUBinderId binder, uint32_t first_binding, uint32_t binding_count, const CGPUBufferId* buffers, const uint64_t* offsets, const uint64_t* sizes, const uint64_t* strides);
 typedef void (*CGPUProcFreeBinder)(CGPUBinderId binder);
-typedef CGPUSurfaceId (*CGPUProcCreateSurfaceFromNativeView)(CGPUDeviceId device, void* view);
-typedef CGPUSurfaceId (*CGPUProcCreateSurfaceFromHwnd)(CGPUDeviceId device, HWND window);
-typedef CGPUSurfaceId (*CGPUProcCreateSurfaceFromNativeWindow)(CGPUDeviceId device, ANativeWindowPtr window);
-typedef void (*CGPUProcFreeSurface)(CGPUDeviceId device, CGPUSurfaceId surface);
 
 typedef struct CGPULogger
 {
@@ -2263,6 +2263,10 @@ CGPU_API void cgpu_free_instance(CGPUInstanceId instance);
 CGPU_API ECGPUBackend cgpu_instance_get_backend(const CGPUInstanceId _this);
 CGPU_API void cgpu_instance_query_instance_features(const CGPUInstanceId _this, CGPUInstanceFeatures* features);
 CGPU_API void cgpu_instance_enum_adapters(const CGPUInstanceId _this, uint32_t* p_adapters_count, CGPUAdapterId* p_adapters);
+CGPU_API CGPUSurfaceId cgpu_instance_create_surface_from_native_view(CGPUInstanceId _this, void* view);
+CGPU_API CGPUSurfaceId cgpu_instance_create_surface_from_hwnd(CGPUInstanceId _this, HWND window);
+CGPU_API CGPUSurfaceId cgpu_instance_create_surface_from_native_window(CGPUInstanceId _this, ANativeWindowPtr window);
+CGPU_API void cgpu_instance_free_surface(CGPUInstanceId _this, CGPUSurfaceId surface);
 CGPU_API const CGPUAdapterDetail* cgpu_adapter_query_adapter_detail(const CGPUAdapterId _this);
 CGPU_API uint32_t cgpu_adapter_query_queue_count(const CGPUAdapterId _this, ECGPUQueueType type);
 CGPU_API CGPUDeviceId cgpu_adapter_create_device(CGPUAdapterId _this, const CGPUDeviceDescriptor* desc);
@@ -2308,10 +2312,6 @@ CGPU_API uint64_t cgpu_device_export_shared_texture_handle(CGPUDeviceId _this, c
 CGPU_API CGPUTextureId cgpu_device_import_shared_texture_handle(CGPUDeviceId _this, const CGPUImportTextureDescriptor* desc);
 CGPU_API CGPUSwapChainId cgpu_device_create_swap_chain(CGPUDeviceId _this, const CGPUSwapChainDescriptor* desc);
 CGPU_API void cgpu_device_free_swap_chain(CGPUDeviceId _this, CGPUSwapChainId swapchain);
-CGPU_API CGPUSurfaceId cgpu_device_create_surface_from_native_view(CGPUDeviceId _this, void* view);
-CGPU_API CGPUSurfaceId cgpu_device_create_surface_from_hwnd(CGPUDeviceId _this, HWND window);
-CGPU_API CGPUSurfaceId cgpu_device_create_surface_from_native_window(CGPUDeviceId _this, ANativeWindowPtr window);
-CGPU_API void cgpu_device_free_surface(CGPUDeviceId _this, CGPUSurfaceId surface);
 CGPU_API void cgpu_wait_fences(uint32_t fence_count, const CGPUFenceId* p_fences);
 CGPU_API ECGPUFenceStatus cgpu_fence_query_status(CGPUFenceId _this);
 CGPU_API void cgpu_queue_submit(CGPUQueueId _this, const CGPUQueueSubmitDescriptor* desc);
@@ -2407,6 +2407,7 @@ static CGPU_FORCEINLINE bool FormatUtil_IsDepthStencilFormat(ECGPUTextureFormat 
         case CGPU_TEXTURE_FORMAT_X8_D24_UNORM_PACK32: return true;
         case CGPU_TEXTURE_FORMAT_D16_UNORM: return true;
         case CGPU_TEXTURE_FORMAT_D16_UNORM_S8_UINT: return true;
+        case CGPU_TEXTURE_FORMAT_S8_UINT: return true;
         default: return false;
     }
     return false;

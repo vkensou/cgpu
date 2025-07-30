@@ -517,9 +517,9 @@ void ImGui_ImplCGPU_DestroyAllViewportsRenderBuffers(CGPUDeviceId device)
 // If you are new to dear imgui or creating a new binding for dear imgui, it is recommended that you completely ignore this section first..
 //--------------------------------------------------------------------------------------------------------
 
-static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQueueId present_queue, CGPURenderPassId render_pass, uint32_t image_count, void* windowHandle, uint32_t width, uint32_t height)
+static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUInstanceId instance, CGPUDeviceId device, CGPUQueueId present_queue, CGPURenderPassId render_pass, uint32_t image_count, void* windowHandle, uint32_t width, uint32_t height)
 {
-    wd->Surface = cgpu_device_create_surface_from_native_view(device, windowHandle);
+    wd->Surface = cgpu_instance_create_surface_from_native_view(instance, windowHandle);
 
     CGPUSwapChainDescriptor descriptor = {
         .present_queue_count = 1,
@@ -566,7 +566,7 @@ static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device, CGPUQue
     wd->Fence = cgpu_device_create_fence(device);
 }
 
-static void FreeWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device)
+static void FreeWindow(ImGui_ImplCGPU_Window* wd, CGPUInstanceId instance, CGPUDeviceId device)
 {
     if (wd->Backbuffers) {
         for (int i = 0; i < wd->ImageCount; ++i)
@@ -585,7 +585,7 @@ static void FreeWindow(ImGui_ImplCGPU_Window* wd, CGPUDeviceId device)
         wd->Framebuffers = nullptr;
     }
     if (wd->Swapchain) { cgpu_device_free_swap_chain(device, wd->Swapchain); wd->Swapchain = nullptr; }
-    if (wd->Surface) { cgpu_device_free_surface(device, wd->Surface); wd->Surface = nullptr; }
+    if (wd->Surface) { cgpu_instance_free_surface(instance, wd->Surface); wd->Surface = nullptr; }
     if (wd->Fence) { cgpu_device_free_fence(device, wd->Fence); wd->Fence = nullptr; }
 }
 
@@ -604,7 +604,7 @@ static void ImGui_ImplCGPU_CreateWindow(ImGuiViewport* viewport)
     wd->UseDynamicRendering = true;
     vd->WindowOwned = true;
 
-    CreateWindow(wd, v->Device, v->PresentQueue, v->RenderPass, v->ImageCount, viewport->PlatformHandleRaw, (uint32_t)viewport->WorkSize.x, (uint32_t)viewport->WorkSize.y);
+    CreateWindow(wd, v->Instance, v->Device, v->PresentQueue, v->RenderPass, v->ImageCount, viewport->PlatformHandleRaw, (uint32_t)viewport->WorkSize.x, (uint32_t)viewport->WorkSize.y);
 
     wd->CommandPool = cgpu_queue_create_command_pool(v->PresentQueue, CGPU_NULLPTR);
     CGPUCommandBufferDescriptor cmd_desc = { .is_secondary = false };
@@ -622,7 +622,7 @@ static void ImGui_ImplCGPU_DestroyWindow(ImGuiViewport* viewport)
 
         if (vd->WindowOwned)
         {
-            FreeWindow(wd, v->Device);
+            FreeWindow(wd, v->Instance, v->Device);
 
             if (wd->Command) cgpu_command_pool_free_command_buffer(wd->CommandPool, wd->Command); wd->Command = nullptr;
             if (wd->CommandPool) cgpu_queue_free_command_pool(v->PresentQueue, wd->CommandPool); wd->CommandPool = nullptr;
@@ -647,8 +647,8 @@ static void ImGui_ImplCGPU_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)
         return;
 
     ImGui_ImplCGPU_Window* wd = &vd->Window;
-    FreeWindow(wd, v->Device);
-    CreateWindow(wd, v->Device, v->PresentQueue, v->RenderPass, v->ImageCount, viewport->PlatformHandleRaw, (uint32_t)viewport->WorkSize.x, (uint32_t)viewport->WorkSize.y);
+    FreeWindow(wd, v->Instance, v->Device);
+    CreateWindow(wd, v->Instance, v->Device, v->PresentQueue, v->RenderPass, v->ImageCount, viewport->PlatformHandleRaw, (uint32_t)viewport->WorkSize.x, (uint32_t)viewport->WorkSize.y);
 }
 
 static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)

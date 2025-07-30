@@ -1361,61 +1361,53 @@ bool cgpux_adapter_is_intel(CGPUAdapterId adapter)
 
 // surfaces
 #if defined(_WIN32) || defined(_WIN64)
-CGPUSurfaceId cgpu_device_create_surface_from_hwnd(CGPUDeviceId device, HWND window)
+CGPUSurfaceId cgpu_instance_create_surface_from_hwnd(CGPUInstanceId instance, HWND window)
 {
-    cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
-    cgpu_assert(device->adapter != CGPU_NULLPTR && "fatal: call on NULL adapter!");
-    cgpu_assert(device->adapter->instance != CGPU_NULLPTR && "fatal: call on NULL instnace!");
-    cgpu_assert(device->adapter->instance->surfaces_table != CGPU_NULLPTR && "surfaces_table Missing!");
-    cgpu_assert(device->adapter->instance->surfaces_table->from_hwnd != CGPU_NULLPTR && "from_hwnd Proc Missing!");
+    cgpu_assert(instance != CGPU_NULLPTR && "fatal: call on NULL instnace!");
+    cgpu_assert(instance->surfaces_table != CGPU_NULLPTR && "surfaces_table Missing!");
+    cgpu_assert(instance->surfaces_table->from_hwnd != CGPU_NULLPTR && "from_hwnd Proc Missing!");
 
-    return device->adapter->instance->surfaces_table->from_hwnd(device, window);
+    return instance->surfaces_table->from_hwnd(instance, window);
 }
 #elif defined(_MACOS)
-CGPUSurfaceId cgpu_create_surface_from_ns_view(CGPUDeviceId device, CGPUNSView* window)
+CGPUSurfaceId cgpu_instance_create_surface_from_ns_view(CGPUInstanceId instance, CGPUNSView* window)
 {
-    cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
-    cgpu_assert(device->adapter != CGPU_NULLPTR && "fatal: call on NULL adapter!");
-    cgpu_assert(device->adapter->instance != CGPU_NULLPTR && "fatal: call on NULL instnace!");
-    cgpu_assert(device->adapter->instance->surfaces_table != CGPU_NULLPTR && "surfaces_table Missing!");
-    cgpu_assert(device->adapter->instance->surfaces_table->from_ns_view != CGPU_NULLPTR && "from_ns_view Proc Missing!");
+    cgpu_assert(instance != CGPU_NULLPTR && "fatal: call on NULL instnace!");
+    cgpu_assert(instance->surfaces_table != CGPU_NULLPTR && "surfaces_table Missing!");
+    cgpu_assert(instance->surfaces_table->from_ns_view != CGPU_NULLPTR && "from_ns_view Proc Missing!");
 
-    return device->adapter->instance->surfaces_table->from_ns_view(device, window);
+    return instance->surfaces_table->from_ns_view(instance, window);
 }
 #elif defined(__ANDROID__)
-CGPUSurfaceId cgpu_device_create_surface_from_native_window(CGPUDeviceId device, ANativeWindow* window)
+CGPUSurfaceId cgpu_instance_create_surface_from_native_window(CGPUInstanceId instance, ANativeWindow* window)
 {
-    cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
-    cgpu_assert(device->adapter != CGPU_NULLPTR && "fatal: call on NULL adapter!");
-    cgpu_assert(device->adapter->instance != CGPU_NULLPTR && "fatal: call on NULL instnace!");
-    cgpu_assert(device->adapter->instance->surfaces_table != CGPU_NULLPTR && "surfaces_table Missing!");
-    cgpu_assert(device->adapter->instance->surfaces_table->from_native_window != CGPU_NULLPTR && "from_native_window Proc Missing!");
+    cgpu_assert(instance != CGPU_NULLPTR && "fatal: call on NULL instnace!");
+    cgpu_assert(instance->surfaces_table != CGPU_NULLPTR && "surfaces_table Missing!");
+    cgpu_assert(instance->surfaces_table->from_native_window != CGPU_NULLPTR && "from_native_window Proc Missing!");
 
-    return device->adapter->instance->surfaces_table->from_native_window(device, window);
+    return instance->surfaces_table->from_native_window(instance, window);
 }
 #endif
 
-CGPUSurfaceId cgpu_device_create_surface_from_native_view(CGPUDeviceId device, void* view)
+CGPUSurfaceId cgpu_instance_create_surface_from_native_view(CGPUInstanceId instance, void* view)
 {
 #ifdef CGPU_OS_MACOSX
-    return cgpu_create_surface_from_ns_view(device, (CGPUNSView*)view);
+    return cgpu_instance_create_surface_from_ns_view(instance, (CGPUNSView*)view);
 #elif defined(CGPU_OS_WINDOWS)
-    return cgpu_device_create_surface_from_hwnd(device, (HWND)view);
+    return cgpu_instance_create_surface_from_hwnd(instance, (HWND)view);
 #elif defined(__ANDROID__)
-    return cgpu_device_create_surface_from_native_window(device, (ANativeWindow*)view);
+    return cgpu_instance_create_surface_from_native_window(instance, (ANativeWindow*)view);
 #endif
     return CGPU_NULLPTR;
 }
 
-void cgpu_device_free_surface(CGPUDeviceId device, CGPUSurfaceId surface)
+void cgpu_instance_free_surface(CGPUInstanceId instance, CGPUSurfaceId surface)
 {
-    cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
-    cgpu_assert(device->adapter != CGPU_NULLPTR && "fatal: call on NULL adapter!");
-    cgpu_assert(device->adapter->instance != CGPU_NULLPTR && "fatal: call on NULL instnace!");
-    cgpu_assert(device->adapter->instance->surfaces_table != CGPU_NULLPTR && "surfaces_table Missing!");
-    cgpu_assert(device->adapter->instance->surfaces_table->free_surface != CGPU_NULLPTR && "free_instance Proc Missing!");
+    cgpu_assert(instance != CGPU_NULLPTR && "fatal: call on NULL instnace!");
+    cgpu_assert(instance->surfaces_table != CGPU_NULLPTR && "surfaces_table Missing!");
+    cgpu_assert(instance->surfaces_table->free_surface != CGPU_NULLPTR && "free_instance Proc Missing!");
 
-    device->adapter->instance->surfaces_table->free_surface(device, surface);
+    instance->surfaces_table->free_surface(instance, surface);
     return;
 }
 

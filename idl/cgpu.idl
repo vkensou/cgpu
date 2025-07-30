@@ -721,6 +721,30 @@ funcptr.EnumAdapters
     .pAdaptersCount     "*uint32_t"
     .pAdapters          "?[*]AdapterId"
 
+funcptr.CreateSurfaceFromNativeView
+    "?SurfaceId"
+    .instance           "InstanceId"
+    .view               "?*anyopaque"
+
+typedef "HWND"
+
+funcptr.CreateSurfaceFromHwnd
+    "?SurfaceId"
+    .instance           "InstanceId"
+    .window             "HWND"
+
+typedef "ANativeWindowPtr"
+
+funcptr.CreateSurfaceFromNativeWindow
+    "?SurfaceId"
+    .instance           "InstanceId"
+    .window             "ANativeWindowPtr"
+
+funcptr.FreeSurface
+    "void"
+    .instance           "InstanceId"
+    .surface            "SurfaceId"
+
 funcptr.QueryAdapterDetail
     "?*const AdapterDetail"
     .adapter            "AdapterId"
@@ -1420,30 +1444,6 @@ funcptr.BinderBindVertexBuffer
 funcptr.FreeBinder
     "void"
     .binder             "BinderId"
-
-typedef "HWND"
-
-funcptr.CreateSurfaceFromNativeView
-    "?SurfaceId"
-    .device             "DeviceId"
-    .view               "?*anyopaque"
-
-funcptr.CreateSurfaceFromHwnd
-    "?SurfaceId"
-    .device             "DeviceId"
-    .window             "HWND"
-
-typedef "ANativeWindowPtr"
-
-funcptr.CreateSurfaceFromNativeWindow
-    "?SurfaceId"
-    .device             "DeviceId"
-    .window             "ANativeWindowPtr"
-
-funcptr.FreeSurface
-    "void"
-    .device             "DeviceId"
-    .surface            "SurfaceId"
 
 id "InstanceId"
 id "AdapterId"
@@ -2398,6 +2398,22 @@ func.Instance.enumAdapters { const }
     .pAdaptersCount     "*uint32_t"
     .pAdapters          "?[*]AdapterId"
 
+func.Instance.CreateSurfaceFromNativeView
+    "?SurfaceId"
+    .view               "?*anyopaque"
+
+func.Instance.CreateSurfaceFromHwnd
+    "?SurfaceId"
+    .window             "HWND"
+
+func.Instance.CreateSurfaceFromNativeWindow
+    "?SurfaceId"
+    .window             "ANativeWindowPtr"
+
+func.Instance.FreeSurface
+    "void"
+    .surface            "SurfaceId"
+
 func.Adapter.queryAdapterDetail { const }
     "*const AdapterDetail"
 
@@ -2577,22 +2593,6 @@ func.Device.CreateSwapChain
 func.Device.FreeSwapChain
     "void"
     .swapchain          "SwapChainId"
-
-func.Device.CreateSurfaceFromNativeView
-    "?SurfaceId"
-    .view               "?*anyopaque"
-
-func.Device.CreateSurfaceFromHwnd
-    "?SurfaceId"
-    .window             "HWND"
-
-func.Device.CreateSurfaceFromNativeWindow
-    "?SurfaceId"
-    .window             "ANativeWindowPtr"
-
-func.Device.FreeSurface
-    "void"
-    .surface            "SurfaceId"
 
 func.waitFences
     "void"
@@ -3001,6 +3001,7 @@ switch_table.FormatUtil_IsDepthStencilFormat
                         { X8_D24_UNorm_Pack32 = true },
                         { D16_UNorm = true },
                         { D16_UNorm_S8_UInt = true },
+                        { S8_UInt = true },
                     })
     .default        (false)
 

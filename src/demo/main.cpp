@@ -156,7 +156,7 @@ struct RenderWindow
 		}
 		cgpu_device_free_swap_chain(device, swapchain);
 		swapchain = CGPU_NULLPTR;
-		cgpu_device_free_surface(device, surface);
+		cgpu_instance_free_surface(instance, surface);
 		surface = CGPU_NULLPTR;
 	}
 
@@ -173,7 +173,7 @@ struct RenderWindow
 		if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED)
 			return;
 
-		surface = cgpu_device_create_surface_from_hwnd(device, wmInfo.info.win.window);
+		surface = cgpu_instance_create_surface_from_hwnd(instance, wmInfo.info.win.window);
 
 		int w, h;
 		SDL_GetWindowSize(window, &w, &h);
@@ -496,8 +496,8 @@ int main(int argc, char** argv)
 
 	// Create device
 	CGPUQueueGroupDescriptor G = {
-		.queue_count = 1,
 		.queue_type = CGPU_QUEUE_TYPE_GRAPHICS,
+		.queue_count = 1,
 	};
 	CGPUDeviceDescriptor device_desc = {
 		.queue_group_count = 1,
