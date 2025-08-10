@@ -128,6 +128,9 @@ struct RenderWindow
 		SDL_DestroyProperties(props);
 		owned_window = true;
 
+		auto hwnd = SDL_GetPointerProperty(window_props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+		surface = cgpu_instance_create_surface_from_native_view(instance, hwnd);
+
 		CreateGPUResources();
 		CreateSyncObjects();
 	}
@@ -142,6 +145,10 @@ struct RenderWindow
 		windowId = SDL_GetWindowID(window);
 		owned_window = false;
 
+		auto window_props = SDL_GetWindowProperties(window);
+		auto hwnd = SDL_GetPointerProperty(window_props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+		surface = cgpu_instance_create_surface_from_native_view(instance, hwnd);
+
 		CreateGPUResources();
 		CreateSyncObjects();
 	}
@@ -150,6 +157,8 @@ struct RenderWindow
 	{
 		FreeSyncObjects();
 		FreeGPUResources();
+		cgpu_instance_free_surface(instance, surface);
+		surface = CGPU_NULLPTR;
 	}
 
 	void FreeGPUResources()
@@ -166,8 +175,6 @@ struct RenderWindow
 		}
 		cgpu_device_free_swap_chain(device, swapchain);
 		swapchain = CGPU_NULLPTR;
-		cgpu_instance_free_surface(instance, surface);
-		surface = CGPU_NULLPTR;
 	}
 
 	void FreeSyncObjects()
@@ -182,10 +189,6 @@ struct RenderWindow
 	{
 		if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED)
 			return;
-
-		auto window_props = SDL_GetWindowProperties(window);
-		auto hwnd = SDL_GetPointerProperty(window_props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
-		surface = cgpu_instance_create_surface_from_native_view(instance, hwnd);
 
 		int w, h;
 		SDL_GetWindowSize(window, &w, &h);
@@ -712,9 +715,6 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 	{
 		for (uint32_t i = 0; i < stamps.size(); ++i)
 		{
-			//float value = m_UIState.bShowMilliseconds ? timeStamps[i].m_microseconds / 1000.0f : timeStamps[i].m_microseconds;
-			//const char* pStrUnit = m_UIState.bShowMilliseconds ? "ms" : "us";
-			//ImGui::Text("%-18s: %7.2f %s", timeStamps[i].m_label.c_str(), value, pStrUnit);
 			float stamp = stamps[i].duration;
 			ImGui::Text("%s %7.2f us", stamps[i].label.c_str(), stamp * 1000);
 		}
@@ -823,8 +823,6 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		auto window = (RenderWindow*)SDL_GetPointerProperty(props, "sdl.window.userdata", nullptr);
 		if (window)
 			window->RequestResize();
-
-		printf("resize\n");
 	}
 
 	return SDL_APP_CONTINUE;
