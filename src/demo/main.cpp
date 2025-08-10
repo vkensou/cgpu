@@ -10,6 +10,8 @@
 #include <stdarg.h>
 #include "renderdoc_helper.h"
 #include "GpuTimeStamps.h"
+#define SDL_MAIN_USE_CALLBACKS
+#include <SDL3/SDL_main.h>
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -461,14 +463,25 @@ void* demo_calloc_aligned(void* user_data, size_t count, size_t size, size_t ali
 
 void demo_free_aligned(void* user_data, void* ptr, const void* pool)
 {
-	//aligned_malloced -= ptr ? _aligned_msize(ptr, alignment, 0) : 0;
+	aligned_malloced -= ptr ? _aligned_msize(ptr, 1, 0) : 0;
 	_aligned_free(ptr);
 }
 
-int main(int argc, char** argv)
+RENDERDOC_API_1_0_0* rdc = nullptr;
+bool rdc_capture = false;
+CGPUAdapterId adapter;
+FrameData frameDatas[3];
+CGPUSemaphoreId render_finished_semaphore;
+int current_frame_index = -1;
+double gpuTicksPerSecond;
+RenderWindow* main_window;
+std::vector<RenderWindow*> need_resize_windows;
+std::vector<RenderWindow*> prepared_windows;
+std::vector<CGPUSemaphoreId> wait_semaphores;
+bool show_demo_window = true;
+
+SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
-	RENDERDOC_API_1_0_0* rdc = nullptr;
-	bool rdc_capture = false;
 	if (false)
 	{
 		auto renderdoc_path = locate_renderdoc();
@@ -477,23 +490,23 @@ int main(int argc, char** argv)
 	}
 
 	CGPUInstanceDescriptor instance_desc = {
-		.backend = CGPU_BACKEND_VULKAN,
+	.backend = CGPU_BACKEND_VULKAN,
 		.enable_debug_layer = true,
 		.enable_gpu_based_validation = true,
 		.enable_set_name = true,
-		.logger = {
-			.log_callback = demo_log
-		},
-		.allocator = {
-			.malloc_fn = demo_malloc,
-			.realloc_fn = demo_realloc,
-			.calloc_fn = demo_calloc,
-			.free_fn = demo_free,
-			.malloc_aligned_fn = demo_malloc_aligned,
-			.realloc_aligned_fn = demo_realloc_aligned,
-			.calloc_aligned_fn = demo_calloc_aligned,
-			.free_aligned_fn = demo_free_aligned,
-		},
+	.logger = {
+		.log_callback = demo_log
+	},
+	.allocator = {
+		.malloc_fn = demo_malloc,
+		.realloc_fn = demo_realloc,
+		.calloc_fn = demo_calloc,
+		.free_fn = demo_free,
+		.malloc_aligned_fn = demo_malloc_aligned,
+		.realloc_aligned_fn = demo_realloc_aligned,
+		.calloc_aligned_fn = demo_calloc_aligned,
+		.free_aligned_fn = demo_free_aligned,
+	},
 	};
 	instance = cgpu_create_instance(&instance_desc);
 
@@ -501,7 +514,7 @@ int main(int argc, char** argv)
 	cgpu_instance_enum_adapters(instance, &adapters_count, CGPU_NULLPTR);
 	CGPUAdapterId* adapters = (CGPUAdapterId*)_alloca(sizeof(CGPUAdapterId) * (adapters_count));
 	cgpu_instance_enum_adapters(instance, &adapters_count, adapters);
-	auto adapter = adapters[0];
+	adapter = adapters[0];
 
 	// Create device
 	CGPUQueueGroupDescriptor G = {
@@ -526,300 +539,291 @@ int main(int argc, char** argv)
 		.depth_stencil = {},
 	};
 	render_pass = cgpu_device_create_render_pass(device, &render_pass_descriptor);
-	FrameData frameDatas[3];
 	for (int i = 0; i < 3; ++i)
 	{
 		frameDatas[i].inflightFence = cgpu_device_create_fence(device);
 		frameDatas[i].pool = cgpu_queue_create_command_pool(gfx_queue, CGPU_NULLPTR);
 	}
-	auto render_finished_semaphore = cgpu_device_create_semaphore(device);
-	int current_frame_index = -1;
+	render_finished_semaphore = cgpu_device_create_semaphore(device);
 
 	gpu_timer = new GpuTimeStamps(device, 3);
 
-	double gpuTicksPerSecond = cgpu_queue_get_timestamp_period_ns(gfx_queue);
+	gpuTicksPerSecond = cgpu_queue_get_timestamp_period_ns(gfx_queue);
 
-	// 初始化 SDL
-	if (SDL_Init(SDL_INIT_EVENTS) < 0)
+	main_window = new RenderWindow(device, gfx_queue, render_pass, SCREEN_WIDTH, SCREEN_HEIGHT);
+	windows.push_back(main_window);
+
+	if (main_window->window == nullptr)
 	{
-		std::cout << "[Error]: SDL could not initialize! SDL_Error: " << SDL_GetError() << std::endl;
+		std::cout << "[Error]: Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
+		return SDL_APP_FAILURE;
 	}
-	else
-	{
-		RenderWindow* main_window = new RenderWindow(device, gfx_queue, render_pass, SCREEN_WIDTH, SCREEN_HEIGHT);
-		windows.push_back(main_window);
 
-		if (main_window->window == nullptr)
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
+	//io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
+	//io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
+
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsLight();
+
+	ImGui_ImplSDL3_InitForOther(main_window->window);
+	ImGui_ImplCGPU_InitInfo init_info = {};
+	init_info.Instance = instance;
+	init_info.Device = device;
+	init_info.GfxQueue = gfx_queue;
+	init_info.PresentQueue = gfx_queue;
+	init_info.RenderPass = render_pass;
+	init_info.ImageCount = 3;
+	ImGui_ImplCGPU_Init(&init_info);
+	ImGui_ImplArena_InitPlatformInterface();
+
+	CGPUVertexAttribute imgui_vertex_attributes[3] = {
+			{ "POSITION", 1, CGPU_VERTEX_FORMAT_FLOAT32X2, 0, 0, sizeof(float) * 2, CGPU_VERTEX_INPUT_RATE_VERTEX },
+			{ "TEXCOORD", 1, CGPU_VERTEX_FORMAT_FLOAT32X2, 0, sizeof(float) * 2, sizeof(float) * 2, CGPU_VERTEX_INPUT_RATE_VERTEX },
+			{ "COLOR", 1, CGPU_VERTEX_FORMAT_UNORM8X4, 0, sizeof(float) * 4, sizeof(uint32_t), CGPU_VERTEX_INPUT_RATE_VERTEX },
+	};
+	CGPUVertexLayout imgui_vertex_layout = {
+		.attribute_count = 3,
+		.p_attributes = imgui_vertex_attributes,
+	};
+	CGPUBlendAttachmentState imgui_blend_attachments = {
+		.enable = true,
+		.src_factor = CGPU_BLEND_FACTOR_SRC_ALPHA,
+		.dst_factor = CGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+		.src_alpha_factor = CGPU_BLEND_FACTOR_SRC_ALPHA,
+		.dst_alpha_factor = CGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+		.blend_op = CGPU_BLEND_OP_ADD,
+		.blend_alpha_op = CGPU_BLEND_OP_ADD,
+		.color_mask = CGPU_COLOR_MASK_RGBA,
+	};
+	CGPUBlendStateDescriptor imgui_blend_desc = {
+		.attachment_count = 1,
+		.p_attachments = &imgui_blend_attachments,
+		.alpha_to_coverage = false,
+		.independent_blend = false,
+	};
+	CGPUDepthStateDescriptor imgui_depth_desc = {
+		.depth_test = false,
+		.depth_write = false,
+		.stencil_test = false,
+	};
+	CGPURasterizerStateDescriptor rasterizer_state = {
+		.cull_mode = CGPU_CULL_MODE_NONE,
+	};
+	auto [_imgui_root_sig, _imgui_pipeline] = create_render_pipeline(device, main_window->swapchain_views[0]->info.format, "shaders/imgui.vert.spv", "shaders/imgui.frag.spv", &imgui_vertex_layout, &imgui_blend_desc, &imgui_depth_desc, &rasterizer_state, render_pass, 0);
+	imgui_root_sig = _imgui_root_sig;
+	imgui_pipeline = _imgui_pipeline;
+
+	ImGui_ImplCGPU_CreateFontsTexture(gfx_queue, imgui_root_sig);
+	ImGui_ImplCGPU_PostInit(imgui_root_sig, imgui_pipeline);
+
+	main_window->imgui_viewport = ImGui::GetMainViewport();
+
+	CGPUVertexLayout vertex_layout = { .attribute_count = 0 };
+	CGPUBlendAttachmentState blend_attachments = {
+		.enable = false,
+		.src_factor = CGPU_BLEND_FACTOR_ONE,
+		.dst_factor = CGPU_BLEND_FACTOR_ZERO,
+		.src_alpha_factor = CGPU_BLEND_FACTOR_ONE,
+		.dst_alpha_factor = CGPU_BLEND_FACTOR_ZERO,
+		.blend_op = CGPU_BLEND_OP_ADD,
+		.blend_alpha_op = CGPU_BLEND_OP_ADD,
+		.color_mask = CGPU_COLOR_MASK_RGBA,
+	};
+	CGPUBlendStateDescriptor blend_desc = {
+		.attachment_count = 1,
+		.p_attachments = &blend_attachments,
+		.alpha_to_coverage = false,
+		.independent_blend = false,
+	};
+	CGPUDepthStateDescriptor depth_desc = {
+		.depth_test = false,
+		.depth_write = false,
+		.stencil_test = false,
+	};
+	auto [_root_sig, _pipeline] = create_render_pipeline(device, main_window->swapchain_views[0]->info.format, "shaders/hello.vert.spv", "shaders/hello.frag.spv", &vertex_layout, &blend_desc, &depth_desc, nullptr, render_pass, 0);
+	root_sig = _root_sig;
+	pipeline = _pipeline;
+
+	main_window->pipeline = pipeline;
+	main_window->imgui_root_sig = imgui_root_sig;
+	main_window->imgui_pipeline = imgui_pipeline;
+
+	return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult SDL_AppIterate(void* appstate)
+{
+	need_resize_windows.clear();
+	for (auto window : windows)
+	{
+		if (window->needResize)
+			need_resize_windows.push_back(window);
+	}
+
+	if (!need_resize_windows.empty())
+	{
+		cgpu_queue_wait_idle(gfx_queue);
+		for (auto window : need_resize_windows)
+			window->OnResize();
+	}
+
+	ImGui_ImplCGPU_NewFrame();
+	ImGui_ImplSDL3_NewFrame();
+	ImGui::NewFrame();
+
+	if (show_demo_window)
+		ImGui::ShowDemoWindow(&show_demo_window);
+
+	if (ImGui::Button("Capture"))
+		rdc_capture = true;
+
+	if (stamps.size() > 0)
+	{
+		for (uint32_t i = 0; i < stamps.size(); ++i)
 		{
-			std::cout << "[Error]: Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
+			//float value = m_UIState.bShowMilliseconds ? timeStamps[i].m_microseconds / 1000.0f : timeStamps[i].m_microseconds;
+			//const char* pStrUnit = m_UIState.bShowMilliseconds ? "ms" : "us";
+			//ImGui::Text("%-18s: %7.2f %s", timeStamps[i].m_label.c_str(), value, pStrUnit);
+			float stamp = stamps[i].duration;
+			ImGui::Text("%s %7.2f us", stamps[i].label.c_str(), stamp * 1000);
 		}
+	}
+
+	if (rdc && rdc_capture)
+		rdc->StartFrameCapture(nullptr, nullptr);
+
+	current_frame_index = (current_frame_index + 1) % 3;
+	auto& cur_frame_data = frameDatas[current_frame_index];
+	cgpu_wait_fences(1, &cur_frame_data.inflightFence);
+
+	prepared_windows.clear();
+	for (auto window : windows)
+	{
+		if (window->AcquireNextImage())
+			prepared_windows.push_back(window);
 		else
+			window->RequestResize();
+	}
+
+	if (prepared_windows.empty())
+	{
+		ImGui::EndFrame();
+		return SDL_APP_CONTINUE;
+	}
+
+	ImGui::Render();
+
+	cur_frame_data.newFrame();
+
+	auto cmd = cur_frame_data.request();
+	cgpu_command_buffer_begin(cmd);
+
+	gpu_timer->OnBeginFrame(cmd, gpuTicksPerSecond, stamps);
+
+	gpu_timer->GetTimeStamp(cmd, "Begin Frame");
+
+	for (auto window : prepared_windows)
+	{
+		window->Render(cmd);
+		gpu_timer->GetTimeStamp(cmd, "Render Window");
+	}
+
+	gpu_timer->CollectTimings(cmd);
+
+	cgpu_command_buffer_end(cmd);
+
+	gpu_timer->OnEndFrame();
+
+	wait_semaphores.clear();
+	for (auto window : prepared_windows)
+	{
+		wait_semaphores.push_back(window->swapchain_prepared_semaphores[window->current_frame_index]);
+	}
+
+	// submit
+	CGPUQueueSubmitDescriptor submit_desc = {
+		.cmd_count = (uint32_t)cur_frame_data.allocated_cmds.size(),
+		.p_cmds = cur_frame_data.allocated_cmds.data(),
+		.signal_fence = cur_frame_data.inflightFence,
+		.wait_semaphore_count = (uint32_t)wait_semaphores.size(),
+		.p_wait_semaphores = wait_semaphores.data(),
+		.signal_semaphore_count = 1,
+		.p_signal_semaphores = &render_finished_semaphore,
+	};
+	cgpu_queue_submit(gfx_queue, &submit_desc);
+
+	for (auto window : prepared_windows)
+	{
+		window->Present(render_finished_semaphore);
+	}
+
+	if (rdc && rdc_capture)
+	{
+		rdc->EndFrameCapture(nullptr, nullptr);
+
+		if (!rdc->IsRemoteAccessConnected())
 		{
-
-			IMGUI_CHECKVERSION();
-			ImGui::CreateContext();
-			ImGuiIO& io = ImGui::GetIO(); (void)io;
-			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-			io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
-			io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
-			//io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
-			//io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
-
-			// Setup Dear ImGui style
-			ImGui::StyleColorsDark();
-			//ImGui::StyleColorsLight();
-
-			ImGui_ImplSDL3_InitForOther(main_window->window);
-			ImGui_ImplCGPU_InitInfo init_info = {};
-			init_info.Instance = instance;
-			init_info.Device = device;
-			init_info.GfxQueue = gfx_queue;
-			init_info.PresentQueue = gfx_queue;
-			init_info.RenderPass = render_pass;
-			init_info.ImageCount = 3;
-			ImGui_ImplCGPU_Init(&init_info);
-			ImGui_ImplArena_InitPlatformInterface();
-
-			CGPUVertexAttribute imgui_vertex_attributes[3] = {
-					{ "POSITION", 1, CGPU_VERTEX_FORMAT_FLOAT32X2, 0, 0, sizeof(float) * 2, CGPU_VERTEX_INPUT_RATE_VERTEX },
-					{ "TEXCOORD", 1, CGPU_VERTEX_FORMAT_FLOAT32X2, 0, sizeof(float) * 2, sizeof(float) * 2, CGPU_VERTEX_INPUT_RATE_VERTEX },
-					{ "COLOR", 1, CGPU_VERTEX_FORMAT_UNORM8X4, 0, sizeof(float) * 4, sizeof(uint32_t), CGPU_VERTEX_INPUT_RATE_VERTEX },
-			};
-			CGPUVertexLayout imgui_vertex_layout = {
-				.attribute_count = 3,
-				.p_attributes = imgui_vertex_attributes,
-			};
-			CGPUBlendAttachmentState imgui_blend_attachments = {
-				.enable = true,
-				.src_factor = CGPU_BLEND_FACTOR_SRC_ALPHA,
-				.dst_factor = CGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-				.src_alpha_factor = CGPU_BLEND_FACTOR_SRC_ALPHA,
-				.dst_alpha_factor = CGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-				.blend_op = CGPU_BLEND_OP_ADD,
-				.blend_alpha_op = CGPU_BLEND_OP_ADD,
-				.color_mask = CGPU_COLOR_MASK_RGBA,
-			};
-			CGPUBlendStateDescriptor imgui_blend_desc = {
-				.attachment_count = 1,
-				.p_attachments = &imgui_blend_attachments,
-				.alpha_to_coverage = false,
-				.independent_blend = false,
-			};
-			CGPUDepthStateDescriptor imgui_depth_desc = {
-				.depth_test = false,
-				.depth_write = false,
-				.stencil_test = false,
-			};
-			CGPURasterizerStateDescriptor rasterizer_state = {
-				.cull_mode = CGPU_CULL_MODE_NONE,
-			};
-			auto [_imgui_root_sig, _imgui_pipeline] = create_render_pipeline(device, main_window->swapchain_views[0]->info.format, "shaders/imgui.vert.spv", "shaders/imgui.frag.spv", &imgui_vertex_layout, &imgui_blend_desc, &imgui_depth_desc, &rasterizer_state, render_pass, 0);
-			imgui_root_sig = _imgui_root_sig;
-			imgui_pipeline = _imgui_pipeline;
-
-			ImGui_ImplCGPU_CreateFontsTexture(gfx_queue, imgui_root_sig);
-			ImGui_ImplCGPU_PostInit(imgui_root_sig, imgui_pipeline);
-
-			main_window->imgui_viewport = ImGui::GetMainViewport();
-
-			CGPUVertexLayout vertex_layout = { .attribute_count = 0 };
-			CGPUBlendAttachmentState blend_attachments = {
-				.enable = false,
-				.src_factor = CGPU_BLEND_FACTOR_ONE,
-				.dst_factor = CGPU_BLEND_FACTOR_ZERO,
-				.src_alpha_factor = CGPU_BLEND_FACTOR_ONE,
-				.dst_alpha_factor = CGPU_BLEND_FACTOR_ZERO,
-				.blend_op = CGPU_BLEND_OP_ADD,
-				.blend_alpha_op = CGPU_BLEND_OP_ADD,
-				.color_mask = CGPU_COLOR_MASK_RGBA,
-			};
-			CGPUBlendStateDescriptor blend_desc = {
-				.attachment_count = 1,
-				.p_attachments = &blend_attachments,
-				.alpha_to_coverage = false,
-				.independent_blend = false,
-			};
-			CGPUDepthStateDescriptor depth_desc = {
-				.depth_test = false,
-				.depth_write = false,
-				.stencil_test = false,
-			};
-			auto [_root_sig, _pipeline] = create_render_pipeline(device, main_window->swapchain_views[0]->info.format, "shaders/hello.vert.spv", "shaders/hello.frag.spv", &vertex_layout, &blend_desc, &depth_desc, nullptr, render_pass, 0);
-			root_sig = _root_sig;
-			pipeline = _pipeline;
-
-			main_window->pipeline = pipeline;
-			main_window->imgui_root_sig = imgui_root_sig;
-			main_window->imgui_pipeline = imgui_pipeline;
-
-			std::vector<RenderWindow*> need_resize_windows;
-			std::vector<RenderWindow*> prepared_windows;
-			std::vector<CGPUSemaphoreId> wait_semaphores;
-
-			// 窗口循环
-			SDL_Event e;
-			bool quit = false;
-			bool show_demo_window = true;
-			while (quit == false)
-			{
-				while (SDL_PollEvent(&e))
-				{
-					ImGui_ImplSDL3_ProcessEvent(&e);
-					if (e.type == SDL_EVENT_QUIT || (e.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && e.window.windowID == SDL_GetWindowID(main_window->window)))
-						quit = true;
-					else if (e.type == SDL_EVENT_WINDOW_RESIZED || e.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED)
-					{
-						auto props = SDL_GetWindowProperties(SDL_GetWindowFromEvent(&e));
-						auto window = (RenderWindow*)SDL_GetPointerProperty(props, "sdl.window.userdata", nullptr);
-						if (window)
-							window->RequestResize();
-					}
-				}
-
-				need_resize_windows.clear();
-				for (auto window : windows)
-				{
-					if (window->needResize)
-						need_resize_windows.push_back(window);
-				}
-
-				if (!need_resize_windows.empty())
-				{
-					cgpu_queue_wait_idle(gfx_queue);
-					for (auto window : need_resize_windows)
-						window->OnResize();
-				}
-
-				ImGui_ImplCGPU_NewFrame();
-				ImGui_ImplSDL3_NewFrame();
-				ImGui::NewFrame();
-
-				if (show_demo_window)
-					ImGui::ShowDemoWindow(&show_demo_window);
-
-				if (ImGui::Button("Capture"))
-					rdc_capture = true;
-
-				if (stamps.size() > 0)
-				{
-					for (uint32_t i = 0; i < stamps.size(); ++i)
-					{
-						//float value = m_UIState.bShowMilliseconds ? timeStamps[i].m_microseconds / 1000.0f : timeStamps[i].m_microseconds;
-						//const char* pStrUnit = m_UIState.bShowMilliseconds ? "ms" : "us";
-						//ImGui::Text("%-18s: %7.2f %s", timeStamps[i].m_label.c_str(), value, pStrUnit);
-						float stamp = stamps[i].duration;
-						ImGui::Text("%s %7.2f us", stamps[i].label.c_str(), stamp * 1000);
-					}
-				}
-
-				if (rdc && rdc_capture)
-					rdc->StartFrameCapture(nullptr, nullptr);
-
-				current_frame_index = (current_frame_index + 1) % 3;
-				auto& cur_frame_data = frameDatas[current_frame_index];
-				cgpu_wait_fences(1, &cur_frame_data.inflightFence);
-
-				prepared_windows.clear();
-				for (auto window : windows)
-				{
-					if (window->AcquireNextImage())
-						prepared_windows.push_back(window);
-					else
-						window->RequestResize();
-				}
-
-				if (prepared_windows.empty())
-				{
-					ImGui::EndFrame();
-					continue;
-				}
-
-				ImGui::Render();
-
-				cur_frame_data.newFrame();
-
-				auto cmd = cur_frame_data.request();
-				cgpu_command_buffer_begin(cmd);
-
-				gpu_timer->OnBeginFrame(cmd, gpuTicksPerSecond, stamps);
-
-				gpu_timer->GetTimeStamp(cmd, "Begin Frame");
-
-				for (auto window : prepared_windows)
-				{
-					window->Render(cmd);
-					gpu_timer->GetTimeStamp(cmd, "Render Window");
-				}
-
-				gpu_timer->CollectTimings(cmd);
-
-				cgpu_command_buffer_end(cmd);
-
-				gpu_timer->OnEndFrame();
-
-				wait_semaphores.clear();
-				for (auto window : prepared_windows)
-				{
-					wait_semaphores.push_back(window->swapchain_prepared_semaphores[window->current_frame_index]);
-				}
-
-				// submit
-				CGPUQueueSubmitDescriptor submit_desc = {
-					.cmd_count = (uint32_t)cur_frame_data.allocated_cmds.size(),
-					.p_cmds = cur_frame_data.allocated_cmds.data(),
-					.signal_fence = cur_frame_data.inflightFence,
-					.wait_semaphore_count = (uint32_t)wait_semaphores.size(),
-					.p_wait_semaphores = wait_semaphores.data(),
-					.signal_semaphore_count = 1,
-					.p_signal_semaphores = &render_finished_semaphore,
-				};
-				cgpu_queue_submit(gfx_queue, &submit_desc);
-
-				for (auto window : prepared_windows)
-				{
-					window->Present(render_finished_semaphore);
-				}
-
-				if (rdc && rdc_capture)
-				{
-					rdc->EndFrameCapture(nullptr, nullptr);
-
-					if (!rdc->IsRemoteAccessConnected())
-					{
-						rdc->LaunchReplayUI(1, "");
-					}
-				}
-
-				// Update and Render additional Platform Windows
-				if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-				{
-					ImGui::UpdatePlatformWindows();
-				}
-
-				rdc_capture = false;
-			}
-
-			cgpu_queue_wait_idle(gfx_queue);
-
-			ImGui_ImplCGPU_Shutdown();
-			ImGui_ImplSDL3_Shutdown();
-			ImGui::DestroyContext();
-
-			cgpu_device_free_render_pipeline(device, imgui_pipeline);
-			cgpu_device_free_root_signature(device, imgui_root_sig);
-
-			cgpu_device_free_render_pipeline(device, pipeline);
-			cgpu_device_free_root_signature(device, root_sig);
+			rdc->LaunchReplayUI(1, "");
 		}
 	}
+
+	ImGuiIO& io = ImGui::GetIO();
+	// Update and Render additional Platform Windows
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		ImGui::UpdatePlatformWindows();
+	}
+
+	rdc_capture = false;
+
+	return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
+{
+	ImGui_ImplSDL3_ProcessEvent(event);
+
+	if (event->type == SDL_EVENT_QUIT || (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event->window.windowID == SDL_GetWindowID(main_window->window)))
+		return SDL_APP_SUCCESS;
+
+	if (event->type == SDL_EVENT_WINDOW_RESIZED || event->type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED)
+	{
+		auto props = SDL_GetWindowProperties(SDL_GetWindowFromEvent(event));
+		auto window = (RenderWindow*)SDL_GetPointerProperty(props, "sdl.window.userdata", nullptr);
+		if (window)
+			window->RequestResize();
+
+		printf("resize\n");
+	}
+
+	return SDL_APP_CONTINUE;
+}
+
+void SDL_AppQuit(void* appstate, SDL_AppResult result)
+{
+	cgpu_queue_wait_idle(gfx_queue);
+
+	ImGui_ImplCGPU_Shutdown();
+	ImGui_ImplSDL3_Shutdown();
+	ImGui::DestroyContext();
+
+	cgpu_device_free_render_pipeline(device, imgui_pipeline);
+	cgpu_device_free_root_signature(device, imgui_root_sig);
+
+	cgpu_device_free_render_pipeline(device, pipeline);
+	cgpu_device_free_root_signature(device, root_sig);
 
 	for (auto window : windows)
 		delete window;
 	windows.clear();
-
-	// 退出 SDL
-	SDL_Quit();
 
 	cgpu_device_free_semaphore(device, render_finished_semaphore);
 	for (int i = 0; i < 3; ++i)
@@ -834,8 +838,6 @@ int main(int argc, char** argv)
 
 	printf("%lld\n", malloced);
 	printf("%lld\n", aligned_malloced);
-
-	return 0;
 }
 
 static void ImGui_ImplArena_CreateWindow(ImGuiViewport* viewport)
