@@ -139,6 +139,7 @@ struct RenderWindow
 		this->render_pass = render_pass;
 
 		this->window = window;
+		windowId = SDL_GetWindowID(window);
 		owned_window = false;
 
 		CreateGPUResources();
@@ -659,8 +660,30 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 	return SDL_APP_CONTINUE;
 }
 
+bool in_iterate = false;
+class ScopeGuard
+{
+public:
+	ScopeGuard(bool* value)
+		:value(value)
+	{
+		*value = true;
+	}
+	~ScopeGuard()
+	{
+		*value = false;
+	}
+
+private:
+	bool* value;
+};
+
 SDL_AppResult SDL_AppIterate(void* appstate)
 {
+	if (in_iterate)
+		return SDL_APP_CONTINUE;
+
+	ScopeGuard guard(&in_iterate);
 	need_resize_windows.clear();
 	for (auto window : windows)
 	{
