@@ -60,15 +60,15 @@ target_end()
 
 if has_config("use_demo") then 
     add_rules("mode.debug", "mode.release", "mode.releasedbg")
-    add_requires("libsdl 2.28.5", {configs = {sdlmain = false}})
-    add_requires("imgui v1.91.8-docking", {configs = {debug = true}})
+    add_requires("libsdl3 3.2.16", {configs = {sdlmain = false}})
+    add_requires("imgui v1.92.1-docking", {configs = {debug = true}})
 
     target("demo")
         set_kind("binary")
         set_rundir("$(projectdir)")
 
         add_deps("cgpu")
-        add_packages("libsdl")
+        add_packages("libsdl3")
         add_packages("imgui")
 
         add_headerfiles("src/demo/*.h")

@@ -1,12 +1,11 @@
 ﻿#include <iostream>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include "cgpu/api.h"
-#include "SDL_syswm.h"
 #include <fstream>
 #include <vector>
 #include <tuple>
 #include "imgui.h"
-#include "imgui_impl_sdl2.h"
+#include "imgui_impl_sdl3.h"
 #include "imgui_impl_cgpu.h"
 #include <stdarg.h>
 #include "renderdoc_helper.h"
@@ -85,7 +84,7 @@ struct FrameData
 struct RenderWindow
 {
 	SDL_Window* window = nullptr;
-	SDL_SysWMinfo wmInfo;
+	SDL_WindowID windowId = 0;
 	ImGuiViewport* imgui_viewport;
 	CGPUSurfaceId surface = CGPU_NULLPTR;
 	CGPUSwapChainId swapchain = CGPU_NULLPTR;
@@ -104,17 +103,28 @@ struct RenderWindow
 	CGPURootSignatureId imgui_root_sig;
 	CGPURenderPipelineId imgui_pipeline;
 
-	RenderWindow(CGPUDeviceId device, CGPUQueueId present_queue, CGPURenderPassId render_pass, int width, int height, Uint32 flags)
+	RenderWindow(CGPUDeviceId device, CGPUQueueId present_queue, CGPURenderPassId render_pass, int width, int height)
 	{
 		this->device = device;
 		this->present_queue = present_queue;
 		this->render_pass = render_pass;
 
-		window = SDL_CreateWindow("HelloSDL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
-		owned_window = true;
+		SDL_PropertiesID props = SDL_CreateProperties();
+		SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, "Hello CGPU");
+		SDL_SetFloatProperty(props, SDL_PROP_WINDOW_CREATE_X_NUMBER, SDL_WINDOWPOS_CENTERED);
+		SDL_SetFloatProperty(props, SDL_PROP_WINDOW_CREATE_Y_NUMBER, SDL_WINDOWPOS_CENTERED);
+		SDL_SetFloatProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, width);
+		SDL_SetFloatProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, height);
+		SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, true);
+		SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_EXTERNAL_GRAPHICS_CONTEXT_BOOLEAN, true);
 
-		SDL_VERSION(&wmInfo.version);
-		SDL_GetWindowWMInfo(window, &wmInfo);
+		window = SDL_CreateWindowWithProperties(props);
+		windowId = SDL_GetWindowID(window);
+		auto window_props = SDL_GetWindowProperties(window);
+		SDL_SetPointerProperty(window_props, "sdl.window.userdata", this);
+		
+		SDL_DestroyProperties(props);
+		owned_window = true;
 
 		CreateGPUResources();
 		CreateSyncObjects();
@@ -128,9 +138,6 @@ struct RenderWindow
 
 		this->window = window;
 		owned_window = false;
-
-		SDL_VERSION(&wmInfo.version);
-		SDL_GetWindowWMInfo(window, &wmInfo);
 
 		CreateGPUResources();
 		CreateSyncObjects();
@@ -173,7 +180,9 @@ struct RenderWindow
 		if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED)
 			return;
 
-		surface = cgpu_instance_create_surface_from_hwnd(instance, wmInfo.info.win.window);
+		auto window_props = SDL_GetWindowProperties(window);
+		auto hwnd = SDL_GetPointerProperty(window_props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+		surface = cgpu_instance_create_surface_from_native_view(instance, hwnd);
 
 		int w, h;
 		SDL_GetWindowSize(window, &w, &h);
@@ -531,13 +540,13 @@ int main(int argc, char** argv)
 	double gpuTicksPerSecond = cgpu_queue_get_timestamp_period_ns(gfx_queue);
 
 	// 初始化 SDL
-	if (SDL_Init(SDL_INIT_VIDEO) < 0)
+	if (SDL_Init(SDL_INIT_EVENTS) < 0)
 	{
 		std::cout << "[Error]: SDL could not initialize! SDL_Error: " << SDL_GetError() << std::endl;
 	}
 	else
 	{
-		RenderWindow* main_window = new RenderWindow(device, gfx_queue, render_pass, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+		RenderWindow* main_window = new RenderWindow(device, gfx_queue, render_pass, SCREEN_WIDTH, SCREEN_HEIGHT);
 		windows.push_back(main_window);
 
 		if (main_window->window == nullptr)
@@ -561,7 +570,7 @@ int main(int argc, char** argv)
 			ImGui::StyleColorsDark();
 			//ImGui::StyleColorsLight();
 
-			ImGui_ImplSDL2_InitForOther(main_window->window);
+			ImGui_ImplSDL3_InitForOther(main_window->window);
 			ImGui_ImplCGPU_InitInfo init_info = {};
 			init_info.Instance = instance;
 			init_info.Device = device;
@@ -656,20 +665,15 @@ int main(int argc, char** argv)
 			{
 				while (SDL_PollEvent(&e))
 				{
-					ImGui_ImplSDL2_ProcessEvent(&e);
-					if (e.type == SDL_QUIT)
+					ImGui_ImplSDL3_ProcessEvent(&e);
+					if (e.type == SDL_EVENT_QUIT || (e.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && e.window.windowID == SDL_GetWindowID(main_window->window)))
 						quit = true;
-					else if (e.type == SDL_WINDOWEVENT)
+					else if (e.type == SDL_EVENT_WINDOW_RESIZED || e.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED)
 					{
-						if (e.window.windowID == SDL_GetWindowID(main_window->window))
-						{
-							if (e.window.event == SDL_WINDOWEVENT_CLOSE)
-								quit = true;
-							else if (e.window.event == SDL_WINDOWEVENT_RESIZED || e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
-							{
-								main_window->RequestResize();
-							}
-						}
+						auto props = SDL_GetWindowProperties(SDL_GetWindowFromEvent(&e));
+						auto window = (RenderWindow*)SDL_GetPointerProperty(props, "sdl.window.userdata", nullptr);
+						if (window)
+							window->RequestResize();
 					}
 				}
 
@@ -688,7 +692,7 @@ int main(int argc, char** argv)
 				}
 
 				ImGui_ImplCGPU_NewFrame();
-				ImGui_ImplSDL2_NewFrame();
+				ImGui_ImplSDL3_NewFrame();
 				ImGui::NewFrame();
 
 				if (show_demo_window)
@@ -799,7 +803,7 @@ int main(int argc, char** argv)
 			cgpu_queue_wait_idle(gfx_queue);
 
 			ImGui_ImplCGPU_Shutdown();
-			ImGui_ImplSDL2_Shutdown();
+			ImGui_ImplSDL3_Shutdown();
 			ImGui::DestroyContext();
 
 			cgpu_device_free_render_pipeline(device, imgui_pipeline);
