@@ -31,6 +31,29 @@ CGPURenderPipelineId imgui_pipeline;
 CGPURootSignatureId root_sig;
 CGPURenderPipelineId pipeline;
 
+std::vector<CGPUFenceId> fence_pool;
+
+CGPUFenceId get_fence()
+{
+	if (fence_pool.empty())
+	{
+		auto fence = cgpu_device_create_fence(device);
+		return fence;
+	}
+	else
+	{
+		auto fence = fence_pool.back();
+		fence_pool.pop_back();
+		return fence;
+	}
+}
+
+void recycle_fence(CGPUFenceId fence)
+{
+	fence_pool.push_back(fence);
+	cgpu_reset_fences(1, &fence);
+}
+
 struct FrameData
 {
 	CGPUFenceId inflightFence;
@@ -854,6 +877,11 @@ void SDL_AppQuit(void* appstate, SDL_AppResult result)
 	{
 		frameDatas[i].free();
 	}
+
+	for (auto fence : fence_pool)
+		cgpu_device_free_fence(device, fence);
+	fence_pool.clear();
+
 	delete gpu_timer;
 	cgpu_device_free_render_pass(device, render_pass);
 	cgpu_device_free_queue(device, gfx_queue);

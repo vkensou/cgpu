@@ -23,6 +23,7 @@ const CGPUProcTable tbl_vk = {
     // API Object APIs
     .create_fence = &cgpu_create_fence_vulkan,
     .wait_fences = &cgpu_wait_fences_vulkan,
+    .reset_fences = &cgpu_reset_fences_vulkan,
     .query_fence_status = &cgpu_query_fence_status_vulkan,
     .free_fence = &cgpu_free_fence_vulkan,
     .create_semaphore = &cgpu_create_semaphore_vulkan,
@@ -92,9 +93,9 @@ const CGPUProcTable tbl_vk = {
     .import_shared_texture_handle = &cgpu_import_shared_texture_handle_vulkan,
 
     // Swapchain APIs
-    .create_swapchain = &cgpu_create_swapchain_vulkan,
+    .create_swap_chain = &cgpu_create_swapchain_vulkan,
     .acquire_next_image = &cgpu_acquire_next_image_vulkan,
-    .free_swapchain = &cgpu_free_swapchain_vulkan,
+    .free_swap_chain = &cgpu_free_swapchain_vulkan,
 
     // CMDs
     .cmd_begin = &cgpu_cmd_begin_vulkan,

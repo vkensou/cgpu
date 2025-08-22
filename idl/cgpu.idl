@@ -785,6 +785,11 @@ funcptr.WaitFences
     .fenceCount         "uint32_t"
     .pFences            "[*]const FenceId"
 
+funcptr.ResetFences
+    "void"
+    .fenceCount         "uint32_t"
+    .pFences            "[*]const FenceId"
+
 funcptr.QueryFenceStatus
     "FenceStatus::Enum"
     .fence              "FenceId"
@@ -891,7 +896,7 @@ funcptr.SubmitQueue
     .desc               "*const QueueSubmitDescriptor"
 
 funcptr.QueuePresent
-    "void"
+    "bool"
     .queue              "QueueId"
     .desc               "*const QueuePresentDescriptor"
 
@@ -2095,6 +2100,7 @@ struct.SwapChainDescriptor
     .enableVsync        "bool" 
     .useFlipSwapEffect  "bool" 
     .format             "TextureFormat::Enum"
+    .oldSwapChain       "SwapChainId"
 
 struct.ComputePassDescriptor 
     .name               "?cstring"
@@ -2209,6 +2215,7 @@ struct.ProcTable
     -- API Objects
     .createFence                    "CreateFence"
     .waitFences                     "WaitFences"
+    .resetFences                    "ResetFences"
     .queryFenceStatus               "QueryFenceStatus"
     .freeFence                      "FreeFence"
     .createSemaphore                "CreateSemaphore"
@@ -2280,9 +2287,9 @@ struct.ProcTable
     .importSharedTextureHandle      "ImportSharedTextureHandle"
 
     -- Swapchain APIs
-    .createSwapchain                "CreateSwapChain"
+    .createSwapChain                "CreateSwapChain"
     .acquireNextImage               "AcquireNextImage"
-    .freeSwapchain                  "FreeSwapChain"
+    .freeSwapChain                  "FreeSwapChain"
 
     -- CMDs
     .cmdBegin                       "CmdBegin"
@@ -2594,7 +2601,12 @@ func.Device.FreeSwapChain
     "void"
     .swapchain          "SwapChainId"
 
-func.waitFences
+func.WaitFences
+    "void"
+    .fenceCount         "uint32_t"
+    .pFences            "[*]const FenceId"
+
+func.ResetFences
     "void"
     .fenceCount         "uint32_t"
     .pFences            "[*]const FenceId"
@@ -2607,7 +2619,7 @@ func.Queue.Submit
     .desc               "*const QueueSubmitDescriptor"
 
 func.Queue.Present
-    "void"
+    "bool"
     .desc               "*const QueuePresentDescriptor"
 
 func.Queue.WaitIdle

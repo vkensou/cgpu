@@ -164,6 +164,28 @@ void cgpu_wait_fences_vulkan(uint32_t fence_count, const CGPUFenceId* fences)
     }
 }
 
+void cgpu_reset_fences_vulkan(uint32_t fence_count, const CGPUFenceId* fences)
+{
+    CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)fences[0]->device;
+    CGPU_DECLARE_ZERO_VLA(VkFence, vfences, fence_count)
+        uint32_t numValidFences = 0;
+    for (uint32_t i = 0; i < fence_count; ++i)
+    {
+        CGPUFence_Vulkan* Fence = (CGPUFence_Vulkan*)fences[i];
+        if (Fence->mSubmitted)
+            vfences[numValidFences++] = Fence->pVkFence;
+    }
+    if (numValidFences)
+    {
+        D->mVkDeviceTable.vkResetFences(D->pVkDevice, numValidFences, vfences);
+    }
+    for (uint32_t i = 0; i < fence_count; ++i)
+    {
+        CGPUFence_Vulkan* Fence = (CGPUFence_Vulkan*)fences[i];
+        Fence->mSubmitted = false;
+    }
+}
+
 ECGPUFenceStatus cgpu_query_fence_status_vulkan(CGPUFenceId fence)
 {
     ECGPUFenceStatus status = CGPU_FENCE_STATUS_COMPLETE;
@@ -1302,7 +1324,7 @@ void cgpu_wait_queue_idle_vulkan(CGPUQueueId queue)
     D->mVkDeviceTable.vkQueueWaitIdle(Q->pVkQueue);
 }
 
-void cgpu_queue_present_vulkan(CGPUQueueId queue, const struct CGPUQueuePresentDescriptor* desc)
+bool cgpu_queue_present_vulkan(CGPUQueueId queue, const struct CGPUQueuePresentDescriptor* desc)
 {
     CGPUSwapChain_Vulkan* SC = (CGPUSwapChain_Vulkan*)desc->swapchain;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)queue->device;
@@ -1345,8 +1367,12 @@ void cgpu_queue_present_vulkan(CGPUQueueId queue, const struct CGPUQueuePresentD
             vk_res != VK_ERROR_OUT_OF_DATE_KHR)
         {
             cgpu_assert(0 && "Present failed!");
+            return false;
         }
+        return true;
     }
+
+    return false;
 }
 
 float cgpu_queue_get_timestamp_period_ns_vulkan(CGPUQueueId queue)
@@ -2241,6 +2267,7 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
     const CGPUAllocator* allocator = &I->super.allocator;
 
     VkSurfaceKHR vkSurface = (VkSurfaceKHR)desc->surface;
+    CGPUSwapChain_Vulkan* oldS = (CGPUSwapChain_Vulkan*)desc->old_swap_chain;
 
     VkSurfaceCapabilitiesKHR caps = { 0 };
     CHECK_VKRESULT(&device->adapter->instance->logger, vkGetPhysicalDeviceSurfaceCapabilitiesKHR(A->pPhysicalDevice, vkSurface, &caps));
@@ -2439,7 +2466,7 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
         .compositeAlpha = composite_alpha,
         .presentMode = present_mode,
         .clipped = VK_TRUE,
-        .oldSwapchain = VK_NULL_HANDLE
+        .oldSwapchain = oldS != CGPU_NULLPTR ? oldS->pVkSwapChain : VK_NULL_HANDLE,
     };
     VkSwapchainKHR new_chain = VK_NULL_HANDLE;
     uint32_t buffer_count = 0;

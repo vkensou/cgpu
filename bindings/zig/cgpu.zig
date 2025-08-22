@@ -690,6 +690,8 @@ pub const CreateFence = fn (device: DeviceId) callconv(.C) ?FenceId;
 
 pub const WaitFences = fn (fence_count: u32, p_fences: [*]const FenceId) callconv(.C) void;
 
+pub const ResetFences = fn (fence_count: u32, p_fences: [*]const FenceId) callconv(.C) void;
+
 pub const QueryFenceStatus = fn (fence: FenceId) callconv(.C) FenceStatus;
 
 pub const FreeFence = fn (device: DeviceId, fence: FenceId) callconv(.C) void;
@@ -732,7 +734,7 @@ pub const GetQueue = fn (device: DeviceId, _type: QueueType, index: u32) callcon
 
 pub const SubmitQueue = fn (queue: QueueId, desc: *const QueueSubmitDescriptor) callconv(.C) void;
 
-pub const QueuePresent = fn (queue: QueueId, desc: *const QueuePresentDescriptor) callconv(.C) void;
+pub const QueuePresent = fn (queue: QueueId, desc: *const QueuePresentDescriptor) callconv(.C) bool;
 
 pub const WaitQueueIdle = fn (queue: QueueId) callconv(.C) void;
 
@@ -1355,7 +1357,7 @@ pub const Queue = extern struct {
     pub inline fn submit(self: *Queue, desc: *const QueueSubmitDescriptor) void {
         return cgpu_queue_submit(self, desc);
     }
-    pub inline fn present(self: *Queue, desc: *const QueuePresentDescriptor) void {
+    pub inline fn present(self: *Queue, desc: *const QueuePresentDescriptor) bool {
         return cgpu_queue_present(self, desc);
     }
     pub inline fn waitIdle(self: *Queue) void {
@@ -2264,6 +2266,7 @@ pub const SwapChainDescriptor = extern struct {
     enable_vsync: bool,
     use_flip_swap_effect: bool,
     format: TextureFormat,
+    old_swap_chain: SwapChainId,
 };
 
 pub const ComputePassDescriptor = extern struct {
@@ -2383,6 +2386,7 @@ pub const ProcTable = extern struct {
     free_device: ?*const FreeDevice = null,
     create_fence: ?*const CreateFence = null,
     wait_fences: ?*const WaitFences = null,
+    reset_fences: ?*const ResetFences = null,
     query_fence_status: ?*const QueryFenceStatus = null,
     free_fence: ?*const FreeFence = null,
     create_semaphore: ?*const CreateSemaphore = null,
@@ -2436,9 +2440,9 @@ pub const ProcTable = extern struct {
     try_bind_aliasing_texture: ?*const TryBindAliasingTexture = null,
     export_shared_texture_handle: ?*const ExportSharedTextureHandle = null,
     import_shared_texture_handle: ?*const ImportSharedTextureHandle = null,
-    create_swapchain: ?*const CreateSwapChain = null,
+    create_swap_chain: ?*const CreateSwapChain = null,
     acquire_next_image: ?*const AcquireNextImage = null,
-    free_swapchain: ?*const FreeSwapChain = null,
+    free_swap_chain: ?*const FreeSwapChain = null,
     cmd_begin: ?*const CmdBegin = null,
     cmd_transfer_buffer_to_buffer: ?*const CmdTransferBufferToBuffer = null,
     cmd_transfer_buffer_to_texture: ?*const CmdTransferBufferToTexture = null,
@@ -3022,11 +3026,16 @@ pub inline fn waitFences(fence_count: u32, p_fences: [*]const FenceId) void {
 }
 extern fn cgpu_wait_fences(fence_count: u32, p_fences: [*]const FenceId) void;
 
+pub inline fn resetFences(fence_count: u32, p_fences: [*]const FenceId) void {
+    return cgpu_reset_fences(fence_count, p_fences);
+}
+extern fn cgpu_reset_fences(fence_count: u32, p_fences: [*]const FenceId) void;
+
 extern fn cgpu_fence_query_status(self: [*c]Fence) FenceStatus;
 
 extern fn cgpu_queue_submit(self: [*c]Queue, desc: *const QueueSubmitDescriptor) void;
 
-extern fn cgpu_queue_present(self: [*c]Queue, desc: *const QueuePresentDescriptor) void;
+extern fn cgpu_queue_present(self: [*c]Queue, desc: *const QueuePresentDescriptor) bool;
 
 extern fn cgpu_queue_wait_idle(self: [*c]Queue) void;
 

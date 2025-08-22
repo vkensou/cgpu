@@ -40,6 +40,7 @@ CGPU_API void cgpu_free_device_vulkan(CGPUAdapterId adapter, CGPUDeviceId device
 // API Object APIs
 CGPU_API CGPUFenceId cgpu_create_fence_vulkan(CGPUDeviceId device);
 CGPU_API void cgpu_wait_fences_vulkan(uint32_t fence_count, const CGPUFenceId* fences);
+CGPU_API void cgpu_reset_fences_vulkan(uint32_t fence_count, const CGPUFenceId* fences);
 ECGPUFenceStatus cgpu_query_fence_status_vulkan(CGPUFenceId fence);
 CGPU_API void cgpu_free_fence_vulkan(CGPUDeviceId device, CGPUFenceId fence);
 CGPU_API CGPUSemaphoreId cgpu_create_semaphore_vulkan(CGPUDeviceId device);
@@ -62,7 +63,7 @@ CGPU_API void cgpu_free_query_pool_vulkan(CGPUDeviceId device, CGPUQueryPoolId p
 CGPU_API CGPUQueueId cgpu_get_queue_vulkan(CGPUDeviceId device, ECGPUQueueType type, uint32_t index);
 CGPU_API void cgpu_submit_queue_vulkan(CGPUQueueId queue, const struct CGPUQueueSubmitDescriptor* desc);
 CGPU_API void cgpu_wait_queue_idle_vulkan(CGPUQueueId queue);
-CGPU_API void cgpu_queue_present_vulkan(CGPUQueueId queue, const struct CGPUQueuePresentDescriptor* desc);
+CGPU_API bool cgpu_queue_present_vulkan(CGPUQueueId queue, const struct CGPUQueuePresentDescriptor* desc);
 CGPU_API float cgpu_queue_get_timestamp_period_ns_vulkan(CGPUQueueId queue);
 CGPU_API void cgpu_queue_map_tiled_texture_vulkan(CGPUQueueId queue, const struct CGPUTiledTextureRegions* regions);
 CGPU_API void cgpu_queue_unmap_tiled_texture_vulkan(CGPUQueueId queue, const struct CGPUTiledTextureRegions* regions);

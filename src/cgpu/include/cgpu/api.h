@@ -939,6 +939,7 @@ typedef void (*CGPUProcQueryVideoMemoryInfo)(CGPUDeviceId device, uint64_t* tota
 typedef void (*CGPUProcQuerySharedMemoryInfo)(CGPUDeviceId device, uint64_t* total, uint64_t* used);
 typedef CGPUFenceId (*CGPUProcCreateFence)(CGPUDeviceId device);
 typedef void (*CGPUProcWaitFences)(uint32_t fence_count, const CGPUFenceId* p_fences);
+typedef void (*CGPUProcResetFences)(uint32_t fence_count, const CGPUFenceId* p_fences);
 typedef ECGPUFenceStatus (*CGPUProcQueryFenceStatus)(CGPUFenceId fence);
 typedef void (*CGPUProcFreeFence)(CGPUDeviceId device, CGPUFenceId fence);
 typedef CGPUSemaphoreId (*CGPUProcCreateSemaphore)(CGPUDeviceId device);
@@ -960,7 +961,7 @@ typedef CGPUMemoryPoolId (*CGPUProcCreateMemoryPool)(CGPUDeviceId device, const 
 typedef void (*CGPUProcFreeMemoryPool)(CGPUDeviceId device, CGPUMemoryPoolId pool);
 typedef CGPUQueueId (*CGPUProcGetQueue)(CGPUDeviceId device, ECGPUQueueType type, uint32_t index);
 typedef void (*CGPUProcSubmitQueue)(CGPUQueueId queue, const CGPUQueueSubmitDescriptor* desc);
-typedef void (*CGPUProcQueuePresent)(CGPUQueueId queue, const CGPUQueuePresentDescriptor* desc);
+typedef bool (*CGPUProcQueuePresent)(CGPUQueueId queue, const CGPUQueuePresentDescriptor* desc);
 typedef void (*CGPUProcWaitQueueIdle)(CGPUQueueId queue);
 typedef float (*CGPUProcQueueGetTimestampPeriodNS)(CGPUQueueId queue);
 typedef void (*CGPUProcQueueMapTiledTexture)(CGPUQueueId queue, const CGPUTiledTextureRegions* desc);
@@ -1974,6 +1975,7 @@ typedef struct CGPUSwapChainDescriptor
     bool                 enable_vsync;
     bool                 use_flip_swap_effect;
     ECGPUTextureFormat   format;
+    CGPUSwapChainId      old_swap_chain;
 
 } CGPUSwapChainDescriptor;
 
@@ -2120,6 +2122,7 @@ typedef struct CGPUProcTable
     CGPUProcFreeDevice   free_device;
     CGPUProcCreateFence  create_fence;
     CGPUProcWaitFences   wait_fences;
+    CGPUProcResetFences  reset_fences;
     CGPUProcQueryFenceStatus query_fence_status;
     CGPUProcFreeFence    free_fence;
     CGPUProcCreateSemaphore create_semaphore;
@@ -2173,9 +2176,9 @@ typedef struct CGPUProcTable
     CGPUProcTryBindAliasingTexture try_bind_aliasing_texture;
     CGPUProcExportSharedTextureHandle export_shared_texture_handle;
     CGPUProcImportSharedTextureHandle import_shared_texture_handle;
-    CGPUProcCreateSwapChain create_swapchain;
+    CGPUProcCreateSwapChain create_swap_chain;
     CGPUProcAcquireNextImage acquire_next_image;
-    CGPUProcFreeSwapChain free_swapchain;
+    CGPUProcFreeSwapChain free_swap_chain;
     CGPUProcCmdBegin     cmd_begin;
     CGPUProcCmdTransferBufferToBuffer cmd_transfer_buffer_to_buffer;
     CGPUProcCmdTransferBufferToTexture cmd_transfer_buffer_to_texture;
@@ -2313,9 +2316,10 @@ CGPU_API CGPUTextureId cgpu_device_import_shared_texture_handle(CGPUDeviceId _th
 CGPU_API CGPUSwapChainId cgpu_device_create_swap_chain(CGPUDeviceId _this, const CGPUSwapChainDescriptor* desc);
 CGPU_API void cgpu_device_free_swap_chain(CGPUDeviceId _this, CGPUSwapChainId swapchain);
 CGPU_API void cgpu_wait_fences(uint32_t fence_count, const CGPUFenceId* p_fences);
+CGPU_API void cgpu_reset_fences(uint32_t fence_count, const CGPUFenceId* p_fences);
 CGPU_API ECGPUFenceStatus cgpu_fence_query_status(CGPUFenceId _this);
 CGPU_API void cgpu_queue_submit(CGPUQueueId _this, const CGPUQueueSubmitDescriptor* desc);
-CGPU_API void cgpu_queue_present(CGPUQueueId _this, const CGPUQueuePresentDescriptor* desc);
+CGPU_API bool cgpu_queue_present(CGPUQueueId _this, const CGPUQueuePresentDescriptor* desc);
 CGPU_API void cgpu_queue_wait_idle(CGPUQueueId _this);
 CGPU_API float cgpu_queue_get_timestamp_period_ns(CGPUQueueId _this);
 CGPU_API void cgpu_queue_map_tiled_texture(CGPUQueueId _this, const CGPUTiledTextureRegions* desc);

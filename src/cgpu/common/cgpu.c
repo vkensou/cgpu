@@ -204,6 +204,20 @@ void cgpu_wait_fences(uint32_t fence_count, const CGPUFenceId* fences)
     fn_wait_fences(fence_count, fences);
 }
 
+void cgpu_reset_fences(uint32_t fence_count, const CGPUFenceId* fences)
+{
+    if (fences == CGPU_NULLPTR || fence_count <= 0)
+    {
+        return;
+    }
+    CGPUFenceId fence = fences[0];
+    cgpu_assert(fence != CGPU_NULLPTR && "fatal: call on NULL fence!");
+    cgpu_assert(fence->device != CGPU_NULLPTR && "fatal: call on NULL device!");
+    const CGPUProcResetFences fn_reset_fences = fence->device->proc_table_cache->reset_fences;
+    cgpu_assert(fn_reset_fences && "reset_fences Proc Missing!");
+    fn_reset_fences(fence_count, fences);
+}
+
 ECGPUFenceStatus cgpu_fence_query_status(CGPUFenceId fence)
 {
     cgpu_assert(fence != CGPU_NULLPTR && "fatal: call on NULL fence!");
@@ -478,7 +492,7 @@ void cgpu_queue_submit(CGPUQueueId queue, const struct CGPUQueueSubmitDescriptor
     submit_queue(queue, desc);
 }
 
-void cgpu_queue_present(CGPUQueueId queue, const struct CGPUQueuePresentDescriptor* desc)
+bool cgpu_queue_present(CGPUQueueId queue, const struct CGPUQueuePresentDescriptor* desc)
 {
     // SkrCZoneN(zz, "CGPUPresent", 1);
 
@@ -488,7 +502,7 @@ void cgpu_queue_present(CGPUQueueId queue, const struct CGPUQueuePresentDescript
     const CGPUProcQueuePresent fn_queue_present = queue->device->proc_table_cache->queue_present;
     cgpu_assert(fn_queue_present && "queue_present Proc Missing!");
 
-    fn_queue_present(queue, desc);
+    return fn_queue_present(queue, desc);
 
     // SkrCZoneEnd(zz);
 }
@@ -1247,7 +1261,7 @@ CGPUSwapChainId cgpu_device_create_swap_chain(CGPUDeviceId device, const CGPUSwa
     // SkrCZoneN(zz, "CGPUCreateSwapchain", 1);
 
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
-    cgpu_assert(device->proc_table_cache->create_swapchain && "create_swapchain Proc Missing!");
+    cgpu_assert(device->proc_table_cache->create_swap_chain && "create_swapchain Proc Missing!");
 
     if (desc->p_present_queues == CGPU_NULLPTR)
     {
@@ -1259,7 +1273,7 @@ CGPUSwapChainId cgpu_device_create_swap_chain(CGPUDeviceId device, const CGPUSwa
         cgpu_assert(desc->present_queue_count > 0 &&
                     "fatal cgpu_create_swapchain: queue array & queue count dismatch!");
     }
-    CGPUSwapChain* swapchain = (CGPUSwapChain*)device->proc_table_cache->create_swapchain(device, desc);
+    CGPUSwapChain* swapchain = (CGPUSwapChain*)device->proc_table_cache->create_swap_chain(device, desc);
     CGPUTextureInfo* pInfo = (CGPUTextureInfo*)swapchain->back_buffers[0]->info;
     cgpu_assert(swapchain && "fatal cgpu_create_swapchain: NULL swapchain id returned from backend.");
     swapchain->device = device;
@@ -1297,7 +1311,7 @@ void cgpu_device_free_swap_chain(CGPUDeviceId device, CGPUSwapChainId swapchain)
 
     cgpu_assert(swapchain != CGPU_NULLPTR && "fatal: call on NULL swapchain!");
     cgpu_assert(swapchain->device != CGPU_NULLPTR && "fatal: call on NULL device!");
-    cgpu_assert(swapchain->device->proc_table_cache->create_swapchain && "create_swapchain Proc Missing!");
+    cgpu_assert(swapchain->device->proc_table_cache->free_swap_chain && "create_swapchain Proc Missing!");
 
     CGPUTextureInfo* pInfo = (CGPUTextureInfo*)swapchain->back_buffers[0]->info;
     cgpu_trace(&swapchain->device->adapter->instance->logger, "cgpu_free_swapchain: swapchain(%dx%d) %p freed, buffers:  [%p, %p]\n",
@@ -1306,7 +1320,7 @@ void cgpu_device_free_swap_chain(CGPUDeviceId device, CGPUSwapChainId swapchain)
 
     // SkrCZoneEnd(zz);
 
-    swapchain->device->proc_table_cache->free_swapchain(device, swapchain);
+    swapchain->device->proc_table_cache->free_swap_chain(device, swapchain);
 }
 
 // cgpux helpers
