@@ -31,28 +31,81 @@ CGPURenderPipelineId imgui_pipeline;
 CGPURootSignatureId root_sig;
 CGPURenderPipelineId pipeline;
 
-std::vector<CGPUFenceId> fence_pool;
-
-CGPUFenceId get_fence()
+struct SwapChainObjects
 {
-	if (fence_pool.empty())
-	{
-		auto fence = cgpu_device_create_fence(device);
-		return fence;
-	}
-	else
-	{
-		auto fence = fence_pool.back();
-		fence_pool.pop_back();
-		return fence;
-	}
-}
+	CGPUSurfaceId surface = CGPU_NULLPTR;
+	CGPUSwapChainId swapchain = CGPU_NULLPTR;
+	std::vector<CGPUTextureViewId> views;
+	std::vector<CGPUFramebufferId> framebuffers;
+	std::vector<CGPUSemaphoreId> prepared_semaphores;
 
-void recycle_fence(CGPUFenceId fence)
-{
-	fence_pool.push_back(fence);
-	cgpu_reset_fences(1, &fence);
-}
+	void create(CGPUSurfaceId surface, CGPUQueueId present_queue, int w, int h, CGPUSwapChainId old_swap_chain)
+	{
+		CGPUSwapChainDescriptor descriptor = {
+			.present_queue_count = 1,
+			.p_present_queues = &present_queue,
+			.surface = surface,
+			.image_count = 3,
+			.width = (uint32_t)w,
+			.height = (uint32_t)h,
+			.enable_vsync = true,
+			.format = CGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM,
+			.old_swap_chain = old_swap_chain,
+		};
+		swapchain = cgpu_device_create_swap_chain(device, &descriptor);
+
+		views.resize(swapchain->buffer_count);
+		framebuffers.resize(swapchain->buffer_count);
+		prepared_semaphores.resize(swapchain->buffer_count);
+		for (uint32_t i = 0; i < swapchain->buffer_count; i++)
+		{
+			CGPUTextureViewDescriptor view_desc = {
+				.texture = swapchain->back_buffers[i],
+				.format = swapchain->back_buffers[i]->info->format,
+				.usages = CGPU_TEXTURE_VIEW_USAGE_RTV_DSV,
+				.aspects = CGPU_TEXTURE_VIEW_ASPECT_COLOR,
+				.dims = CGPU_TEXTURE_DIMENSION_2D,
+				.array_layer_count = 1,
+			};
+			views[i] = cgpu_device_create_texture_view(device, &view_desc);
+
+			CGPUFramebufferDescriptor framebuffer_desc = {
+				.renderpass = render_pass,
+				.attachment_count = 1,
+				.p_attachments = {views[i], CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR },
+				.width = (uint32_t)w,
+				.height = (uint32_t)h,
+				.layers = 1,
+			};
+			framebuffers[i] = cgpu_device_create_framebuffer(device, &framebuffer_desc);
+
+			prepared_semaphores[i] = cgpu_device_create_semaphore(device);
+		}
+	}
+
+	void free()
+	{
+		for (auto framebuffer : framebuffers)
+			cgpu_device_free_framebuffer(device, framebuffer);
+		framebuffers.clear();
+
+		for (auto view : views)
+			cgpu_device_free_texture_view(device, view);
+		views.clear();
+
+		for (auto semaphore : prepared_semaphores)
+			cgpu_device_free_semaphore(device, semaphore);
+		prepared_semaphores.clear();
+
+		if (swapchain)
+			cgpu_device_free_swap_chain(device, swapchain);
+		swapchain = CGPU_NULLPTR;
+
+		if (surface)
+			cgpu_instance_free_surface(instance, surface);
+		surface = CGPU_NULLPTR;
+	}
+};
 
 struct FrameData
 {
@@ -115,15 +168,13 @@ struct RenderWindow
 	SDL_WindowID windowId = 0;
 	ImGuiViewport* imgui_viewport;
 	CGPUSurfaceId surface = CGPU_NULLPTR;
-	CGPUSwapChainId swapchain = CGPU_NULLPTR;
-	std::vector<CGPUTextureViewId> swapchain_views;
-	std::vector<CGPUFramebufferId> swapchain_framebuffers;
-	std::vector<CGPUSemaphoreId> swapchain_prepared_semaphores;
+	SwapChainObjects swapchain_objects;
 	CGPUDeviceId device = CGPU_NULLPTR;
 	CGPUQueueId present_queue = CGPU_NULLPTR;
 	CGPURenderPassId render_pass;
 	uint32_t current_swapchain_index = 0;
 	uint32_t current_frame_index = 0;
+	CGPUSemaphoreId current_prepared_semaphore;
 	bool needResize = false;
 	bool owned_window;
 
@@ -157,8 +208,7 @@ struct RenderWindow
 		auto hwnd = SDL_GetPointerProperty(window_props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
 		surface = cgpu_instance_create_surface_from_native_view(instance, hwnd);
 
-		CreateGPUResources();
-		CreateSyncObjects();
+		CreateGPUResources(CGPU_NULLPTR);
 	}
 
 	RenderWindow(CGPUDeviceId device, CGPUQueueId present_queue, CGPURenderPassId render_pass, SDL_Window* window)
@@ -175,96 +225,26 @@ struct RenderWindow
 		auto hwnd = SDL_GetPointerProperty(window_props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
 		surface = cgpu_instance_create_surface_from_native_view(instance, hwnd);
 
-		CreateGPUResources();
-		CreateSyncObjects();
+		CreateGPUResources(CGPU_NULLPTR);
 	}
 
 	~RenderWindow()
 	{
-		FreeSyncObjects();
-		FreeGPUResources();
+		deferFreeGPUResouces(true);
 		cgpu_instance_free_surface(instance, surface);
-		surface = CGPU_NULLPTR;
 	}
 
-	void FreeGPUResources()
-	{
-		if (!swapchain)
-			return;
-
-		for (auto view : swapchain_views)
-			cgpu_device_free_texture_view(device, view);
-		swapchain_views.clear();
-
-		for (auto framebuffer : swapchain_framebuffers)
-			cgpu_device_free_framebuffer(device, framebuffer);
-		swapchain_framebuffers.clear();
-
-		cgpu_device_free_swap_chain(device, swapchain);
-		swapchain = CGPU_NULLPTR;
-	}
-
-	void FreeSyncObjects()
-	{
-		for (auto semaphore : swapchain_prepared_semaphores)
-			cgpu_device_free_semaphore(device, semaphore);
-		swapchain_prepared_semaphores.clear();
-	}
-
-	void CreateGPUResources()
+	void CreateGPUResources(CGPUSwapChainId oldswapchain)
 	{
 		if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED)
 			return;
 
 		int w, h;
 		SDL_GetWindowSize(window, &w, &h);
-		CGPUSwapChainDescriptor descriptor = {
-			.present_queue_count = 1,
-			.p_present_queues = &present_queue,
-			.surface = surface,
-			.image_count = 3,
-			.width = (uint32_t)w,
-			.height = (uint32_t)h,
-			.enable_vsync = true,
-			.format = CGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM,
-		};
-		swapchain = cgpu_device_create_swap_chain(device, &descriptor);
 
-		swapchain_views.resize(swapchain->buffer_count);
-		swapchain_framebuffers.resize(swapchain->buffer_count);
-		for (uint32_t i = 0; i < swapchain->buffer_count; i++)
-		{
-			CGPUTextureViewDescriptor view_desc = {
-				.texture = swapchain->back_buffers[i],
-				.format = swapchain->back_buffers[i]->info->format,
-				.usages = CGPU_TEXTURE_VIEW_USAGE_RTV_DSV,
-				.aspects = CGPU_TEXTURE_VIEW_ASPECT_COLOR,
-				.dims = CGPU_TEXTURE_DIMENSION_2D,
-				.array_layer_count = 1,
-			};
-			swapchain_views[i] = cgpu_device_create_texture_view(device, &view_desc);
-
-			CGPUFramebufferDescriptor framebuffer_desc = {
-				.renderpass = render_pass,
-				.attachment_count = 1,
-				.p_attachments = {swapchain_views[i], CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR, CGPU_NULLPTR },
-				.width = (uint32_t)w,
-				.height = (uint32_t)h,
-				.layers = 1,
-			};
-			swapchain_framebuffers[i] = cgpu_device_create_framebuffer(device, &framebuffer_desc);
-		}
+		swapchain_objects.create(surface, present_queue, w, h, oldswapchain);
 
 		needResize = false;
-	}
-
-	void CreateSyncObjects()
-	{
-		swapchain_prepared_semaphores.resize(swapchain->buffer_count);
-		for (uint32_t i = 0; i < swapchain->buffer_count; ++i)
-		{
-			swapchain_prepared_semaphores[i] = cgpu_device_create_semaphore(device);
-		}
 	}
 
 	void RequestResize()
@@ -274,32 +254,39 @@ struct RenderWindow
 
 	void OnResize()
 	{
-		FreeGPUResources();
-		CreateGPUResources();
+		auto oldswapchain = deferFreeGPUResouces(false);
+		CreateGPUResources(oldswapchain);
 	}
 
 	bool AcquireNextImage()
 	{
-		current_frame_index = (current_frame_index + 1) % swapchain_prepared_semaphores.size();
+		current_prepared_semaphore = CGPU_NULLPTR;
 
-		if (!swapchain)
+		current_frame_index = (current_frame_index + 1) % swapchain_objects.prepared_semaphores.size();
+
+		if (!swapchain_objects.swapchain)
 			return false;
 
 		CGPUAcquireNextDescriptor acquire_desc = {
-			.signal_semaphore = swapchain_prepared_semaphores[current_frame_index],
+			.signal_semaphore = swapchain_objects.prepared_semaphores[current_frame_index],
 		};
 
-		current_swapchain_index = cgpu_swap_chain_acquire_next_image(swapchain, &acquire_desc);
-		if (current_swapchain_index < swapchain->buffer_count)
+		current_swapchain_index = cgpu_swap_chain_acquire_next_image(swapchain_objects.swapchain, &acquire_desc);
+		if (current_swapchain_index < swapchain_objects.swapchain->buffer_count)
+		{
+			current_prepared_semaphore = swapchain_objects.prepared_semaphores[current_frame_index];
 			return true;
+		}
 		else
+		{
 			return false;
+		}
 	}
 
 	void Present(CGPUSemaphoreId present_signal)
 	{
 		CGPUQueuePresentDescriptor present_desc = {
-			.swapchain = swapchain,
+			.swapchain = swapchain_objects.swapchain,
 			.wait_semaphore_count = 1,
 			.p_wait_semaphores = &present_signal,
 			.index = (uint8_t)current_swapchain_index,
@@ -312,9 +299,8 @@ struct RenderWindow
 		int w, h;
 		SDL_GetWindowSize(window, &w, &h);
 
-		auto back_buffer = swapchain->back_buffers[current_swapchain_index];
-		auto back_buffer_view = swapchain_views[current_swapchain_index];
-		auto prepared_semaphore = swapchain_prepared_semaphores[current_frame_index];
+		auto back_buffer = swapchain_objects.swapchain->back_buffers[current_swapchain_index];
+		auto back_buffer_view = swapchain_objects.views[current_swapchain_index];
 
 		CGPUTextureBarrier draw_barrier = {
 			.texture = back_buffer,
@@ -331,7 +317,7 @@ struct RenderWindow
 
 		CGPUBeginRenderPassInfo begin_info = {
 			.render_pass = this->render_pass,
-			.framebuffer = this->swapchain_framebuffers[current_swapchain_index],
+			.framebuffer = this->swapchain_objects.framebuffers[current_swapchain_index],
 			.clear_value_count = 1,
 			.p_clear_values = &clearColor,
 		};
@@ -360,6 +346,12 @@ struct RenderWindow
 		};
 		CGPUResourceBarrierDescriptor barrier_desc1 = { .texture_barrier_count = 1, .p_texture_barriers = &present_barrier, };
 		cgpu_command_buffer_resource_barrier(cmd, &barrier_desc1);
+	}
+
+	CGPUSwapChainId deferFreeGPUResouces(bool free_surface)
+	{
+		swapchain_objects.free();
+		return CGPU_NULLPTR;
 	}
 };
 
@@ -649,7 +641,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 	CGPURasterizerStateDescriptor rasterizer_state = {
 		.cull_mode = CGPU_CULL_MODE_NONE,
 	};
-	auto [_imgui_root_sig, _imgui_pipeline] = create_render_pipeline(device, main_window->swapchain_views[0]->info.format, "shaders/imgui.vert.spv", "shaders/imgui.frag.spv", &imgui_vertex_layout, &imgui_blend_desc, &imgui_depth_desc, &rasterizer_state, render_pass, 0);
+	auto [_imgui_root_sig, _imgui_pipeline] = create_render_pipeline(device, main_window->swapchain_objects.views[0]->info.format, "shaders/imgui.vert.spv", "shaders/imgui.frag.spv", &imgui_vertex_layout, &imgui_blend_desc, &imgui_depth_desc, &rasterizer_state, render_pass, 0);
 	imgui_root_sig = _imgui_root_sig;
 	imgui_pipeline = _imgui_pipeline;
 
@@ -680,7 +672,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 		.depth_write = false,
 		.stencil_test = false,
 	};
-	auto [_root_sig, _pipeline] = create_render_pipeline(device, main_window->swapchain_views[0]->info.format, "shaders/hello.vert.spv", "shaders/hello.frag.spv", &vertex_layout, &blend_desc, &depth_desc, nullptr, render_pass, 0);
+	auto [_root_sig, _pipeline] = create_render_pipeline(device, main_window->swapchain_objects.views[0]->info.format, "shaders/hello.vert.spv", "shaders/hello.frag.spv", &vertex_layout, &blend_desc, &depth_desc, nullptr, render_pass, 0);
 	root_sig = _root_sig;
 	pipeline = _pipeline;
 
@@ -796,7 +788,7 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 	wait_semaphores.clear();
 	for (auto window : prepared_windows)
 	{
-		wait_semaphores.push_back(window->swapchain_prepared_semaphores[window->current_frame_index]);
+		wait_semaphores.push_back(window->current_prepared_semaphore);
 	}
 
 	// submit
@@ -878,10 +870,6 @@ void SDL_AppQuit(void* appstate, SDL_AppResult result)
 	{
 		frameDatas[i].free();
 	}
-
-	for (auto fence : fence_pool)
-		cgpu_device_free_fence(device, fence);
-	fence_pool.clear();
 
 	delete gpu_timer;
 	cgpu_device_free_render_pass(device, render_pass);
