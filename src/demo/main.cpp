@@ -114,10 +114,20 @@ struct FrameData
 	CGPUCommandPoolId pool;
 	std::vector<CGPUCommandBufferId> cmds;
 	std::vector<CGPUCommandBufferId> allocated_cmds;
+	std::vector<SwapChainObjects> swapchain_garbage;
+	std::vector<CGPUBufferId> wait_for_free_buffer;
 
 	void newFrame()
 	{
 		cgpu_command_pool_reset(pool);
+
+		for (auto& garbage : swapchain_garbage)
+			garbage.free();
+		swapchain_garbage.clear();
+
+		for (auto& buffer : wait_for_free_buffer)
+			cgpu_device_free_buffer(device, buffer);
+		wait_for_free_buffer.clear();
 
 		for (auto cmd : allocated_cmds)
 			cmds.push_back(cmd);
@@ -158,6 +168,15 @@ struct FrameData
 		allocated_cmds.clear();
 
 		cgpu_queue_free_command_pool(pool->queue, pool);
+
+		for (auto& garbage : swapchain_garbage)
+			garbage.free();
+		swapchain_garbage.clear();
+
+		for (auto& buffer : wait_for_free_buffer)
+			cgpu_device_free_buffer(device, buffer);
+		wait_for_free_buffer.clear();
+
 		pool = CGPU_NULLPTR;
 	}
 };
@@ -175,6 +194,7 @@ struct RenderWindow
 	uint32_t current_swapchain_index = 0;
 	uint32_t current_frame_index = 0;
 	CGPUSemaphoreId current_prepared_semaphore;
+	FrameData* current_framedata = nullptr;
 	bool needResize = false;
 	bool owned_window;
 
@@ -231,7 +251,6 @@ struct RenderWindow
 	~RenderWindow()
 	{
 		deferFreeGPUResouces(true);
-		cgpu_instance_free_surface(instance, surface);
 	}
 
 	void CreateGPUResources(CGPUSwapChainId oldswapchain)
@@ -258,8 +277,9 @@ struct RenderWindow
 		CreateGPUResources(oldswapchain);
 	}
 
-	bool AcquireNextImage()
+	bool AcquireNextImage(FrameData* frame_data)
 	{
+		current_framedata = frame_data;
 		current_prepared_semaphore = CGPU_NULLPTR;
 
 		current_frame_index = (current_frame_index + 1) % swapchain_objects.prepared_semaphores.size();
@@ -350,8 +370,20 @@ struct RenderWindow
 
 	CGPUSwapChainId deferFreeGPUResouces(bool free_surface)
 	{
-		swapchain_objects.free();
-		return CGPU_NULLPTR;
+		if (current_framedata)
+		{
+			auto oldswapchain = swapchain_objects.swapchain;
+			current_framedata->swapchain_garbage.push_back(std::move(swapchain_objects));
+			swapchain_objects.swapchain = CGPU_NULLPTR;
+			if (free_surface)
+				current_framedata->swapchain_garbage.back().surface = surface;
+			return oldswapchain;
+		}
+		else
+		{
+			swapchain_objects.free();
+			return CGPU_NULLPTR;
+		}
 	}
 };
 
@@ -716,7 +748,6 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 
 	if (!need_resize_windows.empty())
 	{
-		cgpu_queue_wait_idle(gfx_queue);
 		for (auto window : need_resize_windows)
 			window->OnResize();
 	}
@@ -750,7 +781,7 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 	prepared_windows.clear();
 	for (auto window : windows)
 	{
-		if (window->AcquireNextImage())
+		if (window->AcquireNextImage(&cur_frame_data))
 			prepared_windows.push_back(window);
 		else
 			window->RequestResize();
@@ -898,6 +929,7 @@ static void ImGui_ImplArena_DestroyWindow(ImGuiViewport* viewport)
 {
 	if (ImGui_Arena_ViewportData* vd = (ImGui_Arena_ViewportData*)viewport->RendererUserData)
 	{
+		auto& cur_frame_data = frameDatas[current_frame_index];
 		auto window = vd->window;
 		windows.erase(std::remove(windows.begin(), windows.end(), window), windows.end());
 		delete window;
@@ -906,8 +938,8 @@ static void ImGui_ImplArena_DestroyWindow(ImGuiViewport* viewport)
 		for (uint32_t n = 0; n < wrb->Count; n++)
 		{
 			ImGui_ImplCGPU_FrameRenderBuffers* buffers = &wrb->FrameRenderBuffers[n];
-			if (buffers->VertexBuffer) { cgpu_device_free_buffer(device, buffers->VertexBuffer); buffers->VertexBuffer = CGPU_NULLPTR; }
-			if (buffers->IndexBuffer) { cgpu_device_free_buffer(device, buffers->IndexBuffer); buffers->IndexBuffer = CGPU_NULLPTR; }
+			if (buffers->VertexBuffer) { cur_frame_data.wait_for_free_buffer.push_back(buffers->VertexBuffer); buffers->VertexBuffer = CGPU_NULLPTR; }
+			if (buffers->IndexBuffer) { cur_frame_data.wait_for_free_buffer.push_back(buffers->IndexBuffer); buffers->IndexBuffer = CGPU_NULLPTR; }
 			buffers->VertexBufferSize = 0;
 			buffers->IndexBufferSize = 0;
 		}
