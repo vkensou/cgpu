@@ -57,6 +57,7 @@ void recycle_fence(CGPUFenceId fence)
 struct FrameData
 {
 	CGPUFenceId inflightFence;
+	CGPUSemaphoreId render_finished_semaphore;
 	CGPUCommandPoolId pool;
 	std::vector<CGPUCommandBufferId> cmds;
 	std::vector<CGPUCommandBufferId> allocated_cmds;
@@ -92,6 +93,8 @@ struct FrameData
 	{
 		cgpu_device_free_fence(device, inflightFence);
 		inflightFence = CGPU_NULLPTR;
+
+		cgpu_device_free_semaphore(device, render_finished_semaphore);
 
 		for (auto cmd : cmds)
 			cgpu_command_pool_free_command_buffer(pool, cmd);
@@ -501,7 +504,6 @@ RENDERDOC_API_1_0_0* rdc = nullptr;
 bool rdc_capture = false;
 CGPUAdapterId adapter;
 FrameData frameDatas[3];
-CGPUSemaphoreId render_finished_semaphore;
 int current_frame_index = -1;
 double gpuTicksPerSecond;
 RenderWindow* main_window;
@@ -572,9 +574,9 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 	for (int i = 0; i < 3; ++i)
 	{
 		frameDatas[i].inflightFence = cgpu_device_create_fence(device);
+		frameDatas[i].render_finished_semaphore = cgpu_device_create_semaphore(device);
 		frameDatas[i].pool = cgpu_queue_create_command_pool(gfx_queue, CGPU_NULLPTR);
 	}
-	render_finished_semaphore = cgpu_device_create_semaphore(device);
 
 	gpu_timer = new GpuTimeStamps(device, 3);
 
@@ -805,13 +807,13 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 		.wait_semaphore_count = (uint32_t)wait_semaphores.size(),
 		.p_wait_semaphores = wait_semaphores.data(),
 		.signal_semaphore_count = 1,
-		.p_signal_semaphores = &render_finished_semaphore,
+		.p_signal_semaphores = &cur_frame_data.render_finished_semaphore,
 	};
 	cgpu_queue_submit(gfx_queue, &submit_desc);
 
 	for (auto window : prepared_windows)
 	{
-		window->Present(render_finished_semaphore);
+		window->Present(cur_frame_data.render_finished_semaphore);
 	}
 
 	if (rdc && rdc_capture)
@@ -872,7 +874,6 @@ void SDL_AppQuit(void* appstate, SDL_AppResult result)
 		delete window;
 	windows.clear();
 
-	cgpu_device_free_semaphore(device, render_finished_semaphore);
 	for (int i = 0; i < 3; ++i)
 	{
 		frameDatas[i].free();
