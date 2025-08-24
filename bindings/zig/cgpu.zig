@@ -640,6 +640,29 @@ pub const DynamicStateFeatures = packed struct(u64) {
     pub const tier3: DynamicStateFeatures = .{ .alpha_to_coverage_enable = true, .alpha_to_one_enable = true, .color_blend_advanced = true, .color_blend_enable = true, .color_blend_equation = true, .color_write_mask = true, .conservative_raster_mode = true, .coverage_modulation_mode = true, .coverage_modulation_table = true, .coverage_modulation_table_enable = true, .coverage_reduction_mode = true, .coverage_to_color_enable = true, .coverage_to_color_location = true, .cull_mode = true, .depth_bias = true, .depth_bounds_test = true, .depth_clamp_enable = true, .depth_clip_enable = true, .depth_clip_negative_one_to_one = true, .depth_compare = true, .depth_test = true, .depth_write = true, .extra_primitive_overestimation_size = true, .front_face = true, .line_rasterization_mode = true, .line_stipple_enable = true, .logic_op = true, .logic_op_enable = true, .patch_control_points = true, .polygon_mode = true, .primitive_restart = true, .primitive_topology = true, .provoking_vertex_mode = true, .raster_discard = true, .raster_stream = true, .representative_fragment_test_enable = true, .sample_count = true, .sample_locations_enable = true, .sample_mask = true, .shading_rate_image_enable = true, .stencil_op = true, .stencil_test = true, .tessellation_domain_origin = true, .viewport_swizzle = true, .viewport_wscaling_enable = true };
 };
 
+pub const AcquireNextImageError = enum(u32) {
+    success, // ( 0)
+    sub_optimal, // ( 1)
+    not_available, // ( 2)
+    out_of_date, // ( 3)
+    device_lost, // ( 4)
+    other_fatal, // ( 5)
+};
+
+pub const SubmitError = enum(u32) {
+    success, // ( 0)
+    device_lost, // ( 1)
+    other_fatal, // ( 2)
+};
+
+pub const PresentError = enum(u32) {
+    success, // ( 0)
+    sub_optimal, // ( 1)
+    out_of_date, // ( 2)
+    device_lost, // ( 3)
+    other_fatal, // ( 4)
+};
+
 pub const LogCallback = fn (user_data: ?*anyopaque, severity: LogSeverity, fmt: [*:0]const u8, ...) callconv(.C) void;
 
 pub const Malloc = fn (user_data: ?*anyopaque, size: usize, pool: ?*const anyopaque) callconv(.C) ?*anyopaque;
@@ -690,6 +713,8 @@ pub const CreateFence = fn (device: DeviceId) callconv(.C) ?FenceId;
 
 pub const WaitFences = fn (fence_count: u32, p_fences: [*]const FenceId) callconv(.C) void;
 
+pub const ResetFences = fn (fence_count: u32, p_fences: [*]const FenceId) callconv(.C) void;
+
 pub const QueryFenceStatus = fn (fence: FenceId) callconv(.C) FenceStatus;
 
 pub const FreeFence = fn (device: DeviceId, fence: FenceId) callconv(.C) void;
@@ -730,9 +755,9 @@ pub const FreeMemoryPool = fn (device: DeviceId, pool: MemoryPoolId) callconv(.C
 
 pub const GetQueue = fn (device: DeviceId, _type: QueueType, index: u32) callconv(.C) ?QueueId;
 
-pub const SubmitQueue = fn (queue: QueueId, desc: *const QueueSubmitDescriptor) callconv(.C) void;
+pub const SubmitQueue = fn (queue: QueueId, desc: *const QueueSubmitDescriptor) callconv(.C) SubmitError;
 
-pub const QueuePresent = fn (queue: QueueId, desc: *const QueuePresentDescriptor) callconv(.C) void;
+pub const QueuePresent = fn (queue: QueueId, desc: *const QueuePresentDescriptor) callconv(.C) PresentError;
 
 pub const WaitQueueIdle = fn (queue: QueueId) callconv(.C) void;
 
@@ -798,7 +823,7 @@ pub const ImportSharedTextureHandle = fn (device: DeviceId, desc: *const ImportT
 
 pub const CreateSwapChain = fn (device: DeviceId, desc: *const SwapChainDescriptor) callconv(.C) ?SwapChainId;
 
-pub const AcquireNextImage = fn (swapchain: SwapChainId, desc: *const AcquireNextDescriptor) callconv(.C) u32;
+pub const AcquireNextImage = fn (swapchain: SwapChainId, desc: *const AcquireNextDescriptor, p_image_index: *u32) callconv(.C) AcquireNextImageError;
 
 pub const FreeSwapChain = fn (device: DeviceId, swapchain: SwapChainId) callconv(.C) void;
 
@@ -1352,10 +1377,10 @@ pub const Queue = extern struct {
     _type: QueueType,
     index: u32,
     support_timestamp: bool,
-    pub inline fn submit(self: *Queue, desc: *const QueueSubmitDescriptor) void {
+    pub inline fn submit(self: *Queue, desc: *const QueueSubmitDescriptor) SubmitError {
         return cgpu_queue_submit(self, desc);
     }
-    pub inline fn present(self: *Queue, desc: *const QueuePresentDescriptor) void {
+    pub inline fn present(self: *Queue, desc: *const QueuePresentDescriptor) PresentError {
         return cgpu_queue_present(self, desc);
     }
     pub inline fn waitIdle(self: *Queue) void {
@@ -2053,8 +2078,8 @@ pub const SwapChain = extern struct {
     device: DeviceId,
     back_buffers: [*]const TextureId,
     buffer_count: u32,
-    pub inline fn acquireNextImage(self: *SwapChain, desc: *const AcquireNextDescriptor) u32 {
-        return cgpu_swap_chain_acquire_next_image(self, desc);
+    pub inline fn acquireNextImage(self: *SwapChain, desc: *const AcquireNextDescriptor, p_image_index: *u32) AcquireNextImageError {
+        return cgpu_swap_chain_acquire_next_image(self, desc, p_image_index);
     }
 };
 
@@ -2264,6 +2289,7 @@ pub const SwapChainDescriptor = extern struct {
     enable_vsync: bool,
     use_flip_swap_effect: bool,
     format: TextureFormat,
+    old_swap_chain: SwapChainId,
 };
 
 pub const ComputePassDescriptor = extern struct {
@@ -2383,6 +2409,7 @@ pub const ProcTable = extern struct {
     free_device: ?*const FreeDevice = null,
     create_fence: ?*const CreateFence = null,
     wait_fences: ?*const WaitFences = null,
+    reset_fences: ?*const ResetFences = null,
     query_fence_status: ?*const QueryFenceStatus = null,
     free_fence: ?*const FreeFence = null,
     create_semaphore: ?*const CreateSemaphore = null,
@@ -2436,9 +2463,9 @@ pub const ProcTable = extern struct {
     try_bind_aliasing_texture: ?*const TryBindAliasingTexture = null,
     export_shared_texture_handle: ?*const ExportSharedTextureHandle = null,
     import_shared_texture_handle: ?*const ImportSharedTextureHandle = null,
-    create_swapchain: ?*const CreateSwapChain = null,
+    create_swap_chain: ?*const CreateSwapChain = null,
     acquire_next_image: ?*const AcquireNextImage = null,
-    free_swapchain: ?*const FreeSwapChain = null,
+    free_swap_chain: ?*const FreeSwapChain = null,
     cmd_begin: ?*const CmdBegin = null,
     cmd_transfer_buffer_to_buffer: ?*const CmdTransferBufferToBuffer = null,
     cmd_transfer_buffer_to_texture: ?*const CmdTransferBufferToTexture = null,
@@ -3022,11 +3049,16 @@ pub inline fn waitFences(fence_count: u32, p_fences: [*]const FenceId) void {
 }
 extern fn cgpu_wait_fences(fence_count: u32, p_fences: [*]const FenceId) void;
 
+pub inline fn resetFences(fence_count: u32, p_fences: [*]const FenceId) void {
+    return cgpu_reset_fences(fence_count, p_fences);
+}
+extern fn cgpu_reset_fences(fence_count: u32, p_fences: [*]const FenceId) void;
+
 extern fn cgpu_fence_query_status(self: [*c]Fence) FenceStatus;
 
-extern fn cgpu_queue_submit(self: [*c]Queue, desc: *const QueueSubmitDescriptor) void;
+extern fn cgpu_queue_submit(self: [*c]Queue, desc: *const QueueSubmitDescriptor) SubmitError;
 
-extern fn cgpu_queue_present(self: [*c]Queue, desc: *const QueuePresentDescriptor) void;
+extern fn cgpu_queue_present(self: [*c]Queue, desc: *const QueuePresentDescriptor) PresentError;
 
 extern fn cgpu_queue_wait_idle(self: [*c]Queue) void;
 
@@ -3056,7 +3088,7 @@ extern fn cgpu_buffer_map(self: [*c]Buffer, range: ?*const BufferRange) void;
 
 extern fn cgpu_buffer_unmap(self: [*c]Buffer) void;
 
-extern fn cgpu_swap_chain_acquire_next_image(self: [*c]SwapChain, desc: *const AcquireNextDescriptor) u32;
+extern fn cgpu_swap_chain_acquire_next_image(self: [*c]SwapChain, desc: *const AcquireNextDescriptor, p_image_index: *u32) AcquireNextImageError;
 
 extern fn cgpu_command_buffer_begin(self: [*c]CommandBuffer) void;
 

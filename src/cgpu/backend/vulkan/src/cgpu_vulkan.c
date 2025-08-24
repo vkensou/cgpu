@@ -164,6 +164,28 @@ void cgpu_wait_fences_vulkan(uint32_t fence_count, const CGPUFenceId* fences)
     }
 }
 
+void cgpu_reset_fences_vulkan(uint32_t fence_count, const CGPUFenceId* fences)
+{
+    CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)fences[0]->device;
+    CGPU_DECLARE_ZERO_VLA(VkFence, vfences, fence_count)
+        uint32_t numValidFences = 0;
+    for (uint32_t i = 0; i < fence_count; ++i)
+    {
+        CGPUFence_Vulkan* Fence = (CGPUFence_Vulkan*)fences[i];
+        if (Fence->mSubmitted)
+            vfences[numValidFences++] = Fence->pVkFence;
+    }
+    if (numValidFences)
+    {
+        D->mVkDeviceTable.vkResetFences(D->pVkDevice, numValidFences, vfences);
+    }
+    for (uint32_t i = 0; i < fence_count; ++i)
+    {
+        CGPUFence_Vulkan* Fence = (CGPUFence_Vulkan*)fences[i];
+        Fence->mSubmitted = false;
+    }
+}
+
 ECGPUFenceStatus cgpu_query_fence_status_vulkan(CGPUFenceId fence)
 {
     ECGPUFenceStatus status = CGPU_FENCE_STATUS_COMPLETE;
@@ -1214,7 +1236,7 @@ CGPUQueueId cgpu_get_queue_vulkan(CGPUDeviceId device, ECGPUQueueType type, uint
     return &RQ->super;
 }
 
-void cgpu_submit_queue_vulkan(CGPUQueueId queue, const struct CGPUQueueSubmitDescriptor* desc)
+ECGPUSubmitError cgpu_submit_queue_vulkan(CGPUQueueId queue, const struct CGPUQueueSubmitDescriptor* desc)
 {
     uint32_t CmdCount = desc->cmd_count;
     CGPUCommandBuffer_Vulkan** Cmds = (CGPUCommandBuffer_Vulkan**)desc->p_cmds;
@@ -1277,22 +1299,25 @@ void cgpu_submit_queue_vulkan(CGPUQueueId queue, const struct CGPUQueueSubmitDes
     if (Q->pMutex) skr_mutex_acquire(Q->pMutex);
 #endif
     VkResult res = D->mVkDeviceTable.vkQueueSubmit(Q->pVkQueue, 1, &submit_info, F ? F->pVkFence : VK_NULL_HANDLE);
-    if(res != VK_SUCCESS)
+    ECGPUSubmitError error;
+    if (res == VK_SUCCESS)
+        error = CGPU_SUBMIT_ERROR_SUCCESS;
+    else
     {
-        cgpu_fatal(&D->super.adapter->instance->logger, u8"CGPU VULKAN: Failed to submit queue! Error code: %d\n", res);
+        cgpu_error(&D->super.adapter->instance->logger, u8"CGPU VULKAN: Failed to submit queue! Error code: %d\n", res);
         if (res == VK_ERROR_DEVICE_LOST)
         {
-            ((CGPUDevice*)queue->device)->is_lost = true;
+            D->super.is_lost = true;
+            error = CGPU_SUBMIT_ERROR_DEVICE_LOST;
         }
         else
-        {
-            cgpu_assert("Unhandled VK ERROR!");
-        }
-    };
+            error = CGPU_SUBMIT_ERROR_OTHER_FATAL;
+    }
     if (F) F->mSubmitted = true;
 #ifdef CGPU_THREAD_SAFETY
     if (Q->pMutex) skr_mutex_release(Q->pMutex);
 #endif
+    return error;
 }
 
 void cgpu_wait_queue_idle_vulkan(CGPUQueueId queue)
@@ -1302,51 +1327,63 @@ void cgpu_wait_queue_idle_vulkan(CGPUQueueId queue)
     D->mVkDeviceTable.vkQueueWaitIdle(Q->pVkQueue);
 }
 
-void cgpu_queue_present_vulkan(CGPUQueueId queue, const struct CGPUQueuePresentDescriptor* desc)
+ECGPUPresentError cgpu_queue_present_vulkan(CGPUQueueId queue, const struct CGPUQueuePresentDescriptor* desc)
 {
     CGPUSwapChain_Vulkan* SC = (CGPUSwapChain_Vulkan*)desc->swapchain;
     CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)queue->device;
     CGPUQueue_Vulkan* Q = (CGPUQueue_Vulkan*)queue;
-    if (SC)
+
+    // Set semaphores
+    CGPU_DECLARE_ZERO_VLA(VkSemaphore, wait_semaphores, desc->wait_semaphore_count + 1)
+    uint32_t waitCount = 0;
+    CGPUSemaphore_Vulkan** Semaphores = (CGPUSemaphore_Vulkan**)desc->p_wait_semaphores;
+    for (uint32_t i = 0; i < desc->wait_semaphore_count; ++i)
     {
-        // Set semaphores
-        CGPU_DECLARE_ZERO_VLA(VkSemaphore, wait_semaphores, desc->wait_semaphore_count + 1)
-        uint32_t waitCount = 0;
-        CGPUSemaphore_Vulkan** Semaphores = (CGPUSemaphore_Vulkan**)desc->p_wait_semaphores;
-        for (uint32_t i = 0; i < desc->wait_semaphore_count; ++i)
+        if (Semaphores[i]->mSignaled)
         {
-            if (Semaphores[i]->mSignaled)
-            {
-                wait_semaphores[waitCount] = Semaphores[i]->pVkSemaphore;
-                Semaphores[i]->mSignaled = false;
-                ++waitCount;
-            }
-        }
-        // Present
-        uint32_t presentIndex = desc->index;
-        VkPresentInfoKHR present_info = {
-            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-            .pNext = VK_NULL_HANDLE,
-            .waitSemaphoreCount = waitCount,
-            .pWaitSemaphores = waitCount > 0 ? wait_semaphores : VK_NULL_HANDLE,
-            .swapchainCount = 1,
-            .pSwapchains = &SC->pVkSwapChain,
-            .pImageIndices = &presentIndex,
-            .pResults = VK_NULL_HANDLE
-        };
-#ifdef CGPU_THREAD_SAFETY
-        if (Q->pMutex) skr_mutex_acquire(Q->pMutex);
-#endif
-        VkResult vk_res = D->mVkDeviceTable.vkQueuePresentKHR(Q->pVkQueue, &present_info);
-#ifdef CGPU_THREAD_SAFETY
-        if (Q->pMutex) skr_mutex_release(Q->pMutex);
-#endif
-        if (vk_res != VK_SUCCESS && vk_res != VK_SUBOPTIMAL_KHR &&
-            vk_res != VK_ERROR_OUT_OF_DATE_KHR)
-        {
-            cgpu_assert(0 && "Present failed!");
+            wait_semaphores[waitCount] = Semaphores[i]->pVkSemaphore;
+            Semaphores[i]->mSignaled = false;
+            ++waitCount;
         }
     }
+    // Present
+    uint32_t presentIndex = desc->index;
+    VkPresentInfoKHR present_info = {
+        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+        .pNext = VK_NULL_HANDLE,
+        .waitSemaphoreCount = waitCount,
+        .pWaitSemaphores = waitCount > 0 ? wait_semaphores : VK_NULL_HANDLE,
+        .swapchainCount = 1,
+        .pSwapchains = &SC->pVkSwapChain,
+        .pImageIndices = &presentIndex,
+        .pResults = VK_NULL_HANDLE
+    };
+#ifdef CGPU_THREAD_SAFETY
+    if (Q->pMutex) skr_mutex_acquire(Q->pMutex);
+#endif
+    VkResult vk_res = D->mVkDeviceTable.vkQueuePresentKHR(Q->pVkQueue, &present_info);
+    ECGPUPresentError error;
+    if (vk_res == VK_SUCCESS)
+        error = CGPU_PRESENT_ERROR_SUCCESS;
+    else if (vk_res == VK_SUBOPTIMAL_KHR)
+        error = CGPU_PRESENT_ERROR_SUB_OPTIMAL;
+    else
+    {
+        cgpu_error(&D->super.adapter->instance->logger, u8"CGPU VULKAN: Failed to present! Error code: %d\n", vk_res);
+        if (vk_res == VK_ERROR_OUT_OF_DATE_KHR || vk_res == VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT || vk_res == VK_ERROR_SURFACE_LOST_KHR)
+            error = CGPU_PRESENT_ERROR_OUT_OF_DATE;
+        else if (vk_res == VK_ERROR_DEVICE_LOST)
+        {
+            error = CGPU_PRESENT_ERROR_DEVICE_LOST;
+            D->super.is_lost = true;
+        }
+        else
+            error = CGPU_PRESENT_ERROR_OTHER_FATAL;
+    }
+#ifdef CGPU_THREAD_SAFETY
+    if (Q->pMutex) skr_mutex_release(Q->pMutex);
+#endif
+    return error;
 }
 
 float cgpu_queue_get_timestamp_period_ns_vulkan(CGPUQueueId queue)
@@ -2241,6 +2278,7 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
     const CGPUAllocator* allocator = &I->super.allocator;
 
     VkSurfaceKHR vkSurface = (VkSurfaceKHR)desc->surface;
+    CGPUSwapChain_Vulkan* oldS = (CGPUSwapChain_Vulkan*)desc->old_swap_chain;
 
     VkSurfaceCapabilitiesKHR caps = { 0 };
     CHECK_VKRESULT(&device->adapter->instance->logger, vkGetPhysicalDeviceSurfaceCapabilitiesKHR(A->pPhysicalDevice, vkSurface, &caps));
@@ -2439,7 +2477,7 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
         .compositeAlpha = composite_alpha,
         .presentMode = present_mode,
         .clipped = VK_TRUE,
-        .oldSwapchain = VK_NULL_HANDLE
+        .oldSwapchain = oldS != CGPU_NULLPTR ? oldS->pVkSwapChain : VK_NULL_HANDLE,
     };
     VkSwapchainKHR new_chain = VK_NULL_HANDLE;
     uint32_t buffer_count = 0;
@@ -2513,7 +2551,7 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan(CGPUDeviceId device, const CGPUSwap
     return cgpu_create_swapchain_vulkan_impl(device, desc, CGPU_NULLPTR);
 }
 
-uint32_t cgpu_acquire_next_image_vulkan(CGPUSwapChainId swapchain, const struct CGPUAcquireNextDescriptor* desc)
+ECGPUAcquireNextImageError cgpu_acquire_next_image_vulkan(CGPUSwapChainId swapchain, const struct CGPUAcquireNextDescriptor* desc, uint32_t* p_image_index)
 {
     CGPUFence_Vulkan* Fence = (CGPUFence_Vulkan*)desc->fence;
     CGPUSemaphore_Vulkan* Semaphore = (CGPUSemaphore_Vulkan*)desc->signal_semaphore;
@@ -2532,8 +2570,12 @@ uint32_t cgpu_acquire_next_image_vulkan(CGPUSwapChainId swapchain, const struct 
         vfence,     // fence
         &idx);
 
-    // If swapchain is out of date, let caller know by setting image index to -1
-    if (vk_res == VK_ERROR_OUT_OF_DATE_KHR)
+    if (vk_res == VK_SUCCESS || vk_res == VK_SUBOPTIMAL_KHR)
+    {
+        if (Fence) Fence->mSubmitted = true;
+        if (Semaphore) Semaphore->mSignaled = true;
+    }
+    else 
     {
         idx = -1;
         if (Fence)
@@ -2543,11 +2585,29 @@ uint32_t cgpu_acquire_next_image_vulkan(CGPUSwapChainId swapchain, const struct 
         }
         if (Semaphore) Semaphore->mSignaled = false;
     }
-    else if (vk_res == VK_SUCCESS)
+    *p_image_index = idx;
+
+    ECGPUAcquireNextImageError error;
+    if (vk_res == VK_SUCCESS)
+        error = CGPU_ACQUIRE_NEXT_IMAGE_ERROR_SUCCESS;
+    else if (vk_res == VK_SUBOPTIMAL_KHR)
+        error = CGPU_ACQUIRE_NEXT_IMAGE_ERROR_SUB_OPTIMAL;
+    else if (vk_res == VK_NOT_READY || vk_res == VK_TIMEOUT)
+        error = CGPU_ACQUIRE_NEXT_IMAGE_ERROR_NOT_AVAILABLE;
+    else
     {
-        if (Fence) Fence->mSubmitted = true;
-        if (Semaphore) Semaphore->mSignaled = true;
+        cgpu_error(&D->super.adapter->instance->logger, u8"CGPU VULKAN: Failed to acquire next image! Error code: %d\n", vk_res);
+        if (vk_res == VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT || vk_res == VK_ERROR_OUT_OF_DATE_KHR || vk_res == VK_ERROR_SURFACE_LOST_KHR)
+            error = CGPU_ACQUIRE_NEXT_IMAGE_ERROR_OUT_OF_DATE;
+        else if (vk_res == VK_ERROR_DEVICE_LOST)
+        {
+            error = CGPU_PRESENT_ERROR_DEVICE_LOST;
+            D->super.is_lost = true;
+        }
+        else
+            error = CGPU_ACQUIRE_NEXT_IMAGE_ERROR_OTHER_FATAL;
     }
+
     return idx;
 }
 

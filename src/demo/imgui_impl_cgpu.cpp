@@ -663,7 +663,7 @@ static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)
         .fence = wd->Fence
     };
 
-    wd->FrameIndex = cgpu_swap_chain_acquire_next_image(wd->Swapchain, &acquire_desc);
+    auto res = cgpu_swap_chain_acquire_next_image(wd->Swapchain, &acquire_desc, &wd->FrameIndex);
     if (wd->FrameIndex >= wd->ImageCount)
         return;
 

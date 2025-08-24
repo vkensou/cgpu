@@ -556,6 +556,41 @@ typedef enum ECGPUVertexFormat
 
 } ECGPUVertexFormat;
 
+typedef enum ECGPUAcquireNextImageError
+{
+    CGPU_ACQUIRE_NEXT_IMAGE_ERROR_SUCCESS,    /** ( 0)                                */
+    CGPU_ACQUIRE_NEXT_IMAGE_ERROR_SUB_OPTIMAL, /** ( 1)                                */
+    CGPU_ACQUIRE_NEXT_IMAGE_ERROR_NOT_AVAILABLE, /** ( 2)                                */
+    CGPU_ACQUIRE_NEXT_IMAGE_ERROR_OUT_OF_DATE, /** ( 3)                                */
+    CGPU_ACQUIRE_NEXT_IMAGE_ERROR_DEVICE_LOST, /** ( 4)                                */
+    CGPU_ACQUIRE_NEXT_IMAGE_ERROR_OTHER_FATAL, /** ( 5)                                */
+
+    CGPU_ACQUIRE_NEXT_IMAGE_ERROR_COUNT
+
+} ECGPUAcquireNextImageError;
+
+typedef enum ECGPUSubmitError
+{
+    CGPU_SUBMIT_ERROR_SUCCESS,                /** ( 0)                                */
+    CGPU_SUBMIT_ERROR_DEVICE_LOST,            /** ( 1)                                */
+    CGPU_SUBMIT_ERROR_OTHER_FATAL,            /** ( 2)                                */
+
+    CGPU_SUBMIT_ERROR_COUNT
+
+} ECGPUSubmitError;
+
+typedef enum ECGPUPresentError
+{
+    CGPU_PRESENT_ERROR_SUCCESS,               /** ( 0)                                */
+    CGPU_PRESENT_ERROR_SUB_OPTIMAL,           /** ( 1)                                */
+    CGPU_PRESENT_ERROR_OUT_OF_DATE,           /** ( 2)                                */
+    CGPU_PRESENT_ERROR_DEVICE_LOST,           /** ( 3)                                */
+    CGPU_PRESENT_ERROR_OTHER_FATAL,           /** ( 4)                                */
+
+    CGPU_PRESENT_ERROR_COUNT
+
+} ECGPUPresentError;
+
 
 typedef enum ECGPUColorMaskFlagBits
 {
@@ -939,6 +974,7 @@ typedef void (*CGPUProcQueryVideoMemoryInfo)(CGPUDeviceId device, uint64_t* tota
 typedef void (*CGPUProcQuerySharedMemoryInfo)(CGPUDeviceId device, uint64_t* total, uint64_t* used);
 typedef CGPUFenceId (*CGPUProcCreateFence)(CGPUDeviceId device);
 typedef void (*CGPUProcWaitFences)(uint32_t fence_count, const CGPUFenceId* p_fences);
+typedef void (*CGPUProcResetFences)(uint32_t fence_count, const CGPUFenceId* p_fences);
 typedef ECGPUFenceStatus (*CGPUProcQueryFenceStatus)(CGPUFenceId fence);
 typedef void (*CGPUProcFreeFence)(CGPUDeviceId device, CGPUFenceId fence);
 typedef CGPUSemaphoreId (*CGPUProcCreateSemaphore)(CGPUDeviceId device);
@@ -959,8 +995,8 @@ typedef void (*CGPUProcFreeQueryPool)(CGPUDeviceId device, CGPUQueryPoolId pool)
 typedef CGPUMemoryPoolId (*CGPUProcCreateMemoryPool)(CGPUDeviceId device, const CGPUMemoryPoolDescriptor* desc);
 typedef void (*CGPUProcFreeMemoryPool)(CGPUDeviceId device, CGPUMemoryPoolId pool);
 typedef CGPUQueueId (*CGPUProcGetQueue)(CGPUDeviceId device, ECGPUQueueType type, uint32_t index);
-typedef void (*CGPUProcSubmitQueue)(CGPUQueueId queue, const CGPUQueueSubmitDescriptor* desc);
-typedef void (*CGPUProcQueuePresent)(CGPUQueueId queue, const CGPUQueuePresentDescriptor* desc);
+typedef ECGPUSubmitError (*CGPUProcSubmitQueue)(CGPUQueueId queue, const CGPUQueueSubmitDescriptor* desc);
+typedef ECGPUPresentError (*CGPUProcQueuePresent)(CGPUQueueId queue, const CGPUQueuePresentDescriptor* desc);
 typedef void (*CGPUProcWaitQueueIdle)(CGPUQueueId queue);
 typedef float (*CGPUProcQueueGetTimestampPeriodNS)(CGPUQueueId queue);
 typedef void (*CGPUProcQueueMapTiledTexture)(CGPUQueueId queue, const CGPUTiledTextureRegions* desc);
@@ -993,7 +1029,7 @@ typedef bool (*CGPUProcTryBindAliasingTexture)(CGPUDeviceId device, const CGPUTe
 typedef uint64_t (*CGPUProcExportSharedTextureHandle)(CGPUDeviceId device, const CGPUExportTextureDescriptor* desc);
 typedef CGPUTextureId (*CGPUProcImportSharedTextureHandle)(CGPUDeviceId device, const CGPUImportTextureDescriptor* desc);
 typedef CGPUSwapChainId (*CGPUProcCreateSwapChain)(CGPUDeviceId device, const CGPUSwapChainDescriptor* desc);
-typedef uint32_t (*CGPUProcAcquireNextImage)(CGPUSwapChainId swapchain, const CGPUAcquireNextDescriptor* desc);
+typedef ECGPUAcquireNextImageError (*CGPUProcAcquireNextImage)(CGPUSwapChainId swapchain, const CGPUAcquireNextDescriptor* desc, uint32_t* p_image_index);
 typedef void (*CGPUProcFreeSwapChain)(CGPUDeviceId device, CGPUSwapChainId swapchain);
 typedef void (*CGPUProcCmdBegin)(CGPUCommandBufferId cmd);
 typedef void (*CGPUProcCmdTransferBufferToBuffer)(CGPUCommandBufferId cmd, const CGPUBufferToBufferTransfer* desc);
@@ -1974,6 +2010,7 @@ typedef struct CGPUSwapChainDescriptor
     bool                 enable_vsync;
     bool                 use_flip_swap_effect;
     ECGPUTextureFormat   format;
+    CGPUSwapChainId      old_swap_chain;
 
 } CGPUSwapChainDescriptor;
 
@@ -2120,6 +2157,7 @@ typedef struct CGPUProcTable
     CGPUProcFreeDevice   free_device;
     CGPUProcCreateFence  create_fence;
     CGPUProcWaitFences   wait_fences;
+    CGPUProcResetFences  reset_fences;
     CGPUProcQueryFenceStatus query_fence_status;
     CGPUProcFreeFence    free_fence;
     CGPUProcCreateSemaphore create_semaphore;
@@ -2173,9 +2211,9 @@ typedef struct CGPUProcTable
     CGPUProcTryBindAliasingTexture try_bind_aliasing_texture;
     CGPUProcExportSharedTextureHandle export_shared_texture_handle;
     CGPUProcImportSharedTextureHandle import_shared_texture_handle;
-    CGPUProcCreateSwapChain create_swapchain;
+    CGPUProcCreateSwapChain create_swap_chain;
     CGPUProcAcquireNextImage acquire_next_image;
-    CGPUProcFreeSwapChain free_swapchain;
+    CGPUProcFreeSwapChain free_swap_chain;
     CGPUProcCmdBegin     cmd_begin;
     CGPUProcCmdTransferBufferToBuffer cmd_transfer_buffer_to_buffer;
     CGPUProcCmdTransferBufferToTexture cmd_transfer_buffer_to_texture;
@@ -2313,9 +2351,10 @@ CGPU_API CGPUTextureId cgpu_device_import_shared_texture_handle(CGPUDeviceId _th
 CGPU_API CGPUSwapChainId cgpu_device_create_swap_chain(CGPUDeviceId _this, const CGPUSwapChainDescriptor* desc);
 CGPU_API void cgpu_device_free_swap_chain(CGPUDeviceId _this, CGPUSwapChainId swapchain);
 CGPU_API void cgpu_wait_fences(uint32_t fence_count, const CGPUFenceId* p_fences);
+CGPU_API void cgpu_reset_fences(uint32_t fence_count, const CGPUFenceId* p_fences);
 CGPU_API ECGPUFenceStatus cgpu_fence_query_status(CGPUFenceId _this);
-CGPU_API void cgpu_queue_submit(CGPUQueueId _this, const CGPUQueueSubmitDescriptor* desc);
-CGPU_API void cgpu_queue_present(CGPUQueueId _this, const CGPUQueuePresentDescriptor* desc);
+CGPU_API ECGPUSubmitError cgpu_queue_submit(CGPUQueueId _this, const CGPUQueueSubmitDescriptor* desc);
+CGPU_API ECGPUPresentError cgpu_queue_present(CGPUQueueId _this, const CGPUQueuePresentDescriptor* desc);
 CGPU_API void cgpu_queue_wait_idle(CGPUQueueId _this);
 CGPU_API float cgpu_queue_get_timestamp_period_ns(CGPUQueueId _this);
 CGPU_API void cgpu_queue_map_tiled_texture(CGPUQueueId _this, const CGPUTiledTextureRegions* desc);
@@ -2330,7 +2369,7 @@ CGPU_API void cgpu_command_pool_reset(CGPUCommandPoolId _this);
 CGPU_API void cgpu_command_pool_free_command_buffer(CGPUCommandPoolId _this, CGPUCommandBufferId cmd);
 CGPU_API void cgpu_buffer_map(CGPUBufferId _this, const CGPUBufferRange* range);
 CGPU_API void cgpu_buffer_unmap(CGPUBufferId _this);
-CGPU_API uint32_t cgpu_swap_chain_acquire_next_image(CGPUSwapChainId _this, const CGPUAcquireNextDescriptor* desc);
+CGPU_API ECGPUAcquireNextImageError cgpu_swap_chain_acquire_next_image(CGPUSwapChainId _this, const CGPUAcquireNextDescriptor* desc, uint32_t* p_image_index);
 CGPU_API void cgpu_command_buffer_begin(CGPUCommandBufferId _this);
 CGPU_API void cgpu_command_buffer_transfer_buffer_to_buffer(CGPUCommandBufferId _this, const CGPUBufferToBufferTransfer* desc);
 CGPU_API void cgpu_command_buffer_transfer_texture_to_texture(CGPUCommandBufferId _this, const CGPUTextureToTextureTransfer* desc);
