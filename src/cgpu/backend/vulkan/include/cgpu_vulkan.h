@@ -61,9 +61,9 @@ CGPU_API void cgpu_free_query_pool_vulkan(CGPUDeviceId device, CGPUQueryPoolId p
 
 // Queue APIs
 CGPU_API CGPUQueueId cgpu_get_queue_vulkan(CGPUDeviceId device, ECGPUQueueType type, uint32_t index);
-CGPU_API void cgpu_submit_queue_vulkan(CGPUQueueId queue, const struct CGPUQueueSubmitDescriptor* desc);
+CGPU_API ECGPUSubmitError cgpu_submit_queue_vulkan(CGPUQueueId queue, const struct CGPUQueueSubmitDescriptor* desc);
 CGPU_API void cgpu_wait_queue_idle_vulkan(CGPUQueueId queue);
-CGPU_API bool cgpu_queue_present_vulkan(CGPUQueueId queue, const struct CGPUQueuePresentDescriptor* desc);
+CGPU_API ECGPUPresentError cgpu_queue_present_vulkan(CGPUQueueId queue, const struct CGPUQueuePresentDescriptor* desc);
 CGPU_API float cgpu_queue_get_timestamp_period_ns_vulkan(CGPUQueueId queue);
 CGPU_API void cgpu_queue_map_tiled_texture_vulkan(CGPUQueueId queue, const struct CGPUTiledTextureRegions* regions);
 CGPU_API void cgpu_queue_unmap_tiled_texture_vulkan(CGPUQueueId queue, const struct CGPUTiledTextureRegions* regions);
@@ -110,7 +110,7 @@ CGPUTextureId cgpu_import_shared_texture_handle_vulkan(CGPUDeviceId device, cons
 
 // Swapchain APIs
 CGPU_API CGPUSwapChainId cgpu_create_swapchain_vulkan(CGPUDeviceId device, const CGPUSwapChainDescriptor* desc);
-CGPU_API uint32_t cgpu_acquire_next_image_vulkan(CGPUSwapChainId swapchain, const struct CGPUAcquireNextDescriptor* desc);
+CGPU_API ECGPUAcquireNextImageError cgpu_acquire_next_image_vulkan(CGPUSwapChainId swapchain, const struct CGPUAcquireNextDescriptor* desc, uint32_t* p_image_index);
 CGPU_API void cgpu_free_swapchain_vulkan(CGPUDeviceId device, CGPUSwapChainId swapchain);
 
 // CMDs

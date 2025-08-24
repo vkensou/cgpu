@@ -481,7 +481,7 @@ CGPUQueueId cgpu_device_get_queue(CGPUDeviceId device, ECGPUQueueType type, uint
     return queue;
 }
 
-void cgpu_queue_submit(CGPUQueueId queue, const struct CGPUQueueSubmitDescriptor* desc)
+ECGPUSubmitError cgpu_queue_submit(CGPUQueueId queue, const struct CGPUQueueSubmitDescriptor* desc)
 {
     cgpu_assert(desc != CGPU_NULLPTR && "fatal: call on NULL desc!");
     cgpu_assert(queue != CGPU_NULLPTR && "fatal: call on NULL queue!");
@@ -489,16 +489,17 @@ void cgpu_queue_submit(CGPUQueueId queue, const struct CGPUQueueSubmitDescriptor
     const CGPUProcSubmitQueue submit_queue = queue->device->proc_table_cache->submit_queue;
     cgpu_assert(submit_queue && "submit_queue Proc Missing!");
 
-    submit_queue(queue, desc);
+    return submit_queue(queue, desc);
 }
 
-bool cgpu_queue_present(CGPUQueueId queue, const struct CGPUQueuePresentDescriptor* desc)
+ECGPUPresentError cgpu_queue_present(CGPUQueueId queue, const struct CGPUQueuePresentDescriptor* desc)
 {
     // SkrCZoneN(zz, "CGPUPresent", 1);
 
     cgpu_assert(desc != CGPU_NULLPTR && "fatal: call on NULL desc!");
     cgpu_assert(queue != CGPU_NULLPTR && "fatal: call on NULL queue!");
     cgpu_assert(queue->device != CGPU_NULLPTR && "fatal: call on NULL device!");
+    cgpu_assert(desc->swapchain != CGPU_NULLPTR && "fatal: call on NULL swapchain");
     const CGPUProcQueuePresent fn_queue_present = queue->device->proc_table_cache->queue_present;
     cgpu_assert(fn_queue_present && "queue_present Proc Missing!");
 
@@ -1292,7 +1293,7 @@ CGPUSwapChainId cgpu_device_create_swap_chain(CGPUDeviceId device, const CGPUSwa
     return swapchain;
 }
 
-uint32_t cgpu_swap_chain_acquire_next_image(CGPUSwapChainId swapchain, const struct CGPUAcquireNextDescriptor* desc)
+ECGPUAcquireNextImageError cgpu_swap_chain_acquire_next_image(CGPUSwapChainId swapchain, const struct CGPUAcquireNextDescriptor* desc, uint32_t* p_image_index)
 {
     // SkrCZoneN(zz, "CGPUAcquireNext", 1);
 
@@ -1302,7 +1303,7 @@ uint32_t cgpu_swap_chain_acquire_next_image(CGPUSwapChainId swapchain, const str
 
     // SkrCZoneEnd(zz);
 
-    return swapchain->device->proc_table_cache->acquire_next_image(swapchain, desc);
+    return swapchain->device->proc_table_cache->acquire_next_image(swapchain, desc, p_image_index);
 }
 
 void cgpu_device_free_swap_chain(CGPUDeviceId device, CGPUSwapChainId swapchain)

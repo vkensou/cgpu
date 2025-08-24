@@ -640,6 +640,28 @@ flag.DynamicStateFeatures { underscore, bits = 64, base = 1 }
     "DepthClipNegativeOneToOne", "ViewportWScalingEnable", "ViewportSwizzle", "CoverageToColorEnable", "CoverageToColorLocation", 
     "CoverageModulationMode", "CoverageModulationTableEnable", "CoverageModulationTable", "CoverageReductionMode", "RepresentativeFragmentTestEnable", "ShadingRateImageEnable" }
 
+enum.AcquireNextImageError { underscore }
+    .Success
+    .SubOptimal
+    .NotAvailable
+    .OutOfDate
+    .DeviceLost
+    .OtherFatal
+    ()
+
+enum.SubmitError { underscore }
+    .Success
+    .DeviceLost
+    .OtherFatal
+    ()
+
+enum.PresentError { underscore }
+    .Success
+    .SubOptimal
+    .OutOfDate
+    .DeviceLost
+    .OtherFatal
+    ()
 
 funcptr.LogCallback {vararg}
     "void"
@@ -891,12 +913,12 @@ funcptr.GetQueue
     .index              "uint32_t"
 
 funcptr.SubmitQueue
-    "void"
+    "SubmitError::Enum"
     .queue              "QueueId"
     .desc               "*const QueueSubmitDescriptor"
 
 funcptr.QueuePresent
-    "bool"
+    "PresentError::Enum"
     .queue              "QueueId"
     .desc               "*const QueuePresentDescriptor"
 
@@ -1057,9 +1079,10 @@ funcptr.CreateSwapChain
     .desc               "*const SwapChainDescriptor"
 
 funcptr.AcquireNextImage
-    "uint32_t"
+    "AcquireNextImageError::Enum"
     .swapchain          "SwapChainId"
     .desc               "*const AcquireNextDescriptor"
+    .pImageIndex        "*uint32_t"
 
 funcptr.FreeSwapChain
     "void"
@@ -2615,11 +2638,11 @@ func.Fence.queryStatus
     "FenceStatus::Enum"
 
 func.Queue.Submit
-    "void"
+    "SubmitError::Enum"
     .desc               "*const QueueSubmitDescriptor"
 
 func.Queue.Present
-    "bool"
+    "PresentError::Enum"
     .desc               "*const QueuePresentDescriptor"
 
 func.Queue.WaitIdle
@@ -2676,8 +2699,9 @@ func.Buffer.Unmap
     "void"
 
 func.SwapChain.AcquireNextImage
-    "uint32_t"
+    "AcquireNextImageError::Enum"
     .desc               "*const AcquireNextDescriptor"
+    .pImageIndex        "*uint32_t"
 
 func.CommandBuffer.Begin
     "void"
