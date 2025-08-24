@@ -2608,7 +2608,7 @@ ECGPUAcquireNextImageError cgpu_acquire_next_image_vulkan(CGPUSwapChainId swapch
             error = CGPU_ACQUIRE_NEXT_IMAGE_ERROR_OTHER_FATAL;
     }
 
-    return idx;
+    return error;
 }
 
 void cgpu_free_swapchain_vulkan(CGPUDeviceId device, CGPUSwapChainId swapchain)

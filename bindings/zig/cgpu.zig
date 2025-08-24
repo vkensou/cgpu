@@ -2289,7 +2289,7 @@ pub const SwapChainDescriptor = extern struct {
     enable_vsync: bool,
     use_flip_swap_effect: bool,
     format: TextureFormat,
-    old_swap_chain: SwapChainId,
+    old_swap_chain: ?SwapChainId = null,
 };
 
 pub const ComputePassDescriptor = extern struct {

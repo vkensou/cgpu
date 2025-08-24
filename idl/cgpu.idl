@@ -2123,7 +2123,7 @@ struct.SwapChainDescriptor
     .enableVsync        "bool" 
     .useFlipSwapEffect  "bool" 
     .format             "TextureFormat::Enum"
-    .oldSwapChain       "SwapChainId"
+    .oldSwapChain       "?SwapChainId"
 
 struct.ComputePassDescriptor 
     .name               "?cstring"
