@@ -295,7 +295,7 @@ struct RenderWindow
 			.signal_semaphore = acquire_semaphore,
 		};
 
-		current_swapchain_index = cgpu_swap_chain_acquire_next_image(swapchain_objects.swapchain, &acquire_desc);
+		auto res = cgpu_swap_chain_acquire_next_image(swapchain_objects.swapchain, &acquire_desc, &current_swapchain_index);
 		if (current_swapchain_index < swapchain_objects.swapchain->buffer_count)
 		{
 			current_finish_semaphore = swapchain_objects.finished_semaphores[current_swapchain_index];
