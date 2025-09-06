@@ -2601,7 +2601,7 @@ ECGPUAcquireNextImageError cgpu_acquire_next_image_vulkan(CGPUSwapChainId swapch
             error = CGPU_ACQUIRE_NEXT_IMAGE_ERROR_OUT_OF_DATE;
         else if (vk_res == VK_ERROR_DEVICE_LOST)
         {
-            error = CGPU_PRESENT_ERROR_DEVICE_LOST;
+            error = CGPU_ACQUIRE_NEXT_IMAGE_ERROR_DEVICE_LOST;
             D->super.is_lost = true;
         }
         else
