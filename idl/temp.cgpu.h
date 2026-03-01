@@ -19,7 +19,7 @@ $cconsts
 #define DEFINE_CGPU_OBJECT(name) typedef const struct name* name##Id;
 
 typedef uint32_t ECGPUFlags;
-typedef uint32_t ECGPUFlags64;
+typedef uint64_t ECGPUFlags64;
 typedef struct HWND__* HWND;
 typedef struct ANativeWindow ANativeWindow;
 typedef ANativeWindow* ANativeWindowPtr;
