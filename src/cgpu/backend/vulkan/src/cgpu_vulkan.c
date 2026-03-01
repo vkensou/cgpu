@@ -1680,7 +1680,7 @@ void cgpu_cmd_begin_vulkan(CGPUCommandBufferId cmd)
         .pInheritanceInfo = NULL
     };
     CHECK_VKRESULT(&cmd->device->adapter->instance->logger, D->mVkDeviceTable.vkBeginCommandBuffer(Cmd->pVkCmdBuf, &begin_info));
-    Cmd->pBoundPipelineLayout = CGPU_NULL;
+    Cmd->pBoundPipelineLayout = VK_NULL_HANDLE;
 }
 
 void cgpu_cmd_resource_barrier_vulkan(CGPUCommandBufferId cmd, const struct CGPUResourceBarrierDescriptor* desc)
