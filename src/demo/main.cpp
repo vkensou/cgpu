@@ -75,14 +75,14 @@ struct SwapChainObjects
 		};
 		swapchain = cgpu_device_create_swap_chain(device, &descriptor);
 
-		views.resize(swapchain->buffer_count);
-		framebuffers.resize(swapchain->buffer_count);
-		finished_semaphores.resize(swapchain->buffer_count);
-		for (uint32_t i = 0; i < swapchain->buffer_count; i++)
+		views.resize(swapchain->back_buffer_count);
+		framebuffers.resize(swapchain->back_buffer_count);
+		finished_semaphores.resize(swapchain->back_buffer_count);
+		for (uint32_t i = 0; i < swapchain->back_buffer_count; i++)
 		{
 			CGPUTextureViewDescriptor view_desc = {
-				.texture = swapchain->back_buffers[i],
-				.format = swapchain->back_buffers[i]->info->format,
+				.texture = swapchain->p_back_buffers[i],
+				.format = swapchain->p_back_buffers[i]->info->format,
 				.usages = CGPU_TEXTURE_VIEW_USAGE_RTV_DSV,
 				.aspects = CGPU_TEXTURE_VIEW_ASPECT_COLOR,
 				.dims = CGPU_TEXTURE_DIMENSION_2D,
@@ -296,7 +296,7 @@ struct RenderWindow
 		};
 
 		auto res = cgpu_swap_chain_acquire_next_image(swapchain_objects.swapchain, &acquire_desc, &current_swapchain_index);
-		if (current_swapchain_index < swapchain_objects.swapchain->buffer_count)
+		if (current_swapchain_index < swapchain_objects.swapchain->back_buffer_count)
 		{
 			current_finish_semaphore = swapchain_objects.finished_semaphores[current_swapchain_index];
 			return true;
@@ -323,7 +323,7 @@ struct RenderWindow
 		int w, h;
 		SDL_GetWindowSize(window, &w, &h);
 
-		auto back_buffer = swapchain_objects.swapchain->back_buffers[current_swapchain_index];
+		auto back_buffer = swapchain_objects.swapchain->p_back_buffers[current_swapchain_index];
 		auto back_buffer_view = swapchain_objects.views[current_swapchain_index];
 
 		CGPUTextureBarrier draw_barrier = {

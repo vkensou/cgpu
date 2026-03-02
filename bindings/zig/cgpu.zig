@@ -2076,8 +2076,8 @@ pub const Sampler = extern struct {
 
 pub const SwapChain = extern struct {
     device: DeviceId,
-    back_buffers: [*]const TextureId,
-    buffer_count: u32,
+    back_buffer_count: u32,
+    p_back_buffers: [*]const TextureId,
     pub inline fn acquireNextImage(self: *SwapChain, desc: *const AcquireNextDescriptor, p_image_index: *u32) AcquireNextImageError {
         return cgpu_swap_chain_acquire_next_image(self, desc, p_image_index);
     }

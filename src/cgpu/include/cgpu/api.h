@@ -1739,8 +1739,8 @@ typedef struct CGPUSampler
 typedef struct CGPUSwapChain
 {
     CGPUDeviceId         device;
-    const CGPUTextureId* back_buffers;
-    uint32_t             buffer_count;
+    uint32_t             back_buffer_count;
+    const CGPUTextureId* p_back_buffers;
 
 } CGPUSwapChain;
 

@@ -2498,9 +2498,9 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
             sizeof(CGPUTextureId) * buffer_count, _Alignof(CGPUSwapChain_Vulkan));
     }
     S->pVkSwapChain = new_chain;
-    S->super.buffer_count = buffer_count;
-    CGPU_DECLARE_ZERO_VLA(VkImage, vimages, S->super.buffer_count)
-    CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkGetSwapchainImagesKHR(D->pVkDevice, S->pVkSwapChain, &S->super.buffer_count, vimages));
+    S->super.back_buffer_count = buffer_count;
+    CGPU_DECLARE_ZERO_VLA(VkImage, vimages, S->super.back_buffer_count)
+    CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkGetSwapchainImagesKHR(D->pVkDevice, S->pVkSwapChain, &S->super.back_buffer_count, vimages));
     
     struct THeader
     {
@@ -2530,7 +2530,7 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
     {
         Vs[i] = &Ts[i].T.super;
     }
-    S->super.back_buffers = Vs;
+    S->super.p_back_buffers = Vs;
     S->pVkSurface = vkSurface;
     return &S->super;
 }

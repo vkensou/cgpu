@@ -534,15 +534,15 @@ static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUInstanceId instance, CGP
     wd->Swapchain = cgpu_device_create_swap_chain(device, &descriptor);
     wd->Width = width;
     wd->Height = height;
-    wd->ImageCount = wd->Swapchain->buffer_count;
+    wd->ImageCount = wd->Swapchain->back_buffer_count;
     wd->FrameIndex = 0xffffffff;
     wd->Backbuffers = (CGPUTextureViewId*)IM_ALLOC(sizeof(CGPUTextureViewId) * wd->ImageCount);
     wd->Framebuffers = (CGPUFramebufferId*)IM_ALLOC(sizeof(CGPUFramebufferId) * wd->ImageCount);
     for (int i = 0; i < wd->ImageCount; ++i)
     {
         CGPUTextureViewDescriptor view_desc = {
-            .texture = wd->Swapchain->back_buffers[i],
-            .format = wd->Swapchain->back_buffers[i]->info->format,
+            .texture = wd->Swapchain->p_back_buffers[i],
+            .format = wd->Swapchain->p_back_buffers[i]->info->format,
             .usages = CGPU_TEXTURE_VIEW_USAGE_RTV_DSV,
             .aspects = CGPU_TEXTURE_VIEW_ASPECT_COLOR,
             .dims = CGPU_TEXTURE_DIMENSION_2D,
@@ -561,7 +561,7 @@ static void CreateWindow(ImGui_ImplCGPU_Window* wd, CGPUInstanceId instance, CGP
         wd->Framebuffers[i] = cgpu_device_create_framebuffer(device, &framebuffer_desc);
     }
 
-    wd->SurfaceFormat = wd->Swapchain->back_buffers[0]->info->format;
+    wd->SurfaceFormat = wd->Swapchain->p_back_buffers[0]->info->format;
 
     wd->Fence = cgpu_device_create_fence(device);
 }
@@ -667,7 +667,7 @@ static void ImGui_ImplCGPU_RenderWindow(ImGuiViewport* viewport, void*)
     if (wd->FrameIndex >= wd->ImageCount)
         return;
 
-    const CGPUTextureId back_buffer = wd->Swapchain->back_buffers[wd->FrameIndex];
+    const CGPUTextureId back_buffer = wd->Swapchain->p_back_buffers[wd->FrameIndex];
     const CGPUTextureViewId back_buffer_view = wd->Backbuffers[wd->FrameIndex];
 
     cgpu_command_pool_reset(wd->CommandPool);

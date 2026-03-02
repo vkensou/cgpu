@@ -1943,8 +1943,8 @@ struct.Sampler
 
 struct.SwapChain
     .device             "DeviceId"
-    .backBuffers        "[*]const TextureId"
-    .bufferCount        "uint32_t"
+    .backBufferCount    "uint32_t"
+    .pBackBuffers       "[*]const TextureId"
 
 struct.Surface {}
 

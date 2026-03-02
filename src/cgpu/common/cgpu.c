@@ -1275,16 +1275,16 @@ CGPUSwapChainId cgpu_device_create_swap_chain(CGPUDeviceId device, const CGPUSwa
                     "fatal cgpu_create_swapchain: queue array & queue count dismatch!");
     }
     CGPUSwapChain* swapchain = (CGPUSwapChain*)device->proc_table_cache->create_swap_chain(device, desc);
-    CGPUTextureInfo* pInfo = (CGPUTextureInfo*)swapchain->back_buffers[0]->info;
+    CGPUTextureInfo* pInfo = (CGPUTextureInfo*)swapchain->p_back_buffers[0]->info;
     cgpu_assert(swapchain && "fatal cgpu_create_swapchain: NULL swapchain id returned from backend.");
     swapchain->device = device;
     cgpu_trace(&device->adapter->instance->logger, "cgpu_create_swapchain: swapchain(%dx%d) %p created, buffers: [%p, %p], surface: %p\n",
         pInfo->width, pInfo->height, swapchain,
-        swapchain->back_buffers[0], swapchain->back_buffers[1], desc->surface);
+        swapchain->p_back_buffers[0], swapchain->p_back_buffers[1], desc->surface);
 
-    for (uint32_t i = 0; i < swapchain->buffer_count; i++)
+    for (uint32_t i = 0; i < swapchain->back_buffer_count; i++)
     {
-        CGPUTextureInfo* info = (CGPUTextureInfo*)swapchain->back_buffers[i]->info;
+        CGPUTextureInfo* info = (CGPUTextureInfo*)swapchain->p_back_buffers[i]->info;
         info->unique_id = ((CGPUDevice*)device)->next_texture_id++;
     }
 
@@ -1314,10 +1314,10 @@ void cgpu_device_free_swap_chain(CGPUDeviceId device, CGPUSwapChainId swapchain)
     cgpu_assert(swapchain->device != CGPU_NULLPTR && "fatal: call on NULL device!");
     cgpu_assert(swapchain->device->proc_table_cache->free_swap_chain && "create_swapchain Proc Missing!");
 
-    CGPUTextureInfo* pInfo = (CGPUTextureInfo*)swapchain->back_buffers[0]->info;
+    CGPUTextureInfo* pInfo = (CGPUTextureInfo*)swapchain->p_back_buffers[0]->info;
     cgpu_trace(&swapchain->device->adapter->instance->logger, "cgpu_free_swapchain: swapchain(%dx%d) %p freed, buffers:  [%p, %p]\n",
         pInfo->width, pInfo->height, swapchain,
-        swapchain->back_buffers[0], swapchain->back_buffers[1]);
+        swapchain->p_back_buffers[0], swapchain->p_back_buffers[1]);
 
     // SkrCZoneEnd(zz);
 
