@@ -163,6 +163,7 @@ const SwapchainInfo = struct {
     back_buffer_texture: cgpu.TextureId,
     back_buffer_texture_view: cgpu.TextureViewId,
     framebuffer: cgpu.FramebufferId,
+    render_finished_semaphore: cgpu.SemaphoreId,
 };
 
 pub fn main() !void {
@@ -239,8 +240,8 @@ pub fn main() !void {
     if (hwnd == null)
         return error.InitFailed;
 
-    const surface = try device.createSurfaceFromNativeView(hwnd.?);
-    defer device.freeSurface(surface);
+    const surface = try instance.createSurfaceFromNativeView(hwnd.?);
+    defer instance.freeSurface(surface);
 
     const swap_chain_descriptor = cgpu.SwapChainDescriptor{
         .present_queue_count = 1,
@@ -336,7 +337,7 @@ pub fn main() !void {
 
     const render_pass_descriptor = cgpu.RenderPassDescriptor{
         .sample_count = .{ .@"1" = true },
-        .color_attachments = [_]cgpu.ColorAttachment{ .{ .format = swapchain.back_buffers[0].info.*.format, .load_action = .clear, .store_action = .store }, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment },
+        .color_attachments = [_]cgpu.ColorAttachment{ .{ .format = swapchain.p_back_buffers[0].info.*.format, .load_action = .clear, .store_action = .store }, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment, invalid_color_attachment },
         .depth_stencil = .{ .format = .undefined, .depth_load_action = .load, .depth_store_action = .store, .stencil_load_action = .load, .stencil_store_action = .store },
     };
     const render_pass = try device.createRenderPass(&render_pass_descriptor);
@@ -456,25 +457,26 @@ pub fn main() !void {
     }
 
     var swapchain_infos = std.ArrayList(SwapchainInfo).init(allocator);
-    try swapchain_infos.ensureTotalCapacity(swapchain.buffer_count);
-    for (0..swapchain.buffer_count) |i| {
-        const back_buffer_texture = swapchain.back_buffers[i];
-        const back_buffer_texture_view = try device.createTextureView(&.{ .name = null, .texture = back_buffer_texture, .format = swapchain.back_buffers[i].*.info.*.format, .usages = .{ .rtv_dsv = true }, .aspects = .{ .color = true }, .dims = .@"2d", .base_array_layer = 0, .array_layer_count = 1, .base_mip_level = 0, .mip_level_count = 1 });
+    try swapchain_infos.ensureTotalCapacity(swapchain.back_buffer_count);
+    for (0..swapchain.back_buffer_count) |i| {
+        const back_buffer_texture = swapchain.p_back_buffers[i];
+        const back_buffer_texture_view = try device.createTextureView(&.{ .name = null, .texture = back_buffer_texture, .format = swapchain.p_back_buffers[i].*.info.*.format, .usages = .{ .rtv_dsv = true }, .aspects = .{ .color = true }, .dims = .@"2d", .base_array_layer = 0, .array_layer_count = 1, .base_mip_level = 0, .mip_level_count = 1 });
         swapchain_infos.appendAssumeCapacity(.{
             .back_buffer_texture = back_buffer_texture,
             .back_buffer_texture_view = back_buffer_texture_view,
             .framebuffer = try device.createFramebuffer(&.{ .renderpass = render_pass, .width = w, .height = h, .layers = 1, .attachment_count = 1, .p_attachments = [cgpu.MaxAttachmentCount]cgpu.TextureViewId{ back_buffer_texture_view, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined } }),
+            .render_finished_semaphore = try device.createSemaphore(),
         });
     }
     defer {
         for (swapchain_infos.items) |info| {
             device.freeTextureView(info.back_buffer_texture_view);
             device.freeFramebuffer(info.framebuffer);
+            device.freeSemaphore(info.render_finished_semaphore);
         }
         swapchain_infos.deinit();
     }
-    const render_finished_semaphore = try device.createSemaphore();
-    defer device.freeSemaphore(render_finished_semaphore);
+
     const sampler = try device.createSampler(&.{
         .min_filter = .linear,
         .mag_filter = .linear,
@@ -512,9 +514,10 @@ pub fn main() !void {
         resource_index = (resource_index + 1) % 3;
         const current_frame_data = &frame_datas[current_frame_index];
         cgpu.waitFences(1, &[_]cgpu.FenceId{current_frame_data.inflight_fence});
-        const next_swapchain_index_result = swapchain.acquireNextImage(&.{ .signal_semaphore = current_frame_data.swapchain_prepared_semaphore, .fence = null });
-        if (next_swapchain_index_result == -1) break;
-        const current_swapchain_index = next_swapchain_index_result;
+        var p_image_index: u32 = 0;
+        const acquire_result = swapchain.acquireNextImage(&.{ .signal_semaphore = current_frame_data.swapchain_prepared_semaphore, .fence = null }, &p_image_index);
+        if (acquire_result != .success) break;
+        const current_swapchain_index = p_image_index;
         const current_swapchain_info = swapchain_infos.items[current_swapchain_index];
 
         current_frame_data.cmdpool.reset();
@@ -659,9 +662,9 @@ pub fn main() !void {
 
         cmd.end();
 
-        queue.submit(&.{ .cmd_count = 1, .p_cmds = &[_]cgpu.CommandBufferId{cmd}, .signal_fence = current_frame_data.inflight_fence, .wait_semaphore_count = 1, .p_wait_semaphores = &[_]cgpu.SemaphoreId{current_frame_data.swapchain_prepared_semaphore}, .signal_semaphore_count = 1, .p_signal_semaphores = &[_]cgpu.SemaphoreId{render_finished_semaphore} });
+        _ = queue.submit(&.{ .cmd_count = 1, .p_cmds = &[_]cgpu.CommandBufferId{cmd}, .signal_fence = current_frame_data.inflight_fence, .wait_semaphore_count = 1, .p_wait_semaphores = &[_]cgpu.SemaphoreId{current_frame_data.swapchain_prepared_semaphore}, .signal_semaphore_count = 1, .p_signal_semaphores = &[_]cgpu.SemaphoreId{current_swapchain_info.render_finished_semaphore} });
 
-        queue.present(&.{ .swapchain = swapchain, .wait_semaphore_count = 1, .p_wait_semaphores = &[_]cgpu.SemaphoreId{render_finished_semaphore}, .index = @intCast(next_swapchain_index_result) });
+        _ = queue.present(&.{ .swapchain = swapchain, .wait_semaphore_count = 1, .p_wait_semaphores = &[_]cgpu.SemaphoreId{current_swapchain_info.render_finished_semaphore}, .index = @intCast(p_image_index) });
     }
 
     queue.waitIdle();
