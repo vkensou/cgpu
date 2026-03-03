@@ -24,19 +24,14 @@
             .url = "https://github.com/KhronosGroup/SPIRV-Reflect/archive/refs/tags/vulkan-sdk-1.3.290.0.tar.gz",
             .hash = "N-V-__8AAPjZJwAYPrmeP82KPbIdkLRkudSrnIDw1La5q5pj",
         },
-        .sdl2 = .{
-            .url = "https://github.com/allyourcodebase/SDL/archive/35d2548e41d5c3ea1e6bd22631b1ff1d352fd174.tar.gz",
-            .hash = "SDL-2.32.6-JToi3zqUEgG6r4ADMT5x-s1d5htGsWVMCJorr3GWEvLw",
-            .lazy = true,
-        },
         .zsdl3 = .{
             .url = "https://github.com/vkensou/zsdl3/archive/6eba4181d30b94c4ce8e68beaa61fe9d37e5febc.tar.gz",
             .hash = "sdl-0.2.1+3.2.10-7uIn9OqkfwFkcMD-e9XMN2S_4_LrOyYTfHqJlC13krf6",
             .lazy = true,
         },
         .zgui = .{
-            .url = "https://github.com/vkensou/zgui/archive/068e5d44c7afc1ff40783ae7687a748d72875b4c.tar.gz",
-            .hash = "zgui-0.6.0-dev--L6sZKeIaACTklMgDMeuAu_nE5WsA2Zs1W5TF5dDd3TT",
+            .url = "https://github.com/vkensou/zgui/archive/a15fc10700527baa15bf9b573d7cf1bfb169cebd.tar.gz",
+            .hash = "zgui-0.6.0-dev--L6sZJpsbQCB9LKMTV10gOrBwSRwTDJhDbegewwTQk-r",
             .lazy = true,
         },
     },

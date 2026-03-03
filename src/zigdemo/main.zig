@@ -203,7 +203,7 @@ pub fn main() !void {
     var gui_style = imgui.Style.init();
     imgui.styleColorsDark(&gui_style);
 
-    imgui.backend.init(window);
+    imgui.backend.initOther(window);
     defer imgui.backend.deinit();
 
     const instance_descriptor = cgpu.InstanceDescriptor{ .backend = .vulkan, .enable_debug_layer = true, .enable_gpu_based_validation = true, .enable_set_name = true, .logger = .{}, .allocator = .{} };

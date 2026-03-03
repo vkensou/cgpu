@@ -86,15 +86,15 @@ pub fn build(b: *std.Build) !void {
         demo_module.addCSourceFiles(.{ .root = b.path("src/demo"), .files = &.{
             "main.cpp",
             "GpuTimeStamps.cpp",
-            "imgui_impl_sdl2.cpp",
+            "imgui_impl_sdl3.cpp",
             "imgui_impl_cgpu.cpp",
             "renderdoc_helper.cpp",
         } });
 
-        if (b.lazyDependency("sdl2", .{ .target = target, .optimize = optimize })) |sdl2_depend| {
-            demo_module.linkLibrary(sdl2_depend.artifact("SDL2"));
-            demo_module.addIncludePath(sdl2_depend.path("include"));
-            demo_module.addIncludePath(sdl2_depend.path("include-pregen"));
+        if (b.lazyDependency("zsdl3", .{ .target = target, .optimize = optimize })) |zsdl3_depend| {
+            demo_module.linkLibrary(zsdl3_depend.artifact("SDL3"));
+            demo_module.addIncludePath(zsdl3_depend.path("include"));
+            demo_module.addIncludePath(zsdl3_depend.path("include-pregen"));
         }
 
         if (b.lazyDependency("zgui", .{ .target = target, .optimize = optimize })) |zgui_depend| {
