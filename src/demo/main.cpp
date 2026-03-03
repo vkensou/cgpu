@@ -334,6 +334,12 @@ struct RenderWindow
 		CGPUResourceBarrierDescriptor barrier_desc0 = { .texture_barrier_count = 1, .p_texture_barriers = &draw_barrier, };
 		cgpu_command_buffer_resource_barrier(cmd, &barrier_desc0);
 
+		ImDrawData* draw_data = imgui_viewport->DrawData;
+		if (draw_data->Textures != nullptr)
+			for (ImTextureData* tex : *draw_data->Textures)
+				if (tex->Status != ImTextureStatus_OK)
+					ImGui_ImplCGPU_UpdateTexture(tex, cmd);
+
 		const CGPUClearValue clearColor = {
 			.color = { 0.f, 0.f, 0.f, 1.f },
 			.is_color = true,
@@ -359,7 +365,6 @@ struct RenderWindow
 			cgpu_render_pass_encoder_draw(rp_encoder, 3, 0);
 		}
 
-		ImDrawData* draw_data = imgui_viewport->DrawData;
 		ImGui_ImplCGPU_RenderDrawData(draw_data, rp_encoder, imgui_root_sig, imgui_pipeline);
 
 		cgpu_command_buffer_end_render_pass(cmd, rp_encoder);

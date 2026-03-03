@@ -35,6 +35,17 @@ struct ImGui_ImplCGPU_Window
         ClearEnable = true;
     }
 };
+
+struct ImGui_ImplCGPU_Texture
+{
+    CGPUTextureId               Texture;
+    CGPUTextureViewId           TextureView;
+    CGPUDescriptorSetId         DescriptorSet;
+    CGPUBufferId                tex_upload_buffer;
+
+    ImGui_ImplCGPU_Texture() { memset((void*)this, 0, sizeof(*this)); }
+};
+
 // Each viewport will hold 1 ImGui_ImplCGPUH_WindowRenderBuffers
 // [Please zero-clear before use!]
 
@@ -58,10 +69,7 @@ struct ImGui_ImplCGPU_Data
 {
     ImGui_ImplCGPU_InitInfo   CGPUInitInfo;
 
-    CGPUTextureId                     FontImage;
-    CGPUTextureViewId                 FontView;
     CGPUSamplerId                     FontSampler;
-    CGPUDescriptorSetId               FontDescriptorSet;
 
     ImGui_ImplCGPU_WindowRenderBuffers MainWindowRenderBuffers;
 
@@ -271,7 +279,7 @@ void ImGui_ImplCGPU_RenderDrawData(ImDrawData* draw_data, CGPURenderPassEncoderI
                 //     desc_set[0] = bd->FontDescriptorSet;
                 // }
                 // vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bd->PipelineLayout, 0, 1, desc_set, 0, nullptr);
-                cgpu_render_pass_encoder_bind_descriptor_set(rp_encoder, bd->FontDescriptorSet);
+                cgpu_render_pass_encoder_bind_descriptor_set(rp_encoder, (CGPUDescriptorSetId)pcmd->GetTexID());
 
                 // Draw
                 cgpu_render_pass_encoder_draw_indexed(rp_encoder, pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset);
@@ -291,82 +299,174 @@ void ImGui_ImplCGPU_RenderDrawData(ImDrawData* draw_data, CGPURenderPassEncoderI
     cgpu_render_pass_encoder_set_scissor(rp_encoder, 0, 0, fb_width, fb_height);
 }
 
+static void ImGui_ImplCGPU_DestroyTexture(ImTextureData* tex)
+{
+    ImGui_ImplCGPU_Texture* backend_tex = (ImGui_ImplCGPU_Texture*)tex->BackendUserData;
+    if (backend_tex == nullptr)
+        return;
+    IM_ASSERT(backend_tex->DescriptorSet == (CGPUDescriptorSetId)tex->TexID);
+    ImGui_ImplCGPU_Data* bd = ImGui_ImplCGPU_GetBackendData();
+    ImGui_ImplCGPU_InitInfo* v = &bd->CGPUInitInfo;
+    cgpu_device_free_descriptor_set(v->Device, backend_tex->DescriptorSet);
+    cgpu_device_free_texture_view(v->Device, backend_tex->TextureView);
+    cgpu_device_free_texture(v->Device, backend_tex->Texture);
+    cgpu_device_free_buffer(v->Device, backend_tex->tex_upload_buffer);
+    IM_DELETE(backend_tex);
+
+    // Clear identifiers and mark as destroyed (in order to allow e.g. calling InvalidateDeviceObjects while running)
+    tex->SetTexID(ImTextureID_Invalid);
+    tex->SetStatus(ImTextureStatus_Destroyed);
+    tex->BackendUserData = nullptr;
+}
+
+static inline uint64_t AlignBufferSize(uint64_t size, uint64_t alignment)
+{
+    return (size + alignment - 1) & ~(alignment - 1);
+}
+
+void ImGui_ImplCGPU_UpdateTexture(ImTextureData* tex, CGPUCommandBufferId cpy_cmd)
+{
+    if (tex->Status == ImTextureStatus_OK)
+        return;
+    ImGui_ImplCGPU_Data* bd = ImGui_ImplCGPU_GetBackendData();
+    ImGui_ImplCGPU_InitInfo* v = &bd->CGPUInitInfo;
+
+    if (tex->Status == ImTextureStatus_WantCreate)
+    {
+        // Create and upload new texture to graphics system
+        //IMGUI_DEBUG_LOG("UpdateTexture #%03d: WantCreate %dx%d\n", tex->UniqueID, tex->Width, tex->Height);
+        IM_ASSERT(tex->TexID == ImTextureID_Invalid && tex->BackendUserData == nullptr);
+        IM_ASSERT(tex->Format == ImTextureFormat_RGBA32);
+        ImGui_ImplCGPU_Texture* backend_tex = IM_NEW(ImGui_ImplCGPU_Texture)();
+
+        // Create the Image:
+        {
+            CGPUTextureDescriptor font_texture_desc =
+            {
+                .name = "ImGui Default Font Texture",
+                .width = (uint64_t)tex->Width,
+                .height = (uint64_t)tex->Height,
+                .depth = 1,
+                .array_size = 1,
+                .format = CGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM,
+                .mip_levels = 1,
+                .owner_queue = v->GfxQueue,
+                .start_state = CGPU_RESOURCE_STATE_COPY_DEST,
+                .descriptors = CGPU_RESOURCE_TYPE_TEXTURE,
+            };
+
+            backend_tex->Texture = cgpu_device_create_texture(v->Device, &font_texture_desc);
+        }
+
+        // Create the Image View:
+        {
+            CGPUTextureViewDescriptor view_desc = {
+                .texture = backend_tex->Texture,
+                .format = CGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM,
+                .usages = CGPU_TEXTURE_VIEW_USAGE_SRV,
+                .aspects = CGPU_TEXTURE_VIEW_ASPECT_COLOR,
+            };
+            backend_tex->TextureView = cgpu_device_create_texture_view(v->Device, &view_desc);
+        }
+
+        // Create the Descriptor Set
+
+        CGPUDescriptorSetDescriptor set_desc = {
+            .root_signature = v->RootSig,
+            .set_index = 0,
+        };
+        backend_tex->DescriptorSet = cgpu_device_create_descriptor_set(v->Device, &set_desc);
+
+        CGPUDescriptorData datas[2];
+        datas[0] = {
+            //.name = u8"fontTexture",
+            .binding = 0,
+            .binding_type = CGPU_RESOURCE_TYPE_TEXTURE,
+            .resources = {.textures = &backend_tex->TextureView },
+            .count = 1,
+        };
+        datas[1] = {
+            //.name = u8"fontSampler",
+            .binding = 1,
+            .binding_type = CGPU_RESOURCE_TYPE_SAMPLER,
+            .resources = {.samplers = &bd->FontSampler },
+            .count = 1,
+        };
+
+        cgpu_descriptor_set_update(backend_tex->DescriptorSet, 2, datas);
+
+        uint64_t upload_size = tex->Width * tex->Height * 4 * sizeof(char);
+        CGPUBufferDescriptor upload_buffer_desc = {};
+        upload_buffer_desc.name = "IMGUI_FontUploadBuffer";
+        upload_buffer_desc.flags = CGPU_BUFFER_CREATION_USAGE_PERSISTENT_MAP;
+        upload_buffer_desc.descriptors = CGPU_RESOURCE_TYPE_NONE;
+        upload_buffer_desc.memory_usage = CGPU_MEMORY_USAGE_CPU_ONLY;
+        upload_buffer_desc.size = upload_size;
+        backend_tex->tex_upload_buffer = cgpu_device_create_buffer(v->Device, &upload_buffer_desc);
+
+        // Store identifiers
+        tex->SetTexID((ImTextureID)backend_tex->DescriptorSet);
+        tex->BackendUserData = backend_tex;
+    }
+
+    if (tex->Status == ImTextureStatus_WantCreate || tex->Status == ImTextureStatus_WantUpdates)
+    {
+        ImGui_ImplCGPU_Texture* backend_tex = (ImGui_ImplCGPU_Texture*)tex->BackendUserData;
+
+        CGPUTextureBarrier dst_barrier = {};
+        dst_barrier.texture = backend_tex->Texture;
+        dst_barrier.src_state = CGPU_RESOURCE_STATE_UNDEFINED;
+        dst_barrier.dst_state = CGPU_RESOURCE_STATE_COPY_DEST;
+        CGPUResourceBarrierDescriptor barrier_desc1 = {};
+        barrier_desc1.p_texture_barriers = &dst_barrier;
+        barrier_desc1.texture_barrier_count = 1;
+        cgpu_command_buffer_resource_barrier(cpy_cmd, &barrier_desc1);
+
+        // Update full texture or selected blocks. We only ever write to textures regions which have never been used before!
+        // This backend choose to use tex->UpdateRect but you can use tex->Updates[] to upload individual regions.
+        // We could use the smaller rect on _WantCreate but using the full rect allows us to clear the texture.
+        const int upload_x = (tex->Status == ImTextureStatus_WantCreate) ? 0 : tex->UpdateRect.x;
+        const int upload_y = (tex->Status == ImTextureStatus_WantCreate) ? 0 : tex->UpdateRect.y;
+        const int upload_w = (tex->Status == ImTextureStatus_WantCreate) ? tex->Width : tex->UpdateRect.w;
+        const int upload_h = (tex->Status == ImTextureStatus_WantCreate) ? tex->Height : tex->UpdateRect.h;
+
+        uint64_t upload_pitch = upload_w * tex->BytesPerPixel;
+        uint64_t upload_size = AlignBufferSize(upload_h * upload_pitch, 64);    //TODO
+
+        auto queue = v->GfxQueue;
+        {
+            for (int y = 0; y < upload_h; y++)
+                memcpy(backend_tex->tex_upload_buffer->info->cpu_mapped_address + upload_pitch * y, tex->GetPixelsAt(upload_x, upload_y + y), (size_t)upload_pitch);
+        }
+        CGPUBufferToTextureTransfer b2t = {};
+        b2t.src = backend_tex->tex_upload_buffer;
+        b2t.src_offset = 0;
+        b2t.dst = backend_tex->Texture;
+        b2t.dst_subresource.mip_level = 0;
+        b2t.dst_subresource.base_array_layer = 0;
+        b2t.dst_subresource.layer_count = 1;
+        cgpu_command_buffer_transfer_buffer_to_texture(cpy_cmd, &b2t);
+        CGPUTextureBarrier srv_barrier = {};
+        srv_barrier.texture = backend_tex->Texture;
+        srv_barrier.src_state = CGPU_RESOURCE_STATE_COPY_DEST;
+        srv_barrier.dst_state = CGPU_RESOURCE_STATE_SHADER_RESOURCE;
+        CGPUResourceBarrierDescriptor barrier_desc2 = {};
+        barrier_desc2.p_texture_barriers = &srv_barrier;
+        barrier_desc2.texture_barrier_count = 1;
+        cgpu_command_buffer_resource_barrier(cpy_cmd, &barrier_desc2);
+
+        tex->SetStatus(ImTextureStatus_OK);
+    }
+
+    if (tex->Status == ImTextureStatus_WantDestroy && tex->UnusedFrames >= (int)bd->CGPUInitInfo.ImageCount)
+        ImGui_ImplCGPU_DestroyTexture(tex);
+}
+
 bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId root_sig)
 {
     ImGuiIO& io = ImGui::GetIO();
     ImGui_ImplCGPU_Data* bd = ImGui_ImplCGPU_GetBackendData();
     ImGui_ImplCGPU_InitInfo* v = &bd->CGPUInitInfo;
-
-    unsigned char* pixels;
-    int width, height;
-    io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-    size_t upload_size = width * height * 4 * sizeof(char);
-
-    CGPUTextureDescriptor font_texture_desc = 
-    {
-        .name = "ImGui Default Font Texture",
-        .width = (uint64_t)width,
-        .height = (uint64_t)height,
-        .depth = 1,
-        .array_size = 1,
-        .format = CGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM,
-        .mip_levels = 1,
-        .owner_queue = queue,
-        .start_state = CGPU_RESOURCE_STATE_COPY_DEST,
-        .descriptors = CGPU_RESOURCE_TYPE_TEXTURE,
-    };
-
-    bd->FontImage = cgpu_device_create_texture(v->Device, &font_texture_desc);
-
-    CGPUCommandPoolDescriptor cmd_pool_desc = {};
-    CGPUCommandBufferDescriptor cmd_desc = {};
-    CGPUBufferDescriptor upload_buffer_desc = {};
-    upload_buffer_desc.name = "IMGUI_FontUploadBuffer";
-    upload_buffer_desc.flags = CGPU_BUFFER_CREATION_USAGE_PERSISTENT_MAP;
-    upload_buffer_desc.descriptors = CGPU_RESOURCE_TYPE_NONE;
-    upload_buffer_desc.memory_usage = CGPU_MEMORY_USAGE_CPU_ONLY;
-    upload_buffer_desc.size = upload_size;
-    CGPUBufferId tex_upload_buffer = cgpu_device_create_buffer(queue->device, &upload_buffer_desc);
-    {
-        memcpy(tex_upload_buffer->info->cpu_mapped_address, pixels, upload_size);
-    }
-    auto cpy_cmd_pool = cgpu_queue_create_command_pool(queue, &cmd_pool_desc);
-    auto cpy_cmd = cgpu_command_pool_create_command_buffer(cpy_cmd_pool, &cmd_desc);
-    cgpu_command_buffer_begin(cpy_cmd);
-    CGPUBufferToTextureTransfer b2t = {};
-    b2t.src = tex_upload_buffer;
-    b2t.src_offset = 0;
-    b2t.dst = bd->FontImage;
-    b2t.dst_subresource.mip_level = 0;
-    b2t.dst_subresource.base_array_layer = 0;
-    b2t.dst_subresource.layer_count = 1;
-    cgpu_command_buffer_transfer_buffer_to_texture(cpy_cmd, &b2t);
-    CGPUTextureBarrier srv_barrier = {};
-    srv_barrier.texture = bd->FontImage;
-    srv_barrier.src_state = CGPU_RESOURCE_STATE_COPY_DEST;
-    srv_barrier.dst_state = CGPU_RESOURCE_STATE_SHADER_RESOURCE;
-    CGPUResourceBarrierDescriptor barrier_desc1 = {};
-    barrier_desc1.p_texture_barriers = &srv_barrier;
-    barrier_desc1.texture_barrier_count = 1;
-    cgpu_command_buffer_resource_barrier(cpy_cmd, &barrier_desc1);
-    cgpu_command_buffer_end(cpy_cmd);
-    CGPUQueueSubmitDescriptor cpy_submit = {};
-    cpy_submit.p_cmds = &cpy_cmd;
-    cpy_submit.cmd_count = 1;
-    cgpu_queue_submit(queue, &cpy_submit);
-    cgpu_queue_wait_idle(queue);
-    cgpu_command_pool_free_command_buffer(cpy_cmd_pool, cpy_cmd);
-    cgpu_queue_free_command_pool(queue, cpy_cmd_pool);
-    cgpu_device_free_buffer(v->Device, tex_upload_buffer);
-    io.Fonts->TexID = (ImTextureID)(intptr_t)&bd->FontImage;
-
-    CGPUTextureViewDescriptor view_desc = {
-        .texture = bd->FontImage,
-        .format = CGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM,
-        .usages = CGPU_TEXTURE_VIEW_USAGE_SRV,
-        .aspects = CGPU_TEXTURE_VIEW_ASPECT_COLOR,
-    };
-    bd->FontView = cgpu_device_create_texture_view(v->Device, &view_desc);
 
     CGPUSamplerDescriptor sampler_desc = {
         .min_filter = CGPU_FILTER_TYPE_LINEAR,
@@ -380,30 +480,6 @@ bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId ro
     };
     bd->FontSampler = cgpu_device_create_sampler(v->Device, &sampler_desc);
 
-    CGPUDescriptorSetDescriptor set_desc = {
-        .root_signature = root_sig,
-        .set_index = 0,
-    };
-    bd->FontDescriptorSet = cgpu_device_create_descriptor_set(v->Device, &set_desc);
-
-    CGPUDescriptorData datas[2];
-    datas[0] = {
-        //.name = u8"fontTexture",
-        .binding = 0,
-        .binding_type = CGPU_RESOURCE_TYPE_TEXTURE,
-        .resources = { .textures = &bd->FontView },
-        .count = 1,
-    };
-    datas[1] = {
-        //.name = u8"fontSampler",
-        .binding = 1,
-        .binding_type = CGPU_RESOURCE_TYPE_SAMPLER,
-        .resources = { .samplers = &bd->FontSampler },
-        .count = 1,
-    };
-
-    cgpu_descriptor_set_update(bd->FontDescriptorSet, 2, datas);
-
     return true;
 }
 
@@ -413,10 +489,12 @@ void    ImGui_ImplCGPU_DestroyDeviceObjects()
     ImGui_ImplCGPU_InitInfo* v = &bd->CGPUInitInfo;
     ImGui_ImplCGPU_DestroyAllViewportsRenderBuffers(v->Device);
 
-    if (bd->FontView) { cgpu_device_free_texture_view(v->Device, bd->FontView); bd->FontView = CGPU_NULLPTR; }
-    if (bd->FontImage) { cgpu_device_free_texture(v->Device, bd->FontImage); bd->FontImage = CGPU_NULLPTR; }
+    // Destroy all textures
+    for (ImTextureData* tex : ImGui::GetPlatformIO().Textures)
+        if (tex->RefCount == 1)
+            ImGui_ImplCGPU_DestroyTexture(tex);
+
     if (bd->FontSampler) { cgpu_device_free_sampler(v->Device, bd->FontSampler); bd->FontSampler = CGPU_NULLPTR; }
-    if (bd->FontDescriptorSet) { cgpu_device_free_descriptor_set(v->Device, bd->FontDescriptorSet); bd->FontDescriptorSet = CGPU_NULLPTR; }
 }
 
 bool    ImGui_ImplCGPU_Init(ImGui_ImplCGPU_InitInfo* info)
@@ -430,6 +508,7 @@ bool    ImGui_ImplCGPU_Init(ImGui_ImplCGPU_InitInfo* info)
     io.BackendRendererName = "imgui_impl_cgpu";
     io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
     io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
+    io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
 
     IM_ASSERT(info->Instance != CGPU_NULL);
     IM_ASSERT(info->Device != CGPU_NULL);

@@ -70,6 +70,7 @@ IMGUI_IMPL_API bool         ImGui_ImplCGPU_Init(ImGui_ImplCGPU_InitInfo* info);
 IMGUI_IMPL_API bool         ImGui_ImplCGPU_PostInit(CGPURootSignatureId root_sig, CGPURenderPipelineId pipeline);
 IMGUI_IMPL_API void         ImGui_ImplCGPU_Shutdown();
 IMGUI_IMPL_API void         ImGui_ImplCGPU_NewFrame();
+IMGUI_IMPL_API void         ImGui_ImplCGPU_UpdateTexture(ImTextureData* tex, CGPUCommandBufferId cmd);
 IMGUI_IMPL_API void         ImGui_ImplCGPU_RenderDrawData(ImDrawData* draw_data, CGPURenderPassEncoderId rp_encoder, CGPURootSignatureId root_sig, CGPURenderPipelineId pipeline);
 IMGUI_IMPL_API bool         ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId root_sig);
 IMGUI_IMPL_API void         ImGui_ImplCGPU_DestroyFontUploadObjects();
