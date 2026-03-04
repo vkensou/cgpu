@@ -308,17 +308,10 @@ void cgpu_cmd_transfer_buffer_to_texture_vulkan(CGPUCommandBufferId cmd, const s
     const ECGPUTextureFormat fmt = texInfo->format;
     if (isSinglePlane)
     {
-        const uint64_t width = cgpu_max(1, texInfo->width >> desc->dst_subresource.mip_level);
-        const uint64_t height = cgpu_max(1, texInfo->height >> desc->dst_subresource.mip_level);
-        const uint64_t depth = cgpu_max(1, texInfo->depth >> desc->dst_subresource.mip_level);
-
-		const uint64_t xBlocksCount = width / FormatUtil_WidthOfBlock(fmt);
-		const uint64_t yBlocksCount = height / FormatUtil_HeightOfBlock(fmt);
-
         VkBufferImageCopy copy = {
             .bufferOffset = desc->src_offset,
-            .bufferRowLength = (uint32_t)xBlocksCount * FormatUtil_WidthOfBlock(fmt),
-            .bufferImageHeight = (uint32_t)yBlocksCount * FormatUtil_HeightOfBlock(fmt),
+            .bufferRowLength = 0,
+            .bufferImageHeight = 0,
             .imageSubresource = {
                 .aspectMask = (VkImageAspectFlags)texInfo->aspect_mask,
                 .mipLevel = desc->dst_subresource.mip_level,
@@ -326,14 +319,14 @@ void cgpu_cmd_transfer_buffer_to_texture_vulkan(CGPUCommandBufferId cmd, const s
                 .layerCount = desc->dst_subresource.layer_count,
             },
             .imageOffset = {
-                .x = 0,
-                .y = 0,
-                .z = 0,
+                .x = desc->dst_region.x,
+                .y = desc->dst_region.y,
+                .z = desc->dst_region.z,
             },
             .imageExtent = {
-                .width = (uint32_t)width,
-                .height = (uint32_t)height,
-                .depth = (uint32_t)depth
+                .width = desc->dst_region.width,
+                .height = desc->dst_region.height,
+                .depth = desc->dst_region.height
             },
         };
         D->mVkDeviceTable.vkCmdCopyBufferToImage(Cmd->pVkCmdBuf,
@@ -403,10 +396,6 @@ void cgpu_cmd_transfer_texture_to_texture_vulkan(CGPUCommandBufferId cmd, const 
     const CGPUTextureInfo* texInfo = desc->dst->info;
     if (isSinglePlane)
     {
-        const uint32_t width = (uint32_t)cgpu_max(1, texInfo->width >> desc->dst_subresource.mip_level);
-        const uint32_t height = (uint32_t)cgpu_max(1, texInfo->height >> desc->dst_subresource.mip_level);
-        const uint32_t depth = (uint32_t)cgpu_max(1, texInfo->depth >> desc->dst_subresource.mip_level);
-
         VkImageCopy copy_region = {
             .srcSubresource = {
                 desc->src_subresource.aspects,
@@ -414,15 +403,15 @@ void cgpu_cmd_transfer_texture_to_texture_vulkan(CGPUCommandBufferId cmd, const 
                 desc->src_subresource.base_array_layer,
                 desc->src_subresource.layer_count 
             },
-            .srcOffset = { 0, 0, 0 },
+            .srcOffset = { desc->src_region.x, desc->src_region.y, desc->src_region.z },
             .dstSubresource = {                     //
                 desc->dst_subresource.aspects,          //
                 desc->dst_subresource.mip_level,        //
                 desc->dst_subresource.base_array_layer, //
                 desc->dst_subresource.layer_count 
             },
-            .dstOffset = { 0, 0, 0 },
-            .extent = { width, height, depth },
+            .dstOffset = { desc->dst_coordinate.x, desc->dst_coordinate.y, desc->dst_coordinate.z },
+            .extent = { desc->src_region.width, desc->src_region.height, desc->src_region.depth },
         };
         D->mVkDeviceTable.vkCmdCopyImage(Cmd->pVkCmdBuf,
             Src->pVkImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,

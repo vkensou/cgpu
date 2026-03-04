@@ -1709,10 +1709,10 @@ typedef struct CGPUTextureViewDescriptor
     ECGPUTextureViewUsageFlags usages;
     ECGPUTextureViewAspectFlags aspects;
     ECGPUTextureDimension dims;
-    uint8_t              base_array_layer;
-    uint8_t              array_layer_count;
-    uint8_t              base_mip_level;
-    uint8_t              mip_level_count;
+    uint32_t             base_array_layer;
+    uint32_t             array_layer_count;
+    uint32_t             base_mip_level;
+    uint32_t             mip_level_count;
 
 } CGPUTextureViewDescriptor;
 
@@ -1916,13 +1916,24 @@ typedef struct CGPUTextureSubresource
 
 } CGPUTextureSubresource;
 
+typedef struct CGPUTextureRegion
+{
+    uint32_t             x;
+    uint32_t             y;
+    uint32_t             z;
+    uint32_t             width;
+    uint32_t             height;
+    uint32_t             depth;
+
+} CGPUTextureRegion;
+
 typedef struct CGPUBufferToBufferTransfer
 {
-    CGPUBufferId         dst;
-    uint64_t             dst_offset;
     CGPUBufferId         src;
     uint64_t             src_offset;
     uint64_t             size;
+    CGPUBufferId         dst;
+    uint64_t             dst_offset;
 
 } CGPUBufferToBufferTransfer;
 
@@ -1939,17 +1950,20 @@ typedef struct CGPUTextureToTextureTransfer
 {
     CGPUTextureId        src;
     CGPUTextureSubresource src_subresource;
+    CGPUTextureRegion    src_region;
     CGPUTextureId        dst;
     CGPUTextureSubresource dst_subresource;
+    CGPUCoordinate       dst_coordinate;
 
 } CGPUTextureToTextureTransfer;
 
 typedef struct CGPUBufferToTextureTransfer
 {
-    CGPUTextureId        dst;
-    CGPUTextureSubresource dst_subresource;
     CGPUBufferId         src;
     uint64_t             src_offset;
+    CGPUTextureId        dst;
+    CGPUTextureSubresource dst_subresource;
+    CGPUTextureRegion    dst_region;
 
 } CGPUBufferToTextureTransfer;
 

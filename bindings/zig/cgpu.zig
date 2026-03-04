@@ -2054,10 +2054,10 @@ pub const TextureViewDescriptor = extern struct {
     usages: TextureViewUsage,
     aspects: TextureViewAspect,
     dims: TextureDimension,
-    base_array_layer: u8,
-    array_layer_count: u8,
-    base_mip_level: u8,
-    mip_level_count: u8,
+    base_array_layer: u32,
+    array_layer_count: u32,
+    base_mip_level: u32,
+    mip_level_count: u32,
 };
 
 pub const QueryPoolDescriptor = extern struct {
@@ -2214,12 +2214,21 @@ pub const TextureSubresource = extern struct {
     layer_count: u32,
 };
 
+pub const TextureRegion = extern struct {
+    x: u32,
+    y: u32,
+    z: u32,
+    width: u32,
+    height: u32,
+    depth: u32,
+};
+
 pub const BufferToBufferTransfer = extern struct {
-    dst: BufferId,
-    dst_offset: u64,
     src: BufferId,
     src_offset: u64,
     size: u64,
+    dst: BufferId,
+    dst_offset: u64,
 };
 
 pub const BufferToTilesTransfer = extern struct {
@@ -2232,15 +2241,18 @@ pub const BufferToTilesTransfer = extern struct {
 pub const TextureToTextureTransfer = extern struct {
     src: TextureId,
     src_subresource: TextureSubresource,
+    src_region: TextureRegion,
     dst: TextureId,
     dst_subresource: TextureSubresource,
+    dst_coordinate: Coordinate,
 };
 
 pub const BufferToTextureTransfer = extern struct {
-    dst: TextureId,
-    dst_subresource: TextureSubresource,
     src: BufferId,
     src_offset: u64,
+    dst: TextureId,
+    dst_subresource: TextureSubresource,
+    dst_region: TextureRegion,
 };
 
 pub const BufferBarrier = extern struct {

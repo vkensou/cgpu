@@ -445,6 +445,12 @@ void ImGui_ImplCGPU_UpdateTexture(ImTextureData* tex, CGPUCommandBufferId cpy_cm
         b2t.dst_subresource.mip_level = 0;
         b2t.dst_subresource.base_array_layer = 0;
         b2t.dst_subresource.layer_count = 1;
+		b2t.dst_region.x = upload_x;
+		b2t.dst_region.y = upload_y;
+		b2t.dst_region.z = 0;
+		b2t.dst_region.width = upload_w;
+		b2t.dst_region.height = upload_h;
+		b2t.dst_region.depth = 1;
         cgpu_command_buffer_transfer_buffer_to_texture(cpy_cmd, &b2t);
         CGPUTextureBarrier srv_barrier = {};
         srv_barrier.texture = backend_tex->Texture;

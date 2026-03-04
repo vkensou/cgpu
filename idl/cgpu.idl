@@ -1925,10 +1925,10 @@ struct.TextureViewDescriptor
     .usages             "TextureViewUsage"
     .aspects            "TextureViewAspect"
     .dims               "TextureDimension::Enum"
-    .baseArrayLayer     "uint8_t"
-    .arrayLayerCount    "uint8_t"
-    .baseMipLevel       "uint8_t"
-    .MipLevelCount      "uint8_t"
+    .baseArrayLayer     "uint32_t"
+    .arrayLayerCount    "uint32_t"
+    .baseMipLevel       "uint32_t"
+    .mipLevelCount      "uint32_t"
     
 struct.QueryPoolDescriptor
     .type               "QueryType::Enum"
@@ -2057,12 +2057,20 @@ struct.TextureSubresource
     .baseArrayLayer     "uint32_t" 
     .layerCount         "uint32_t"
 
+struct.TextureRegion
+    .x                  "uint32_t"
+    .y                  "uint32_t"
+    .z                  "uint32_t"
+    .width              "uint32_t"
+    .height             "uint32_t"
+    .depth              "uint32_t"
+
 struct.BufferToBufferTransfer 
-    .dst                "BufferId" 
-    .dstOffset          "uint64_t" 
     .src                "BufferId" 
     .srcOffset          "uint64_t" 
     .size               "uint64_t"
+    .dst                "BufferId" 
+    .dstOffset          "uint64_t" 
 
 struct.BufferToTilesTransfer 
     .src                "BufferId" 
@@ -2073,14 +2081,17 @@ struct.BufferToTilesTransfer
 struct.TextureToTextureTransfer 
     .src                "TextureId" 
     .srcSubresource     "TextureSubresource" 
+    .srcRegion          "TextureRegion"
     .dst                "TextureId" 
     .dstSubresource     "TextureSubresource"
+    .dstCoordinate      "Coordinate"
 
 struct.BufferToTextureTransfer 
-    .dst                "TextureId" 
-    .dstSubresource     "TextureSubresource" 
     .src                "BufferId" 
     .srcOffset          "uint64_t"
+    .dst                "TextureId" 
+    .dstSubresource     "TextureSubresource" 
+    .dstRegion          "TextureRegion"
 
 struct.BufferBarrier
     .buffer             "BufferId" 
