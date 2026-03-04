@@ -2223,6 +2223,12 @@ pub const TextureRegion = extern struct {
     depth: u32,
 };
 
+pub const BufferTextureLayout = extern struct {
+    offset: u64,
+    row_pitch: u64,
+    slice_pitch: u64,
+};
+
 pub const BufferToBufferTransfer = extern struct {
     src: BufferId,
     src_offset: u64,
@@ -2249,7 +2255,7 @@ pub const TextureToTextureTransfer = extern struct {
 
 pub const BufferToTextureTransfer = extern struct {
     src: BufferId,
-    src_offset: u64,
+    src_layout: BufferTextureLayout,
     dst: TextureId,
     dst_subresource: TextureSubresource,
     dst_region: TextureRegion,

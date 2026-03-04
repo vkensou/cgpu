@@ -1927,6 +1927,14 @@ typedef struct CGPUTextureRegion
 
 } CGPUTextureRegion;
 
+typedef struct CGPUBufferTextureLayout
+{
+    uint64_t             offset;
+    uint64_t             row_pitch;
+    uint64_t             slice_pitch;
+
+} CGPUBufferTextureLayout;
+
 typedef struct CGPUBufferToBufferTransfer
 {
     CGPUBufferId         src;
@@ -1960,7 +1968,7 @@ typedef struct CGPUTextureToTextureTransfer
 typedef struct CGPUBufferToTextureTransfer
 {
     CGPUBufferId         src;
-    uint64_t             src_offset;
+    CGPUBufferTextureLayout src_layout;
     CGPUTextureId        dst;
     CGPUTextureSubresource dst_subresource;
     CGPUTextureRegion    dst_region;

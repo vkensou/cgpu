@@ -2065,6 +2065,11 @@ struct.TextureRegion
     .height             "uint32_t"
     .depth              "uint32_t"
 
+struct.BufferTextureLayout
+    .offset             "uint64_t"
+    .rowPitch          "uint64_t"
+    .slicePitch        "uint64_t"
+
 struct.BufferToBufferTransfer 
     .src                "BufferId" 
     .srcOffset          "uint64_t" 
@@ -2088,7 +2093,7 @@ struct.TextureToTextureTransfer
 
 struct.BufferToTextureTransfer 
     .src                "BufferId" 
-    .srcOffset          "uint64_t"
+    .srcLayout          "BufferTextureLayout"
     .dst                "TextureId" 
     .dstSubresource     "TextureSubresource" 
     .dstRegion          "TextureRegion"

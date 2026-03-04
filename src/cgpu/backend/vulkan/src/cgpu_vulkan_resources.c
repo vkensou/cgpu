@@ -308,10 +308,20 @@ void cgpu_cmd_transfer_buffer_to_texture_vulkan(CGPUCommandBufferId cmd, const s
     const ECGPUTextureFormat fmt = texInfo->format;
     if (isSinglePlane)
     {
+        auto blockSize = FormatUtil_BitSizeOfBlock(fmt) / 8;
+        auto blockWidth = FormatUtil_WidthOfBlock(fmt);
+        auto blockHeight = FormatUtil_HeightOfBlock(fmt);
+
+        cgpu_assert(desc->src_layout.row_pitch % blockSize == 0);
+        cgpu_assert(desc->src_layout.slice_pitch % desc->src_layout.row_pitch == 0);
+
+        auto bufferRowLength = (desc->src_layout.row_pitch / blockSize) * blockWidth;
+        auto bufferImageHeight = cgpu_max(1, desc->src_layout.slice_pitch / desc->src_layout.row_pitch) * blockHeight;
+
         VkBufferImageCopy copy = {
-            .bufferOffset = desc->src_offset,
-            .bufferRowLength = 0,
-            .bufferImageHeight = 0,
+            .bufferOffset = desc->src_layout.offset,
+            .bufferRowLength = bufferRowLength,
+            .bufferImageHeight = bufferImageHeight,
             .imageSubresource = {
                 .aspectMask = (VkImageAspectFlags)texInfo->aspect_mask,
                 .mipLevel = desc->dst_subresource.mip_level,

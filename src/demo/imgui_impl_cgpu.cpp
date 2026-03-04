@@ -430,8 +430,8 @@ void ImGui_ImplCGPU_UpdateTexture(ImTextureData* tex, CGPUCommandBufferId cpy_cm
         const int upload_w = (tex->Status == ImTextureStatus_WantCreate) ? tex->Width : tex->UpdateRect.w;
         const int upload_h = (tex->Status == ImTextureStatus_WantCreate) ? tex->Height : tex->UpdateRect.h;
 
-        uint64_t upload_pitch = upload_w * tex->BytesPerPixel;
-        uint64_t upload_size = AlignBufferSize(upload_h * upload_pitch, 64);    //TODO
+        uint64_t upload_pitch = AlignBufferSize(upload_w * tex->BytesPerPixel, 64);
+        uint64_t upload_size = upload_pitch * upload_h;    //TODO
 
         auto queue = v->GfxQueue;
         {
@@ -440,7 +440,9 @@ void ImGui_ImplCGPU_UpdateTexture(ImTextureData* tex, CGPUCommandBufferId cpy_cm
         }
         CGPUBufferToTextureTransfer b2t = {};
         b2t.src = backend_tex->tex_upload_buffer;
-        b2t.src_offset = 0;
+        b2t.src_layout.offset = 0;
+        b2t.src_layout.row_pitch = upload_pitch;
+        b2t.src_layout.slice_pitch = upload_size;
         b2t.dst = backend_tex->Texture;
         b2t.dst_subresource.mip_level = 0;
         b2t.dst_subresource.base_array_layer = 0;
