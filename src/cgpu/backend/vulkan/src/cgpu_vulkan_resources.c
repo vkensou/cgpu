@@ -326,7 +326,7 @@ void cgpu_cmd_transfer_buffer_to_texture_vulkan(CGPUCommandBufferId cmd, const s
             .imageExtent = {
                 .width = desc->dst_region.width,
                 .height = desc->dst_region.height,
-                .depth = desc->dst_region.height
+                .depth = desc->dst_region.depth
             },
         };
         D->mVkDeviceTable.vkCmdCopyBufferToImage(Cmd->pVkCmdBuf,
