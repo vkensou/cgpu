@@ -711,6 +711,10 @@ void cgpu_command_buffer_transfer_buffer_to_texture(CGPUCommandBufferId cmd, con
     cgpu_assert(desc != CGPU_NULLPTR && "fatal: call on NULL cpy_desc!");
     cgpu_assert(desc->src != CGPU_NULLPTR && "fatal: call on NULL cpy_src!");
     cgpu_assert(desc->dst != CGPU_NULLPTR && "fatal: call on NULL cpy_dst!");
+    cgpu_assert(desc->src_layout.row_pitch > 0);
+    cgpu_assert(desc->src_layout.slice_pitch > 0);
+    cgpu_assert(desc->src_layout.row_pitch % (FormatUtil_BitSizeOfBlock(desc->dst->info->format) / 8) == 0);
+    cgpu_assert(desc->src_layout.slice_pitch % desc->src_layout.row_pitch == 0);
     const CGPUProcCmdTransferBufferToTexture fn_cmd_transfer_buffer_to_texture = cmd->device->proc_table_cache->cmd_transfer_buffer_to_texture;
     cgpu_assert(fn_cmd_transfer_buffer_to_texture && "cmd_transfer_buffer_to_texture Proc Missing!");
     fn_cmd_transfer_buffer_to_texture(cmd, desc);
