@@ -360,17 +360,6 @@ pub const ShaderBytecodeType = enum(u32) {
     mtl, // ( 2)
 };
 
-pub const TextureFormatUsage = enum(u32) {
-    sample, // ( 0)
-    render, // ( 1)
-    load_store, // ( 2)
-    blend, // ( 3)
-    msaa2x, // ( 4)
-    msaa4x, // ( 5)
-    msaa8x, // ( 6)
-    msaa16x, // ( 7)
-};
-
 pub const ShaderStage = packed struct(u32) {
     vertex: bool = false, // ( 0)
     tessellation_control: bool = false, // ( 1)

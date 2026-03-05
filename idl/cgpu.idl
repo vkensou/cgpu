@@ -359,17 +359,6 @@ enum.ShaderBytecodeType { comment = "Shader Bytecode Type:" }
     .Mtl
     ()
 
-enum.TextureFormatUsage
-    .Sample
-    .Render
-    .LoadStore
-    .Blend
-    .MSAA2x
-    .MSAA4x
-    .MSAA8x
-    .MSAA16x
-    ()
-
 flag.ShaderStage { underscore, bits = 32, base = 0, comment = "Shader Stage:" }
     .None
     .Vertex
@@ -592,7 +581,6 @@ flag.DynamicStateFeatures { underscore, bits = 64, base = 1 }
     .DepthBoundsTest
     .StencilTest
     .StencilOp
-
 
     .RasterDiscard
     .DepthBias
