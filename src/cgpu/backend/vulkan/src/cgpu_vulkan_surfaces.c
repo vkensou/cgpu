@@ -28,8 +28,10 @@ void cgpu_free_surface_vulkan(CGPUInstanceId instance, CGPUSurfaceId surface)
     cgpu_assert(surface && "CGPU VULKAN ERROR: NULL surface!");
 
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)instance;
-    VkSurfaceKHR vkSurface = (VkSurfaceKHR)surface;
-    vkDestroySurfaceKHR(I->pVkInstance, vkSurface, &I->vkAllocator);
+    CGPUSurface_Vulkan* vkSurface = (CGPUSurface_Vulkan*)surface;
+    vkDestroySurfaceKHR(I->pVkInstance, vkSurface->pVkSurface, &I->vkAllocator);
+    const CGPUAllocator* allocator = &instance->allocator;
+    cgpu_free_aligned(allocator, vkSurface);
 }
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -39,7 +41,9 @@ CGPUSurfaceId cgpu_surface_from_hwnd_vulkan(CGPUInstanceId instance, HWND window
     cgpu_assert(window && "CGPU VULKAN ERROR: NULL HWND!");
 
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)instance;
-    CGPUSurfaceId surface;
+    const CGPUAllocator* allocator = &instance->allocator;
+    CGPUSurface_Vulkan* surface = cgpu_calloc_aligned(allocator, 1, sizeof(CGPUSurface_Vulkan), _Alignof(CGPUSurface_Vulkan));
+    surface->super.instance = instance;
     VkWin32SurfaceCreateInfoKHR create_info = {
         .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
         .pNext = NULL,
@@ -48,12 +52,12 @@ CGPUSurfaceId cgpu_surface_from_hwnd_vulkan(CGPUInstanceId instance, HWND window
         .hwnd = window
     };
     if (vkCreateWin32SurfaceKHR(I->pVkInstance, &create_info, &I->vkAllocator,
-        (VkSurfaceKHR*)&surface) != VK_SUCCESS)
+        &surface->pVkSurface) != VK_SUCCESS)
     {
         cgpu_assert(0 && "Create VKWin32 Surface Failed!");
         return CGPU_NULLPTR;
     }
-    return surface;
+    return &surface->super;
 }
 
 #elif defined(_MACOS)
@@ -63,7 +67,9 @@ CGPUSurfaceId cgpu_surface_from_ns_view_vulkan(CGPUInstanceId instance, CGPUNSVi
     cgpu_assert(window && "CGPU VULKAN ERROR: NULL NSVIEW!");
 
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)instance;
-    CGPUSurfaceId surface;
+    const CGPUAllocator* allocator = &instance->allocator;
+    CGPUSurface_Vulkan* surface = cgpu_calloc_aligned(allocator, 1, sizeof(CGPUSurface_Vulkan), _Alignof(CGPUSurface_Vulkan));
+    surface->super.instance = instance;
     VkMacOSSurfaceCreateInfoMVK create_info = {
         .sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK,
         .pNext = NULL,
@@ -71,12 +77,12 @@ CGPUSurfaceId cgpu_surface_from_ns_view_vulkan(CGPUInstanceId instance, CGPUNSVi
         .pView = window
     };
     if (vkCreateMacOSSurfaceMVK(I->pVkInstance, &create_info, &I->vkAllocator,
-        (VkSurfaceKHR*)&surface) != VK_SUCCESS)
+        &surface->pVkSurface) != VK_SUCCESS)
     {
         cgpu_assert(0 && "Create VK NSView Surface Failed!");
         return CGPU_NULLPTR;
     }
-    return surface;
+    return &surface->super;
 }
 
 #elif defined(__ANDROID__)
@@ -86,7 +92,9 @@ CGPUSurfaceId cgpu_surface_from_native_window_vulkan(CGPUInstanceId instance, st
     cgpu_assert(window && "CGPU VULKAN ERROR: NULL HWND!");
 
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)instance;
-    CGPUSurfaceId surface;
+    const CGPUAllocator* allocator = &instance->allocator;
+    CGPUSurface_Vulkan* surface = cgpu_calloc_aligned(allocator, 1, sizeof(CGPUSurface_Vulkan), _Alignof(CGPUSurface_Vulkan));
+    surface->super.instance = instance;
     VkAndroidSurfaceCreateInfoKHR create_info = {
         .sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR,
         .pNext = NULL,
@@ -94,12 +102,12 @@ CGPUSurfaceId cgpu_surface_from_native_window_vulkan(CGPUInstanceId instance, st
         .window = window,
     };
     if (vkCreateAndroidSurfaceKHR(I->pVkInstance, &create_info, &I->vkAllocator,
-        (VkSurfaceKHR*)&surface) != VK_SUCCESS)
+        &surface->pVkSurface) != VK_SUCCESS)
     {
         cgpu_assert(0 && "Create Android Surface Failed!");
         return CGPU_NULLPTR;
     }
-    return surface;
+    return &surface->super;
 }
 
 #endif // create views

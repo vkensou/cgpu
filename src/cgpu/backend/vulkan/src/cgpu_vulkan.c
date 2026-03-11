@@ -2277,11 +2277,11 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
     const CGPUAllocator* allocator = &I->super.allocator;
 
-    VkSurfaceKHR vkSurface = (VkSurfaceKHR)desc->surface;
+    CGPUSurface_Vulkan* vkSurface = (CGPUSurface_Vulkan*)desc->surface;
     CGPUSwapChain_Vulkan* oldS = (CGPUSwapChain_Vulkan*)desc->old_swap_chain;
 
     VkSurfaceCapabilitiesKHR caps = { 0 };
-    CHECK_VKRESULT(&device->adapter->instance->logger, vkGetPhysicalDeviceSurfaceCapabilitiesKHR(A->pPhysicalDevice, vkSurface, &caps));
+    CHECK_VKRESULT(&device->adapter->instance->logger, vkGetPhysicalDeviceSurfaceCapabilitiesKHR(A->pPhysicalDevice, vkSurface->pVkSurface, &caps));
     if ((caps.maxImageCount > 0) && (desc->image_count > caps.maxImageCount))
     {
         ((CGPUSwapChainDescriptor*)desc)->image_count = caps.maxImageCount;
@@ -2296,11 +2296,11 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
     surface_format.format = VK_FORMAT_UNDEFINED;
     uint32_t surfaceFormatCount = 0;
     CHECK_VKRESULT(&device->adapter->instance->logger, vkGetPhysicalDeviceSurfaceFormatsKHR(
-    A->pPhysicalDevice, vkSurface, &surfaceFormatCount, CGPU_NULLPTR));
+    A->pPhysicalDevice, vkSurface->pVkSurface, &surfaceFormatCount, CGPU_NULLPTR));
     // Allocate and get surface formats
     CGPU_DECLARE_ZERO_VLA(VkSurfaceFormatKHR, formats, surfaceFormatCount)
     CHECK_VKRESULT(&device->adapter->instance->logger, vkGetPhysicalDeviceSurfaceFormatsKHR(
-    A->pPhysicalDevice, vkSurface, &surfaceFormatCount, formats))
+    A->pPhysicalDevice, vkSurface->pVkSurface, &surfaceFormatCount, formats))
 
     // Only undefined format support found, force use B8G8R8A8
     if ((1 == surfaceFormatCount) && (VK_FORMAT_UNDEFINED == formats[0].format))
@@ -2342,11 +2342,11 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
     uint32_t swapChainImageCount = 0;
     // Get present mode count
     CHECK_VKRESULT(&device->adapter->instance->logger, vkGetPhysicalDeviceSurfacePresentModesKHR(
-    A->pPhysicalDevice, vkSurface, &swapChainImageCount, NULL));
+    A->pPhysicalDevice, vkSurface->pVkSurface, &swapChainImageCount, NULL));
     // Allocate and get present modes
     CGPU_DECLARE_ZERO_VLA(VkPresentModeKHR, modes, swapChainImageCount)
     CHECK_VKRESULT(&device->adapter->instance->logger, vkGetPhysicalDeviceSurfacePresentModesKHR(
-    A->pPhysicalDevice, vkSurface, &swapChainImageCount, modes));
+    A->pPhysicalDevice, vkSurface->pVkSurface, &swapChainImageCount, modes));
     // Select Preferred Present Mode
     VkPresentModeKHR preferredModeList[] = {
         VK_PRESENT_MODE_IMMEDIATE_KHR,    // normal
@@ -2463,7 +2463,7 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .pNext = NULL,
         .flags = 0,
-        .surface = vkSurface,
+        .surface = vkSurface->pVkSurface,
         .minImageCount = desc->image_count,
         .imageFormat = surface_format.format,
         .imageColorSpace = surface_format.colorSpace,
@@ -2531,7 +2531,7 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
         Vs[i] = &Ts[i].T.super;
     }
     S->super.p_back_buffers = Vs;
-    S->pVkSurface = vkSurface;
+    S->pVkSurface = vkSurface->pVkSurface;
     return &S->super;
 }
 

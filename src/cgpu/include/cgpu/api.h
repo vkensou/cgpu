@@ -1744,8 +1744,11 @@ typedef struct CGPUSwapChain
 
 } CGPUSwapChain;
 
-struct CGPUSurface_s;
-typedef struct CGPUSurface_s CGPUSurface_t;
+typedef struct CGPUSurface
+{
+    CGPUInstanceId       instance;
+
+} CGPUSurface;
 
 typedef struct CGPUBufferRange
 {

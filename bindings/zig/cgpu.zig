@@ -2083,7 +2083,9 @@ pub const SwapChain = extern struct {
     }
 };
 
-pub const Surface = extern struct {};
+pub const Surface = extern struct {
+    instance: InstanceId,
+};
 
 pub const BufferRange = extern struct {
     offset: u64,

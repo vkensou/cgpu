@@ -395,6 +395,11 @@ typedef struct CGPUShaderLibrary_Vulkan {
     struct SpvReflectShaderModule* pReflect;
 } CGPUShaderLibrary_Vulkan;
 
+typedef struct CGPUSurface_Vulkan {
+    CGPUSurface super;
+    VkSurfaceKHR pVkSurface;
+} CGPUSurface_Vulkan;
+
 typedef struct CGPUSwapChain_Vulkan {
     CGPUSwapChain super;
     VkSurfaceKHR pVkSurface;

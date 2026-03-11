@@ -1946,7 +1946,8 @@ struct.SwapChain
     .backBufferCount    "uint32_t"
     .pBackBuffers       "[*]const TextureId"
 
-struct.Surface {}
+struct.Surface
+    .instance           "InstanceId"
 
 struct.BufferRange
     .offset             "uint64_t"
