@@ -328,36 +328,11 @@ function gen.apply(idl, tempfile)
 	return (temp:gsub("$([%l%d_]+)", codes_tbl))
 end
 
-function gen.format(codes, f)
-	return change_indent(codes, f.indent)
-end
-
-function gen.changed(codes, outputfile)
-	local out = io.open(outputfile, "rb")
-	if out then
-		local origin = out:read "a"
-		out:close()
-		return origin ~= codes
-	end
-	return true
-end
-
-function gen.write(codes, outputfile)
-	local out = assert(io.open(outputfile, "wb"))
-	out:write(codes)
-	out:close()
-end
-
 function gen.gen(idl, tempfile, outputfile, indent)
-	print ("Generate", outputfile, "from", tempfile)
 	local codes = gen.apply(idl, tempfile)
 	codes = change_indent(codes, indent)
 
-	if not gen.changed(codes, outputfile) then
-		print("No change")
-	end
-
-	gen.write(codes, outputfile)
+	return codes
 end
 
-return gen
+return gen.gen

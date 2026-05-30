@@ -21,4 +21,26 @@ local modname = "bindings-" .. binding
 local gen = require(modname)
 
 -- Dispatch: C binding uses template-file API; others use gen()+write() convention
-gen.gen(idl, template_path, output_path, indent or "\t")
+
+print ("Generating: ", output_path, "from", template_path)
+
+local codes = gen(idl, template_path, output_path, indent or "\t")
+
+function changed(codes, outputfile)
+	local out = io.open(outputfile, "rb")
+	if out then
+		local origin = out:read "a"
+		out:close()
+		return origin ~= codes
+	end
+	return true
+end
+
+if not changed(codes, output_path) then
+	print("No change")
+else
+	local out = assert(io.open(output_path, "wb"))
+	out:write(codes)
+	out:close()
+	print("Output: " .. output_path)
+end

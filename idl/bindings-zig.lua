@@ -271,51 +271,6 @@ end
 
 local converter = {}
 local yield = coroutine.yield
-local gen = {}
-
-function gen.gen(_idl, tempfile, outputfile, indent)
-	idl = _idl
-	-- find the functions that have `this` first argument
-	-- these belong to a type (struct) and we need to add them when converting structures
-	local methods = {}
-	for _, func in ipairs(idl["funcs"]) do
-		if func.this ~= nil then
-			if methods[func.this_type.type] == nil then
-				methods[func.this_type.type] = {}
-			end
-			table.insert(methods[func.this_type.type], func)
-		end
-	end
-
-	local r = zig_template:gsub("$(%l+)", function(what)
-		local tmp = {}
-		for _, object in ipairs(idl[what]) do
-			local co = coroutine.create(converter[what])
-			local any
-			-- we're pretty confident there are no types that have the same name with a func
-			local funcs = methods[object.name]
-			while true do
-				local ok, v = coroutine.resume(co, {
-					obj = object,
-					funcs = funcs
-				})
-				assert(ok, debug.traceback(co, v))
-				if not v then
-					break
-				end
-				table.insert(tmp, v)
-				any = true
-			end
-			if any and tmp[#tmp] ~= "" then
-				table.insert(tmp, "")
-			end
-		end
-		return table.concat(tmp, "\n")
-	end)
-
-	gen.write(r, outputfile)
-	return r
-end
 
 local function flat_combined(flag, item, added)
     for i = 1, #flag.flag do
@@ -622,11 +577,50 @@ function converter.funcs(params)
 	end
 end
 
-function gen.write(codes, outputfile)
-	local out = assert(io.open(outputfile, "wb"))
-	out:write(codes)
-	out:close()
-	print("Generating: " .. outputfile)
+local gen = {}
+
+
+function gen.gen(_idl, tempfile, outputfile, indent)
+	idl = _idl
+	-- find the functions that have `this` first argument
+	-- these belong to a type (struct) and we need to add them when converting structures
+	local methods = {}
+	for _, func in ipairs(idl["funcs"]) do
+		if func.this ~= nil then
+			if methods[func.this_type.type] == nil then
+				methods[func.this_type.type] = {}
+			end
+			table.insert(methods[func.this_type.type], func)
+		end
+	end
+
+	local r = zig_template:gsub("$(%l+)", function(what)
+		local tmp = {}
+		for _, object in ipairs(idl[what]) do
+			local co = coroutine.create(converter[what])
+			local any
+			-- we're pretty confident there are no types that have the same name with a func
+			local funcs = methods[object.name]
+			while true do
+				local ok, v = coroutine.resume(co, {
+					obj = object,
+					funcs = funcs
+				})
+				assert(ok, debug.traceback(co, v))
+				if not v then
+					break
+				end
+				table.insert(tmp, v)
+				any = true
+			end
+			if any and tmp[#tmp] ~= "" then
+				table.insert(tmp, "")
+			end
+		end
+		return table.concat(tmp, "\n")
+	end)
+
+	return r
 end
 
-return gen
+return gen.gen
