@@ -11,8 +11,8 @@ function codegen.compute_naming(prefix)
     local U = prefix:upper()
     local L = prefix:lower()
     codegen._naming = {
-        EU = "E" .. U,       -- enum/flag type name prefix   (e.g. ECGPU)
-        U  = U,              -- struct/id/funcptr type prefix (e.g. CGPU)
+        EU = "E" .. prefix,       -- enum/flag type name prefix   (e.g. ECGPU)
+        U  = prefix,              -- struct/id/funcptr type prefix (e.g. CGPU)
         U_ = U .. "_",       -- const macro prefix           (e.g. CGPU_)
         L_ = L .. "_",       -- function / enum item prefix  (e.g. cgpu_)
         api_macro   = U .. "_API",
