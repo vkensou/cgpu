@@ -1,8 +1,7 @@
 -- Copyright 2019 云风 https://github.com/cloudwu . All rights reserved.
 -- License (the same with bgfx) : https://github.com/bkaradzic/bgfx/blob/master/LICENSE
 
-local codegen = require "codegen"
-local idl = codegen.idl "cgpu.idl"
+return function(idl)
 
 local func_actions = {
 
@@ -365,3 +364,4 @@ function gen.gen(tempfile, outputfile, indent)
 end
 
 return gen
+end

@@ -1,5 +1,4 @@
-local codegen = require "codegen"
-local idl = codegen.idl "cgpu.idl"
+return function(idl)
 
 local zig_template = [[
 // Copyright 2011-2023 Branimir Karadzic. All rights reserved.
@@ -626,9 +625,5 @@ function gen.write(codes, outputfile)
 	print("Generating: " .. outputfile)
 end
 
-if (...) == nil then
-	-- run `lua bindings-zig.lua` in command line
-	print(gen.gen())
-end
-
 return gen
+end

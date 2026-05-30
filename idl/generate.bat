@@ -1,2 +1,2 @@
-.\lua54.exe generate-c.lua
-.\lua54.exe generate-zig.lua
+.\lua54.exe generate-binding.lua cgpu.idl temp.cgpu.h c ..\src\cgpu\include\cgpu\api.h "    "
+.\lua54.exe generate-binding.lua cgpu.idl temp.cgpu.zig zig ..\bindings\zig\cgpu.zig
