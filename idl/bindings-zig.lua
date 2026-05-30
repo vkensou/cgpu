@@ -1,5 +1,6 @@
 local codegen = require "codegen"
 local idl
+local naming
 
 local zig_template = [[
 // Copyright 2011-2023 Branimir Karadzic. All rights reserved.
@@ -216,7 +217,7 @@ local function wrap_simple_func(func, args, argNames)
 	if createFunc then
 		zigFunc.ret = zigFunc.ret:gsub("^?", "")
 	end
-	zigFunc.cfunc = "cgpu_" .. func.cname
+	zigFunc.cfunc = naming.L_ .. func.cname
 	zigFunc.args = table.concat(argNames, ", ")
 	if createFunc then
 		return zigCreateFuncTemplate:gsub("$(%l+)", zigFunc)
@@ -260,7 +261,7 @@ local function wrap_method(func, type, args, argNames, indent)
 	if createFunc then
 		zigFunc.ret = zigFunc.ret:gsub("^?", "")
 	end
-	zigFunc.cfunc = "cgpu_" .. func.cname
+	zigFunc.cfunc = naming.L_ .. func.cname
 	zigFunc.args = table.concat(argNames, ", ")
 	if createFunc then
 		return zigCreateFuncTemplate:gsub("$(%l+)", zigFunc)
@@ -572,7 +573,7 @@ function converter.funcs(params)
 			yield(wrap_simple_func(func, args, argNames))
 		end
 		yield(
-			"extern fn cgpu_" .. func.cname .. "(" .. table.concat(args, ", ") .. ") " .. convert_ret_type(func.ret) ..
+			"extern fn " .. naming.L_ .. func.cname .. "(" .. table.concat(args, ", ") .. ") " .. convert_ret_type(func.ret) ..
 			";")
 	end
 end
@@ -580,8 +581,9 @@ end
 local gen = {}
 
 
-function gen.gen(_idl, tempfile, outputfile, indent)
+function gen.gen(_idl, tempfile, outputfile, indent, _naming)
 	idl = _idl
+	naming = _naming
 	-- find the functions that have `this` first argument
 	-- these belong to a type (struct) and we need to add them when converting structures
 	local methods = {}

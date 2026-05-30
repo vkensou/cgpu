@@ -1,21 +1,23 @@
 -- generate-binding.lua
 -- Unified code generation entry point.
--- Usage: lua generate-binding.lua <idl_path> <template_path> <binding> <output_path> [indent]
+-- Usage: lua generate-binding.lua <idl_path> <template_path> <binding> <output_path> <prefix> [indent]
 --   binding: module suffix for "bindings-<binding>" (e.g. "c" → bindings-c, "zig" → bindings-zig)
+--   prefix : naming prefix string (e.g. "cgpu")
 --   indent : optional, defaults to "\t"
 
 local idl_path      = arg[1]
 local template_path = arg[2]
 local binding       = arg[3]
 local output_path   = arg[4]
-local indent        = arg[5]
+local prefix        = arg[5]
+local indent        = arg[6]
 
 if not idl_path or not binding or not output_path then
-	error("Usage: lua generate-binding.lua <idl_path> <template_path> <binding> <output_path> [indent]")
+	error("Usage: lua generate-binding.lua <idl_path> <template_path> <binding> <output_path> <prefix> [indent]")
 end
 
 local codegen = require "codegen"
-local idl = codegen.idl(idl_path)
+local idl = codegen.idl(idl_path, prefix)
 
 local modname = "bindings-" .. binding
 local gen = require(modname)
@@ -24,7 +26,7 @@ local gen = require(modname)
 
 print ("Generating: ", output_path, "from", template_path)
 
-local codes = gen(idl, template_path, output_path, indent or "\t")
+local codes = gen(idl, template_path, output_path, indent or "\t", codegen._naming)
 
 function changed(codes, outputfile)
 	local out = io.open(outputfile, "rb")

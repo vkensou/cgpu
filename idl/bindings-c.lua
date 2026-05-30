@@ -126,21 +126,7 @@ function funcgen.cppdecl(func)
 	end
 end
 
-funcgen.c99decl = cfunc(function(func)
-	local doc = func.comments
-	if not doc and func.comment then
-		doc = { func.comment }
-	end
-	if doc then
-		doc = codegen.doxygen_ctype(doc, func)
-	end
-	local funcdecl = codegen.apply_functemp(func, "CGPU_API $CRET cgpu_$CFUNCNAME($CARGS);")
-	if doc then
-		return "\n" .. doc .. "\n" .. funcdecl
-	else
-		return funcdecl
-	end
-end)
+-- c99decl is now built dynamically in codes() using naming
 
 local typegen = {}
 
@@ -248,7 +234,7 @@ function typegen.cswitches(typedef)
 	end
 end
 
-local function codes(idl)
+local function codes(idl, naming)
 	local temp = {}
 	for k in pairs(func_actions) do
 		temp[k] = {}
@@ -258,12 +244,34 @@ local function codes(idl)
 		temp[k] = {}
 	end
 
+	-- Build c99decl template from naming
+	local c99decl_template = naming.api_macro .. " $CRET " .. naming.L_ .. "$CFUNCNAME($CARGS);"
+
 	-- call actions with func
 	for _, f in ipairs(idl.funcs) do
+		-- c99decl: generate function declaration with naming prefix
+		local doc = f.comments
+		if not doc and f.comment then
+			doc = { f.comment }
+		end
+		if doc then
+			doc = codegen.doxygen_ctype(doc, f)
+		end
+		local funcdecl = codegen.apply_functemp(f, c99decl_template)
+		local decl
+		if doc then
+			decl = "\n" .. doc .. "\n" .. funcdecl
+		else
+			decl = funcdecl
+		end
+		table.insert(temp.c99decl, decl)
+
 		for k in pairs(func_actions) do
-			local funcgen = funcgen[k]
-			if funcgen then
-				table.insert(temp[k], (funcgen(f)))
+			if k ~= "c99decl" then
+				local fgen = funcgen[k]
+				if fgen then
+					table.insert(temp[k], (fgen(f)))
+				end
 			end
 		end
 	end
@@ -286,7 +294,7 @@ local function codes(idl)
 		temp[k] = table.concat(temp[k], indent)
 	end
 
-	temp.version = string.format("#define BGFX_API_VERSION UINT32_C(%d)", idl._version or 0)
+	temp.version = string.format("#define " .. naming.U .. "_API_VERSION UINT32_C(%d)", idl._version or 0)
 
 	return temp
 end
@@ -319,17 +327,17 @@ end
 
 local gen = {}
 
-function gen.apply(idl, tempfile)
+function gen.apply(idl, tempfile, naming)
 	local f = assert(io.open(tempfile, "rb"))
 	local temp = f:read "a"
 	f:close()
-	local codes_tbl = codes(idl)
+	local codes_tbl = codes(idl, naming)
 	codes_tbl.source = tempfile
 	return (temp:gsub("$([%l%d_]+)", codes_tbl))
 end
 
-function gen.gen(idl, tempfile, outputfile, indent)
-	local codes = gen.apply(idl, tempfile)
+function gen.gen(idl, tempfile, outputfile, indent, naming)
+	local codes = gen.apply(idl, tempfile, naming)
 	codes = change_indent(codes, indent)
 
 	return codes

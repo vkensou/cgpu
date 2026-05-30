@@ -3,6 +3,24 @@
 
 local codegen = {}
 
+-- Naming convention table, computed from a prefix string like "cgpu".
+-- Set via codegen.compute_naming(prefix) before calling nameconversion.
+codegen._naming = {}
+
+function codegen.compute_naming(prefix)
+    local U = prefix:upper()
+    local L = prefix:lower()
+    codegen._naming = {
+        EU = "E" .. U,       -- enum/flag type name prefix   (e.g. ECGPU)
+        U  = U,              -- struct/id/funcptr type prefix (e.g. CGPU)
+        U_ = U .. "_",       -- const macro prefix           (e.g. CGPU_)
+        L_ = L .. "_",       -- function / enum item prefix  (e.g. cgpu_)
+        api_macro   = U .. "_API",
+        forceinline = U .. "_FORCEINLINE",
+        define_object = "DEFINE_" .. U .. "_OBJECT",
+    }
+end
+
 local DEFAULT_NAME_ALIGN = 20
 local DEFINE_NAME_ALIGN  = 41
 
@@ -396,17 +414,17 @@ function codegen.nameconversion(all_types, all_funcs)
 			if v.namespace then
 				cname = camelcase_to_underscorecase(v.namespace) .. "_" .. cname
 			elseif v.enum then
-				v.cname = "ECGPU" .. name
+				v.cname = codegen._naming.EU .. name
 			elseif v.flag then
-				v.cname = "ECGPU".. name .. "Flags"
+				v.cname = codegen._naming.EU .. name .. "Flags"
 			elseif v.id then
-				v.cname = "CGPU".. name:match("(.-)Id$") .. "Id"
+				v.cname = codegen._naming.U .. name:match("(.-)Id$") .. "Id"
 			elseif v.args then
-				v.cname = "CGPU" .. "Proc".. name
+				v.cname = codegen._naming.U .. "Proc" .. name
 			elseif v.struct then
-				v.cname = "CGPU" .. name
+				v.cname = codegen._naming.U .. name
 			elseif v.const_value then
-				v.cname = "CGPU_" .. camelcase_to_underscorecase(name):upper()
+				v.cname = codegen._naming.U_ .. camelcase_to_underscorecase(name):upper()
 			elseif v.cases then
 				v.cname = name
 			else
@@ -435,7 +453,7 @@ function codegen.nameconversion(all_types, all_funcs)
 
 	for _,v in ipairs(all_types) do
 		if v.enum then
-			local uname = ("cgpu_" .. camelcase_to_underscorecase(v.name:match("(.-)::Enum$"))):upper()
+			local uname = (codegen._naming.L_ .. camelcase_to_underscorecase(v.name:match("(.-)::Enum$"))):upper()
 
 			for _,item in ipairs(v.enum) do
 				local ename
@@ -724,16 +742,6 @@ function codegen.gen_cfuncptr(funcptr)
 	return apply_template(funcptr, "typedef $CRET (*$CFUNCNAME)($CARGS);")
 end
 
-local switch_temp = [[
-static CGPU_FORCEINLINE $RET $NAME($ENUM const arg) {
-    switch(arg) {
-$CASE
-        default: return $DEFAULT;
-    }
-    return $DEFAULT;
-}
-]]
-
 local case_temp = [[        case $ENUM: return $VALUE;]]
 
 function codegen.gen_cswitches(switch_table)
@@ -747,6 +755,15 @@ function codegen.gen_cswitches(switch_table)
 		table.insert(cases, case)
 	end
 
+	local switch_temp = [[
+static ]] .. codegen._naming.forceinline .. [[ $RET $NAME($ENUM const arg) {
+    switch(arg) {
+$CASE
+        default: return $DEFAULT;
+    }
+    return $DEFAULT;
+}
+]]
 	local temp = {
 		RET = switch_table.ret.ctype,
 		NAME = switch_table.cname,
@@ -906,7 +923,7 @@ typedef enum $NAME
 function codegen.gen_enum_cdefine(enum)
 	assert(type(enum.enum) == "table", "Not an enum")
 	local cname = enum.cname
-	local uname = ("cgpu_" .. camelcase_to_underscorecase(enum.name:match("(.-)::Enum$"))):upper()
+	local uname = (codegen._naming.L_ .. camelcase_to_underscorecase(enum.name:match("(.-)::Enum$"))):upper()
 	local items = {}
 	for index , item in ipairs(enum.enum) do
 		local comment = ""
@@ -937,28 +954,12 @@ local function flag_format(flag)
 	end
 end
 
-local flag_temp = [[
-typedef enum $BITSNAME
-{
-    $ITEMS
-        
-} $BITSNAME;
-typedef ECGPUFlags $NAME;
-]]
-
-local flag_temp64 = [[
-typedef enum $BITSNAME
-{
-    $ITEMS
-        
-} $BITSNAME;
-typedef ECGPUFlags64 $NAME;
-]]
-
 function codegen.gen_flag_cdefine(flag)
 	assert(type(flag.flag) == "table", "Not a flag")
 	flag_format(flag)
-	local cname = ("cgpu_" .. camelcase_to_underscorecase(flag.name)):upper()
+	local flags_typedef = codegen._naming.EU .. "Flags"
+	local flags64_typedef = codegen._naming.EU .. "Flags64"
+	local cname = (codegen._naming.L_ .. camelcase_to_underscorecase(flag.name)):upper()
 	local s = {}
 	local shift = flag.shift
 	for index, item in ipairs(flag.flag) do
@@ -1056,8 +1057,16 @@ function codegen.gen_flag_cdefine(flag)
         ITEMS = table.concat(s, "\n\t")
     }
 
-	local temp_used = flag.bits == 64 and flag_temp64 or flag_temp
-    return (temp_used:gsub("$(%u+)", temp))
+	local typedef_name = flag.bits == 64 and flags64_typedef or flags_typedef
+	local flag_template = [[
+typedef enum $BITSNAME
+{
+    $ITEMS
+        
+} $BITSNAME;
+typedef ]] .. typedef_name .. [[ $NAME;
+]]
+    return (flag_template:gsub("$(%u+)", temp))
 end
 
 local function text_with_comments(items, item, cstyle, is_classmember)
@@ -1206,18 +1215,17 @@ function codegen.gen_handle(handle)
 	return (handle_temp:gsub("$(%u+)", { NAME = handle.name }))
 end
 
-local cid_temp = [[
-DEFINE_CGPU_OBJECT($NAME)
-]]
 function codegen.gen_cid(id)
 	assert(id.id, "Not a id")
 	local cname = id.cname:match("(.-)Id$")
-	return (cid_temp:gsub("$(%u+)", { NAME = cname }))
+	local template = codegen._naming.define_object .. "($NAME)"
+	return (template:gsub("$(%u+)", { NAME = cname }))
 end
 
 function codegen.gen_id(id)
 	assert(id.id, "Not a id")
-	return (cid_temp:gsub("$(%u+)", { NAME = id.cname:match "(.-)_t$" }))
+	local template = codegen._naming.define_object .. "($NAME)"
+	return (template:gsub("$(%u+)", { NAME = id.cname:match "(.-)_t$" }))
 end
 
 local idl = require "idl"
@@ -1235,13 +1243,16 @@ function codegen.load(filename)
 	idlfile[filename] = true
 end
 
-function codegen.idl(filename)
+function codegen.idl(filename, prefix)
 	if conversion == nil then
 		if filename and not idlfile[filename] then
 			codegen.load(filename)
 		end
 		assert(next(idlfile), "call codegen.load() first")
 		conversion = true
+		if prefix then
+			codegen.compute_naming(prefix)
+		end
 		codegen.nameconversion(idl.types, idl.funcs)
 	end
 	return idl
