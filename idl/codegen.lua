@@ -1175,8 +1175,8 @@ typedef union $NAME
 } $NAME;
 ]]
 local cstruct_empty_temp = [[
-struct $NAME_s;
-typedef struct $NAME_s $NAME_t;
+struct $NAME;
+typedef struct $NAME $NAME;
 ]]
 function codegen.gen_struct_cdefine(struct)
 	assert(type(struct.struct) == "table", "Not a struct")

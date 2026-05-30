@@ -2109,8 +2109,8 @@ typedef struct CGPUMarkerInfo
 
 } CGPUMarkerInfo;
 
-struct CGPUStateBufferDescriptor_s;
-typedef struct CGPUStateBufferDescriptor_s CGPUStateBufferDescriptor_t;
+struct CGPUStateBufferDescriptor;
+typedef struct CGPUStateBufferDescriptor CGPUStateBufferDescriptor;
 
 typedef struct CGPUProcTable
 {
@@ -2261,8 +2261,8 @@ typedef struct CGPUSurfacesProcTable
 
 } CGPUSurfacesProcTable;
 
-struct CGPURuntimeTable_s;
-typedef struct CGPURuntimeTable_s CGPURuntimeTable_t;
+struct CGPURuntimeTable;
+typedef struct CGPURuntimeTable CGPURuntimeTable;
 
 
 CGPU_API CGPUInstanceId cgpu_create_instance(const CGPUInstanceDescriptor* desc);
