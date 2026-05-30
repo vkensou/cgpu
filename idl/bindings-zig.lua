@@ -1,4 +1,5 @@
-return function(idl)
+local codegen = require "codegen"
+local idl
 
 local zig_template = [[
 // Copyright 2011-2023 Branimir Karadzic. All rights reserved.
@@ -272,7 +273,8 @@ local converter = {}
 local yield = coroutine.yield
 local gen = {}
 
-function gen.gen()
+function gen.gen(_idl, tempfile, outputfile, indent)
+	idl = _idl
 	-- find the functions that have `this` first argument
 	-- these belong to a type (struct) and we need to add them when converting structures
 	local methods = {}
@@ -310,6 +312,8 @@ function gen.gen()
 		end
 		return table.concat(tmp, "\n")
 	end)
+
+	gen.write(r, outputfile)
 	return r
 end
 
@@ -626,4 +630,3 @@ function gen.write(codes, outputfile)
 end
 
 return gen
-end

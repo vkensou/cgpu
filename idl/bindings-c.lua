@@ -1,7 +1,4 @@
--- Copyright 2019 云风 https://github.com/cloudwu . All rights reserved.
--- License (the same with bgfx) : https://github.com/bkaradzic/bgfx/blob/master/LICENSE
-
-return function(idl)
+local codegen = require "codegen"
 
 local func_actions = {
 
@@ -251,7 +248,7 @@ function typegen.cswitches(typedef)
 	end
 end
 
-local function codes()
+local function codes(idl)
 	local temp = {}
 	for k in pairs(func_actions) do
 		temp[k] = {}
@@ -294,7 +291,6 @@ local function codes()
 	return temp
 end
 
-local codes_tbl = codes()
 
 local function add_path(filename)
 	local path
@@ -323,10 +319,11 @@ end
 
 local gen = {}
 
-function gen.apply(tempfile)
+function gen.apply(idl, tempfile)
 	local f = assert(io.open(tempfile, "rb"))
 	local temp = f:read "a"
 	f:close()
+	local codes_tbl = codes(idl)
 	codes_tbl.source = tempfile
 	return (temp:gsub("$([%l%d_]+)", codes_tbl))
 end
@@ -351,9 +348,9 @@ function gen.write(codes, outputfile)
 	out:close()
 end
 
-function gen.gen(tempfile, outputfile, indent)
+function gen.gen(idl, tempfile, outputfile, indent)
 	print ("Generate", outputfile, "from", tempfile)
-	local codes = gen.apply(tempfile)
+	local codes = gen.apply(idl, tempfile)
 	codes = change_indent(codes, indent)
 
 	if not gen.changed(codes, outputfile) then
@@ -364,4 +361,3 @@ function gen.gen(tempfile, outputfile, indent)
 end
 
 return gen
-end

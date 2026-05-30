@@ -18,13 +18,7 @@ local codegen = require "codegen"
 local idl = codegen.idl(idl_path)
 
 local modname = "bindings-" .. binding
-local make_gen = require(modname)
-local gen = make_gen(idl)
+local gen = require(modname)
 
 -- Dispatch: C binding uses template-file API; others use gen()+write() convention
-if binding == "c" then
-	gen.gen(template_path, output_path, indent or "\t")
-else
-	local codes = gen.gen()
-	gen.write(codes, output_path)
-end
+gen.gen(idl, template_path, output_path, indent or "\t")
