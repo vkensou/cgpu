@@ -331,7 +331,7 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
                     vkbindings[i_binding].binding = param_table->p_resources[i_binding].binding;
                     vkbindings[i_binding].stageFlags = VkUtil_TranslateShaderUsages(param_table->p_resources[i_binding].stages);
                     vkbindings[i_binding].descriptorType = VkUtil_TranslateResourceType(param_table->p_resources[i_binding].type);
-                    vkbindings[i_binding].descriptorCount = param_table->p_resources[i_binding].size;
+                    vkbindings[i_binding].descriptorCount = param_table->p_resources[i_binding].count;
                 }
             }
             // static samplers
@@ -411,7 +411,7 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
             {
                 uint32_t i_binding = param_table->p_resources[i_iter].binding;
                 VkDescriptorUpdateTemplateEntry* this_entry = template_entries + i_iter;
-                this_entry->descriptorCount = param_table->p_resources[i_iter].size;
+                this_entry->descriptorCount = param_table->p_resources[i_iter].count;
                 this_entry->descriptorType = VkUtil_TranslateResourceType(param_table->p_resources[i_iter].type);
                 this_entry->dstBinding = i_binding;
                 this_entry->dstArrayElement = 0;
@@ -835,7 +835,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
     CGPURootSignature_Vulkan* RS = (CGPURootSignature_Vulkan*)desc->root_signature;
     
     uint32_t input_binding_count = 0;
-	uint32_t input_attribute_count = 0;
+    uint32_t input_attribute_count = 0;
     VkUtil_GetVertexInputBindingAttrCount(desc->vertex_layout, &input_binding_count, &input_attribute_count);
     uint64_t dsize = sizeof(CGPURenderPipeline_Vulkan);
     const uint64_t input_elements_offset = dsize;
@@ -883,12 +883,12 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
 
     VkPipelineVertexInputStateCreateInfo vi = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-		.pNext = NULL,
-		.flags = 0,
-		.vertexBindingDescriptionCount = input_binding_count,
-		.pVertexBindingDescriptions = input_bindings,
-		.vertexAttributeDescriptionCount = input_attribute_count,
-		.pVertexAttributeDescriptions = input_attributes
+        .pNext = NULL,
+        .flags = 0,
+        .vertexBindingDescriptionCount = input_binding_count,
+        .pVertexBindingDescriptions = input_bindings,
+        .vertexAttributeDescriptionCount = input_attribute_count,
+        .pVertexAttributeDescriptions = input_attributes
     };
     // Shader stages
     CGPU_DECLARE_ZERO(VkPipelineShaderStageCreateInfo, shaderStages[5])
@@ -980,22 +980,22 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
     VkUitl_QueryDynamicPipelineStates(A, dynamic_state, &dyn_state_count, dyn_states);
     VkPipelineDynamicStateCreateInfo dys = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-		.pNext = NULL,
-		.flags = 0,
-		.dynamicStateCount = dyn_state_count,
-		.pDynamicStates = dyn_states
+        .pNext = NULL,
+        .flags = 0,
+        .dynamicStateCount = dyn_state_count,
+        .pDynamicStates = dyn_states
     };
     // Multi-sampling
     VkPipelineMultisampleStateCreateInfo ms = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-		.pNext = NULL,
-		.flags = 0,
-		.rasterizationSamples = VkUtil_SampleCountTranslateToVk(desc->sample_count),
-		.sampleShadingEnable = VK_FALSE,
-		.minSampleShading = 0.0f,
-		.pSampleMask = 0,
-		.alphaToCoverageEnable = VK_FALSE,
-		.alphaToOneEnable = VK_FALSE
+        .pNext = NULL,
+        .flags = 0,
+        .rasterizationSamples = VkUtil_SampleCountTranslateToVk(desc->sample_count),
+        .sampleShadingEnable = VK_FALSE,
+        .minSampleShading = 0.0f,
+        .pSampleMask = 0,
+        .alphaToCoverageEnable = VK_FALSE,
+        .alphaToOneEnable = VK_FALSE
     };
     // IA stage
     VkPrimitiveTopology topology = VkUtil_TranslateTopology(desc->prim_topology);
@@ -1069,7 +1069,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
     CGPU_DECLARE_ZERO(VkPipelineColorBlendAttachmentState, cb_attachments[CGPU_MAX_MRT_COUNT])
     const CGPUBlendStateDescriptor* pDesc = desc->blend_state;
     for (int i = 0; i < cgpu_min(pDesc->attachment_count, CGPU_MAX_MRT_COUNT); ++i)
-	{
+    {
         VkBool32 blendEnable = pDesc->p_attachments[i].enable ? VK_TRUE : VK_FALSE;
         cb_attachments[i].blendEnable = blendEnable;
         cb_attachments[i].colorWriteMask = pDesc->p_attachments[i].color_mask;
@@ -1079,7 +1079,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
         cb_attachments[i].srcAlphaBlendFactor = gVkBlendConstantTranslator[pDesc->p_attachments[i].src_alpha_factor];
         cb_attachments[i].dstAlphaBlendFactor = gVkBlendConstantTranslator[pDesc->p_attachments[i].dst_alpha_factor];
         cb_attachments[i].alphaBlendOp = gVkBlendOpTranslator[pDesc->p_attachments[i].blend_alpha_op];
-	}
+    }
     VkPipelineColorBlendStateCreateInfo cbs = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
         .pNext = NULL,

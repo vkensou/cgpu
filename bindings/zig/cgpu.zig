@@ -1739,6 +1739,7 @@ pub const ShaderResource = extern struct {
     dim: TextureDimension,
     set: u32,
     binding: u32,
+    count: u32,
     size: u32,
     offset: u32,
     stages: ShaderStage,
