@@ -1158,6 +1158,8 @@ funcptr.ComputeEncoderBindDescriptorSet
     "void"
     .encoder            "ComputePassEncoderId"
     .set                "DescriptorSetId"
+    .dynamicOffsetCount "uint32_t"
+    .pDynamicOffsets    "*const uint32_t"
 
 funcptr.ComputeEncoderBindPipeline
     "void"
@@ -1192,6 +1194,8 @@ funcptr.RenderEncoderBindDescriptorSet
     "void"
     .encoder            "RenderPassEncoderId"
     .set                "DescriptorSetId"
+    .dynamicOffsetCount "uint32_t"
+    .pDynamicOffsets    "*const uint32_t"
 
 funcptr.RenderEncoderSetViewport
     "void"
@@ -2799,6 +2803,8 @@ func.CommandBuffer.FreeBinder
 func.ComputePassEncoder.BindDescriptorSet
     "void"
     .set                "DescriptorSetId"
+    .dynamicOffsetCount "uint32_t"
+    .pDynamicOffsets    "*const uint32_t"
 
 func.ComputePassEncoder.BindComputePipeline
     "void"
@@ -2829,6 +2835,8 @@ func.RenderPassEncoder.SetShadingRate
 func.RenderPassEncoder.BindDescriptorSet
     "void"
     .set                "DescriptorSetId"
+    .dynamicOffsetCount "uint32_t"
+    .pDynamicOffsets    "*const uint32_t"
 
 func.RenderPassEncoder.SetViewport
     "void"

@@ -133,7 +133,7 @@ CGPU_API void cgpu_cmd_end_event_vulkan(CGPUCommandBufferId cmd);
 
 // Compute CMDs
 CGPU_API CGPUComputePassEncoderId cgpu_cmd_begin_compute_pass_vulkan(CGPUCommandBufferId cmd, const struct CGPUComputePassDescriptor* desc);
-CGPU_API void cgpu_compute_encoder_bind_descriptor_set_vulkan(CGPUComputePassEncoderId encoder, CGPUDescriptorSetId descriptor);
+CGPU_API void cgpu_compute_encoder_bind_descriptor_set_vulkan(CGPUComputePassEncoderId encoder, CGPUDescriptorSetId descriptor, uint32_t dynamic_offset_count, const uint32_t* p_dynamic_offsets);
 CGPU_API void cgpu_compute_encoder_push_constants_vulkan(CGPUComputePassEncoderId encoder, CGPURootSignatureId rs, const char* name, const void* data);
 CGPU_API void cgpu_compute_encoder_bind_pipeline_vulkan(CGPUComputePassEncoderId encoder, CGPUComputePipelineId pipeline);
 CGPU_API void cgpu_compute_encoder_dispatch_vulkan(CGPUComputePassEncoderId encoder, uint32_t X, uint32_t Y, uint32_t Z);
@@ -142,7 +142,7 @@ CGPU_API void cgpu_cmd_end_compute_pass_vulkan(CGPUCommandBufferId cmd, CGPUComp
 // Render CMDs
 CGPU_API CGPURenderPassEncoderId cgpu_cmd_begin_render_pass_vulkan(CGPUCommandBufferId cmd, const CGPUBeginRenderPassInfo* begin_info);
 CGPU_API void cgpu_render_encoder_set_shading_rate_vulkan(CGPURenderPassEncoderId encoder, ECGPUShadingRate shading_rate, ECGPUShadingRateCombiner post_rasterizer_rate, ECGPUShadingRateCombiner final_rate);
-CGPU_API void cgpu_render_encoder_bind_descriptor_set_vulkan(CGPURenderPassEncoderId encoder, CGPUDescriptorSetId set);
+CGPU_API void cgpu_render_encoder_bind_descriptor_set_vulkan(CGPURenderPassEncoderId encoder, CGPUDescriptorSetId set, uint32_t dynamic_offset_count, const uint32_t* p_dynamic_offsets);
 CGPU_API void cgpu_render_encoder_set_viewport_vulkan(CGPURenderPassEncoderId encoder, float x, float y, float width, float height, float min_depth, float max_depth);
 CGPU_API void cgpu_render_encoder_set_scissor_vulkan(CGPURenderPassEncoderId encoder, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 CGPU_API void cgpu_render_encoder_bind_pipeline_vulkan(CGPURenderPassEncoderId encoder, CGPURenderPipelineId pipeline);

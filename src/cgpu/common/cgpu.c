@@ -810,15 +810,16 @@ CGPUComputePassEncoderId cgpu_command_buffer_begin_compute_pass(CGPUCommandBuffe
     return ecd;
 }
 
-void cgpu_compute_pass_encoder_bind_descriptor_set(CGPUComputePassEncoderId encoder, CGPUDescriptorSetId set)
+void cgpu_compute_pass_encoder_bind_descriptor_set(CGPUComputePassEncoderId encoder, CGPUDescriptorSetId set, uint32_t dynamic_offset_count, const uint32_t* p_dynamic_offsets)
 {
     cgpu_assert(encoder != CGPU_NULLPTR && "fatal: call on NULL compute encoder!");
     cgpu_assert(set != CGPU_NULLPTR && "fatal: call on NULL descriptor!");
+    cgpu_assert(((dynamic_offset_count == 0) == (p_dynamic_offsets == CGPU_NULLPTR)) && "fatal: dynamic_offset_count and p_dynamic_offsets mismatch!");
     CGPUDeviceId device = encoder->device;
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
     const CGPUProcComputeEncoderBindDescriptorSet fn_bind_descriptor_set = device->proc_table_cache->compute_encoder_bind_descriptor_set;
     cgpu_assert(fn_bind_descriptor_set && "compute_encoder_bind_descriptor_set Proc Missing!");
-    fn_bind_descriptor_set(encoder, set);
+    fn_bind_descriptor_set(encoder, set, dynamic_offset_count, p_dynamic_offsets);
 }
 
 void cgpu_compute_pass_encoder_push_constants(CGPUComputePassEncoderId encoder, CGPURootSignatureId rs, const char* name, const void* data)
@@ -883,15 +884,16 @@ void cgpu_render_pass_encoder_set_shading_rate(CGPURenderPassEncoderId encoder, 
     fn_set_shading_rate(encoder, shading_rate, post_rasterizer_rate, final_rate);
 }
 
-void cgpu_render_pass_encoder_bind_descriptor_set(CGPURenderPassEncoderId encoder, CGPUDescriptorSetId set)
+void cgpu_render_pass_encoder_bind_descriptor_set(CGPURenderPassEncoderId encoder, CGPUDescriptorSetId set, uint32_t dynamic_offset_count, const uint32_t* p_dynamic_offsets)
 {
     cgpu_assert(encoder != CGPU_NULLPTR && "fatal: call on NULL compute encoder!");
     cgpu_assert(set != CGPU_NULLPTR && "fatal: call on NULL descriptor!");
+    cgpu_assert(((dynamic_offset_count == 0) == (p_dynamic_offsets == CGPU_NULLPTR)) && "fatal: dynamic_offset_count and p_dynamic_offsets mismatch!");
     CGPUDeviceId device = encoder->device;
     cgpu_assert(device != CGPU_NULLPTR && "fatal: call on NULL device!");
     const CGPUProcRenderEncoderBindDescriptorSet fn_bind_descriptor_set = device->proc_table_cache->render_encoder_bind_descriptor_set;
     cgpu_assert(fn_bind_descriptor_set && "render_encoder_bind_descriptor_set Proc Missing!");
-    fn_bind_descriptor_set(encoder, set);
+    fn_bind_descriptor_set(encoder, set, dynamic_offset_count, p_dynamic_offsets);
 }
 
 void cgpu_render_pass_encoder_bind_vertex_buffers(CGPURenderPassEncoderId encoder, uint32_t buffer_count,

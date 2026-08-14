@@ -1975,7 +1975,7 @@ CGPUComputePassEncoderId cgpu_cmd_begin_compute_pass_vulkan(CGPUCommandBufferId 
     return (CGPUComputePassEncoderId)cmd;
 }
 
-void cgpu_compute_encoder_bind_descriptor_set_vulkan(CGPUComputePassEncoderId encoder, CGPUDescriptorSetId set)
+void cgpu_compute_encoder_bind_descriptor_set_vulkan(CGPUComputePassEncoderId encoder, CGPUDescriptorSetId set, uint32_t dynamic_offset_count, const uint32_t* p_dynamic_offsets)
 {
     CGPUCommandBuffer_Vulkan* Cmd = (CGPUCommandBuffer_Vulkan*)encoder;
     const CGPUDescriptorSet_Vulkan* Set = (CGPUDescriptorSet_Vulkan*)set;
@@ -2001,11 +2001,10 @@ void cgpu_compute_encoder_bind_descriptor_set_vulkan(CGPUComputePassEncoderId en
     D->mVkDeviceTable.vkCmdBindDescriptorSets(Cmd->pVkCmdBuf,
     VK_PIPELINE_BIND_POINT_COMPUTE, RS->pPipelineLayout,
     Set->super.index, 1, &Set->pVkDescriptorSet,
-    // TODO: Dynamic Offset
-    0, NULL);
+    dynamic_offset_count, p_dynamic_offsets);
 }
 
-void cgpu_render_encoder_bind_descriptor_set_vulkan(CGPURenderPassEncoderId encoder, CGPUDescriptorSetId set)
+void cgpu_render_encoder_bind_descriptor_set_vulkan(CGPURenderPassEncoderId encoder, CGPUDescriptorSetId set, uint32_t dynamic_offset_count, const uint32_t* p_dynamic_offsets)
 {
     CGPUCommandBuffer_Vulkan* Cmd = (CGPUCommandBuffer_Vulkan*)encoder;
     const CGPUDescriptorSet_Vulkan* Set = (CGPUDescriptorSet_Vulkan*)set;
@@ -2031,8 +2030,7 @@ void cgpu_render_encoder_bind_descriptor_set_vulkan(CGPURenderPassEncoderId enco
     D->mVkDeviceTable.vkCmdBindDescriptorSets(Cmd->pVkCmdBuf,
     VK_PIPELINE_BIND_POINT_GRAPHICS, RS->pPipelineLayout,
     Set->super.index, 1, &Set->pVkDescriptorSet,
-    // TODO: Dynamic Offset
-    0, NULL);
+    dynamic_offset_count, p_dynamic_offsets);
 }
 
 void cgpu_compute_encoder_push_constants_vulkan(CGPUComputePassEncoderId encoder, CGPURootSignatureId rs, const char* name, const void* data)

@@ -851,7 +851,7 @@ pub const CmdEnd = fn (cmd: CommandBufferId) callconv(.C) void;
 
 pub const CmdBeginComputePass = fn (cmd: CommandBufferId, desc: *const ComputePassDescriptor) callconv(.C) ?ComputePassEncoderId;
 
-pub const ComputeEncoderBindDescriptorSet = fn (encoder: ComputePassEncoderId, set: DescriptorSetId) callconv(.C) void;
+pub const ComputeEncoderBindDescriptorSet = fn (encoder: ComputePassEncoderId, set: DescriptorSetId, dynamic_offset_count: u32, p_dynamic_offsets: *const u32) callconv(.C) void;
 
 pub const ComputeEncoderBindPipeline = fn (encoder: ComputePassEncoderId, pipeline: ComputePipelineId) callconv(.C) void;
 
@@ -863,7 +863,7 @@ pub const CmdBeginRenderPass = fn (cmd: CommandBufferId, begin_info: *const Begi
 
 pub const RenderEncoderSetShadingRate = fn (encoder: RenderPassEncoderId, shading_rate: ShadingRate, post_rasterize_rate: ShadingRateCombiner, final_rate: ShadingRateCombiner) callconv(.C) void;
 
-pub const RenderEncoderBindDescriptorSet = fn (encoder: RenderPassEncoderId, set: DescriptorSetId) callconv(.C) void;
+pub const RenderEncoderBindDescriptorSet = fn (encoder: RenderPassEncoderId, set: DescriptorSetId, dynamic_offset_count: u32, p_dynamic_offsets: *const u32) callconv(.C) void;
 
 pub const RenderEncoderSetViewport = fn (encoder: RenderPassEncoderId, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) callconv(.C) void;
 
@@ -1536,8 +1536,8 @@ pub const QueryPool = extern struct {
 
 pub const ComputePassEncoder = extern struct {
     device: DeviceId,
-    pub inline fn bindDescriptorSet(self: *ComputePassEncoder, set: DescriptorSetId) void {
-        return cgpu_compute_pass_encoder_bind_descriptor_set(self, set);
+    pub inline fn bindDescriptorSet(self: *ComputePassEncoder, set: DescriptorSetId, dynamic_offset_count: u32, p_dynamic_offsets: *const u32) void {
+        return cgpu_compute_pass_encoder_bind_descriptor_set(self, set, dynamic_offset_count, p_dynamic_offsets);
     }
     pub inline fn bindComputePipeline(self: *ComputePassEncoder, pipeline: ComputePipelineId) void {
         return cgpu_compute_pass_encoder_bind_compute_pipeline(self, pipeline);
@@ -1558,8 +1558,8 @@ pub const RenderPassEncoder = extern struct {
     pub inline fn setShadingRate(self: *RenderPassEncoder, shading_rate: ShadingRate, post_rasterize_rate: ShadingRateCombiner, final_rate: ShadingRateCombiner) void {
         return cgpu_render_pass_encoder_set_shading_rate(self, shading_rate, post_rasterize_rate, final_rate);
     }
-    pub inline fn bindDescriptorSet(self: *RenderPassEncoder, set: DescriptorSetId) void {
-        return cgpu_render_pass_encoder_bind_descriptor_set(self, set);
+    pub inline fn bindDescriptorSet(self: *RenderPassEncoder, set: DescriptorSetId, dynamic_offset_count: u32, p_dynamic_offsets: *const u32) void {
+        return cgpu_render_pass_encoder_bind_descriptor_set(self, set, dynamic_offset_count, p_dynamic_offsets);
     }
     pub inline fn setViewport(self: *RenderPassEncoder, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void {
         return cgpu_render_pass_encoder_set_viewport(self, x, y, width, height, min_depth, max_depth);
@@ -3137,7 +3137,7 @@ extern fn cgpu_command_buffer_create_binder(self: [*c]CommandBuffer) ?BinderId;
 
 extern fn cgpu_command_buffer_free_binder(self: [*c]CommandBuffer, binder: BinderId) void;
 
-extern fn cgpu_compute_pass_encoder_bind_descriptor_set(self: [*c]ComputePassEncoder, set: DescriptorSetId) void;
+extern fn cgpu_compute_pass_encoder_bind_descriptor_set(self: [*c]ComputePassEncoder, set: DescriptorSetId, dynamic_offset_count: u32, p_dynamic_offsets: *const u32) void;
 
 extern fn cgpu_compute_pass_encoder_bind_compute_pipeline(self: [*c]ComputePassEncoder, pipeline: ComputePipelineId) void;
 
@@ -3149,7 +3149,7 @@ extern fn cgpu_compute_pass_encoder_bind_state_buffer(self: [*c]ComputePassEncod
 
 extern fn cgpu_render_pass_encoder_set_shading_rate(self: [*c]RenderPassEncoder, shading_rate: ShadingRate, post_rasterize_rate: ShadingRateCombiner, final_rate: ShadingRateCombiner) void;
 
-extern fn cgpu_render_pass_encoder_bind_descriptor_set(self: [*c]RenderPassEncoder, set: DescriptorSetId) void;
+extern fn cgpu_render_pass_encoder_bind_descriptor_set(self: [*c]RenderPassEncoder, set: DescriptorSetId, dynamic_offset_count: u32, p_dynamic_offsets: *const u32) void;
 
 extern fn cgpu_render_pass_encoder_set_viewport(self: [*c]RenderPassEncoder, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void;
 
