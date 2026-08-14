@@ -366,6 +366,19 @@ CGPU_FORCEINLINE static VkDescriptorType VkUtil_TranslateResourceType(ECGPUResou
 	return VK_DESCRIPTOR_TYPE_MAX_ENUM;
 }
 
+CGPU_FORCEINLINE static VkDescriptorType VkUtil_TranslateResourceTypeConvertToDynamic(ECGPUResourceTypeFlags type, bool dynamic_buffers)
+{
+    VkDescriptorType dtype = VkUtil_TranslateResourceType(type);
+    if (dynamic_buffers)
+    {
+        if (type == CGPU_RESOURCE_TYPE_UNIFORM_BUFFER)
+            dtype = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+        else if (type == CGPU_RESOURCE_TYPE_RW_BUFFER)
+            dtype = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+    }
+    return dtype;
+}
+
 CGPU_FORCEINLINE static VkPipelineStageFlags VkUtil_DeterminePipelineStageFlags(CGPUAdapter_Vulkan* A, VkAccessFlags accessFlags, ECGPUQueueType queue_type)
 {
     VkPipelineStageFlags flags = 0;

@@ -1717,11 +1717,13 @@ struct.RootSignatureDescriptor
     .pStaticSamplerNames"?[*]cstring"
     .pushConstantCount  "uint32_t"
     .pPushConstantNames "?[*]cstring"
+    .dynamicBuffers     "bool"
     .pool               "?RootSignaturePoolId"
 
 struct.ParameterTable
     .resourcesCount     "uint32_t"
     .pResources         "[*]ShaderResource"
+    .dynamicBufferCount "uint32_t"
     .setIndex           "uint32_t"
 
 struct.RootSignature

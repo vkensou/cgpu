@@ -14,6 +14,7 @@ struct RSCharacteristic
     uint32_t static_sampler_count;
     size_t static_samplers_hash;
     ECGPUPipelineType pipeline_type;
+    bool dynamic_buffers;
     operator size_t() const
     {
         return cgpu_hash(this, sizeof(RSCharacteristic), (size_t)pipeline_type);
@@ -106,6 +107,7 @@ public:
             }
         }
         newCharacteristic.pipeline_type = RSTables->pipeline_type;
+        newCharacteristic.dynamic_buffers = desc->dynamic_buffers;
         return newCharacteristic;
     }
     CGPURootSignatureId try_allocate(CGPURootSignature* RSTables, const struct CGPURootSignatureDescriptor* desc)

@@ -173,10 +173,17 @@ void CGPUUtil_InitRSParamTables(CGPURootSignature* RS, const struct CGPURootSign
         CGPUParameterTable& table = RS->p_tables[table_index];
         table.set_index = set_index;
         table.resources_count = 0;
+        table.dynamic_buffer_count = 0;
         for (auto&& RST_resource : RST_resources)
         {
             if (RST_resource.set == set_index)
+            {
                 table.resources_count++;
+                if (desc->dynamic_buffers &&
+                    (RST_resource.type == CGPU_RESOURCE_TYPE_UNIFORM_BUFFER ||
+                     RST_resource.type == CGPU_RESOURCE_TYPE_RW_BUFFER))
+                    table.dynamic_buffer_count += RST_resource.count;
+            }
         }
         table.p_resources = (CGPUShaderResource*)cgpu_calloc(allocator,
         table.resources_count, sizeof(CGPUShaderResource));

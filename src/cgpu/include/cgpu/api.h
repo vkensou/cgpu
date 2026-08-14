@@ -1379,6 +1379,7 @@ typedef struct CGPURootSignatureDescriptor
     const char**         p_static_sampler_names;
     uint32_t             push_constant_count;
     const char**         p_push_constant_names;
+    bool                 dynamic_buffers;
     CGPURootSignaturePoolId pool;
 
 } CGPURootSignatureDescriptor;
@@ -1387,6 +1388,7 @@ typedef struct CGPUParameterTable
 {
     uint32_t             resources_count;
     CGPUShaderResource*  p_resources;
+    uint32_t             dynamic_buffer_count;
     uint32_t             set_index;
 
 } CGPUParameterTable;

@@ -1789,12 +1789,14 @@ pub const RootSignatureDescriptor = extern struct {
     p_static_sampler_names: ?[*][*:0]const u8 = null,
     push_constant_count: u32,
     p_push_constant_names: ?[*][*:0]const u8 = null,
+    dynamic_buffers: bool,
     pool: ?RootSignaturePoolId = null,
 };
 
 pub const ParameterTable = extern struct {
     resources_count: u32,
     p_resources: [*]ShaderResource,
+    dynamic_buffer_count: u32,
     set_index: u32,
 };
 

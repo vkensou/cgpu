@@ -410,6 +410,7 @@ typedef struct SetLayout_Vulkan {
     VkDescriptorSetLayout layout;
     VkDescriptorUpdateTemplate pUpdateTemplate;
     uint32_t mUpdateEntriesCount;
+    uint32_t dynamic_count;
     VkDescriptorSet pEmptyDescSet;
 } SetLayout_Vulkan;
 

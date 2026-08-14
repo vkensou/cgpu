@@ -330,8 +330,13 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
                 {
                     vkbindings[i_binding].binding = param_table->p_resources[i_binding].binding;
                     vkbindings[i_binding].stageFlags = VkUtil_TranslateShaderUsages(param_table->p_resources[i_binding].stages);
-                    vkbindings[i_binding].descriptorType = VkUtil_TranslateResourceType(param_table->p_resources[i_binding].type);
+                    vkbindings[i_binding].descriptorType = VkUtil_TranslateResourceTypeConvertToDynamic(param_table->p_resources[i_binding].type, desc->dynamic_buffers);
                     vkbindings[i_binding].descriptorCount = param_table->p_resources[i_binding].count;
+                    if (vkbindings[i_binding].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
+                        vkbindings[i_binding].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
+                    {
+                        RS->pSetLayouts[set_index].dynamic_count += param_table->p_resources[i_binding].count;
+                    }
                 }
             }
             // static samplers
@@ -412,7 +417,7 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
                 uint32_t i_binding = param_table->p_resources[i_iter].binding;
                 VkDescriptorUpdateTemplateEntry* this_entry = template_entries + i_iter;
                 this_entry->descriptorCount = param_table->p_resources[i_iter].count;
-                this_entry->descriptorType = VkUtil_TranslateResourceType(param_table->p_resources[i_iter].type);
+                this_entry->descriptorType = VkUtil_TranslateResourceTypeConvertToDynamic(param_table->p_resources[i_iter].type, desc->dynamic_buffers);
                 this_entry->dstBinding = i_binding;
                 this_entry->dstArrayElement = 0;
                 this_entry->stride = sizeof(VkDescriptorUpdateData);
