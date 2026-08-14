@@ -252,13 +252,12 @@ void cgpu_free_semaphore_vulkan(CGPUDeviceId device, CGPUSemaphoreId semaphore)
 
 uint32_t get_set_count(uint32_t set_index_mask)
 {
+    // Set slots are indexed by their set number (RS->pSetLayouts[set_index]), so the
+    // layout array must cover every slot up to the highest referenced set, gaps included.
     uint32_t set_count = 0;
     while (set_index_mask != 0)
     {
-        if (set_index_mask & 1)
-        {
-            set_count++;
-        }
+        set_count++;
         set_index_mask >>= 1;
     }
     return set_count;
@@ -306,69 +305,70 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
     RS->pSetLayouts = cgpu_calloc(allocator, set_count, sizeof(SetLayout_Vulkan));
     RS->mSetLayoutCount = set_count;
     uint32_t set_index = 0;
-    while (set_index_mask != 0)
+    for (set_index = 0; set_index < set_count; set_index++)
     {
-        if (set_index_mask & 1)
+        if (!(set_index_mask & (1 << set_index)))
         {
-            CGPUParameterTable* param_table = CGPU_NULLPTR;
-            for (uint32_t i = 0; i < RS->super.table_count; i++)
-            {
-                if (RS->super.p_tables[i].set_index == set_index)
-                {
-                    param_table = &RS->super.p_tables[i];
-                    break;
-                }
-            }
-            uint32_t bindings_count = param_table ? param_table->resources_count + desc->static_sampler_count : 0 + desc->static_sampler_count;
-            VkDescriptorSetLayoutBinding* vkbindings = cgpu_calloc(allocator,
-            bindings_count, sizeof(VkDescriptorSetLayoutBinding));
-            uint32_t i_binding = 0;
-            // bindings
-            if (param_table)
-            {
-                for (i_binding = 0; i_binding < param_table->resources_count; i_binding++)
-                {
-                    vkbindings[i_binding].binding = param_table->p_resources[i_binding].binding;
-                    vkbindings[i_binding].stageFlags = VkUtil_TranslateShaderUsages(param_table->p_resources[i_binding].stages);
-                    vkbindings[i_binding].descriptorType = VkUtil_TranslateResourceTypeConvertToDynamic(param_table->p_resources[i_binding].type, desc->dynamic_buffers);
-                    vkbindings[i_binding].descriptorCount = param_table->p_resources[i_binding].count;
-                    if (vkbindings[i_binding].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
-                        vkbindings[i_binding].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
-                    {
-                        RS->pSetLayouts[set_index].dynamic_count += param_table->p_resources[i_binding].count;
-                    }
-                }
-            }
-            // static samplers
-            for (uint32_t i_ss = 0; i_ss < desc->static_sampler_count; i_ss++)
-            {
-                if (RS->super.p_static_samplers[i_ss].set == set_index)
-                {
-                    CGPUSampler_Vulkan* immutableSampler = (CGPUSampler_Vulkan*)desc->p_static_samplers[i_ss];
-                    vkbindings[i_binding].pImmutableSamplers = &immutableSampler->pVkSampler;
-                    vkbindings[i_binding].binding = RS->super.p_static_samplers[i_ss].binding;
-                    vkbindings[i_binding].stageFlags = VkUtil_TranslateShaderUsages(RS->super.p_static_samplers[i_ss].stages);
-                    vkbindings[i_binding].descriptorType = VkUtil_TranslateResourceType(RS->super.p_static_samplers[i_ss].type);
-                    vkbindings[i_binding].descriptorCount = RS->super.p_static_samplers[i_ss].size;
-                    i_binding++;
-                }
-            }
-            VkDescriptorSetLayoutCreateInfo setLayoutInfo = {
-                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-                .pNext = NULL,
-                .flags = 0,
-                .bindingCount = i_binding,
-                .pBindings = vkbindings,
-            };
-            CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkCreateDescriptorSetLayout(D->pVkDevice,
-                &setLayoutInfo, &I->vkAllocator, &RS->pSetLayouts[set_index].layout));
-            VkUtil_ConsumeDescriptorSets(D->pDescriptorPool, &RS->pSetLayouts[set_index].layout,
-                &RS->pSetLayouts[set_index].pEmptyDescSet, 1);
-
-            if (bindings_count) cgpu_free(allocator, vkbindings);
+            // Numbering gap: the shader never references this set slot. Use the shared
+            // empty set layout; it is auto-bound at bind time (see empty_set_mask).
+            RS->pSetLayouts[set_index].layout = D->pEmptySetLayout;
+            RS->empty_set_mask |= (1 << set_index);
+            continue;
         }
-        set_index++;
-        set_index_mask >>= 1;
+        CGPUParameterTable* param_table = CGPU_NULLPTR;
+        for (uint32_t i = 0; i < RS->super.table_count; i++)
+        {
+            if (RS->super.p_tables[i].set_index == set_index)
+            {
+                param_table = &RS->super.p_tables[i];
+                break;
+            }
+        }
+        uint32_t bindings_count = param_table ? param_table->resources_count + desc->static_sampler_count : 0 + desc->static_sampler_count;
+        VkDescriptorSetLayoutBinding* vkbindings = cgpu_calloc(allocator,
+        bindings_count, sizeof(VkDescriptorSetLayoutBinding));
+        uint32_t i_binding = 0;
+        // bindings
+        if (param_table)
+        {
+            for (i_binding = 0; i_binding < param_table->resources_count; i_binding++)
+            {
+                vkbindings[i_binding].binding = param_table->p_resources[i_binding].binding;
+                vkbindings[i_binding].stageFlags = VkUtil_TranslateShaderUsages(param_table->p_resources[i_binding].stages);
+                vkbindings[i_binding].descriptorType = VkUtil_TranslateResourceTypeConvertToDynamic(param_table->p_resources[i_binding].type, desc->dynamic_buffers);
+                vkbindings[i_binding].descriptorCount = param_table->p_resources[i_binding].count;
+                if (vkbindings[i_binding].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
+                    vkbindings[i_binding].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
+                {
+                    RS->pSetLayouts[set_index].dynamic_count += param_table->p_resources[i_binding].count;
+                }
+            }
+        }
+        // static samplers
+        for (uint32_t i_ss = 0; i_ss < desc->static_sampler_count; i_ss++)
+        {
+            if (RS->super.p_static_samplers[i_ss].set == set_index)
+            {
+                CGPUSampler_Vulkan* immutableSampler = (CGPUSampler_Vulkan*)desc->p_static_samplers[i_ss];
+                vkbindings[i_binding].pImmutableSamplers = &immutableSampler->pVkSampler;
+                vkbindings[i_binding].binding = RS->super.p_static_samplers[i_ss].binding;
+                vkbindings[i_binding].stageFlags = VkUtil_TranslateShaderUsages(RS->super.p_static_samplers[i_ss].stages);
+                vkbindings[i_binding].descriptorType = VkUtil_TranslateResourceType(RS->super.p_static_samplers[i_ss].type);
+                vkbindings[i_binding].descriptorCount = RS->super.p_static_samplers[i_ss].size;
+                i_binding++;
+            }
+        }
+        VkDescriptorSetLayoutCreateInfo setLayoutInfo = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .pNext = NULL,
+            .flags = 0,
+            .bindingCount = i_binding,
+            .pBindings = vkbindings,
+        };
+        CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkCreateDescriptorSetLayout(D->pVkDevice,
+            &setLayoutInfo, &I->vkAllocator, &RS->pSetLayouts[set_index].layout));
+
+        if (bindings_count) cgpu_free(allocator, vkbindings);
     }
     // Push constants
     // Collect push constants count
@@ -474,7 +474,9 @@ void cgpu_free_root_signature_vulkan(CGPUDeviceId device, CGPURootSignatureId si
     for (uint32_t i_set = 0; i_set < RS->mSetLayoutCount; i_set++)
     {
         SetLayout_Vulkan* set_to_free = &RS->pSetLayouts[i_set];
-        if (set_to_free->layout != VK_NULL_HANDLE)
+        // Numbering-gap slots share the device-wide empty set layout; skip destroying it.
+        if (set_to_free->layout != VK_NULL_HANDLE &&
+            !(RS->empty_set_mask & (1 << i_set)))
             D->mVkDeviceTable.vkDestroyDescriptorSetLayout(D->pVkDevice, set_to_free->layout, &I->vkAllocator);
         if (set_to_free->pUpdateTemplate != VK_NULL_HANDLE)
             D->mVkDeviceTable.vkDestroyDescriptorUpdateTemplateKHR(D->pVkDevice, set_to_free->pUpdateTemplate, &I->vkAllocator);
@@ -1987,19 +1989,21 @@ void cgpu_compute_encoder_bind_descriptor_set_vulkan(CGPUComputePassEncoderId en
     const CGPURootSignature_Vulkan* RS = (CGPURootSignature_Vulkan*)set->root_signature;
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)set->root_signature->device;
 
-    // VK Must Fill All DescriptorSetLayouts at first dispach/draw.
-    // Example: If shader uses only set 2, we still have to bind empty sets for set=0 and set=1
+    // VK requires every set slot of the pipeline layout to be bound at draw/dispatch.
+    // Only numbering gaps (sets the shader never references) are auto-bound with the
+    // shared empty descriptor set; referenced sets must be bound by the caller or the
+    // validation layer reports the missing bind.
     if (Cmd->pBoundPipelineLayout != RS->pPipelineLayout)
     {
         Cmd->pBoundPipelineLayout = RS->pPipelineLayout;
         for (uint32_t i = 0; i < RS->mSetLayoutCount; i++)
         {
-            if (RS->pSetLayouts[i].pEmptyDescSet != VK_NULL_HANDLE &&
+            if ((RS->empty_set_mask & (1 << i)) &&
                 Set->super.index != i)
             {
                 D->mVkDeviceTable.vkCmdBindDescriptorSets(Cmd->pVkCmdBuf,
                 VK_PIPELINE_BIND_POINT_COMPUTE, RS->pPipelineLayout, i,
-                1, &RS->pSetLayouts[i].pEmptyDescSet, 0, NULL);
+                1, &D->pEmptyDescSet, 0, NULL);
             }
         }
     }
@@ -2016,19 +2020,21 @@ void cgpu_render_encoder_bind_descriptor_set_vulkan(CGPURenderPassEncoderId enco
     const CGPURootSignature_Vulkan* RS = (CGPURootSignature_Vulkan*)set->root_signature;
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)set->root_signature->device;
 
-    // VK Must Fill All DescriptorSetLayouts at first dispach/draw.
-    // Example: If shader uses only set 2, we still have to bind empty sets for set=0 and set=1
+    // VK requires every set slot of the pipeline layout to be bound at draw/dispatch.
+    // Only numbering gaps (sets the shader never references) are auto-bound with the
+    // shared empty descriptor set; referenced sets must be bound by the caller or the
+    // validation layer reports the missing bind.
     if (Cmd->pBoundPipelineLayout != RS->pPipelineLayout)
     {
         Cmd->pBoundPipelineLayout = RS->pPipelineLayout;
         for (uint32_t i = 0; i < RS->mSetLayoutCount; i++)
         {
-            if (RS->pSetLayouts[i].pEmptyDescSet != VK_NULL_HANDLE &&
+            if ((RS->empty_set_mask & (1 << i)) &&
                 Set->super.index != i)
             {
                 D->mVkDeviceTable.vkCmdBindDescriptorSets(Cmd->pVkCmdBuf,
                 VK_PIPELINE_BIND_POINT_GRAPHICS, RS->pPipelineLayout, i,
-                1, &RS->pSetLayouts[i].pEmptyDescSet, 0, NULL);
+                1, &D->pEmptyDescSet, 0, NULL);
             }
         }
     }

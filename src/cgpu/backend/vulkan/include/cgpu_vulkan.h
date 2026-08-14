@@ -274,6 +274,10 @@ typedef struct CGPUDevice_Vulkan {
     // struct VmaPool_T* pDedicatedAllocationVmaPools[VK_MAX_MEMORY_TYPES];
     struct VolkDeviceTable mVkDeviceTable;
     uint32_t next_shared_id;
+    // Empty descriptor set layout + descriptor set, shared across all root signatures.
+    // Used to fill set slots that are never referenced by the shader (numbering gaps).
+    VkDescriptorSetLayout pEmptySetLayout;
+    VkDescriptorSet pEmptyDescSet;
 } CGPUDevice_Vulkan;
 
 typedef struct CGPUFence_Vulkan {
@@ -411,7 +415,6 @@ typedef struct SetLayout_Vulkan {
     VkDescriptorUpdateTemplate pUpdateTemplate;
     uint32_t mUpdateEntriesCount;
     uint32_t dynamic_count;
-    VkDescriptorSet pEmptyDescSet;
 } SetLayout_Vulkan;
 
 typedef struct CGPURootSignature_Vulkan {
@@ -420,6 +423,8 @@ typedef struct CGPURootSignature_Vulkan {
     SetLayout_Vulkan* pSetLayouts;
     VkDescriptorSetLayout* pVkSetLayouts;
     uint32_t mSetLayoutCount;
+    // Bit i set: set slot i is a numbering gap never referenced by the shader.
+    uint32_t empty_set_mask;
     VkPushConstantRange* pPushConstRanges;
 } CGPURootSignature_Vulkan;
 

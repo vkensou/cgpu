@@ -470,6 +470,23 @@ CGPUDeviceId cgpu_create_device_vulkan(CGPUAdapterId adapter, const CGPUDeviceDe
     // Create Descriptor Heap
     D->pDescriptorPool = VkUtil_CreateDescriptorPool(D);
 
+    // Create the shared empty descriptor set layout + descriptor set. Every root
+    // signature uses this to fill set slots that are numbering gaps (never referenced
+    // by the shader), so they are created once per device and shared.
+    {
+        VkDescriptorSetLayoutCreateInfo emptyLayoutInfo = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .pNext = NULL,
+            .flags = 0,
+            .bindingCount = 0,
+            .pBindings = NULL,
+        };
+        CHECK_VKRESULT(&adapter->instance->logger, D->mVkDeviceTable.vkCreateDescriptorSetLayout(
+            D->pVkDevice, &emptyLayoutInfo, &I->vkAllocator, &D->pEmptySetLayout));
+        VkUtil_ConsumeDescriptorSets(D->pDescriptorPool, &D->pEmptySetLayout,
+            &D->pEmptyDescSet, 1);
+    }
+
     VkUtil_EnsureFeatures(A, D);
 
     return &D->super;
@@ -494,6 +511,8 @@ void cgpu_free_device_vulkan(CGPUAdapterId adapter, CGPUDeviceId device)
         }
     }
     VkUtil_FreeVMAAllocator(I, A, D);
+    VkUtil_ReturnDescriptorSets(D->pDescriptorPool, &D->pEmptyDescSet, 1);
+    D->mVkDeviceTable.vkDestroyDescriptorSetLayout(D->pVkDevice, D->pEmptySetLayout, &I->vkAllocator);
     VkUtil_FreeDescriptorPool(D->pDescriptorPool);
     VkUtil_FreePipelineCache(I, A, D);
     vkDestroyDevice(D->pVkDevice, &I->vkAllocator);
