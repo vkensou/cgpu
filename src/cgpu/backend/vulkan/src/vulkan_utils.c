@@ -1147,7 +1147,7 @@ VkObjectType type, const char* pName)
     vkSetDebugUtilsObjectNameEXT(pDevice, &nameInfo);
 }
 
-CGPU_FORCEINLINE static void VkUtil_DebugReportSetObjectName(VkDevice pDevice, uint64_t handle,
+CGPU_FORCEINLINE static void VkUtil_DebugMarkerSetObjectName(VkDevice pDevice, uint64_t handle,
     VkDebugReportObjectTypeEXT type, const char* pName)
 {
     VkDebugMarkerObjectNameInfoEXT nameInfo = {
@@ -1164,10 +1164,11 @@ void VkUtil_OptionalSetObjectName(struct CGPUDevice_Vulkan* device, uint64_t han
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)device->super.adapter->instance;
     if (I->super.enable_set_name && name)
     {
-        if (I->debug_report)
+        const CGPUAdapter_Vulkan* VkAdapter = (CGPUAdapter_Vulkan*)device->super.adapter;
+        if (VkAdapter->debug_marker)
         {
             VkDebugReportObjectTypeEXT exttype = VkUtil_ObjectTypeToDebugReportType(type);
-            VkUtil_DebugReportSetObjectName(device->pVkDevice, handle, exttype, name);
+            VkUtil_DebugMarkerSetObjectName(device->pVkDevice, handle, exttype, name);
         }
         if (I->debug_utils)
         {
