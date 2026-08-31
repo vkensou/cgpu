@@ -184,6 +184,7 @@ typedef struct CGPUInstance_Vulkan {
     uint32_t device_group_creation : 1;
     uint32_t debug_utils : 1;
     uint32_t debug_report : 1;
+    uint32_t enable_gpu_based_validation : 1;
 } CGPUInstance_Vulkan;
 
 typedef struct CGPUAdapter_Vulkan {
@@ -221,6 +222,12 @@ typedef struct CGPUAdapter_Vulkan {
 #if VK_EXT_descriptor_buffer
     VkPhysicalDeviceDescriptorBufferFeaturesEXT mPhysicalDeviceDescriptorBufferFeatures;
     VkPhysicalDeviceDescriptorBufferPropertiesEXT mPhysicalDeviceDescriptorBufferProperties;
+#endif
+#if VK_KHR_timeline_semaphore
+    VkPhysicalDeviceTimelineSemaphoreFeatures mPhysicalDeviceTimelineSemaphoreFeatures;
+#endif
+#if VK_KHR_vulkan_memory_model
+    VkPhysicalDeviceVulkanMemoryModelFeatures mPhysicalDeviceVulkanMemoryModelFeatures;
 #endif
     VkPhysicalDeviceFeatures2 mPhysicalDeviceFeatures;
     VkPhysicalDeviceSubgroupProperties mSubgroupProperties;

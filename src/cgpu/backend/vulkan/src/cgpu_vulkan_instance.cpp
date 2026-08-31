@@ -111,7 +111,7 @@ struct CGPUVkExtensionsTable : public phmap::flat_hash_map<std::string, bool, st
                 Adapter.amd_draw_indirect_count = Table[VK_AMD_DRAW_INDIRECT_COUNT_EXTENSION_NAME];
                 Adapter.amd_gcn_shader = Table[VK_AMD_GCN_SHADER_EXTENSION_NAME];
                 Adapter.sampler_ycbcr = Table[VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME];
-                
+
 #ifdef ENABLE_NSIGHT_AFTERMATH
                 Adapter.nv_diagnostic_checkpoints = Table[VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME];
                 Adapter.nv_diagnostic_config = Table[VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME];
@@ -275,6 +275,7 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
     vkEnumerateInstanceVersion(&apiVersion);
     appInfo.apiVersion = apiVersion;
     I->apiVersion = apiVersion;
+    I->enable_gpu_based_validation = desc->enable_gpu_based_validation;
 
     // Select Instance Layers & Layer Extensions
     VkUtil_SelectInstanceLayers(I,
@@ -321,6 +322,26 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
 #endif
     }
 
+    CGPU_DECLARE_ZERO(VkDebugUtilsMessengerCreateInfoEXT, instanceMessengerInfo)
+    instanceMessengerInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    instanceMessengerInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    instanceMessengerInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    instanceMessengerInfo.pfnUserCallback = VkUtil_DebugUtilsCallback;
+    instanceMessengerInfo.pUserData = I;
+    if (desc->enable_set_name)
+    {
+#if VK_HEADER_VERSION >= 108
+        if (createInfo.pNext)
+        {
+            validationFeaturesExt.pNext = &instanceMessengerInfo;
+        }
+        else
+#endif
+        {
+            createInfo.pNext = &instanceMessengerInfo;
+        }
+    }
+
     auto instRes = (int32_t)vkCreateInstance(&createInfo, &I->vkAllocator, &I->pVkInstance);
     if (instRes != VK_SUCCESS)
     {
@@ -346,7 +367,7 @@ CGPUInstanceId cgpu_create_instance_vulkan(CGPUInstanceDescriptor const* desc)
         wanted_device_layers, wanted_device_layers_count,
         wanted_device_extensions, wanted_device_extensions_count);
     // sort by GPU type
-    std::stable_sort(I->pVulkanAdapters, I->pVulkanAdapters + I->mPhysicalDeviceCount, 
+    std::stable_sort(I->pVulkanAdapters, I->pVulkanAdapters + I->mPhysicalDeviceCount,
     [](const CGPUAdapter_Vulkan& a, const CGPUAdapter_Vulkan& b) {
         const uint32_t orders[] = {
             4, 1, 0, 2, 3

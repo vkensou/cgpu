@@ -30,16 +30,13 @@ void VkUtil_DeInitializeEnvironment(struct CGPUInstance* Inst)
 {
 }
 
-typedef struct VkUtil_MessageToSkip {
-    const char* what;
-    uint64_t hash;
-} VkUtil_MessageToSkip;
-
-VkUtil_MessageToSkip kSkippedMessages[] = {
-    { "UNASSIGNED-BestPractices-vkCreateDevice-deprecated-extension" },
+static const char* kIgnoredMessageNames[] = {
+    "BestPractices-deprecated-extension",
+    "BestPractices-specialuse-extension",
+    "WARNING-GPU-Assisted-Validation",
 };
 
-bool VkUtil_IsExtensionEnabled(CGPUAdapter_Vulkan* VkAdapter, const char* extension_name)
+bool VkUtil_IsExtensionEnabled(const CGPUAdapter_Vulkan* VkAdapter, const char* extension_name)
 {
     for (uint32_t i = 0; i < VkAdapter->mExtensionsCount; ++i)
     {
@@ -51,40 +48,14 @@ bool VkUtil_IsExtensionEnabled(CGPUAdapter_Vulkan* VkAdapter, const char* extens
     return false;
 }
 
-CGPU_FORCEINLINE bool VkUtil_TryIgnoreMessage(const char* MessageId, bool Scan)
+static bool VkUtil_TryIgnoreMessage(const char* message_id_name, const char* message_text)
 {
-    if (!MessageId)
-        return false;
-    if (Scan)
+    for (uint32_t i = 0; i < sizeof(kIgnoredMessageNames) / sizeof(const char*); ++i)
     {
-        for (uint32_t i = 0; i < sizeof(kSkippedMessages) / sizeof(VkUtil_MessageToSkip); ++i)
-        {
-            if (strstr(kSkippedMessages[i].what, MessageId) != CGPU_NULLPTR)
-                return true;
-        }
-    }
-    else
-    {
-        const uint64_t msg_hash = cgpu_hash(MessageId, strlen(MessageId), CGPU_NAME_HASH_SEED);
-        for (uint32_t i = 0; i < sizeof(kSkippedMessages) / sizeof(VkUtil_MessageToSkip); ++i)
-        {
-            const uint64_t hash = kSkippedMessages[i].hash;
-            if (msg_hash != hash)
-                continue;
-            if (strcmp(kSkippedMessages[i].what, MessageId) == 0)
-                return true;
-        }
+        if ((message_id_name && strcmp(message_id_name, kIgnoredMessageNames[i]) == 0) || (message_text && strstr(message_text, kIgnoredMessageNames[i]) != CGPU_NULLPTR))
+            return true;
     }
     return false;
-}
-
-CGPU_FORCEINLINE void VkUtil_InitializeMessagesToSkip()
-{
-    for (uint32_t i = 0; i < sizeof(kSkippedMessages) / sizeof(VkUtil_MessageToSkip); ++i)
-    {
-        const char* what = kSkippedMessages[i].what;
-        kSkippedMessages[i].hash = cgpu_hash(what, strlen(what), CGPU_NAME_HASH_SEED);
-    }
 }
 
 // Instance APIs
@@ -93,7 +64,6 @@ void VkUtil_EnableValidationLayer(
     const VkDebugUtilsMessengerCreateInfoEXT* messenger_info_ptr,
     const VkDebugReportCallbackCreateInfoEXT* report_info_ptr)
 {
-    VkUtil_InitializeMessagesToSkip();
     if (I->debug_utils)
     {
         VkDebugUtilsMessengerCreateInfoEXT messengerInfo = {
@@ -145,6 +115,29 @@ void VkUtil_EnableValidationLayer(
             cgpu_assert(0 && "vkCreateDebugReportCallbackEXT failed - disabling Vulkan debug callbacks");
         }
     }
+}
+
+uint32_t VkUtil_ExtensionPromotedVersion(const char* extension_name)
+{
+    if (!strcmp(extension_name, VK_KHR_MAINTENANCE1_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_MAINTENANCE_2_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_MAINTENANCE3_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_MULTIVIEW_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_DEVICE_GROUP_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME))
+        return VK_API_VERSION_1_1;
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    if (!strcmp(extension_name, VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME))
+        return VK_API_VERSION_1_1;
+#endif
+    if (!strcmp(extension_name, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME) || !strcmp(extension_name, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
+        return VK_API_VERSION_1_2;
+    if (!strcmp(extension_name, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) || !strcmp(extension_name, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME) || !strcmp(extension_name, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME) || !strcmp(extension_name, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME))
+        return VK_API_VERSION_1_3;
+    return 0;
+}
+
+static bool VkUtil_FeatureStructUsable(uint32_t api_version, const CGPUAdapter_Vulkan* adapter, const char* extension_name)
+{
+    if (VkUtil_IsExtensionEnabled(adapter, extension_name))
+        return true;
+    const uint32_t promoted_version = VkUtil_ExtensionPromotedVersion(extension_name);
+    return promoted_version != 0 && api_version >= promoted_version;
 }
 
 void VkUtil_QueryAllAdapters(CGPUInstance_Vulkan* I,
@@ -213,52 +206,94 @@ const char* const* device_extensions, uint32_t device_extension_count)
                 vkGetPhysicalDeviceProperties2KHR(pysicalDevices[i], &VkAdapter->mPhysicalDeviceProps);
             else
                 vkGetPhysicalDeviceProperties(pysicalDevices[i], &VkAdapter->mPhysicalDeviceProps.properties);
+            // Query Physical Device Extension Properties
+            VkUtil_SelectPhysicalDeviceExtensions(VkAdapter, device_extensions, device_extension_count, allocator);
             // Query Physical Device Features
             VkAdapter->mPhysicalDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
             // Append pNexts
             {
                 void** ppNext = &VkAdapter->mPhysicalDeviceFeatures.pNext;
 #if VK_KHR_buffer_device_address
-                VkAdapter->mPhysicalDeviceBufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
-                *ppNext = &VkAdapter->mPhysicalDeviceBufferDeviceAddressFeatures;
-                ppNext = &VkAdapter->mPhysicalDeviceBufferDeviceAddressFeatures.pNext;
+                if (VkUtil_FeatureStructUsable(I->apiVersion, VkAdapter, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
+                {
+                    VkAdapter->mPhysicalDeviceBufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
+                    *ppNext = &VkAdapter->mPhysicalDeviceBufferDeviceAddressFeatures;
+                    ppNext = &VkAdapter->mPhysicalDeviceBufferDeviceAddressFeatures.pNext;
+                }
 #endif
 #if VK_EXT_descriptor_buffer
-                VkAdapter->mPhysicalDeviceDescriptorBufferFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT;
-                *ppNext = &VkAdapter->mPhysicalDeviceDescriptorBufferFeatures;
-                ppNext = &VkAdapter->mPhysicalDeviceDescriptorBufferFeatures.pNext;
+                if (VkUtil_FeatureStructUsable(I->apiVersion, VkAdapter, VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME))
+                {
+                    VkAdapter->mPhysicalDeviceDescriptorBufferFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT;
+                    *ppNext = &VkAdapter->mPhysicalDeviceDescriptorBufferFeatures;
+                    ppNext = &VkAdapter->mPhysicalDeviceDescriptorBufferFeatures.pNext;
+                }
 #endif
 
 #if VK_KHR_fragment_shading_rate
-                VkAdapter->mPhysicalDeviceFragmentShadingRateFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR;
-                *ppNext = &VkAdapter->mPhysicalDeviceFragmentShadingRateFeatures;
-                ppNext = &VkAdapter->mPhysicalDeviceFragmentShadingRateFeatures.pNext;
+                if (VkUtil_FeatureStructUsable(I->apiVersion, VkAdapter, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME))
+                {
+                    VkAdapter->mPhysicalDeviceFragmentShadingRateFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR;
+                    *ppNext = &VkAdapter->mPhysicalDeviceFragmentShadingRateFeatures;
+                    ppNext = &VkAdapter->mPhysicalDeviceFragmentShadingRateFeatures.pNext;
+                }
 #endif
 
 #if VK_KHR_dynamic_rendering
-                VkAdapter->mPhysicalDeviceDynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
-                *ppNext = &VkAdapter->mPhysicalDeviceDynamicRenderingFeatures;
-                ppNext = &VkAdapter->mPhysicalDeviceDynamicRenderingFeatures.pNext;
+                if (VkUtil_FeatureStructUsable(I->apiVersion, VkAdapter, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME))
+                {
+                    VkAdapter->mPhysicalDeviceDynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
+                    *ppNext = &VkAdapter->mPhysicalDeviceDynamicRenderingFeatures;
+                    ppNext = &VkAdapter->mPhysicalDeviceDynamicRenderingFeatures.pNext;
+                }
 #endif
 #if VK_EXT_extended_dynamic_state
-                VkAdapter->mPhysicalDeviceExtendedDynamicStateFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
-                *ppNext = &VkAdapter->mPhysicalDeviceExtendedDynamicStateFeatures;
-                ppNext = &VkAdapter->mPhysicalDeviceExtendedDynamicStateFeatures.pNext;
+                if (VkUtil_FeatureStructUsable(I->apiVersion, VkAdapter, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME))
+                {
+                    VkAdapter->mPhysicalDeviceExtendedDynamicStateFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+                    *ppNext = &VkAdapter->mPhysicalDeviceExtendedDynamicStateFeatures;
+                    ppNext = &VkAdapter->mPhysicalDeviceExtendedDynamicStateFeatures.pNext;
+                }
 #endif
 #if VK_EXT_extended_dynamic_state2
-                VkAdapter->mPhysicalDeviceExtendedDynamicState2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT;
-                *ppNext = &VkAdapter->mPhysicalDeviceExtendedDynamicState2Features;
-                ppNext = &VkAdapter->mPhysicalDeviceExtendedDynamicState2Features.pNext;
+                if (VkUtil_FeatureStructUsable(I->apiVersion, VkAdapter, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME))
+                {
+                    VkAdapter->mPhysicalDeviceExtendedDynamicState2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT;
+                    *ppNext = &VkAdapter->mPhysicalDeviceExtendedDynamicState2Features;
+                    ppNext = &VkAdapter->mPhysicalDeviceExtendedDynamicState2Features.pNext;
+                }
 #endif
 #if VK_EXT_extended_dynamic_state3
-                VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
-                *ppNext = &VkAdapter->mPhysicalDeviceExtendedDynamicState3Features;
-                ppNext = &VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.pNext;
+                if (VkUtil_FeatureStructUsable(I->apiVersion, VkAdapter, VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME))
+                {
+                    VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
+                    *ppNext = &VkAdapter->mPhysicalDeviceExtendedDynamicState3Features;
+                    ppNext = &VkAdapter->mPhysicalDeviceExtendedDynamicState3Features.pNext;
+                }
 #endif
 #if VK_EXT_shader_object
-                VkAdapter->mPhysicalDeviceShaderObjectFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT;
-                *ppNext = &VkAdapter->mPhysicalDeviceShaderObjectFeatures;
-                ppNext = &VkAdapter->mPhysicalDeviceShaderObjectFeatures.pNext;
+                if (VkUtil_FeatureStructUsable(I->apiVersion, VkAdapter, VK_EXT_SHADER_OBJECT_EXTENSION_NAME))
+                {
+                    VkAdapter->mPhysicalDeviceShaderObjectFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT;
+                    *ppNext = &VkAdapter->mPhysicalDeviceShaderObjectFeatures;
+                    ppNext = &VkAdapter->mPhysicalDeviceShaderObjectFeatures.pNext;
+                }
+#endif
+#if VK_KHR_timeline_semaphore
+                if (I->enable_gpu_based_validation && I->apiVersion >= VK_API_VERSION_1_2)
+                {
+                    VkAdapter->mPhysicalDeviceTimelineSemaphoreFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+                    *ppNext = &VkAdapter->mPhysicalDeviceTimelineSemaphoreFeatures;
+                    ppNext = &VkAdapter->mPhysicalDeviceTimelineSemaphoreFeatures.pNext;
+                }
+#endif
+#if VK_KHR_vulkan_memory_model
+                if (I->enable_gpu_based_validation && I->apiVersion >= VK_API_VERSION_1_2)
+                {
+                    VkAdapter->mPhysicalDeviceVulkanMemoryModelFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES;
+                    *ppNext = &VkAdapter->mPhysicalDeviceVulkanMemoryModelFeatures;
+                    ppNext = &VkAdapter->mPhysicalDeviceVulkanMemoryModelFeatures.pNext;
+                }
 #endif
             }
             if (vkGetPhysicalDeviceFeatures2KHR || I->apiVersion >= VK_API_VERSION_1_1)
@@ -273,8 +308,6 @@ const char* const* device_extensions, uint32_t device_extension_count)
                 vkGetPhysicalDeviceFeatures(pysicalDevices[i], &VkAdapter->mPhysicalDeviceFeatures.features);
             // Query Physical Device Layers Properties
             VkUtil_SelectPhysicalDeviceLayers(VkAdapter, device_layers, device_layers_count, allocator);
-            // Query Physical Device Extension Properties
-            VkUtil_SelectPhysicalDeviceExtensions(VkAdapter, device_extensions, device_extension_count, allocator);
             // Select Queue Indices
             VkUtil_SelectQueueIndices(VkAdapter, allocator);
             // Record Adapter Detail
@@ -739,13 +772,13 @@ void VkUtil_QueryHostVisbleVramInfo(CGPUAdapter_Vulkan* VkAdapter)
     }
 }
 
-static inline uint32_t VkUtil_CombineVersion(uint32_t a, uint32_t b) 
+static inline uint32_t VkUtil_CombineVersion(uint32_t a, uint32_t b)
 {
    uint32_t times = 1;
    while (times <= b)
       times *= 10;
    return a*times + b;
-} 
+}
 
 void VkUitl_QueryDynamicPipelineStates(CGPUAdapter_Vulkan* VkAdapter, uint64_t dynamic_state, uint32_t* pCount, VkDynamicState* pStates)
 {
@@ -807,7 +840,7 @@ void VkUtil_RecordAdapterDetail(CGPUAdapter_Vulkan* VkAdapter)
     adapter_detail->vendor_preset.vendor_id = prop->vendorID;
     if (adapter_detail->vendor_preset.vendor_id == 0x10DE) // NVIDIA
     {
-        const uint32_t vraw = prop->driverVersion; 
+        const uint32_t vraw = prop->driverVersion;
         const uint32_t v0 = (vraw >> 22) & 0x3ff;
         const uint32_t v1 = (vraw >> 14) & 0x0ff;
         const uint32_t v2 = (vraw >> 6) & 0x0ff;
@@ -816,7 +849,7 @@ void VkUtil_RecordAdapterDetail(CGPUAdapter_Vulkan* VkAdapter)
     }
     else if (adapter_detail->vendor_preset.vendor_id == 0x8086 ) // Intel
     {
-        const uint32_t vraw = prop->driverVersion; 
+        const uint32_t vraw = prop->driverVersion;
         const uint32_t v0 = (vraw >> 14);
         const uint32_t v1 = (vraw) & 0x3fff;
         adapter_detail->vendor_preset.driver_version = VkUtil_CombineVersion(v0, v1);
@@ -1183,7 +1216,7 @@ VkUtil_DebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void* pUserData)
 {
-    if (VkUtil_TryIgnoreMessage(pCallbackData->pMessageIdName, false))
+    if (VkUtil_TryIgnoreMessage(pCallbackData->pMessageIdName, pCallbackData->pMessage))
         return VK_FALSE;
 
     CGPUInstance_Vulkan* I = pUserData;
@@ -1214,7 +1247,7 @@ VkUtil_DebugReportCallback(
     uint64_t object, size_t location, int32_t messageCode,
     const char* pLayerPrefix, const char* pMessage, void* pUserData)
 {
-    if (VkUtil_TryIgnoreMessage(pMessage, true))
+    if (VkUtil_TryIgnoreMessage(CGPU_NULLPTR, pMessage))
         return VK_FALSE;
 
     CGPUInstance_Vulkan* I = pUserData;
