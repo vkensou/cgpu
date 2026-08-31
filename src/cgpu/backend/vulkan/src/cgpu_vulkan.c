@@ -428,13 +428,14 @@ CGPURootSignatureId cgpu_create_root_signature_vulkan(CGPUDeviceId device,const 
                 VkDescriptorUpdateTemplateCreateInfo template_info = {
                     .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO,
                     .pNext = NULL,
+                    .flags = 0,
                     .descriptorUpdateEntryCount = update_entry_count,
                     .pDescriptorUpdateEntries = template_entries,
                     .templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET_KHR,
                     .descriptorSetLayout = set_to_record->layout,
                     .pipelineBindPoint = gPipelineBindPoint[RS->super.pipeline_type],
-                    .pipelineLayout = RS->pPipelineLayout,
-                    .set = param_table->set_index,
+                    .pipelineLayout = VK_NULL_HANDLE,
+                    .set = 0,
                 };
                 set_to_record->mUpdateEntriesCount = update_entry_count;
                 CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkCreateDescriptorUpdateTemplateKHR(D->pVkDevice,
@@ -840,7 +841,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
     CGPUInstance_Vulkan* I = (CGPUInstance_Vulkan*)A->super.instance;
     const CGPUAllocator* allocator = &I->super.allocator;
     CGPURootSignature_Vulkan* RS = (CGPURootSignature_Vulkan*)desc->root_signature;
-    
+
     uint32_t input_binding_count = 0;
     uint32_t input_attribute_count = 0;
     VkUtil_GetVertexInputBindingAttrCount(desc->vertex_layout, &input_binding_count, &input_attribute_count);
@@ -873,7 +874,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
             else
                 current_binding->inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
             current_binding->stride += attrib->elem_stride;
-            
+
             for(uint32_t j = 0; j < array_size; j++)
             {
                 input_attributes[attr_slot].location = attr_slot;
@@ -1018,7 +1019,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
         .pNext = NULL,
         .flags = 0,
-        
+
         .depthTestEnable = desc->depth_state->depth_test ? VK_TRUE : VK_FALSE,
         .depthWriteEnable = desc->depth_state->depth_write ? VK_TRUE : VK_FALSE,
         .depthCompareOp = gVkComparisonFuncTranslator[desc->depth_state->depth_op],
@@ -1054,7 +1055,7 @@ CGPURenderPipelineId cgpu_create_render_pipeline_vulkan(CGPUDeviceId device, con
     const VkPolygonMode polygonMode = !desc->rasterizer_state ? VK_POLYGON_MODE_FILL : gVkFillModeTranslator[desc->rasterizer_state->fill_mode];
     const VkFrontFace frontFace = !desc->rasterizer_state ? VK_FRONT_FACE_COUNTER_CLOCKWISE : gVkFrontFaceTranslator[desc->rasterizer_state->front_face];
     const float slope_scaled_depth_bias = desc->rasterizer_state ? desc->rasterizer_state->slope_scaled_depth_bias : 0.f;
-    const VkBool32 enable_depth_clamp = desc->rasterizer_state ? 
+    const VkBool32 enable_depth_clamp = desc->rasterizer_state ?
         (desc->rasterizer_state->enable_depth_clamp ? VK_TRUE : VK_FALSE) :
         VK_FALSE;
     VkPipelineRasterizationStateCreateInfo rs = {
@@ -1602,7 +1603,7 @@ VkCommandPool allocate_transient_command_pool(CGPUDevice_Vulkan* D, CGPUQueueId 
     };
     CHECK_VKRESULT(&queue->device->adapter->instance->logger, D->mVkDeviceTable.vkCreateCommandPool(
         D->pVkDevice, &create_info, &I->vkAllocator, &P));
-        
+
     return P;
 }
 
@@ -2443,7 +2444,7 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
         }
     }
     */
-    
+
     VkSurfaceTransformFlagBitsKHR pre_transform;
     // #TODO: Add more if necessary but identity should be enough for now
     if (caps.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
@@ -2502,15 +2503,15 @@ CGPUSwapChainId cgpu_create_swapchain_vulkan_impl(CGPUDeviceId device, const CGP
     if (!old)
     {
         S = cgpu_calloc_aligned(allocator, 1,
-            sizeof(CGPUSwapChain_Vulkan) + 
-            (sizeof(CGPUTexture_Vulkan) + sizeof(CGPUTextureInfo)) * buffer_count + 
+            sizeof(CGPUSwapChain_Vulkan) +
+            (sizeof(CGPUTexture_Vulkan) + sizeof(CGPUTextureInfo)) * buffer_count +
             sizeof(CGPUTextureId) * buffer_count, _Alignof(CGPUSwapChain_Vulkan));
     }
     S->pVkSwapChain = new_chain;
     S->super.back_buffer_count = buffer_count;
     CGPU_DECLARE_ZERO_VLA(VkImage, vimages, S->super.back_buffer_count)
     CHECK_VKRESULT(&device->adapter->instance->logger, D->mVkDeviceTable.vkGetSwapchainImagesKHR(D->pVkDevice, S->pVkSwapChain, &S->super.back_buffer_count, vimages));
-    
+
     struct THeader
     {
         CGPUTexture_Vulkan T;
@@ -2584,7 +2585,7 @@ ECGPUAcquireNextImageError cgpu_acquire_next_image_vulkan(CGPUSwapChainId swapch
         if (Fence) Fence->mSubmitted = true;
         if (Semaphore) Semaphore->mSignaled = true;
     }
-    else 
+    else
     {
         idx = -1;
         if (Fence)
