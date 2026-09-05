@@ -365,6 +365,7 @@ bool ImGui_ImplCGPU_CreateFontsTexture(CGPUQueueId queue, CGPURootSignatureId ro
         .format = CGPU_TEXTURE_FORMAT_R8G8B8A8_UNORM,
         .usages = CGPU_TEXTURE_VIEW_USAGE_SRV,
         .aspects = CGPU_TEXTURE_VIEW_ASPECT_COLOR,
+        .dims = CGPU_TEXTURE_DIMENSION_2D,
     };
     bd->FontView = cgpu_device_create_texture_view(v->Device, &view_desc);
 
