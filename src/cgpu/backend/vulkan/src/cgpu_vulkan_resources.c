@@ -1395,13 +1395,13 @@ CGPUTextureViewId cgpu_create_texture_view_vulkan(CGPUDeviceId device, const str
             view_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
             break;
         case CGPU_TEXTURE_DIMENSION_CUBE:
-            cgpu_assert(pInfo->is_cube && "A cube view requires a cube compatible image");
-            cgpu_assert(desc->array_layer_count % 6 == 0 && "VUID-VkImageViewCreateInfo-viewType-02960: a cube view must cover whole cubes");
+            cgpu_assert(pInfo->is_cube && "VUID-VkImageViewCreateInfo-image-01003: a cube view requires a cube compatible image");
+            cgpu_assert(desc->array_layer_count == 6 && "VUID-VkImageViewCreateInfo-viewType-02960: a cube view must cover exactly one cube");
             view_type = VK_IMAGE_VIEW_TYPE_CUBE;
             break;
         case CGPU_TEXTURE_DIMENSION_CUBE_ARRAY:
-            cgpu_assert(pInfo->is_cube && "A cube array view requires a cube compatible image");
-            cgpu_assert(desc->array_layer_count % 12 == 0 && "VUID-VkImageViewCreateInfo-viewType-02961: a cube array view must cover whole cube arrays");
+            cgpu_assert(pInfo->is_cube && "VUID-VkImageViewCreateInfo-image-01003: a cube array view requires a cube compatible image");
+            cgpu_assert(desc->array_layer_count > 0 && desc->array_layer_count % 6 == 0 && "VUID-VkImageViewCreateInfo-viewType-02961: a cube array view must cover a whole number of cubes");
             view_type = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
             break;
         case CGPU_TEXTURE_DIMENSION_3D:
