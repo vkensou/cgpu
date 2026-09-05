@@ -1380,28 +1380,37 @@ CGPUTextureViewId cgpu_create_texture_view_vulkan(CGPUDeviceId device, const str
     const CGPUTextureInfo* pInfo = T->super.info;
     CGPUTextureView_Vulkan* TV = cgpu_calloc_aligned(allocator, 1, sizeof(CGPUTextureView_Vulkan), _Alignof(CGPUTextureView_Vulkan));
     VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
-    VkImageType mImageType = pInfo->depth > 1 ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
-    switch (mImageType)
+    const bool is_3d_image = pInfo->depth > 1;
+    switch (desc->dims)
     {
-        case VK_IMAGE_TYPE_1D:
-            view_type = desc->array_layer_count > 1 ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
+        case CGPU_TEXTURE_DIMENSION_2D:
+        case CGPU_TEXTURE_DIMENSION_2DMS:
+            cgpu_assert(!is_3d_image && "2D views cannot target a 3D image");
+            view_type = desc->array_layer_count > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
             break;
-        case VK_IMAGE_TYPE_2D:
-            if (pInfo->is_cube)
-                view_type = (desc->dims == CGPU_TEXTURE_DIMENSION_CUBE_ARRAY) ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
-            else
-                view_type = ((desc->dims == CGPU_TEXTURE_DIMENSION_2DARRAY) || (desc->dims == CGPU_TEXTURE_DIMENSION_2DMSARRAY)) ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
+        case CGPU_TEXTURE_DIMENSION_2DARRAY:
+        case CGPU_TEXTURE_DIMENSION_2DMSARRAY:
+            cgpu_assert(!is_3d_image && "2D array views cannot target a 3D image");
+            cgpu_assert(desc->array_layer_count > 1 && "A 2D array view must cover more than one layer");
+            view_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
             break;
-        case VK_IMAGE_TYPE_3D:
-            if (desc->array_layer_count > 1)
-            {
-                cgpu_error(&device->adapter->instance->logger, "Cannot support 3D Texture Array in Vulkan\n");
-                cgpu_assert(false);
-            }
+        case CGPU_TEXTURE_DIMENSION_CUBE:
+            cgpu_assert(pInfo->is_cube && "A cube view requires a cube compatible image");
+            cgpu_assert(desc->array_layer_count % 6 == 0 && "VUID-VkImageViewCreateInfo-viewType-02960: a cube view must cover whole cubes");
+            view_type = VK_IMAGE_VIEW_TYPE_CUBE;
+            break;
+        case CGPU_TEXTURE_DIMENSION_CUBE_ARRAY:
+            cgpu_assert(pInfo->is_cube && "A cube array view requires a cube compatible image");
+            cgpu_assert(desc->array_layer_count % 12 == 0 && "VUID-VkImageViewCreateInfo-viewType-02961: a cube array view must cover whole cube arrays");
+            view_type = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+            break;
+        case CGPU_TEXTURE_DIMENSION_3D:
+            cgpu_assert(is_3d_image && "A 3D view requires a 3D image");
+            cgpu_assert(desc->array_layer_count == 1 && "Cannot support 3D Texture Array in Vulkan\n");
             view_type = VK_IMAGE_VIEW_TYPE_3D;
             break;
         default:
-            cgpu_assert(false && "Image Format not supported!");
+            cgpu_assert(false && "Texture view dimension is not supported by this backend!");
             break;
     }
     cgpu_assert(view_type != VK_IMAGE_VIEW_TYPE_MAX_ENUM && "Invalid Image View");
