@@ -506,16 +506,24 @@ CGPUDescriptorSetId cgpu_create_descriptor_set_vulkan(CGPUDeviceId device, const
     size_t totalSize = sizeof(CGPUDescriptorSet_Vulkan);
     CGPURootSignature_Vulkan* RS = (CGPURootSignature_Vulkan*)desc->root_signature;
     uint32_t table_index = 0;
+    bool table_found = false;
     for (uint32_t i = 0; i < RS->super.table_count; i++)
     {
         if (RS->super.p_tables[i].set_index == desc->set_index)
         {
             table_index = i;
+            table_found = true;
         }
     }
     SetLayout_Vulkan* SetLayout = &RS->pSetLayouts[desc->set_index];
     const CGPUDevice_Vulkan* D = (CGPUDevice_Vulkan*)device;
-    const size_t UpdateTemplateSize = RS->super.p_tables[table_index].resources_count * sizeof(VkDescriptorUpdateData);
+    uint32_t update_entry_count = 0;
+    for (uint32_t i = 0; table_found && i < RS->super.p_tables[table_index].resources_count; i++)
+    {
+        const CGPUShaderResource* resource = RS->super.p_tables[table_index].p_resources + i;
+        update_entry_count = cgpu_max(update_entry_count, resource->binding + cgpu_max(1u, resource->count));
+    }
+    const size_t UpdateTemplateSize = update_entry_count * sizeof(VkDescriptorUpdateData);
     totalSize += UpdateTemplateSize;
     CGPUDescriptorSet_Vulkan* Set = cgpu_calloc_aligned(allocator, 1, totalSize, _Alignof(CGPUDescriptorSet_Vulkan));
     char* pMem = (char*)(Set + 1);
